@@ -1,6 +1,6 @@
-Current: Phase B, next stage B6
+Current stage: B7 — Fetch the libraries (Phase B)
 
-Last updated: 2026-10-23, end of Stage B5. Phase A complete (Gate A met).
+Last updated: 2026-10-23, end of Stage B6. Phase A complete (Gate A met).
 
 ## Stages done
 
@@ -17,6 +17,7 @@ Last updated: 2026-10-23, end of Stage B5. Phase A complete (Gate A met).
 | B3 — Prove the compiler works | CMake + Ninja + MSVC built and ran a C++23 `hello.exe`: printed `hello`, compiler 195136260, C++ level 202302, 64-bit, exit code 0. C++23 switch pinned to `/std:c++23preview` (T-B3-2). Scratch folder deleted with your OK. `docs\ENVIRONMENT.md`. |
 | B4 — Lock the original ROM | Spare copy at `F:\Ports\ROM-originals\Pac-Man (1981) (Atari).a26` (SHA-1 match). Read-only flag on the original and the spare. Open-for-writing refused by Windows on both. Original unchanged (SHA-1, size, date). `rom\EXPECTED_SHA1.txt` written. `docs\ROM_IDENTITY.md` "Protection", T-B4-1/T-B4-2. |
 | B5 — Project skeleton and Git | Folders `src\host`, `src\game`, `third_party`, `tests`, `reference` (local only). `.gitignore` / `.gitattributes` (T-B5-1, T-B5-2). Repository on branch `main` (T-B5-3). `git check-ignore` and `git status --ignored` prove every `.a26` and `rom\` is ignored. First commit `Stage B5: Project skeleton and Git` with no ROM in it (checked by script). |
+| B6 — The memory files | `CLAUDE.md`: your 12 rules, identical to your pasted text (scripted comparison, 42 lines), plus working preferences and technical facts. `docs\GLOSSARY.md`. Memory files cross-checked (102 markers, A1–B5 consistent, all cited decisions exist). T-B6-1. |
 
 ## Key facts so far
 
@@ -38,19 +39,25 @@ Last updated: 2026-10-23, end of Stage B5. Phase A complete (Gate A met).
 
 ## Pending decisions
 
-- None right now. Next: Stella version for the reference app (D-002, stage C1).
+- **Stella version (D-002), needed by B7.** The plan reserves D-002 for C1, but B7 already downloads Stella's source "at the same release tag as the C1 reference app". So B7 will ask you to approve the Stella version first. The latest release noted in D-001 is 7.0, and B7 re-checks it.
 
 ## Next stage
 
-B6 — The memory files. Claude Code writes `CLAUDE.md`, which Claude Code reads automatically every session, and `docs\GLOSSARY.md`, and tidies `PROJECT_STATUS.md` / `PLAN.md` / `DECISIONS.md`.
+B7 — Fetch the libraries. Claude Code downloads pinned versions of SDL3 and the Stella source into `third_party\`, each with its licence, and records them in `docs\DEPENDENCIES.md`.
 
-**This needs a file only you have:** the plan says `CLAUDE.md` holds "the 12 engineering rules from your brief, word for word". That brief is not in the project folder (only `ROADMAP.md`, which refers to the rules but doesn't list them). At the start of B6, paste the 12 rules, or the whole original brief, into the chat, or save it as a text file in the project folder.
+**This needs your approvals:**
+- the Stella version (D-002, brought forward from C1);
+- the downloads themselves, after Claude Code shows you their names, official sources and sizes.
+
+Nothing is installed: they are source files kept inside the project.
 
 ## Handoff from the last session
 
-Stage B5 done:
-- The project now has its folder layout.
-- A Git repository exists on branch `main`, with an ignore list that keeps every ROM, `rom\` and `reference\` out of Git. This was proved with `git check-ignore` and `git status --ignored` before anything was committed.
-- The first commit, `Stage B5: Project skeleton and Git`, holds all work from A1 to B5: text files only, checked by script.
+Stage B6 done:
+- `CLAUDE.md` now holds your 12 engineering rules. A script compared them with the text you pasted and found them identical.
+- It also holds the working preferences from the resume prompt and the technical facts learned so far.
+- `docs\GLOSSARY.md` explains about 70 project terms in plain English.
+- `PLAN.md`, `PROJECT_STATUS.md` and `DECISIONS.md` were cross-checked and agree.
+- Line 1 of this file now reads "Current stage: B7".
 
-New: `.gitignore`, `.gitattributes`, four `README.md` placeholders, the empty local `reference\` folder. Updated: `DECISIONS.md` (T-B5-1/2/3), `PLAN.md`, `PROJECT_STATUS.md`. Nothing was installed, no Git setting outside the project was changed, nothing was pushed, and the ROMs are unchanged (SHA-1s checked).
+New: `CLAUDE.md`, `docs\GLOSSARY.md`. Updated: `DECISIONS.md` (T-B6-1), `PLAN.md` (B6 entry, Done), `PROJECT_STATUS.md`. Nothing installed, nothing deleted, nothing pushed, ROMs untouched.

@@ -392,9 +392,50 @@ Install only what A5 approved, verify each tool the moment it's installed, and p
         - The dry-run add listed 14 text files and no ROM.
       - **First commit:** `Stage B5: Project skeleton and Git`. The staged list was checked by script for `.a26`/`.bin`/`rom/`/`reference/` (none), and `git status` was clean afterwards.
       - **ROMs:** SHA-1s unchanged.
-6. **[Not started] B6 — The memory files.**
-    - Claude Code: writes `CLAUDE.md` (your 12 rules + your working preferences), `PROJECT_STATUS.md`, `PLAN.md` (this roadmap), `DECISIONS.md`, `docs\GLOSSARY.md` (every new term in one line of plain English).
-    - Done when: you open `PROJECT_STATUS.md` in Notepad and it says "Current stage: B7".
+6. **[Done] B6 — The memory files.** *(expanded 2026-10-23, done 2026-10-23)*
+    - **Objective:** `CLAUDE.md` holds your 12 engineering rules word for word, plus the working preferences and hard-won technical facts. `docs\GLOSSARY.md` explains every project term in one plain line. `PROJECT_STATUS.md`, `PLAN.md` and `DECISIONS.md` are complete and consistent, with line 1 of `PROJECT_STATUS.md` reading "Current stage: B7".
+    - **Why it matters:** Claude Code reads `CLAUDE.md` automatically at the start of every session, so the rules and the "how we work" apply even if a prompt forgets them. This is what keeps future sessions safe and consistent.
+    - **Prerequisites:**
+      - B5 Done (yes; commit `ffef5a0`, clean tree).
+      - The 12 rules: you pasted "PART VII — Engineering rules and safeguards" on 2026-10-23.
+      - `PROJECT_STATUS.md`, `PLAN.md` and `DECISIONS.md` already exist since Phase A, so B6 checks and tidies them rather than creating them.
+    - **What Claude Code will do:**
+      1. Write `CLAUDE.md`:
+         - (a) the 12 rules, word for word, with only Markdown heading marks added;
+         - (b) working preferences taken from the resume prompt and section 3 of this plan;
+         - (c) technical facts later sessions must know (ROM protection, the Developer environment, the C++23 switch, PowerShell 5.1 quirks, the Git commit routine).
+      2. Write `docs\GLOSSARY.md` with every term used so far.
+      3. Check the three existing memory files against each other and set line 1 of `PROJECT_STATUS.md` to the agreed form.
+      4. Prove the rules were copied word for word by comparing them with your pasted text by script.
+      5. Commit.
+    - **What I must do:** Nothing more (the rules are given). Optionally, open `PROJECT_STATUS.md` in Notepad afterwards and check line 1.
+    - **Exact instructions:** None.
+    - **Required input:** The 12 rules (received).
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - `CLAUDE.md` exists, with 12 rule headings whose text matches your paste.
+      - `docs\GLOSSARY.md` exists.
+      - `PROJECT_STATUS.md` line 1 is `Current stage: B7 — Fetch the libraries (Phase B)`.
+      - The commit is `Stage B6: The memory files`.
+    - **Verification:**
+      - A scripted comparison of the rules text, ignoring only blank lines and the added `#` marks.
+      - The first line of `PROJECT_STATUS.md` shown.
+      - `git status` clean after the commit, and no ROM tracked.
+    - **Completion criteria:** All of the above shown.
+    - **Potential problems:** Text that looks the same but uses different dashes or quote marks. The comparison script catches that.
+    - **Recovery:** All new files are plain text in Git. Undoing them means returning to commit `ffef5a0`, with your OK.
+    - **Documentation updates:** `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`, `DECISIONS.md` (T-B6-1).
+    - **Git checkpoint:** `Stage B6: The memory files`.
+    - **Next stage:** B7 — Fetch the libraries.
+    - **Result (2026-10-23):**
+      - **`CLAUDE.md` written.** Its rules section was compared by script with your pasted text (only blank lines and the added `#` marks ignored): 42 lines, identical byte for byte, 12 `Rule` headings. The reference copy was transcribed by Claude Code from your message, so a glance by you closes that gap.
+      - **`docs\GLOSSARY.md` written:** about 70 terms in six groups.
+      - **Memory files cross-checked:**
+        - 102 stage markers.
+        - A1–B5 Done in both `PLAN.md` and `PROJECT_STATUS.md`.
+        - Every cited decision exists, apart from D-002, which is reserved for C1.
+      - **Status line:** line 1 of `PROJECT_STATUS.md` is now "Current stage: B7 — Fetch the libraries (Phase B)" (T-B6-1).
+      - **Commit:** `Stage B6: The memory files`.
 7. **[Not started] B7 — Fetch the libraries.**
     - Claude Code: downloads pinned versions of SDL3 (latest stable at the time; 3.4.18 on 2026-10-23) and the Stella source (its `src/os/libretro` core, at the same release tag as the C1 reference app, per D-001) into `third_party\`, each with its licence file and the exact version noted in `docs\DEPENDENCIES.md`. This is a download, so you approve it after seeing the names, sources and sizes.
     - Done when: both compile as empty libraries.

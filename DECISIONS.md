@@ -131,6 +131,18 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **No global settings changed:** the branch name was given on the command line, and no `safe.directory` was needed (F: is NTFS and owned by you).
 - **Reversible:** Yes.
 
+### T-B6-1 — How `CLAUDE.md` and the status line are laid out (2026-10-23, Stage B6)
+
+- **Choice:**
+  - `CLAUDE.md` holds your rules between `<!-- RULES START -->` and `<!-- RULES END -->` markers. Every sentence is copied unchanged, and only Markdown heading marks (`##`, `###`) are added, so Claude Code sees them as headings.
+  - Working preferences and technical facts follow in separate sections, kept short.
+  - Line 1 of `PROJECT_STATUS.md` now always has the form `Current stage: <ID> — <title> (Phase <X>)`.
+- **Why:**
+  - The markers let any later session prove by script that the rules are still word for word (B6 did this: identical, 42 lines).
+  - A short `CLAUDE.md` is read in full every session, whereas a long one would crowd out work. Details stay in `PLAN.md`, `DECISIONS.md` and `docs\`.
+  - The line-1 form matches B6's completion check ("Current stage: B7").
+- **Reversible:** Yes.
+
 ### T-A3-1 — Which ROM file is "the original" (2026-10-23, Stage A3)
 
 - **Choice:** The original is `Pac-Man (1981) (Atari).a26` in the project folder's top level. The file with the same name in `F:\Ports` is ignored.

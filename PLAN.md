@@ -672,9 +672,52 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
       - **Settings:** `stella.sqlite3` (57,344 bytes) and empty `cfg\`, `nvram\` and `state\` were created in the app folder. No `%APPDATA%\Stella` was created.
       - **Afterwards:** the official files are still identical, no ROM was opened, and the ROM SHA-1s are unchanged.
       - **Recorded:** `docs\REFERENCE_EMULATOR.md`.
-2. **[Not started] C2 — First run of the original.**
-    - You: in Stella, load the copy in `rom\`, play for one minute with the keyboard and with the PS4 pad, then tell Claude Code in a sentence whether it looked and sounded right.
-    - Claude Code: reads Stella's game-properties entry for this ROM (cartridge type, TV format, display settings) and records it.
+2. **[Done] C2 — First run of the original.** *(expanded 2026-10-24, done 2026-10-24)*
+    - **Objective:** The original game runs in the reference Stella app from the working copy `rom\pacman.a26`. You confirm in a sentence that it looks, sounds and plays right. Stella's view of this ROM (database entry and what it detects: cartridge type, TV format, display settings) is recorded. Nothing is written next to the ROM.
+    - **Why it matters:**
+      - This is the first time the game itself runs.
+      - Your judgement is the human check on the "ruler" (Stella) before anything is measured with it (C3–C8).
+      - The detected properties are the settings every later measurement must reproduce.
+    - **Prerequisites:** C1 Done (yes; commit `764720d`, clean tree). Checked 2026-10-24:
+      - **Database entry:** Stella 7.0's own database (`third_party\stella\src\emucore\DefProps.hxx`, line 1625) has the same entry for MD5 `6e372f07…f1cb` that A3 read from Stella's development version: name "Pac-Man (1982) (Atari)", cartridge type and TV format empty (auto-detect), `Display_Phosphor` YES.
+      - **Default keys (Stella's manual):** arrow keys move; Space or Left Ctrl is fire; F1 is Game Select, F2 Game Reset, F5/F6 the left player's difficulty A/B, Pause pauses, Escape goes back to the game list.
+      - **Controller:** Windows currently lists no PS4 controller, only the "Nefarius Virtual Gamepad Emulation Bus" (usually from DS4Windows).
+    - **What Claude Code will do:**
+      1. Take a fingerprint snapshot of `rom\`, then the ROM SHA-1s.
+      2. With your approval, run Stella's `-rominfo` on `rom\pacman.a26`, which prints what Stella detects and exits (through the same `-baseinappdir` setup, T-C1-2).
+      3. With your approval, start the game with `tools\run_stella.cmd rom\pacman.a26`, and tell you the keys.
+      4. Afterwards, check that `rom\` is unchanged and nothing new appeared next to the ROM, list what Stella wrote in its own folder, and record everything in `docs\FIRST_RUN.md`.
+    - **What I must do:**
+      - Approve the two Stella starts.
+      - Play for about a minute with the keyboard, then with your PS4 controller if you connect it.
+      - Close Stella.
+      - Tell Claude Code in one sentence how it looked, sounded and felt.
+    - **Exact instructions:** given in the session (keys, and how to connect the pad).
+    - **Required input:** your sentence, and whether the pad worked.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - `-rominfo` shows the name, MD5 `6e372f07…f1cb`, a 4K cartridge type and NTSC.
+      - The game runs; you report it looks and sounds right (or describe what doesn't).
+      - `rom\` is unchanged, and the ROM SHA-1s are unchanged.
+    - **Verification:** the `-rominfo` output, process and window-title output, the before/after listing of `rom\`, the list of Stella's own new files, and your sentence quoted.
+    - **Completion criteria:** all expected results shown, and your sentence recorded.
+    - **Potential problems:**
+      - `-rominfo` prints nothing, because Windows programs with a window often have no text output. In that case: read Stella's in-app "Game Properties" instead, with your help, or its log.
+      - The PS4 pad isn't seen: with DS4Windows running, it may appear as an Xbox controller. Note what happens; controller details are C6's job.
+      - Sound missing: check the Windows volume, and note it.
+      - Anything looks wrong: describe it. Nothing is changed in Stella's settings to "fix" it without recording it.
+    - **Recovery:** Stella only reads the ROM. Its own new files live in its folder and can be removed with your OK.
+    - **Documentation updates:** `docs\FIRST_RUN.md` (new), `docs\GLOSSARY.md`, `DECISIONS.md` (if a choice is needed), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage C2: First run of the original`.
+    - **Next stage:** C3 — Display facts, measured.
+    - **Result (2026-10-24):** you approved both Stella starts and chose keyboard only.
+      - **Info run:** `-rominfo` gave empty output (a windowed program on Windows), as foreseen.
+      - **Game run:** Stella started with `rom\pacman.a26`, window title `Stella 7.0: "Pac-Man (1982) (Atari)"`. It was restarted once at your request.
+      - **Your verdict:** "Looks, sounds and plays right".
+      - **Game Properties → Emulation**, read by you: "4K detected" and "NTSC detected". I had first pointed you to the wrong tab; the fields' location was then checked in Stella's source.
+      - **Database:** Stella 7.0's entry (`DefProps.hxx` line 1625) is the same as A3's.
+      - **Files:** `rom\` unchanged (fingerprint snapshot before = after) and ROM SHA-1s unchanged. Only Stella's own `stella.sqlite3` was updated, and nothing went to `%APPDATA%`.
+      - **Recorded:** `docs\FIRST_RUN.md` and T-C2-1. The PS4 pad is left for C6.
 3. **[Not started] C3 — Display facts, measured.**
     - Claude Code: using Stella's debugger and snapshots, records the number of scanlines per frame, the first and last visible line, the visible height, the 160-pixel width, the colour palette (NTSC), and whether the line count ever changes (during deaths, level changes, attract mode).
     - Done when: `docs\DISPLAY.md` lists each value with how it was measured. No value is copied from memory.

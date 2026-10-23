@@ -58,6 +58,18 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-C2-1 — Which ROM file Stella opens, and how its view is read (2026-10-24, Stage C2)
+
+- **Choice:**
+  - Stella opens the working copy `rom\pacman.a26`, never the read-only original.
+  - What Stella detects (cartridge type, TV format) is read from its in-app "Game Properties" → "Emulation" tab, because `-rominfo` prints nothing on Windows (tried in C2: empty output).
+  - The database entry is read from Stella 7.0's own source (`DefProps.hxx`), the same version as the app.
+- **Why:**
+  - The working copy is the one meant for analysis (T-A3-2), and the original stays untouched even by reading tools.
+  - The in-app dialog is Stella's own report.
+  - The source entry is exact text that can be checked again at any time.
+- **Reversible:** Yes.
+
 ### T-C1-1 — Proving the reference app is genuine; keeping your folder name (2026-10-24, Stage C1)
 
 - **Choice:**

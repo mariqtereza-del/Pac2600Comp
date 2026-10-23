@@ -44,6 +44,10 @@ Every project term in one line of plain English. New terms are added in the stag
 | `-baseinappdir` | A Stella start-up option that keeps all its settings inside its own folder (used by `tools\run_stella.cmd`). |
 | Digital signature | A maker's electronic seal on a program file; our Stella 7.0c build has none, so we compared its files with the official zip instead. |
 | SmartScreen | Windows' warning when starting a program it doesn't recognise. |
+| Game Properties | Stella's window (Tab → Game Properties…) showing what it knows and detects about the loaded game. |
+| Auto-detect | Stella working out a setting (cartridge type, TV format) from the ROM itself instead of from its database. |
+| NTSC / PAL | The US and European TV standards; NTSC draws about 60 pictures per second, PAL about 50. This ROM is NTSC. |
+| Phosphor effect | Stella's optional blending of each picture with the previous one, like an old TV's afterglow; it softens flicker. |
 | libretro core | A version of an emulator packaged so other programs can embed it; we use Stella's own. |
 | SDL3 | A library that opens windows and handles sound and game controllers on the PC. |
 | Library | Ready-made code another program uses, instead of writing it from scratch. |

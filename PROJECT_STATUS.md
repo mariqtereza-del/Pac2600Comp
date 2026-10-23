@@ -1,6 +1,6 @@
-Current stage: C2 — First run of the original (Phase C)
+Current stage: C3 — Display facts, measured (Phase C)
 
-Last updated: 2026-10-24, end of Stage C1. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage C2. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -22,6 +22,7 @@ Last updated: 2026-10-24, end of Stage C1. Phase A complete (Gate A met). Phase 
 | B8 — Checkpoint script and a restore test | `tools\make_checkpoint.ps1` (refusals tested). Checkpoint `pacman2600-2026-10-24-B8.zip` (83.5 MB, 7105 entries, no ROM, SHA-256 file) in `F:\Ports\Pac-Man - Atari 2600 checkpoints\`. Restore test: all files identical, same `git status`, `git fsck` clean, libraries rebuilt with 0 errors. Test folder deleted with your OK. T-B8-1/T-B8-2. |
 | B9 — Gate B | All 6 items PASS, re-checked this session (`docs\GATE_B.md`): tools plus a fresh library build (0 errors), ROM locked (SHA-1, read-only, write refused), no ROM anywhere in Git (by name and by content), memory files and rules intact, history healthy (`git fsck`), B8 checkpoint verified. End-of-phase checkpoint `pacman2600-2026-10-24-Gate-B.zip` made with your OK. |
 | C1 — Install the reference emulator | Your folder `F:\Ports\Tools\Stella-7.0c`: all 96 files identical to the official `Stella-7.0c-windows.zip` (re-downloaded with your OK, SHA-256 `44102ccf…4653`). First start through `tools\run_stella.cmd` (`-baseinappdir`): window "Stella 7.0", you saw the game list. Settings stayed in the app folder, none in `%APPDATA%`. `docs\REFERENCE_EMULATOR.md`, T-C1-1/T-C1-2. |
+| C2 — First run of the original | Game ran in Stella from `rom\pacman.a26` (window `Stella 7.0: "Pac-Man (1982) (Atari)"`). Your verdict: "Looks, sounds and plays right" (keyboard). Game Properties: "4K detected", "NTSC detected". Database entry recorded. `rom\` unchanged, ROM SHA-1s unchanged. `docs\FIRST_RUN.md`, T-C2-1. |
 
 ## Key facts so far
 
@@ -58,20 +59,23 @@ Last updated: 2026-10-24, end of Stage C1. Phase A complete (Gate A met). Phase 
 
 ## Next stage
 
-C2 — First run of the original. The first time the game itself runs.
+C3 — Display facts, measured.
 
-**This needs you:**
-- Claude Code starts Stella with the working copy `rom\pacman.a26`, with your OK.
-- You play for about one minute with the keyboard, and with your PS4 controller if it's connected.
-- Then you tell Claude Code in a sentence whether it looked and sounded right.
+Claude Code measures and records in `docs\DISPLAY.md`:
+- scanlines per frame;
+- the first and last visible line, and the visible height and width;
+- the colour palette;
+- whether the line count ever changes (deaths, level changes, attract mode).
 
-Claude Code also reads and records Stella's game-properties entry for this ROM (cartridge type, TV format, display settings), and checks that nothing was written next to the ROM.
+Every value comes with how it was measured; none is copied from memory.
+
+At the start of C3, Claude Code decides the safest way to measure. That could be with Stella's debugger, with your help, or by a small measuring tool built on the same Stella 7.0 core already compiled in B7. Any start of Stella, and anything that writes outside the project, needs your OK.
 
 ## Handoff from the last session
 
-Stage C1 done: the reference emulator is ready.
-- **It's genuine:** the Stella folder you unzipped (`F:\Ports\Tools\Stella-7.0c`) is identical, file for file, to Stella's official 7.0c download. I downloaded that zip again with your OK and compared all 96 files.
-- **Launcher:** the new script `tools\run_stella.cmd` starts Stella so that it keeps all its settings in its own folder, not in your Windows profile. This was proved on the first start.
-- **First start:** you saw the game list and closed it normally. No game was opened yet.
+Stage C2 done: **the original game runs in the reference Stella**, from the working copy `rom\pacman.a26`.
+- **Your verdict:** "Looks, sounds and plays right" (keyboard only; the PS4 pad is left for C6).
+- **Stella's view, read by you in Game Properties → Emulation:** "4K detected" and "NTSC detected". Stella's database entry for this ROM is recorded.
+- **Files:** nothing was written next to the ROM, all ROM fingerprints are unchanged, and Stella only updated its own settings file.
 
-New: `docs\REFERENCE_EMULATOR.md`, `tools\run_stella.cmd`. Updated: `CLAUDE.md`, `DECISIONS.md` (T-C1-1, T-C1-2), `docs\GLOSSARY.md`, `PLAN.md` (C1 entry, Done), `PROJECT_STATUS.md`. Local only: `reference\_downloads\Stella-7.0c-windows.zip`. Outside the project, created by Stella itself: its settings in `F:\Ports\Tools\Stella-7.0c`. Nothing installed into Windows, nothing deleted, nothing pushed, ROMs untouched.
+New: `docs\FIRST_RUN.md`. Updated: `DECISIONS.md` (T-C2-1), `docs\GLOSSARY.md`, `PLAN.md` (C2 entry, Done), `PROJECT_STATUS.md`. Nothing installed, nothing deleted, nothing pushed.

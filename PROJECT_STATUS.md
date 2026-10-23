@@ -1,6 +1,6 @@
-Current stage: B8 — Checkpoint script and a restore test (Phase B)
+Current stage: B9 — Gate B (Phase B)
 
-Last updated: 2026-10-24, end of Stage B7. Phase A complete (Gate A met).
+Last updated: 2026-10-24, end of Stage B8. Phase A complete (Gate A met).
 
 ## Stages done
 
@@ -19,6 +19,7 @@ Last updated: 2026-10-24, end of Stage B7. Phase A complete (Gate A met).
 | B5 — Project skeleton and Git | Folders `src\host`, `src\game`, `third_party`, `tests`, `reference` (local only). `.gitignore` / `.gitattributes` (T-B5-1, T-B5-2). Repository on branch `main` (T-B5-3). `git check-ignore` and `git status --ignored` prove every `.a26` and `rom\` is ignored. First commit `Stage B5: Project skeleton and Git` with no ROM in it (checked by script). |
 | B6 — The memory files | `CLAUDE.md`: your 12 rules, identical to your pasted text (scripted comparison, 42 lines), plus working preferences and technical facts. `docs\GLOSSARY.md`. Memory files cross-checked (102 markers, A1–B5 consistent, all cited decisions exist). T-B6-1. |
 | B7 — Fetch the libraries | D-002 = Stella 7.0. SDL3 3.4.18 (SHA-256 = GitHub's) and Stella 7.0 (all 1057 files identical to tag 7.0) in `third_party\`. Stella's 459 test ROM files and SDL's AI-instruction files left out (0 ROM-like files). Both build with our toolchain: `SDL3.dll` 3.4.18, `stella_libretro.dll` (25 `retro_*` exports), 0 errors, 0 warnings. `docs\DEPENDENCIES.md`, T-B7-1…4. |
+| B8 — Checkpoint script and a restore test | `tools\make_checkpoint.ps1` (refusals tested). Checkpoint `pacman2600-2026-10-24-B8.zip` (83.5 MB, 7105 entries, no ROM, SHA-256 file) in `F:\Ports\Pac-Man - Atari 2600 checkpoints\`. Restore test: all files identical, same `git status`, `git fsck` clean, libraries rebuilt with 0 errors. Test folder deleted with your OK. T-B8-1/T-B8-2. |
 
 ## Key facts so far
 
@@ -35,6 +36,10 @@ Last updated: 2026-10-24, end of Stage B7. Phase A complete (Gate A met).
   - SDL3 3.4.18 and Stella 7.0 are vendored, byte-identical, in `third_party\` (never edit them). Stella 7.0 itself is C++20.
   - One build-time fix is applied to a copy of Stella's `libretro.cxx` (T-B7-4).
   - Rebuild check: `tools\build_third_party.cmd`.
+- Checkpoints (B8):
+  - `tools\make_checkpoint.ps1 -Stage <ID>` writes zips to `F:\Ports\Pac-Man - Atari 2600 checkpoints\`. This is outside the project, so it needs your OK each time.
+  - Zips hold the full project and Git history, but no ROM and no `build\`.
+  - To restore, the ROM comes back from `F:\Ports\ROM-originals\`.
 - What is still assumed, and where it gets checked: `docs\DISCOVERY_REPORT.md`.
 
 ## Open problems
@@ -48,22 +53,25 @@ Last updated: 2026-10-24, end of Stage B7. Phase A complete (Gate A met).
 
 ## Next stage
 
-B8 — Checkpoint script and a restore test. Claude Code writes `tools\make_checkpoint.ps1`, which zips the whole project (without `build\`) into a checkpoints folder, then proves a zip can be restored and built.
+B9 — Gate B. Claude Code checks the Phase B checklist item by item against the files, with evidence:
+- all tools verified;
+- ROM locked;
+- Git ignoring ROMs (proved);
+- memory files present;
+- first commit made;
+- first checkpoint zip exists.
 
-**This needs your approvals:**
-- creating the checkpoints folder **outside** the project (`F:\Ports\Pac-Man - Atari 2600 checkpoints\`, as planned);
-- a temporary restore folder for the test, and deleting it afterwards.
-
-Claude Code explains each step first.
+Phase C only starts if every item passes (Rule 10). Claude Code may propose an end-of-phase checkpoint (`Gate-B`), which writes outside the project and so needs your OK.
 
 ## Handoff from the last session
 
-Stage B7 done:
-- **Stella version:** you chose Stella 7.0 (D-002).
-- **SDL3 3.4.18:** its fingerprint equals the official one.
-- **Stella 7.0:** every one of its 1057 files is identical to the official 7.0 release.
-- **Left out on purpose:** 459 test files containing other games' ROMs (Stella), and two instruction files meant for AI tools (SDL).
-- **Build:** both libraries compile with our tools (0 errors, 0 warnings). The first attempt failed on two issues, and both were fixed and recorded (T-B7-3, T-B7-4) without changing the downloaded files.
-- **In Git:** the library sources are committed byte-identical, and the downloaded archives stay local.
+Stage B8 done:
+- `tools\make_checkpoint.ps1` zips the whole project, Git history included, into `F:\Ports\Pac-Man - Atari 2600 checkpoints\`.
+- It never includes a ROM (checked by name and by content), never overwrites, and refuses unsafe destinations. All three refusals were tested.
+- The first checkpoint, `pacman2600-2026-10-24-B8.zip` (83.5 MB), was restored to a temporary folder:
+  - every file was identical, and Git showed the same state;
+  - Git's health check found no damage;
+  - the libraries built from it without errors.
+- The temporary folder was then deleted, and so was the old `build_b7.log` (both with your OK).
 
-New: `third_party\SDL3\`, `third_party\stella\`, `third_party\CMakeLists.txt`, `tools\build_third_party.cmd`, `docs\DEPENDENCIES.md`. Updated: `.gitignore`, `.gitattributes`, `CLAUDE.md`, `DECISIONS.md` (D-002, T-B7-1…4), `docs\GLOSSARY.md`, `PLAN.md` (B7 entry, Done; C1 updated), `PROJECT_STATUS.md`. Local only: `third_party\_downloads\` (the two archives), `build\third_party\`, `build_b7.log`. Nothing was installed into Windows, nothing was pushed, and the ROMs are untouched.
+New: `tools\make_checkpoint.ps1`. Updated: `CLAUDE.md`, `DECISIONS.md` (T-B8-1, T-B8-2), `docs\GLOSSARY.md`, `PLAN.md` (B8 entry, Done), `PROJECT_STATUS.md`. Outside the project: the checkpoints folder with the zip and its `.sha256`. Nothing installed, nothing pushed, ROMs untouched.

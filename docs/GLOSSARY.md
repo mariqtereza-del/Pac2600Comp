@@ -29,6 +29,9 @@ Every project term in one line of plain English. New terms are added in the stag
 | Read-only flag | A Windows setting that makes a file refuse changes; set on the original ROM in B4. |
 | Working copy | A copy of the ROM (`rom\pacman.a26`) used for analysis so the original is never touched. |
 | Checkpoint zip | A full copy of the project in a zip file outside the project folder, made at the end of each phase. |
+| Restore test | Unpacking a backup into a fresh folder and proving it is complete and still builds; a backup only counts once this works. |
+| `git fsck` | Git's own health check of its history files; "no errors" means the history is undamaged. |
+| `.partial` file | A file still being written; only renamed to its real name once it has been checked. |
 
 ## Tools
 

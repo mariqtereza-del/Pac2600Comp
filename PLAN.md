@@ -500,9 +500,64 @@ Install only what A5 approved, verify each tool the moment it's installed, and p
         - 8 files hidden by the projects' own `.gitignore` files were added explicitly.
         - The archives stay local.
       - **Records:** `docs\DEPENDENCIES.md` written, and C1 updated to Stella 7.0c.
-8. **[Not started] B8 — Checkpoint script and a restore test.**
-    - Claude Code: writes `tools\make_checkpoint.ps1`, which zips the project (minus `build\`) into the checkpoints folder with the date and stage ID in the name, refusing to run if a `.a26` would be included in a release folder.
-    - Verify: make one zip, unzip it to a temp folder, build it there, then remove the temp folder.
+8. **[Done] B8 — Checkpoint script and a restore test.** *(expanded 2026-10-24, done 2026-10-24)*
+    - **Objective:** `tools\make_checkpoint.ps1` makes a dated, stage-named zip of the whole project, including its Git history, in `F:\Ports\Pac-Man - Atari 2600 checkpoints\`. It is proved by restoring one zip to a temporary folder and building it there.
+    - **Why it matters:** Git protects against bad edits, but not against losing or damaging the folder itself (a disk fault, an accidental delete, a broken `.git`). A checkpoint zip outside the project is the third safety layer (section 3). It only counts once a restore has been shown to work.
+    - **Prerequisites:**
+      - B7 Done (yes; commit `1435e80`, clean tree).
+      - Checked 2026-10-24:
+        - The checkpoints folder doesn't exist yet.
+        - F: has 86.5 GB free.
+        - Project sizes: `.git` 27.1 MB, `third_party` 100.4 MB (of which `_downloads` 28.3 MB), and `build` 88.9 MB, which is excluded.
+        - PowerShell is 5.1 (.NET Framework 4).
+    - **What Claude Code will do:**
+      1. Write `tools\make_checkpoint.ps1` (T-B8-1, T-B8-2):
+         - It zips everything except `build\` and ROM files, with entry names using `/`.
+         - It writes to a `.partial` file first.
+         - Before keeping the zip, it re-reads it and refuses if any entry has a ROM extension or the same content as the ROM (SHA-1 match). On any problem it removes its own `.partial` and stops.
+         - It never overwrites an existing checkpoint.
+         - It refuses a destination inside the project folder.
+         - It writes a small `.sha256` file next to the zip.
+      2. After your approval, create the checkpoints folder and make checkpoint `B8`.
+      3. Restore test, in a temporary folder `restore-test-B8` inside the checkpoints folder:
+         - unzip;
+         - prove `git status` is clean and `git fsck` finds no damage;
+         - rebuild the libraries with `tools\build_third_party.cmd` from the restored copy;
+         - compare the restored files with the project.
+      4. With your OK, delete the temporary folder.
+    - **What I must do:** Approve:
+      - creating the checkpoints folder outside the project;
+      - the temporary restore folder and its deletion afterwards;
+      - (optionally) deleting `build_b7.log`, my B7 log.
+    - **Exact instructions:** Answer the approval question.
+    - **Required input:** Approvals.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - `pacman2600-<date>-B8.zip` and its `.sha256` file exist in the checkpoints folder.
+      - The zip contains no `.a26`/`.bin`/`.rom` entry and no file whose SHA-1 equals the ROM's.
+      - The restored copy shows a clean `git status`, `git fsck` reports no errors, and the libraries build with 0 errors.
+      - The temporary folder is gone afterwards.
+    - **Verification:** script output, zip size and entry count, the restored `git status`/`git fsck` output, the build log tail, and the before/after ROM SHA-1s.
+    - **Completion criteria:** all expected results shown.
+    - **Potential problems:**
+      - Read-only files in `.git` make deleting the restore folder fail without `-Force`.
+      - Windows path-length limits: the deepest path is checked first.
+      - The zip creation fails part-way: the `.partial` file is removed and nothing else changes.
+    - **Recovery:** checkpoints and the restore folder live outside the project and can be deleted (with your OK). The project itself is only read.
+    - **Documentation updates:** `DECISIONS.md` (T-B8-1, T-B8-2), `docs\GLOSSARY.md`, `CLAUDE.md` (how to make a checkpoint), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage B8: Checkpoint script and a restore test`.
+    - **Next stage:** B9 — Gate B.
+    - **Result (2026-10-24):** You approved all steps plus deleting `build_b7.log`.
+      - **Safety refusals tested first, with nothing written:** destination inside the project, missing destination, invalid stage name.
+      - **Checkpoint:** `pacman2600-2026-10-24-B8.zip`, 83,465,798 bytes, 7105 entries, made in 44 s. SHA-256 `eda9d7b1…bd25`, in the `.sha256` file. The original `.a26` and `rom\pacman.a26` were left out (T-B8-1), and the zip was re-checked for ROMs by name and content.
+      - **Restore test** (`restore-test-B8`):
+        - The SHA-256 matches.
+        - All 7105 files are identical to the project (0 missing, 0 extra, 0 different), with 0 ROM-like files.
+        - `git status` is identical to the project's at checkpoint time.
+        - `git fsck --full` reports no errors.
+        - `tools\build_third_party.cmd` built from the restored copy: 570 steps, 0 errors, 0 warnings, with the same DLL sizes as B7.
+      - **Afterwards:** the restore folder was deleted (with your OK), and the ROM SHA-1s are unchanged.
+      - **Note:** this checkpoint was taken before B8's commit (T-B8-2).
 9. **[Not started] B9 — Gate B.**
     - Checklist: all tools verified, ROM locked, Git ignoring ROMs (proved), memory files present, first commit made, first checkpoint zip exists.
 

@@ -58,6 +58,38 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-B8-1 — What a checkpoint zip contains (2026-10-24, Stage B8)
+
+- **Choice:**
+  - Everything in the project folder, including the hidden `.git` history, `rom\EXPECTED_SHA1.txt`, `reference\` (your future recordings) and the downloaded library archives.
+  - Two exceptions: `build\`, and every ROM file. ROMs are left out by extension (`.a26`, `.bin`, `.rom`) and also by content: any 4096-byte file whose SHA-1 equals the ROM's makes the script stop.
+  - The zip is written with .NET's own zip library and entry names using `/`. (PowerShell 5.1's `Compress-Archive` skips hidden files such as `.git`.)
+- **Why:**
+  - **Git history:** a checkpoint must be able to replace a damaged project completely, history included.
+  - **`build\`:** it is re-created by building (89 MB saved).
+  - **ROMs:** they are left out so a backup zip can never spread the ROM by accident, if it is ever copied or shared (Rule 7). The ROM already has its own protected spare in `F:\Ports\ROM-originals\` (B4), so nothing is lost.
+- **How to restore:**
+  1. Unzip.
+  2. Copy the ROM back from `F:\Ports\ROM-originals\`, as the original (then set read-only) and as `rom\pacman.a26`.
+  3. Check it against `rom\EXPECTED_SHA1.txt`.
+- **Reversible:** Yes.
+
+### T-B8-2 — Checkpoint safety rules and naming (2026-10-24, Stage B8)
+
+- **Choice:**
+  - **Location and name:** zips go to `F:\Ports\Pac-Man - Atari 2600 checkpoints\` (the plan's folder), named `pacman2600-<yyyy-MM-dd>-<stage>.zip`, with a `.sha256` file next to each.
+  - **Refusals:** the script refuses a destination inside the project or a folder that doesn't exist, and it never overwrites a checkpoint.
+  - **Safe writing:** it writes to `.partial` first. It re-opens the finished zip to check the entry count and to confirm no entry is a ROM (by name and content), and only then renames it. On any failure it removes only its own `.partial`.
+  - **Restore tests:** they unzip into `restore-test-<stage>` inside the checkpoints folder, which is deleted afterwards with your OK.
+- **Why:**
+  - A checkpoint stored inside the project would be lost with it, and would end up inside the next checkpoint.
+  - The `.partial` step means a half-written zip can never look like a good one.
+  - The `.sha256` file lets anyone check later that a zip hasn't been damaged.
+- **When to run:** at the end of each phase (the plan), and before any risky step.
+  - A checkpoint taken mid-stage includes uncommitted changes. That is fine, because the restore test shows Git restores to exactly the same state.
+  - The B8 checkpoint was taken before B8's commit.
+- **Reversible:** Yes.
+
 ### T-B7-1 — What is left out when unpacking (2026-10-23, Stage B7)
 
 - **Choice:**

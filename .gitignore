@@ -1,0 +1,26 @@
+# Never commit game ROMs or ROM images (copyright). See DECISIONS.md T-B5-1.
+*.a26
+*.bin
+*.rom
+*.zip
+*.7z
+*.rar
+
+# Local-only folders: the working ROM copy and the reference emulator/recordings.
+/rom/
+/reference/
+
+# Build output and scratch work.
+/build/
+/out/
+/scratch*/
+CMakeUserPresets.json
+.vs/
+*.obj
+*.pdb
+*.ilk
+*.exe
+
+# Python caches.
+__pycache__/
+*.pyc

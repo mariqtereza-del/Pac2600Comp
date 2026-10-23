@@ -1,0 +1,17 @@
+# Line endings, the same on every PC. See DECISIONS.md T-B5-2.
+* text=auto
+
+# Windows scripts must keep Windows line endings to run correctly.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Unix scripts must keep Unix line endings.
+*.sh text eol=lf
+
+# Binary files are never changed by Git.
+*.a26 binary
+*.bin binary
+*.png binary
+*.wav binary
+*.zip binary

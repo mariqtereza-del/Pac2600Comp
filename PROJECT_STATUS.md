@@ -1,6 +1,6 @@
-Current stage: C4 — Timing facts (Phase C)
+Current stage: C5 — Sound facts (Phase C)
 
-Last updated: 2026-10-24, end of Stage C3. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage C4. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -24,6 +24,7 @@ Last updated: 2026-10-24, end of Stage C3. Phase A complete (Gate A met). Phase 
 | C1 — Install the reference emulator | Your folder `F:\Ports\Tools\Stella-7.0c`: all 96 files identical to the official `Stella-7.0c-windows.zip` (re-downloaded with your OK, SHA-256 `44102ccf…4653`). First start through `tools\run_stella.cmd` (`-baseinappdir`): window "Stella 7.0", you saw the game list. Settings stayed in the app folder, none in `%APPDATA%`. `docs\REFERENCE_EMULATOR.md`, T-C1-1/T-C1-2. |
 | C2 — First run of the original | Game ran in Stella from `rom\pacman.a26` (window `Stella 7.0: "Pac-Man (1982) (Atari)"`). Your verdict: "Looks, sounds and plays right" (keyboard). Game Properties: "4K detected", "NTSC detected". Database entry recorded. `rom\` unchanged, ROM SHA-1s unchanged. `docs\FIRST_RUN.md`, T-C2-1. |
 | C3 — Display facts, measured | `tools\stella_probe` (Stella 7.0 core, T-C3-1), 24,000 frames: 262 lines per frame throughout (frame 0: 45), visible window line 23 + 228 lines, drawn scanlines 34–222 over 160 columns, 9 play colours (ghost flicker ¼ each), 87 overall (idle colour shifting). 13 identical runs. Level change not reached. `docs\DISPLAY.md`. |
+| C4 — Timing facts | `stella_timing.exe` (T-C4-1), fingerprints identical to C3. 19,912 cycles/frame (76/line). Stella plays at 60.000 Hz; its NTSC console clock gives 59.923 Hz (+0.128 %). Every frame: VSYNC L259-261, logic, wait to L33, drawing from L34, timer at L195, logic, wait to L258. Spare time at least 6 lines (top), 24 (bottom), no overruns. `docs\TIMING.md`. |
 
 ## Key facts so far
 
@@ -62,20 +63,24 @@ Last updated: 2026-10-24, end of Stage C3. Phase A complete (Gate A met). Phase 
 
 ## Next stage
 
-C4 — Timing facts. Claude Code measures and records in `docs\TIMING.md`:
-- the frames per second in NTSC mode;
-- the processor speed;
-- where in each frame the game logic runs.
+C5 — Sound facts. Claude Code records short sound clips (WAV) of each of the game's sounds into `reference\audio\` (local only), and lists which sound plays when.
 
-The C3 probe can likely be extended for this, so probably nothing is needed from you. Any start of the Stella app needs your OK.
+The same Stella 7.0 core can produce the sound directly. But idle play only triggers a few sounds: eating dots, power pills and eaten ghosts need someone actually playing, or scripted joystick input. Claude Code decides at the start of C5, and may ask you for a short play session in the Stella app.
 
 ## Handoff from the last session
 
-Stage C3 done: **the display facts are measured** (`docs\DISPLAY.md`), using a new measuring program built on the same Stella 7.0 code as the reference app (a plan change, explained in T-C3-1).
-- **Lines per frame:** **262**, never changing: not in attract mode, not at game start, not during the deaths, not after game over. The only exception is the very first 45-line frame at power-on.
-- **The picture:** Stella shows lines 23–250. The game draws on lines 34–222, across all 160 pixel columns.
-- **Colours:** 9 during active play, where each of the 4 ghost colours shows in about a quarter of the frames, which is the flicker. When idle, the game shifts its colours, giving 87 in all.
-- **Not reached:** a level change (no dots get eaten without input).
-- **Findings:** see Open problems.
+Stage C4 done: **the timing facts are measured** (`docs\DISPLAY.md` for the picture, now `docs\TIMING.md` for time), using a second tool built on the same Stella 7.0 code. It was proved not to change the emulation: every picture fingerprint is identical to C3.
+- **Speed:** every frame is 19,912 processor cycles (76 per line).
+  - Stella plays the game at exactly **60.000** frames a second.
+  - The console's own clock, as Stella states it, would give **59.923**, so Stella runs 0.128% fast: one extra frame every 13 seconds.
+  - Phase D will need your decision on which to follow.
+- **Each frame:**
+  - a 3-line VSYNC;
+  - game logic, then a wait for a timer until line 33;
+  - drawing from line 34;
+  - more logic after the drawing, then a wait until line 258.
+  - The pattern is identical in every frame.
+- **Spare time:** the logic always finished in time. Its tightest moment left 6 lines spare at the top.
+- **Fixed during the stage:** my first version of the tool sampled once per scanline and gave imprecise numbers. I replaced it with an instruction-precise version, and none of the imprecise numbers were used.
 
-New: `docs\DISPLAY.md`, `tools\stella_probe\` (program and build file), `tools\build_stella_probe.cmd`, `tools\c3_report.py`. Updated: `third_party\CMakeLists.txt` (new `stella_core` target; the `stella_libretro` build was proved unchanged), `CLAUDE.md`, `DECISIONS.md` (T-C3-1), `docs\DEPENDENCIES.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c3\` (probe data and pictures). Stella app not started; nothing installed, deleted or pushed; ROMs untouched.
+New: `docs\TIMING.md`, `tools\stella_probe\timing.cpp`, `tools\c4_report.py`. Updated: `tools\stella_probe\CMakeLists.txt`, `tools\build_stella_probe.cmd`, `CLAUDE.md`, `DECISIONS.md` (T-C4-1), `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c4\`. Stella app not started; nothing installed, deleted or pushed; ROMs untouched.

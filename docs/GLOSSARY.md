@@ -47,6 +47,13 @@ Every project term in one line of plain English. New terms are added in the stag
 | Game Properties | Stella's window (Tab → Game Properties…) showing what it knows and detects about the loaded game. |
 | Auto-detect | Stella working out a setting (cartridge type, TV format) from the ROM itself instead of from its database. |
 | NTSC / PAL | The US and European TV standards; NTSC draws about 60 pictures per second, PAL about 50. This ROM is NTSC. |
+| CPU cycle | The smallest step of the 2600's processor; 76 of them make one scanline, 19,912 one frame. |
+| Clock rate / Hz | How many cycles (or frames) happen per second; 60 Hz = 60 frames a second. |
+| VSYNC / VBLANK | TIA signals: VSYNC tells the TV a new picture starts; VBLANK blacks out lines (used above and below the picture). |
+| WSYNC | A TIA register; writing it makes the CPU wait until the current scanline ends, to stay in step with the beam. |
+| RIOT timer (INTIM, TIM64T) | A countdown in the 2600's RIOT chip; the game sets it, does its logic, then waits until it runs out. |
+| Overscan | The blank lines after the picture, before VSYNC, where games usually run logic. |
+| Spare time | The part of the logic areas left unused before the timer runs out; here at least 6 lines at the top. |
 | Scanline | One horizontal line of the TV picture; an NTSC 2600 frame here has 262 of them. |
 | Visible window | The part of each frame's scanlines that Stella shows (here lines 23–250, 228 lines). |
 | Framebuffer | The emulator's memory copy of one finished picture (160 pixels per line, one colour number each). |

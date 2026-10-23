@@ -74,6 +74,19 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-C4-1 — Timing measured at CPU-instruction precision with a second tool (2026-10-24, Stage C4)
+
+- **Choice:**
+  - `tools\stella_probe\timing.cpp` builds `stella_timing.exe`. It subclasses Stella's `StellaLIBRETRO` to call its protected frame steps in the same order as `runFrame()`.
+  - It unrolls `TIA::updateScanline()` into the identical sequence of `M6502::execute(1)` calls.
+  - After each instruction it reads only public, side-effect-free values: `TIA::cycles()`, `scanlines()`, `clocksThisLine()`, `registerValue()` for VSYNC/VBLANK, and `M6502::lastWriteAddress()` / `lastReadAddress()` to spot RIOT timer writes ($294–$297) and timer reads ($284/$286, any mirror).
+  - A report script, `tools\c4_report.py`, summarises the output.
+- **Why:**
+  - **A first version sampled once per scanline, and its numbers were wrong.** Stella's `updateScanline()` stops at the first instruction boundary after a line ends, so samples landed a few cycles late. A "last write was WSYNC" flag also missed most WSYNCs. Instruction-level sampling gives exact positions.
+  - **Stella's own WSYNC and timer counters only exist in debugger builds.** Compiling the debugger in would change which code paths run, so it was avoided.
+- **Proof it doesn't change the emulation:** all 24,000 picture fingerprints and line counts are identical to C3.
+- **Reversible:** Yes. It's a separate program; nothing else depends on it.
+
 ### T-C3-1 — Measuring with a probe built on the Stella 7.0 core instead of the debugger by hand (2026-10-24, Stage C3)
 
 - **Choice (a plan change, Rule 12):**

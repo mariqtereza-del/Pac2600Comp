@@ -773,8 +773,62 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
         - "File open/read error" explained as harmless.
         - **One unexplained crash** in the first run, not reproduced in 13 more. Its data before the crash was identical to the good runs.
       - **Build:** the `stella_core` target was added, and the `stella_libretro` build was proved unchanged.
-4. **[Not started] C4 — Timing facts.**
-    - Claude Code: measures frames per second in Stella's NTSC mode, the processor speed, and where in each frame the game logic runs. Writes `docs\TIMING.md`.
+4. **[Done] C4 — Timing facts.** *(expanded 2026-10-24, done 2026-10-24)*
+    - **Objective:** `docs\TIMING.md` records, with how each was measured:
+      - CPU cycles per scanline and per frame;
+      - the processor clock and the resulting frame rate, both the console's (per Stella's constant) and the rate Stella actually plays at;
+      - the layout of each frame: VSYNC lines, blanked lines at top and bottom, drawn lines;
+      - where the game's logic can run, meaning the lines where the CPU is not locked to the beam (not ending each line with WSYNC);
+      - whether all of this stays constant across attract mode, play, deaths and game over.
+    - **Why it matters:**
+      - The PC port must run the game at the right speed and keep sound in step. A 0.13% difference in frame rate adds up to a whole second over 13 minutes.
+      - The frame layout and the time available for logic are what the native rebuild (Phase F) must reproduce. Lockstep tests need the exact cycle counts.
+    - **Prerequisites:** C3 Done (yes; commits `09988f4`, `874d917`, clean tree). Found in Stella 7.0's source on 2026-10-24:
+      - **Stella's playback rate:** for NTSC it times emulation at 262 × 76 × 60 = 1,194,720 cycles/s, i.e. exactly 60.000 frames/s (`EmulationTiming.cxx` lines 174–188).
+      - **Stella's console clock:** "NTSC 6507 clock rate" = 1,193,191.67 Hz (`CartARM.cxx` line 59, also `CartCTY.cxx` and `CartDPC.cxx`).
+      - **One CPU cycle per system cycle** (`M6502.hxx` `SYSTEM_CYCLES_PER_CPU = 1`), and 76 cycles per line (`TIAConstants.hxx` `H_CYCLES`).
+      - **Public, read-only measuring points:** `TIA::cycles()`, `TIA::registerValue()` (last value written to VSYNC/VBLANK) and `M6502::lastWriteAddress()`.
+      - **Not available in this build:** Stella's WSYNC-cycle and timer counters exist only when its debugger is compiled in.
+    - **What Claude Code will do:**
+      1. Add a second tool, `tools\stella_probe\timing.cpp` → `stella_timing.exe` (T-C4-1). It repeats Stella's own `runFrame()` steps exactly, but stops after every scanline to record, without disturbing anything:
+         - the cycle count;
+         - the VSYNC and VBLANK state;
+         - whether the line ended with a WSYNC write.
+      2. Prove it doesn't change the emulation: its picture fingerprints must equal C3's for all 24,000 frames.
+      3. Run the same 24,000-frame scenario as C3 and summarise per frame.
+      4. Keep full per-line detail for three sample frames (attract, play, game over).
+      5. Write `docs\TIMING.md`.
+    - **What I must do:** Nothing.
+    - **Exact instructions:** None.
+    - **Required input:** None.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - 76 cycles per line and 19,912 per frame (262 × 76), confirmed by measurement.
+      - Frame rate: 59.92 Hz on Stella's console clock and 60.000 Hz as Stella plays, both stated.
+      - A frame layout table, and the lines available for logic.
+      - Fingerprints identical to C3.
+    - **Verification:** tool output, the fingerprint comparison with C3, and the summary in `reference\c4\` traceable to `docs\TIMING.md`. ROM SHA-1s unchanged.
+    - **Completion criteria:** all of the above shown. What can't be measured without the debugger (CPU busy versus waiting inside the blank areas) is marked "not yet measured", with the stage that will measure it.
+    - **Potential problems:**
+      - Replicating `runFrame()` could subtly change the emulation. The C3 fingerprint comparison catches that.
+      - A "last write" isn't a perfect busy/idle signal, so it is only interpreted for what it proves (whether the line ended locked to the beam).
+    - **Recovery:** new files only, plus local output in `reference\c4\`. Undo by returning to `874d917` (with your OK).
+    - **Documentation updates:** `docs\TIMING.md` (new), `DECISIONS.md` (T-C4-1), `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage C4: Timing facts`.
+    - **Next stage:** C5 — Sound facts.
+    - **Result (2026-10-24):** `stella_timing.exe` (T-C4-1) ran C3's 24,000-frame scenario. All picture fingerprints and line counts are identical to C3. Details in `docs\TIMING.md`.
+      - **Cycles:** 19,912 per frame on all full frames, 76 per line.
+      - **Frame rate:** Stella plays at **60.000000 Hz** (1,194,720 cycles/s). Stella's NTSC console clock (1,193,191.67 Hz, `CartARM.cxx`) gives **59.923246 Hz**, a +0.128 % difference (one frame per 13 s). Phase D must choose.
+      - **Frame pattern, identical in all 23,999 full frames:**
+        - VSYNC lines 259–261, with the timer set at L261;
+        - top logic from L0, then a wait until L33;
+        - VBLANK off at L34;
+        - a second timer set at L195;
+        - bottom logic after drawing, then a wait until L258;
+        - VSYNC and VBLANK on at L259.
+      - **Spare time:** at least 6 lines (456 cycles) at the top and 24 lines at the bottom. No overruns.
+      - **Not measured:** WSYNC waits during drawing and the timer values (debugger-only), and busy moments of real play (Phase E).
+      - **Fixed during the stage:** a first per-scanline version proved imprecise and was replaced.
 5. **[Not started] C5 — Sound facts.**
     - Claude Code: records short WAV clips of each sound from Stella into `reference\audio\` (local only) and lists which sound plays when.
 6. **[Not started] C6 — Controls and game variations.**

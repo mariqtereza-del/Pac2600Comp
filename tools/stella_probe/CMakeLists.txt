@@ -17,3 +17,8 @@ add_executable(stella_probe main.cpp)
 target_link_libraries(stella_probe PRIVATE stella_core)
 # A linker map file lets a crash offset printed by the probe be traced to a function.
 target_link_options(stella_probe PRIVATE /MAP)
+
+# stella_timing: per-scanline timing measurements (Stage C4, DECISIONS.md T-C4-1).
+add_executable(stella_timing timing.cpp)
+target_link_libraries(stella_timing PRIVATE stella_core)
+target_link_options(stella_timing PRIVATE /MAP)

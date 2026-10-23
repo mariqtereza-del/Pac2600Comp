@@ -1,6 +1,6 @@
-Current stage: C5 — Sound facts (Phase C)
+Current stage: C6 — Controls and game variations (Phase C)
 
-Last updated: 2026-10-24, end of Stage C4. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage C5. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -25,6 +25,7 @@ Last updated: 2026-10-24, end of Stage C4. Phase A complete (Gate A met). Phase 
 | C2 — First run of the original | Game ran in Stella from `rom\pacman.a26` (window `Stella 7.0: "Pac-Man (1982) (Atari)"`). Your verdict: "Looks, sounds and plays right" (keyboard). Game Properties: "4K detected", "NTSC detected". Database entry recorded. `rom\` unchanged, ROM SHA-1s unchanged. `docs\FIRST_RUN.md`, T-C2-1. |
 | C3 — Display facts, measured | `tools\stella_probe` (Stella 7.0 core, T-C3-1), 24,000 frames: 262 lines per frame throughout (frame 0: 45), visible window line 23 + 228 lines, drawn scanlines 34–222 over 160 columns, 9 play colours (ghost flicker ¼ each), 87 overall (idle colour shifting). 13 identical runs. Level change not reached. `docs\DISPLAY.md`. |
 | C4 — Timing facts | `stella_timing.exe` (T-C4-1), fingerprints identical to C3. 19,912 cycles/frame (76/line). Stella plays at 60.000 Hz; its NTSC console clock gives 59.923 Hz (+0.128 %). Every frame: VSYNC L259-261, logic, wait to L33, drawing from L34, timer at L195, logic, wait to L258. Spare time at least 6 lines (top), 24 (bottom), no overruns. `docs\TIMING.md`. |
+| C5 — Sound facts | `stella_sound.exe` (T-C5-1), idle run identical to C3; 8 runs incl. scripted joystick play. Only 3 sounds: start tune (2 channels, 63 frames), scoring blip (C9 F9, 8 frames, 376/376 with a score change), death sound (C4, AUDF 31->0 rising, about 2.1 s). Attract silent, no background sound. Power pill, ghost eaten, level clear not captured. `docs\SOUND.md`. |
 
 ## Key facts so far
 
@@ -63,24 +64,25 @@ Last updated: 2026-10-24, end of Stage C4. Phase A complete (Gate A met). Phase 
 
 ## Next stage
 
-C5 — Sound facts. Claude Code records short sound clips (WAV) of each of the game's sounds into `reference\audio\` (local only), and lists which sound plays when.
+C6 — Controls and game variations. Claude Code documents in `docs\CONTROLS.md`:
+- the joystick directions;
+- whether the fire button does anything;
+- Game Select and Game Reset;
+- each game variation;
+- what the two difficulty switches change.
 
-The same Stella 7.0 core can produce the sound directly. But idle play only triggers a few sounds: eating dots, power pills and eaten ghosts need someone actually playing, or scripted joystick input. Claude Code decides at the start of C5, and may ask you for a short play session in the Stella app.
+Much of this can be measured with the same tools (pressing Select or the difficulty switches by script, then looking at the pictures). **Your part:** the PS4 controller test left over from C2, which needs you, the pad and the Stella app. Claude Code decides the rest at the start of C6.
 
 ## Handoff from the last session
 
-Stage C4 done: **the timing facts are measured** (`docs\DISPLAY.md` for the picture, now `docs\TIMING.md` for time), using a second tool built on the same Stella 7.0 code. It was proved not to change the emulation: every picture fingerprint is identical to C3.
-- **Speed:** every frame is 19,912 processor cycles (76 per line).
-  - Stella plays the game at exactly **60.000** frames a second.
-  - The console's own clock, as Stella states it, would give **59.923**, so Stella runs 0.128% fast: one extra frame every 13 seconds.
-  - Phase D will need your decision on which to follow.
-- **Each frame:**
-  - a 3-line VSYNC;
-  - game logic, then a wait for a timer until line 33;
-  - drawing from line 34;
-  - more logic after the drawing, then a wait until line 258.
-  - The pattern is identical in every frame.
-- **Spare time:** the logic always finished in time. Its tightest moment left 6 lines spare at the top.
-- **Fixed during the stage:** my first version of the tool sampled once per scanline and gave imprecise numbers. I replaced it with an instruction-precise version, and none of the imprecise numbers were used.
+Stage C5 done: **the game's sounds are measured** (`docs\SOUND.md`), using a third tool built on the same Stella 7.0 code. Its idle run matches C3 exactly. It includes a "scripted player" that steers Pac-Man by a fixed recipe, so no one had to play.
+- **Only three sounds** occurred in 8 runs (about 53 minutes of game time):
+  1. **The start tune:** two voices, 1.05 s, at the start of each game and after each lost life.
+  2. **A short blip:** 0.13 s, every time the score goes up (all 376 times). That's eating a wafer.
+  3. **The death sound:** 2.1 s, with a rising note and a volume that ramps down four times over.
+- **Silences:** attract mode is silent, and there's no background sound during play.
+- **Not captured:** power pills, eating a ghost and clearing a level. The scripted player never achieved them.
+- **WAV clips:** each sound is in `reference\audio\` (local only).
+- **Fixed during the stage:** I'd first described the death sound's note as falling. Stella's sound-chip code shows a smaller pitch number is a higher note, so the note rises. Also, one count in my draft was corrected (738 sound frames in the idle run).
 
-New: `docs\TIMING.md`, `tools\stella_probe\timing.cpp`, `tools\c4_report.py`. Updated: `tools\stella_probe\CMakeLists.txt`, `tools\build_stella_probe.cmd`, `CLAUDE.md`, `DECISIONS.md` (T-C4-1), `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c4\`. Stella app not started; nothing installed, deleted or pushed; ROMs untouched.
+New: `docs\SOUND.md`, `tools\stella_probe\sound.cpp`, `tools\c5_report.py`. Updated: `tools\stella_probe\CMakeLists.txt`, `tools\build_stella_probe.cmd`, `CLAUDE.md`, `DECISIONS.md` (T-C5-1), `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\audio\` (9 run folders, about 50 MB of audio each). Stella app not started; nothing installed, deleted or pushed; ROMs untouched.

@@ -74,6 +74,24 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-C5-1 — Sound measured with a third tool and scripted joystick play (2026-10-24, Stage C5)
+
+- **Choice:**
+  - `tools\stella_probe\sound.cpp` builds `stella_sound.exe`, the same instruction-precise frame stepping as T-C4-1. It records:
+    - every change of AUDC0/1, AUDF0/1 and AUDV0/1 ($15–$1A);
+    - Stella's audio output (`getAudioBuffer()`) as a WAV;
+    - per-frame picture and status-bar fingerprints, and the colours used;
+    - pictures of chosen frames.
+  - **Scripted play** instead of a human session: after Game Reset, the joystick holds a pseudo-random direction for 30–119 frames (a fixed generator, so a seed gives the same run every time). Optionally Game Reset is pressed again every 4,000 frames to start new games.
+  - `tools\c5_report.py` groups register data into sounds (effective bits only), cuts WAV clips and makes PNGs.
+- **Why:**
+  - Repeatable, needs nobody at the keyboard, and records the exact register values a port must reproduce.
+  - A human play session in the Stella app couldn't easily be recorded at register level.
+  - The names of sounds are checked against evidence: pictures, plus a status-bar change for every scoring blip (376 of 376).
+- **Limits:** random steering never ate a power pill or a ghost, or cleared a level, so those sounds are "not yet captured" (`docs\SOUND.md`).
+- **Proof it doesn't change the emulation:** the idle run's fingerprints equal C3's, and every re-run reproduced its data exactly.
+- **Reversible:** Yes. It's a separate program.
+
 ### T-C4-1 — Timing measured at CPU-instruction precision with a second tool (2026-10-24, Stage C4)
 
 - **Choice:**

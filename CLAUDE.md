@@ -150,6 +150,7 @@ Do not continue following an outdated plan simply because it was written earlier
   - Its emulator starts with zeroed RAM; the Stella app starts with random RAM (`docs\DISPLAY.md`).
   - Its "File open/read error" line at start-up is harmless.
   - `stella_timing.exe` (same build) records VSYNC/VBLANK and timer events at CPU-instruction precision (C4, T-C4-1); `tools\c4_report.py` summarises them. Never sample once per scanline: `updateScanline()` stops a few cycles late.
+  - `stella_sound.exe` (same build) records sound register changes, audio WAV and status-bar fingerprints, with optional scripted joystick play (C5, T-C5-1); `tools\c5_report.py` finds the sounds. Use effective register bits (AUDC & 15, AUDF & 31, AUDV & 15).
 - **Speed:** Stella plays NTSC at exactly 60.000 Hz (1,194,720 cycles/s). Stella's NTSC console clock gives 59.923 Hz. Phase D must choose (`docs\TIMING.md`).
 - **Checkpoints (B8):**
   - Make one with `powershell -NoProfile -ExecutionPolicy Bypass -File tools\make_checkpoint.ps1 -Stage <ID>`. It writes to `F:\Ports\Pac-Man - Atari 2600 checkpoints\`, which is outside the project, so announce it and get the owner's OK each time.

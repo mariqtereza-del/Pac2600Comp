@@ -829,8 +829,60 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
       - **Spare time:** at least 6 lines (456 cycles) at the top and 24 lines at the bottom. No overruns.
       - **Not measured:** WSYNC waits during drawing and the timer values (debugger-only), and busy moments of real play (Phase E).
       - **Fixed during the stage:** a first per-scanline version proved imprecise and was replaced.
-5. **[Not started] C5 — Sound facts.**
-    - Claude Code: records short WAV clips of each sound from Stella into `reference\audio\` (local only) and lists which sound plays when.
+5. **[Done] C5 — Sound facts.** *(expanded 2026-10-24, done 2026-10-24)*
+    - **Objective:** `docs\SOUND.md` lists every distinct sound the game made in the measured runs. For each one:
+      - when it plays (with a picture of the moment);
+      - which TIA channel it uses;
+      - its register values over time (tone type AUDC, pitch AUDF, volume AUDV);
+      - how long it lasts, and how often it occurred.
+
+      It also gives the audio format Stella produces. A WAV clip of each sound and full-run WAVs go in `reference\audio\` (local only). Sounds that never occurred are listed as "not yet captured".
+    - **Why it matters:** the port must make exactly the same sounds at the same moments. The register sequences are what the native rebuild must reproduce, and the clips are what you and later tests compare by ear and by number.
+    - **Prerequisites:** C4 Done (yes; commit `1912511`, clean tree). Checked in the Stella 7.0 source on 2026-10-24:
+      - **Audio format:** the libretro core delivers 16-bit stereo at 262 × 76 × 60 ÷ 38 = 31,440 Hz (`StellaLIBRETRO.hxx` `getAudioRate()`), via `getAudioBuffer()`/`getAudioSize()`. Mono games are copied to both sides (`SoundLIBRETRO::dequeue`).
+      - **Sound registers:** AUDC0 $15, AUDC1 $16, AUDF0 $17, AUDF1 $18, AUDV0 $19 and AUDV1 $1A (`TIAConstants.hxx`). Their last-written values are readable with `TIA::registerValue()`.
+      - **Joystick input:** Stella events `LeftJoystickUp/Down/Left/Right`.
+    - **What Claude Code will do (T-C5-1):**
+      1. Add `tools\stella_probe\sound.cpp` → `stella_sound.exe`, built the same way as C4's tool: identical frame steps, checked after every CPU instruction. It records:
+         - every change of the six sound registers, with its frame, line and cycle;
+         - the audio stream as a WAV;
+         - the picture at chosen frames.
+      2. Prove it doesn't change the emulation: its picture fingerprints for the idle run must equal C3's.
+      3. Run two scenarios:
+         - (a) **idle**, as in C3/C4;
+         - (b) **scripted play**: Game Reset, then the joystick changes direction on a fixed pseudo-random schedule, so Pac-Man moves and eats. It is repeatable, with nobody at the keyboard.
+      4. A report script (`tools\c5_report.py`) groups the register changes into distinct sounds, cuts a WAV clip of each and makes a PNG of the moment each starts.
+      5. Claude Code looks at those pictures to say what was happening, and records everything in `docs\SOUND.md`.
+    - **What I must do:** Nothing required. Optionally, listen to the clips in `reference\audio\` and say whether they sound like the game.
+    - **Exact instructions:** None.
+    - **Required input:** None.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - The idle run's fingerprints equal C3's.
+      - A list of distinct sounds, each with its channel, register sequence, duration, occurrences, the moment it starts and a WAV clip.
+      - Sounds not triggered are named as "not yet captured", with where they will be.
+    - **Verification:** tool and report output, the fingerprint comparison, the pictures checked by eye, and the ROM SHA-1s unchanged.
+    - **Completion criteria:** all of the above. Every sound named in `docs\SOUND.md` is traceable to register data and a clip.
+    - **Potential problems:**
+      - Scripted input may never trigger some events (for example eating a ghost). They are reported as not captured; nothing is invented.
+      - The names of sounds are interpretations of the pictures, and are labelled as such.
+      - If a register changes several times within a frame, the per-instruction record keeps every change.
+    - **Recovery:** new files only, plus local output in `reference\audio\`. Undo by returning to `1912511` (with your OK).
+    - **Documentation updates:** `docs\SOUND.md` (new), `DECISIONS.md` (T-C5-1), `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage C5: Sound facts`.
+    - **Next stage:** C6 — Controls and game variations.
+    - **Result (2026-10-24):** `stella_sound.exe` (T-C5-1). Idle fingerprints equal C3's, and every re-run reproduced its data exactly. Runs: `idle`, `play1` and `seed1`–`seed6` (scripted joystick), 24,000 frames each. Details in `docs\SOUND.md`.
+      - **Audio format:** 31,440 Hz, 16-bit stereo (identical sides), 524 samples per frame.
+      - **Only 3 sounds occurred:**
+        1. **Start tune:** 2 channels, 63 frames, at game start and after each lost life.
+        2. **Scoring blip:** C9 F9, volume 9→2, 8 frames. All 376 occurrences coincide with a status-bar change.
+        3. **Death sound:** C4, AUDF 31→0 (rising note) one step per 4 frames, volume ramping 15→0 four times, ≈ 2.1 s.
+      - **Silences:** attract mode is silent, and there is no background sound during play.
+      - **Each frame:** the game writes AUDV = 0 at line 226 and the real volume at line 227.
+      - **Not captured:** power pill, ghost eaten, level clear (never reached by scripted play).
+      - **Corrected during the stage:**
+        - The death sound's note rises, not falls (checked in Stella's `AudioChannel.cxx`).
+        - The count of idle sound frames is 738.
 6. **[Not started] C6 — Controls and game variations.**
     - You: with Claude Code guiding, press Game Select and watch the variation number; try the two difficulty switches.
     - Claude Code: documents joystick directions, fire button use (if any), Select/Reset, each game variation's settings, and what the difficulty switches change. Writes `docs\CONTROLS.md`.

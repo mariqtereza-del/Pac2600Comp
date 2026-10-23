@@ -22,3 +22,8 @@ target_link_options(stella_probe PRIVATE /MAP)
 add_executable(stella_timing timing.cpp)
 target_link_libraries(stella_timing PRIVATE stella_core)
 target_link_options(stella_timing PRIVATE /MAP)
+
+# stella_sound: sound register changes, audio and pictures (Stage C5, DECISIONS.md T-C5-1).
+add_executable(stella_sound sound.cpp)
+target_link_libraries(stella_sound PRIVATE stella_core)
+target_link_options(stella_sound PRIVATE /MAP)

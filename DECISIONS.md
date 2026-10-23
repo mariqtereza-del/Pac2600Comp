@@ -56,6 +56,22 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Why it was decided early:** B7 already needs it to download the matching source.
 - **Reversible:** Yes, until Phase D builds on it. Changing it later means re-running every comparison made with the old version.
 
+### D-003 — Disk space: keep all files (2026-10-24, after Stage C3)
+
+**Your choice:** "Keep all files as they are."
+
+- **Context (measured 2026-10-24):**
+  - The project folder holds 467 MB: `build\` 291 MB, the library sources 72 MB, `.git` 27 MB, `reference\c3` 44 MB and the download archives 28 MB.
+  - The backup zips outside it hold 159 MB.
+  - Estimate if nothing is cleaned: about 1–2 GB by the end of the project. The released game itself is estimated at about 5 MB.
+- **Options offered and declined:**
+  1. A one-off clean-up of rebuildable or duplicate files (≈ 175 MB).
+  2. Deleting build folders after each stage.
+  3. Keeping only the two newest backup zips.
+  4. Leaving the download archives out of backups.
+- **What it means for future sessions:** don't propose deleting build folders, measurement data, downloads or old backups to save space. Only mention disk space again if free space on F: becomes a real problem (86 GB free today).
+- **Reversible:** Yes. You can ask for any of the clean-ups at any time.
+
 ## Technical choices made by Claude Code
 
 ### T-C3-1 — Measuring with a probe built on the Stella 7.0 core instead of the debugger by hand (2026-10-24, Stage C3)

@@ -1,0 +1,19 @@
+# stella_probe: measuring tool built on the Stella 7.0 core (Stage C3, DECISIONS.md T-C3-1).
+cmake_minimum_required(VERSION 3.30)
+project(stella_probe LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+# MSVC 14.51 ignores /std:c++23; pin the fixed C++23 mode (DECISIONS.md T-B3-2).
+if(MSVC)
+  set(CMAKE_CXX23_STANDARD_COMPILE_OPTION "/std:c++23preview")
+  set(CMAKE_CXX23_EXTENSION_COMPILE_OPTION "/std:c++23preview")
+endif()
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party third_party)
+
+add_executable(stella_probe main.cpp)
+target_link_libraries(stella_probe PRIVATE stella_core)
+# A linker map file lets a crash offset printed by the probe be traced to a function.
+target_link_options(stella_probe PRIVATE /MAP)

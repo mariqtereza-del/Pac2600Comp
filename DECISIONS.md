@@ -58,6 +58,24 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-C3-1 — Measuring with a probe built on the Stella 7.0 core instead of the debugger by hand (2026-10-24, Stage C3)
+
+- **Choice (a plan change, Rule 12):**
+  - The plan said "using Stella's debugger and snapshots". Instead, display facts are measured by `tools\stella_probe`, a small program built from the **same Stella 7.0 code** as the reference app.
+  - It drives Stella's own `StellaLIBRETRO` class with default settings and records, for every frame, what the TIA produced: line count, visible window, drawn area, colours and a picture fingerprint.
+  - A report script (`tools\c3_report.py`) reads the palette from Stella's source and turns saved frames into PNGs.
+  - To build it, `third_party\CMakeLists.txt` gained a `stella_core` static library: the same sources and settings as `stella_libretro`, minus the entry file `libretro.cxx`. The probe supplies the one function from that file it needs, `libretro_read_rom`, with the same three-line body.
+- **Why:**
+  - It measures **every** frame of a long run, including attract mode, game start, deaths and game over, instead of a few frames inspected by hand.
+  - It repeats exactly, and needs no clicking by you.
+  - It uses identical emulation code, so the numbers are Stella's own.
+  - The same tool can grow into the reference-trace recorder Phase D/E need.
+- **Proof that `stella_libretro` didn't change:** after the CMake change, `tools\build_third_party.cmd` reported nothing to rebuild. Ninja rebuilds whenever any compile setting changes.
+- **Limits:**
+  - The probe reads the raw TIA picture, before Stella's display effects (phosphor).
+  - Its emulator starts with zeroed RAM, unlike the app (see `docs\DISPLAY.md`, "Things learned").
+- **Reversible:** Yes. The probe and the `stella_core` target can be removed without affecting anything else.
+
 ### T-C2-1 — Which ROM file Stella opens, and how its view is read (2026-10-24, Stage C2)
 
 - **Choice:**

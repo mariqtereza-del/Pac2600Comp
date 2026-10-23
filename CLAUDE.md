@@ -145,6 +145,10 @@ Do not continue following an outdated plan simply because it was written earlier
   - Stella 7.0c in `F:\Ports\Tools\Stella-7.0c` (outside the project), proved identical to the official zip (`docs\REFERENCE_EMULATOR.md`).
   - Start it only with `tools\run_stella.cmd`, which adds `-baseinappdir` so settings stay in its folder (T-C1-2). Never double-click `Stella.exe`.
   - Starting it, and anything written in its folder, needs the owner's OK.
+- **Measuring tool (C3):**
+  - `tools\stella_probe` runs the ROM in the Stella 7.0 core (`stella_core` target) and records every frame. Build it with `tools\build_stella_probe.cmd`; output goes to `reference\` (local only). Summaries come from `tools\c3_report.py`.
+  - Its emulator starts with zeroed RAM; the Stella app starts with random RAM (`docs\DISPLAY.md`).
+  - Its "File open/read error" line at start-up is harmless.
 - **Checkpoints (B8):**
   - Make one with `powershell -NoProfile -ExecutionPolicy Bypass -File tools\make_checkpoint.ps1 -Stage <ID>`. It writes to `F:\Ports\Pac-Man - Atari 2600 checkpoints\`, which is outside the project, so announce it and get the owner's OK each time.
   - Zips contain `.git`, but no ROM and no `build\` (T-B8-1).

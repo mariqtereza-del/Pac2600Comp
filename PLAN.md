@@ -718,9 +718,61 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
       - **Database:** Stella 7.0's entry (`DefProps.hxx` line 1625) is the same as A3's.
       - **Files:** `rom\` unchanged (fingerprint snapshot before = after) and ROM SHA-1s unchanged. Only Stella's own `stella.sqlite3` was updated, and nothing went to `%APPDATA%`.
       - **Recorded:** `docs\FIRST_RUN.md` and T-C2-1. The PS4 pad is left for C6.
-3. **[Not started] C3 — Display facts, measured.**
-    - Claude Code: using Stella's debugger and snapshots, records the number of scanlines per frame, the first and last visible line, the visible height, the 160-pixel width, the colour palette (NTSC), and whether the line count ever changes (during deaths, level changes, attract mode).
-    - Done when: `docs\DISPLAY.md` lists each value with how it was measured. No value is copied from memory.
+3. **[Done] C3 — Display facts, measured.** *(expanded 2026-10-24, done 2026-10-24)*
+    - **Objective:** `docs\DISPLAY.md` lists the game's display facts, each with how it was measured and none copied from memory:
+      - scanlines per frame;
+      - the visible window Stella uses (first line, height);
+      - the lines and columns the game actually draws on;
+      - the 160-pixel width;
+      - the colours used and their NTSC palette values;
+      - whether the line count changes in attract mode, at game start and during deaths;
+      - whether level changes were reached, stated honestly either way.
+    - **Why it matters:** the PC port must draw exactly the same picture (D6 "getting the shape right"). These numbers define the size and shape of its screen and which colours it needs. A frame with a different line count is exactly the kind of detail a port gets wrong.
+    - **Prerequisites:** C2 Done (yes; commit `47e24ad`, clean tree). Checked 2026-10-24 in the Stella 7.0 source:
+      - `StellaLIBRETRO` (Stella's own libretro wrapper) can be driven directly, with no other libretro code.
+      - Its TIA (video chip) gives `scanlinesLastFrame()`, `startLine()`, `height()` and the raw `frameBuffer()`: 160 pixels per line, TIA colour numbers, before Stella's display effects.
+      - The palette table `ourNTSCPalette` is in `src/common/PaletteHandler.cxx`.
+      - Defaults are the same as the app: palette "standard", format "AUTO", phosphor "byrom". `plr.ramrandom` is true (random memory at power-on, like a real console).
+    - **What Claude Code will do (plan change, T-C3-1):** instead of you operating Stella's debugger by hand,
+      1. Build a small measuring program, `tools\stella_probe\`, from the **same Stella 7.0 code** as the reference app. This adds a `stella_core` static library to `third_party\CMakeLists.txt`, made from the same sources and settings as the core.
+      2. Run the game for a long stretch: about 30 s of attract mode, then Game Reset, then no input, so the ghosts catch Pac-Man until the game ends. For every frame it records the line count, visible window, drawn area, colours used and a picture fingerprint.
+      3. Run it a second time to see whether runs repeat exactly.
+      4. Save a few frames as pictures (BMP) in `reference\c3\` (local only), for you to look at.
+      5. A report script (`tools\c3_report.py`) reads the palette from Stella's source and summarises everything.
+      6. Write `docs\DISPLAY.md`.
+    - **What I must do:** optionally, look at the saved pictures and say whether they look like the game you played in C2.
+    - **Exact instructions:** none beyond that optional look.
+    - **Required input:** none.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - The probe reports "NTSC" and "4K", like C2.
+      - Per-frame data covers attract mode, game start and the deaths up to game over.
+      - The line counts are summarised: the normal value, plus any frames that differ and when.
+      - The drawn area and the colours used are listed with RGB values from Stella's palette.
+      - `docs\DISPLAY.md` is written.
+    - **Verification:** probe and report output shown in the session; the summary numbers in `docs\DISPLAY.md` traceable to the CSV in `reference\c3\`; ROM SHA-1s unchanged.
+    - **Completion criteria:** every display fact listed with its measurement method. Anything not reached (for example a level change) is marked "not yet measured", with the stage that will measure it.
+    - **Potential problems:**
+      - **Build problems** linking Stella's code into a new program: fixed in our CMake file only, never in Stella's sources.
+      - **Runs not repeating:** expected with random power-on memory; recorded, not "fixed".
+      - **Idle play never reaches a new level:** stated plainly.
+    - **Recovery:** only new project files plus local output in `reference\c3\` and `build\`. Undo by returning to `47e24ad` (with your OK). Nothing outside the project is touched, and Stella isn't started.
+    - **Documentation updates:** `docs\DISPLAY.md` (new), `DECISIONS.md` (T-C3-1), `docs\GLOSSARY.md`, `CLAUDE.md` (probe tool), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage C3: Display facts, measured`.
+    - **Next stage:** C4 — Timing facts.
+    - **Result (2026-10-24):** `tools\stella_probe` (T-C3-1) ran the working copy for 24,000 frames: attract, Game Reset at 1800, then no input until game over. Details in `docs\DISPLAY.md`.
+      - **Detected:** NTSC* and 4K* (as in C2).
+      - **Lines per frame:** **262** on all frames except frame 0 (45, the partial power-on frame). The count never changed through attract, reset, the deaths and game over.
+      - **Visible window:** line 23, 228 lines.
+      - **Drawn area:** scanlines 34–222, all 160 columns.
+      - **Colours:** 9 in active play (4 ghost colours each in about ¼ of frames, i.e. the flicker). 87 overall, because of the idle colour shifting.
+      - **Pictures:** 80 in `reference\c3\dump1\png\` were checked by eye: attract, play with 3 lives, 1 life left, game over.
+      - **Not measured:** the line count at a level change (none was reached).
+      - **Findings for D/E:**
+        - The libretro wrapper zeroes RAM before the first frame (the app randomises it), so probe runs are deterministic (13 identical full runs).
+        - "File open/read error" explained as harmless.
+        - **One unexplained crash** in the first run, not reproduced in 13 more. Its data before the crash was identical to the good runs.
+      - **Build:** the `stella_core` target was added, and the `stella_libretro` build was proved unchanged.
 4. **[Not started] C4 — Timing facts.**
     - Claude Code: measures frames per second in Stella's NTSC mode, the processor speed, and where in each frame the game logic runs. Writes `docs\TIMING.md`.
 5. **[Not started] C5 — Sound facts.**

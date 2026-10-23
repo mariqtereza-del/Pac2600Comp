@@ -1,6 +1,6 @@
-Current stage: C3 — Display facts, measured (Phase C)
+Current stage: C4 — Timing facts (Phase C)
 
-Last updated: 2026-10-24, end of Stage C2. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage C3. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -23,6 +23,7 @@ Last updated: 2026-10-24, end of Stage C2. Phase A complete (Gate A met). Phase 
 | B9 — Gate B | All 6 items PASS, re-checked this session (`docs\GATE_B.md`): tools plus a fresh library build (0 errors), ROM locked (SHA-1, read-only, write refused), no ROM anywhere in Git (by name and by content), memory files and rules intact, history healthy (`git fsck`), B8 checkpoint verified. End-of-phase checkpoint `pacman2600-2026-10-24-Gate-B.zip` made with your OK. |
 | C1 — Install the reference emulator | Your folder `F:\Ports\Tools\Stella-7.0c`: all 96 files identical to the official `Stella-7.0c-windows.zip` (re-downloaded with your OK, SHA-256 `44102ccf…4653`). First start through `tools\run_stella.cmd` (`-baseinappdir`): window "Stella 7.0", you saw the game list. Settings stayed in the app folder, none in `%APPDATA%`. `docs\REFERENCE_EMULATOR.md`, T-C1-1/T-C1-2. |
 | C2 — First run of the original | Game ran in Stella from `rom\pacman.a26` (window `Stella 7.0: "Pac-Man (1982) (Atari)"`). Your verdict: "Looks, sounds and plays right" (keyboard). Game Properties: "4K detected", "NTSC detected". Database entry recorded. `rom\` unchanged, ROM SHA-1s unchanged. `docs\FIRST_RUN.md`, T-C2-1. |
+| C3 — Display facts, measured | `tools\stella_probe` (Stella 7.0 core, T-C3-1), 24,000 frames: 262 lines per frame throughout (frame 0: 45), visible window line 23 + 228 lines, drawn scanlines 34–222 over 160 columns, 9 play colours (ghost flicker ¼ each), 87 overall (idle colour shifting). 13 identical runs. Level change not reached. `docs\DISPLAY.md`. |
 
 ## Key facts so far
 
@@ -51,6 +52,8 @@ Last updated: 2026-10-24, end of Stage C2. Phase A complete (Gate A met). Phase 
 ## Open problems
 
 - None blocking.
+- **Zeroed vs random RAM (C3), for Phase D/E:** Stella's libretro wrapper (used by the probe and by the planned Phase 1 program) starts the game with **zeroed** console RAM. The Stella app starts with **random** RAM. The first frames, or anything that depends on uninitialised RAM, may differ between our program and the "ruler". This must be checked, not assumed, before lockstep comparisons (`docs\DISPLAY.md`).
+- **One unexplained crash of `stella_probe` (C3):** an access violation at frame ≈ 23,973 in the very first run. It was not reproduced in 13 further full runs, and the data recorded before it was correct. The probe now reports any crash's location. Watch for it in later stages.
 - Git exists since B5. Every stage now ends with one commit. `rom\` and `reference\` stay local only: `rom\EXPECTED_SHA1.txt` is therefore not in Git, and its value is also recorded in `docs\ROM_IDENTITY.md`.
 
 ## Pending decisions
@@ -59,23 +62,20 @@ Last updated: 2026-10-24, end of Stage C2. Phase A complete (Gate A met). Phase 
 
 ## Next stage
 
-C3 — Display facts, measured.
+C4 — Timing facts. Claude Code measures and records in `docs\TIMING.md`:
+- the frames per second in NTSC mode;
+- the processor speed;
+- where in each frame the game logic runs.
 
-Claude Code measures and records in `docs\DISPLAY.md`:
-- scanlines per frame;
-- the first and last visible line, and the visible height and width;
-- the colour palette;
-- whether the line count ever changes (deaths, level changes, attract mode).
-
-Every value comes with how it was measured; none is copied from memory.
-
-At the start of C3, Claude Code decides the safest way to measure. That could be with Stella's debugger, with your help, or by a small measuring tool built on the same Stella 7.0 core already compiled in B7. Any start of Stella, and anything that writes outside the project, needs your OK.
+The C3 probe can likely be extended for this, so probably nothing is needed from you. Any start of the Stella app needs your OK.
 
 ## Handoff from the last session
 
-Stage C2 done: **the original game runs in the reference Stella**, from the working copy `rom\pacman.a26`.
-- **Your verdict:** "Looks, sounds and plays right" (keyboard only; the PS4 pad is left for C6).
-- **Stella's view, read by you in Game Properties → Emulation:** "4K detected" and "NTSC detected". Stella's database entry for this ROM is recorded.
-- **Files:** nothing was written next to the ROM, all ROM fingerprints are unchanged, and Stella only updated its own settings file.
+Stage C3 done: **the display facts are measured** (`docs\DISPLAY.md`), using a new measuring program built on the same Stella 7.0 code as the reference app (a plan change, explained in T-C3-1).
+- **Lines per frame:** **262**, never changing: not in attract mode, not at game start, not during the deaths, not after game over. The only exception is the very first 45-line frame at power-on.
+- **The picture:** Stella shows lines 23–250. The game draws on lines 34–222, across all 160 pixel columns.
+- **Colours:** 9 during active play, where each of the 4 ghost colours shows in about a quarter of the frames, which is the flicker. When idle, the game shifts its colours, giving 87 in all.
+- **Not reached:** a level change (no dots get eaten without input).
+- **Findings:** see Open problems.
 
-New: `docs\FIRST_RUN.md`. Updated: `DECISIONS.md` (T-C2-1), `docs\GLOSSARY.md`, `PLAN.md` (C2 entry, Done), `PROJECT_STATUS.md`. Nothing installed, nothing deleted, nothing pushed.
+New: `docs\DISPLAY.md`, `tools\stella_probe\` (program and build file), `tools\build_stella_probe.cmd`, `tools\c3_report.py`. Updated: `third_party\CMakeLists.txt` (new `stella_core` target; the `stella_libretro` build was proved unchanged), `CLAUDE.md`, `DECISIONS.md` (T-C3-1), `docs\DEPENDENCIES.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c3\` (probe data and pictures). Stella app not started; nothing installed, deleted or pushed; ROMs untouched.

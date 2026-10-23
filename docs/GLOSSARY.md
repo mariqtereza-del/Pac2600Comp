@@ -47,6 +47,13 @@ Every project term in one line of plain English. New terms are added in the stag
 | Game Properties | Stella's window (Tab → Game Properties…) showing what it knows and detects about the loaded game. |
 | Auto-detect | Stella working out a setting (cartridge type, TV format) from the ROM itself instead of from its database. |
 | NTSC / PAL | The US and European TV standards; NTSC draws about 60 pictures per second, PAL about 50. This ROM is NTSC. |
+| Scanline | One horizontal line of the TV picture; an NTSC 2600 frame here has 262 of them. |
+| Visible window | The part of each frame's scanlines that Stella shows (here lines 23–250, 228 lines). |
+| Framebuffer | The emulator's memory copy of one finished picture (160 pixels per line, one colour number each). |
+| Probe (`stella_probe`) | Our measuring tool: runs the ROM in Stella's own emulator code and records every frame. |
+| Colour cycling (attract) | The game slowly shifting all its colours while nobody plays (measured in C3); on Atari games this is usually done to protect the TV screen from burn-in. |
+| Deterministic | Giving exactly the same result every time it is run with the same inputs. |
+| Access violation | A crash where a program touched memory it may not use (Windows code 0xC0000005). |
 | Phosphor effect | Stella's optional blending of each picture with the previous one, like an old TV's afterglow; it softens flicker. |
 | libretro core | A version of an emulator packaged so other programs can embed it; we use Stella's own. |
 | SDL3 | A library that opens windows and handles sound and game controllers on the PC. |

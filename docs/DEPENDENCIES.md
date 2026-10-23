@@ -35,6 +35,7 @@ The downloaded archives are kept locally in `third_party\_downloads\`, which is 
   - **Sources:** the 148 source files are read directly from Stella's `src/os/libretro/Makefile.common`, so the list can't drift.
   - **Settings:** copied from Stella's own Makefile for Microsoft's compiler (`windows_msvc2017_desktop`): `/std:c++20`, `/O2`, `NDEBUG`, `/MD`, `__LIB_RETRO__`, `SOUND_SUPPORT`, `HAVE_STDINT_H`, `__WIN32__` and `WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP`.
   - **C++ level:** Stella 7.0 asks for C++20 (not C++23), and `/std:c++20` works on this compiler.
+- **`stella_core` (added in C3, T-C3-1):** the same Stella sources and settings as a static library, without `libretro.cxx`, for project tools such as `tools\stella_probe`.
 - **One build-time fix (T-B7-4):** the vendored files are not edited.
   - Stella's `libretro.cxx` turns `snprintf` into the old `_snprintf` for every Microsoft compiler. On today's compiler that breaks the JSON library Stella bundles.
   - The build compiles a corrected copy (in `build\third_party\stella_patched\`) that limits this to compilers older than 2015, the same condition SDL's bundled zlib uses.

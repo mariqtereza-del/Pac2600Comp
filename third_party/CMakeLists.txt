@@ -1,6 +1,7 @@
 # Third-party libraries, pinned in docs/DEPENDENCIES.md:
 #   SDL3 3.4.18   (zlib)  -> target SDL3::SDL3
 #   Stella 7.0    (GPL-2) -> target stella_libretro (Stella's own libretro core)
+#                            and stella_core (same code as a static library, for project tools)
 # Can be built on its own (stage B7 check) or added by the main project with add_subdirectory().
 cmake_minimum_required(VERSION 3.30)
 
@@ -48,15 +49,29 @@ endif()
 list(REMOVE_AT STELLA_SOURCES ${STELLA_LIBRETRO_INDEX})
 list(INSERT STELLA_SOURCES ${STELLA_LIBRETRO_INDEX} ${STELLA_LIBRETRO_PATCHED})
 
-add_library(stella_libretro SHARED ${STELLA_SOURCES})
-set_target_properties(stella_libretro PROPERTIES
-  CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
-  EXCLUDE_FROM_ALL ON)
-target_include_directories(stella_libretro PRIVATE
+set(STELLA_INCLUDE_DIRS
   ${STELLA_SRC}/os/libretro ${STELLA_SRC} ${STELLA_SRC}/emucore ${STELLA_SRC}/emucore/elf
   ${STELLA_SRC}/emucore/tia ${STELLA_SRC}/common ${STELLA_SRC}/common/audio
   ${STELLA_SRC}/common/tv_filters ${STELLA_SRC}/common/repository/sqlite
   ${STELLA_SRC}/lib/json ${STELLA_SRC}/lib/httplib ${STELLA_SRC}/lib/sqlite)
-target_compile_definitions(stella_libretro PRIVATE
+set(STELLA_DEFINITIONS
   __LIB_RETRO__ SOUND_SUPPORT HAVE_STDINT_H
   __WIN32__ WINAPI_FAMILY=WINAPI_FAMILY_DESKTOP_APP)
+
+add_library(stella_libretro SHARED ${STELLA_SOURCES})
+set_target_properties(stella_libretro PROPERTIES
+  CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
+  EXCLUDE_FROM_ALL ON)
+target_include_directories(stella_libretro PRIVATE ${STELLA_INCLUDE_DIRS})
+target_compile_definitions(stella_libretro PRIVATE ${STELLA_DEFINITIONS})
+
+# The same core as a static library without the libretro entry file (libretro.cxx), so project
+# tools can drive StellaLIBRETRO directly and read the emulator's state (DECISIONS.md T-C3-1).
+set(STELLA_CORE_SOURCES ${STELLA_SOURCES})
+list(REMOVE_ITEM STELLA_CORE_SOURCES ${STELLA_LIBRETRO_PATCHED})
+add_library(stella_core STATIC ${STELLA_CORE_SOURCES})
+set_target_properties(stella_core PROPERTIES
+  CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
+  EXCLUDE_FROM_ALL ON)
+target_include_directories(stella_core PUBLIC ${STELLA_INCLUDE_DIRS})
+target_compile_definitions(stella_core PUBLIC ${STELLA_DEFINITIONS})

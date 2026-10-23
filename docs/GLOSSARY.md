@@ -39,6 +39,11 @@ Every project term in one line of plain English. New terms are added in the stag
 | --- | --- |
 | Emulator | A program that imitates the 2600 so its original ROM runs on a PC. |
 | Stella | The best-known, very accurate Atari 2600 emulator; the project's "ruler" for what is correct. |
+| Reference emulator / app | The standalone Stella 7.0 program in `F:\Ports\Tools\Stella-7.0c`, used to see and measure the original game. |
+| Portable app | A program that runs from its own folder without being installed into Windows. |
+| `-baseinappdir` | A Stella start-up option that keeps all its settings inside its own folder (used by `tools\run_stella.cmd`). |
+| Digital signature | A maker's electronic seal on a program file; our Stella 7.0c build has none, so we compared its files with the official zip instead. |
+| SmartScreen | Windows' warning when starting a program it doesn't recognise. |
 | libretro core | A version of an emulator packaged so other programs can embed it; we use Stella's own. |
 | SDL3 | A library that opens windows and handles sound and game controllers on the PC. |
 | Library | Ready-made code another program uses, instead of writing it from scratch. |

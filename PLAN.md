@@ -622,10 +622,56 @@ Install only what A5 approved, verify each tool the moment it's installed, and p
 
 Set up the standalone Stella app as the "ruler" we measure everything against, and write down how the real game looks, sounds and responds before we build anything.
 
-1. **[Not started] C1 — Install the reference emulator.**
-    - You: download the Windows 64-bit **portable** zip of Stella from stella-emu.github.io (version recorded in D-002), unzip it to `F:\Ports\Tools\Stella`. Portable means nothing is installed into Windows.
-    - *(Updated at B7, D-002.)* The file is `Stella-7.0c-windows.zip` (4,255,411 bytes) on the 7.0 release page, `https://github.com/stella-emu/stella/releases/tag/7.0`. "7.0c" has the same emulation code as the 7.0 source in `third_party\stella`. C1 records its SHA-256.
-    - Verify: Stella opens to its game list.
+1. **[Done] C1 — Install the reference emulator.** *(expanded 2026-10-24, done 2026-10-24)*
+    - **Objective:** The standalone Stella 7.0 app (Windows build "7.0c", D-002) is ready as the project's reference "ruler". It is proved to be the official release file by file, keeps all its settings inside its own folder, starts, and shows its game list. Its location and the way it is launched are recorded.
+    - **Why it matters:** Every later comparison (display, timing, sound, baselines, lockstep tests) trusts this app. If it were a tampered or wrong version, or its settings were scattered or changed, every measurement built on it would be doubtful.
+    - **Prerequisites:**
+      - Gate B met (yes; commit `bd3d30a`, clean tree).
+      - Checked 2026-10-24 (read-only):
+        - **What you set up:** you already unzipped Stella to **`F:\Ports\Tools\Stella-7.0c`** (folder created 2026-10-24 00:45). The plan had said `F:\Ports\Tools\Stella`.
+        - **Contents:** 96 files (counted in the C1 comparison; an earlier rough "103" was wrong). `Stella.exe` is 6,692,352 bytes, file version 7.0, "The Stella Team", and not digitally signed. Alongside it: `SDL2.dll`, `msvcp140.dll`, `vcruntime140.dll` and `docs\`.
+        - **The zip:** the downloaded zip is no longer in Downloads, so its SHA-256 can't be taken from your copy.
+        - **Never run:** Stella has never been started (no `%APPDATA%\Stella`).
+        - **Settings location:** Stella's manual says settings normally go to `%APPDATA%\Stella`. The `-baseinappdir` option keeps them in the app's own folder.
+    - **What Claude Code will do:**
+      1. With your approval, download the official `Stella-7.0c-windows.zip` again into `reference\_downloads\` (local only, never in Git). Record its SHA-256, and compare every file inside it with your unpacked folder (T-C1-1).
+      2. Write `tools\run_stella.cmd`, which always starts Stella with `-baseinappdir`, so settings stay in `F:\Ports\Tools\Stella-7.0c` and nothing is written to your Windows profile (T-C1-2).
+      3. With your approval, start Stella once through that script. Check the process and its window title, then check that its settings appeared in the app folder and not in `%APPDATA%`.
+      4. Record everything in `docs\REFERENCE_EMULATOR.md`.
+    - **What I must do:**
+      - Approve the download and the first start of Stella.
+      - When Stella's window appears, look at it and tell Claude Code what you see (the game list), then close Stella yourself.
+    - **Exact instructions:** Given in the session when Stella opens: look, answer the question, close the Stella window with its X button.
+    - **Required input:** Approvals and your one-line description of the window.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - The official zip's SHA-256 is recorded, and all files in it are identical to your folder (none missing or changed).
+      - Stella starts, and its window title names Stella 7.0.
+      - Its settings file appears inside `F:\Ports\Tools\Stella-7.0c`, and no `%APPDATA%\Stella` is created.
+      - You confirm the game list is showing.
+    - **Verification:** comparison output, process and window-title output, a file listing of the new settings files, your confirmation, and the ROM SHA-1s unchanged.
+    - **Completion criteria:** all expected results shown.
+    - **Potential problems:**
+      - **Windows SmartScreen** may warn because `Stella.exe` isn't signed. Accept only once the file comparison has proved it is the official release.
+      - **A file differs from the official zip:** stop; don't run it, and re-unzip with your OK.
+      - **The window doesn't appear:** check the process, close it, and record what happened.
+      - **Settings still go to `%APPDATA%`:** record it, and discuss before deleting anything.
+    - **Recovery:**
+      - The Stella folder and `reference\_downloads\` can be deleted (with your OK).
+      - Stella installs nothing into Windows.
+      - The project is only read; no ROM is opened in this stage.
+    - **Documentation updates:** `docs\REFERENCE_EMULATOR.md` (new), `DECISIONS.md` (T-C1-1, T-C1-2), `docs\GLOSSARY.md`, `CLAUDE.md` (where the reference app lives and how it's launched), `.gitignore` (if needed), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage C1: Install the reference emulator`.
+    - **Next stage:** C2 — First run of the original.
+    - **Result (2026-10-24):** you approved the download and the first start.
+      - **Download:** the official `Stella-7.0c-windows.zip`, 4,255,411 bytes, SHA-256 `44102ccf…4653`, into `reference\_downloads\`.
+      - **Identity:** 96 of 96 files identical to your folder `F:\Ports\Tools\Stella-7.0c`, with 0 different, missing or extra (T-C1-1).
+      - **First start:** through `tools\run_stella.cmd` (`-baseinappdir`, T-C1-2).
+        - The process ran from the app folder, with window title "Stella 7.0", responding.
+        - You saw "the game list / file browser" and closed it normally.
+      - **Settings:** `stella.sqlite3` (57,344 bytes) and empty `cfg\`, `nvram\` and `state\` were created in the app folder. No `%APPDATA%\Stella` was created.
+      - **Afterwards:** the official files are still identical, no ROM was opened, and the ROM SHA-1s are unchanged.
+      - **Recorded:** `docs\REFERENCE_EMULATOR.md`.
 2. **[Not started] C2 — First run of the original.**
     - You: in Stella, load the copy in `rom\`, play for one minute with the keyboard and with the PS4 pad, then tell Claude Code in a sentence whether it looked and sounded right.
     - Claude Code: reads Stella's game-properties entry for this ROM (cartridge type, TV format, display settings) and records it.

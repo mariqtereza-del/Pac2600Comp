@@ -58,6 +58,26 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-C1-1 — Proving the reference app is genuine; keeping your folder name (2026-10-24, Stage C1)
+
+- **Choice:**
+  - You had already unzipped Stella to `F:\Ports\Tools\Stella-7.0c`. That folder is kept as it is (not renamed to the planned `F:\Ports\Tools\Stella`).
+  - Its identity was proved by downloading the official `Stella-7.0c-windows.zip` again (with your approval) into `reference\_downloads\` (local only), recording its SHA-256, and comparing all 96 files byte for byte. All 96 were identical.
+- **Why:**
+  - Renaming a folder outside the project needs your permission and gains nothing; the path is simply recorded.
+  - `Stella.exe` isn't digitally signed and the original download was gone, so a file-by-file comparison with the official release is the only solid proof. It was done before the app was first run.
+- **Reversible:** Yes.
+
+### T-C1-2 — Stella always starts with `-baseinappdir` (2026-10-24, Stage C1)
+
+- **Choice:** Stella is started only through `tools\run_stella.cmd`, which passes Stella's own `-baseinappdir` option. All its settings and saved data then live in `F:\Ports\Tools\Stella-7.0c` (`stella.sqlite3`, `cfg\`, `nvram\`, `state\`), never in `%APPDATA%\Stella`.
+- **Why:**
+  - It is the "portable" setup the plan asked for: nothing is written into your Windows profile, and the reference app and its settings stay together.
+  - It is easy to back up, or to reset by re-unzipping.
+  - Proved in C1: after the first start, no `%APPDATA%\Stella` existed and the settings appeared in the app folder.
+- **Note:** starting `Stella.exe` directly (by double-click) would use `%APPDATA%\Stella` instead, with separate, default settings. Always use the script for project work.
+- **Reversible:** Yes.
+
 ### T-B8-1 — What a checkpoint zip contains (2026-10-24, Stage B8)
 
 - **Choice:**

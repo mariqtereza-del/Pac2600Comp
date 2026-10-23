@@ -1,6 +1,6 @@
-Current stage: C1 — Install the reference emulator (Phase C)
+Current stage: C2 — First run of the original (Phase C)
 
-Last updated: 2026-10-24, end of Stage B9. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage C1. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -21,6 +21,7 @@ Last updated: 2026-10-24, end of Stage B9. Phase A complete (Gate A met). Phase 
 | B7 — Fetch the libraries | D-002 = Stella 7.0. SDL3 3.4.18 (SHA-256 = GitHub's) and Stella 7.0 (all 1057 files identical to tag 7.0) in `third_party\`. Stella's 459 test ROM files and SDL's AI-instruction files left out (0 ROM-like files). Both build with our toolchain: `SDL3.dll` 3.4.18, `stella_libretro.dll` (25 `retro_*` exports), 0 errors, 0 warnings. `docs\DEPENDENCIES.md`, T-B7-1…4. |
 | B8 — Checkpoint script and a restore test | `tools\make_checkpoint.ps1` (refusals tested). Checkpoint `pacman2600-2026-10-24-B8.zip` (83.5 MB, 7105 entries, no ROM, SHA-256 file) in `F:\Ports\Pac-Man - Atari 2600 checkpoints\`. Restore test: all files identical, same `git status`, `git fsck` clean, libraries rebuilt with 0 errors. Test folder deleted with your OK. T-B8-1/T-B8-2. |
 | B9 — Gate B | All 6 items PASS, re-checked this session (`docs\GATE_B.md`): tools plus a fresh library build (0 errors), ROM locked (SHA-1, read-only, write refused), no ROM anywhere in Git (by name and by content), memory files and rules intact, history healthy (`git fsck`), B8 checkpoint verified. End-of-phase checkpoint `pacman2600-2026-10-24-Gate-B.zip` made with your OK. |
+| C1 — Install the reference emulator | Your folder `F:\Ports\Tools\Stella-7.0c`: all 96 files identical to the official `Stella-7.0c-windows.zip` (re-downloaded with your OK, SHA-256 `44102ccf…4653`). First start through `tools\run_stella.cmd` (`-baseinappdir`): window "Stella 7.0", you saw the game list. Settings stayed in the app folder, none in `%APPDATA%`. `docs\REFERENCE_EMULATOR.md`, T-C1-1/T-C1-2. |
 
 ## Key facts so far
 
@@ -41,6 +42,9 @@ Last updated: 2026-10-24, end of Stage B9. Phase A complete (Gate A met). Phase 
   - `tools\make_checkpoint.ps1 -Stage <ID>` writes zips to `F:\Ports\Pac-Man - Atari 2600 checkpoints\`. This is outside the project, so it needs your OK each time.
   - Zips hold the full project and Git history, but no ROM and no `build\`.
   - To restore, the ROM comes back from `F:\Ports\ROM-originals\`.
+- Reference emulator (C1):
+  - Stella 7.0c in `F:\Ports\Tools\Stella-7.0c`, proved genuine.
+  - Always start it with `tools\run_stella.cmd`, never by double-clicking `Stella.exe`. Settings stay in its own folder.
 - What is still assumed, and where it gets checked: `docs\DISCOVERY_REPORT.md`.
 
 ## Open problems
@@ -54,24 +58,20 @@ Last updated: 2026-10-24, end of Stage B9. Phase A complete (Gate A met). Phase 
 
 ## Next stage
 
-C1 — Install the reference emulator (first stage of Phase C).
+C2 — First run of the original. The first time the game itself runs.
 
 **This needs you:**
-- Download the official Stella Windows zip, `Stella-7.0c-windows.zip` (4,255,411 bytes), from `https://github.com/stella-emu/stella/releases/tag/7.0`, the version you chose in D-002.
-- Unzip it to `F:\Ports\Tools\Stella`. That is outside the project folder, and it is a "portable" copy, so nothing is installed into Windows.
+- Claude Code starts Stella with the working copy `rom\pacman.a26`, with your OK.
+- You play for about one minute with the keyboard, and with your PS4 controller if it's connected.
+- Then you tell Claude Code in a sentence whether it looked and sounded right.
 
-Claude Code gives every click, records the zip's fingerprint, and checks that Stella opens to its game list.
+Claude Code also reads and records Stella's game-properties entry for this ROM (cartridge type, TV format, display settings), and checks that nothing was written next to the ROM.
 
 ## Handoff from the last session
 
-Stage B9 done: **Gate B is met, and Phase B (development environment) is complete.**
-- All six checklist items passed, each re-checked from scratch with evidence (`docs\GATE_B.md`):
-  - the tools work, shown by a fresh full build of both libraries;
-  - your ROM is unchanged and locked;
-  - the ROM has never entered Git, by name or by content;
-  - the memory files and rules are intact;
-  - the Git history is healthy;
-  - the first backup is valid.
-- With your OK, an end-of-phase backup was made: `pacman2600-2026-10-24-Gate-B.zip`.
+Stage C1 done: the reference emulator is ready.
+- **It's genuine:** the Stella folder you unzipped (`F:\Ports\Tools\Stella-7.0c`) is identical, file for file, to Stella's official 7.0c download. I downloaded that zip again with your OK and compared all 96 files.
+- **Launcher:** the new script `tools\run_stella.cmd` starts Stella so that it keeps all its settings in its own folder, not in your Windows profile. This was proved on the first start.
+- **First start:** you saw the game list and closed it normally. No game was opened yet.
 
-New: `docs\GATE_B.md`. Updated: `PLAN.md` (B9 entry, Done), `PROJECT_STATUS.md`. Outside the project: the new Gate-B zip and its `.sha256`. Local only: `build\gate_b\` (the fresh test build, ignored by Git). Nothing installed, nothing deleted, nothing pushed, ROMs untouched.
+New: `docs\REFERENCE_EMULATOR.md`, `tools\run_stella.cmd`. Updated: `CLAUDE.md`, `DECISIONS.md` (T-C1-1, T-C1-2), `docs\GLOSSARY.md`, `PLAN.md` (C1 entry, Done), `PROJECT_STATUS.md`. Local only: `reference\_downloads\Stella-7.0c-windows.zip`. Outside the project, created by Stella itself: its settings in `F:\Ports\Tools\Stella-7.0c`. Nothing installed into Windows, nothing deleted, nothing pushed, ROMs untouched.

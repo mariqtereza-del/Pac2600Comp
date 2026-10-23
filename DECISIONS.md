@@ -42,7 +42,77 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 **Reversible:** Yes, before Phase D starts. Switching compilers later means rebuilding and re-running all tests, but no game code would be lost.
 
+### D-002 — Stella version (2026-10-23, Stage B7, brought forward from C1)
+
+**Your choice:** "Stella 7.0 (Recommended)".
+
+- **What it means:**
+  - The emulator core built into our program is Stella's libretro core from source tag **7.0**.
+  - The reference app you run in C1 is the official Windows download of the same release, labelled **7.0c**.
+- **Why they count as the same version:** tags 7.0a, 7.0b and 7.0c differ from 7.0 only in two Windows installer files (`Create_Builds.bat`, `stella.iss`), checked with GitHub's comparison on 2026-10-23. So the "ruler" and our program run identical emulation code (D-001's reason for using Stella's own core).
+- **Alternatives:**
+  - 6.7.1 (January 2024): older, with no advantage for this game.
+  - Stella's current development code: newer, but not a release, and it changes often.
+- **Why it was decided early:** B7 already needs it to download the matching source.
+- **Reversible:** Yes, until Phase D builds on it. Changing it later means re-running every comparison made with the old version.
+
 ## Technical choices made by Claude Code
+
+### T-B7-1 — What is left out when unpacking (2026-10-23, Stage B7)
+
+- **Choice:**
+  - Stella's `test/roms/` (459 files, 49.4 MB) is not unpacked.
+  - SDL3's `CLAUDE.md` and `AGENTS.md` are not unpacked.
+  - Everything else is unpacked unchanged, using Python's safe unpacking mode (`filter='data'`), which refuses links and paths that point outside the target folder.
+- **Why:**
+  - `test/roms/` contains 430 ROM images of other games (bankswitching and controller tests). The project must never store or publish ROMs (Rules 1 and 7). Leaving them out is safer than relying on `.gitignore`, and nothing in the build uses them.
+  - SDL's two files are instructions for AI tools working on SDL itself. Claude Code could load them automatically in later sessions, as if they were project instructions. They play no part in building SDL.
+- **Proof:** after unpacking, `third_party\` held 0 files with ROM-like extensions. Stella's remaining 1057 files match tag 7.0 exactly.
+- **Reversible:** Yes. The archives are kept in `third_party\_downloads\`.
+
+### T-B7-2 — The library sources are kept in Git, byte-identical (2026-10-23, Stage B7)
+
+- **Choice:**
+  - The unpacked SDL3 and Stella sources are committed: 3,238 files, 72.1 MB.
+  - The archives themselves stay local in `third_party\_downloads\`, which is ignored by Git.
+  - `.gitattributes` switches off line-ending conversion for `third_party/SDL3/**` and `third_party/stella/**`.
+  - The 8 files the projects' own `.gitignore` files hid (7 SDL `.hlsl` shaders and Stella's `.vscode/settings.json`) are added with `git add -f`.
+- **Why:**
+  - The project then builds without internet, and its history records exactly which code was used. That suits a preservation project.
+  - With your Git's `core.autocrlf=true`, 256 vendored files would otherwise get altered line endings, and `libretro.cxx` would get Windows endings on checkout. That would break the "identical to the release" check and the T-B7-4 text match.
+- **Alternatives:**
+  - Download at build time (CMake FetchContent): this needs internet, and the site could change.
+  - Git submodules: these are more complex for you to manage.
+- **Cost:** a larger repository, still far below GitHub's limits. The biggest single file is Stella's bundled `sqlite3.c` at 9.1 MB, against GitHub's 100 MB per-file limit.
+- **Reversible:** Yes.
+
+### T-B7-3 — How Stella's libretro core is built (2026-10-23, Stage B7)
+
+- **Choice:**
+  - `third_party\CMakeLists.txt` reads the source list from Stella's own `Makefile.common` (148 files).
+  - It uses exactly the compiler settings of Stella's Makefile for Microsoft's compiler.
+  - It builds `stella_libretro.dll`, the same kind of file Stella's Makefile produces.
+  - SDL3 is built by its own CMake files as `SDL3.dll`. Whether to use static or DLL forms in the final program is left to Phase D.
+- **Why:**
+  - Copying Stella's own recipe keeps the emulation identical to Stella's.
+  - Building the DLL, rather than only compiling, also proves everything links (all 25 `retro_*` functions exported).
+- **Reversible:** Yes.
+
+### T-B7-4 — Build-time fix for `snprintf` in Stella's `libretro.cxx` (2026-10-23, Stage B7)
+
+- **Problem:**
+  - Lines 10–12 of `src/os/libretro/libretro.cxx` say `#ifdef _MSC_VER` / `#define snprintf _snprintf`.
+  - On today's compiler this turns `std::snprintf` in Stella's bundled `json.hpp` into `std::_snprintf`, which doesn't exist (error C2039, six places).
+  - The same line is still in Stella's development code (checked 2026-10-23).
+- **Choice:**
+  - The vendored file is left untouched.
+  - At configure time, CMake writes a copy to `build\third_party\stella_patched\libretro.cxx` with the condition changed to `#if defined(_MSC_VER) && _MSC_VER < 1900` (compilers before Visual Studio 2015, the condition zlib uses for the same workaround), and compiles that copy.
+  - If the original text isn't found exactly, the build stops with an error that points here.
+- **Why:**
+  - Modern Microsoft compilers have a correct `snprintf`. `_snprintf` is the older, less safe version: it may not end the text properly when it is cut short.
+  - The change only affects text formatting in settings and JSON, never the emulation.
+  - Keeping the vendored file pristine means the "identical to tag 7.0" check stays true.
+- **Reversible:** Yes. It is one block in `third_party\CMakeLists.txt`.
 
 ### T-B2-1 — Build Tools download link and how the compiler is checked (2026-10-23, Stage B2)
 

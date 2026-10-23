@@ -436,9 +436,70 @@ Install only what A5 approved, verify each tool the moment it's installed, and p
         - Every cited decision exists, apart from D-002, which is reserved for C1.
       - **Status line:** line 1 of `PROJECT_STATUS.md` is now "Current stage: B7 — Fetch the libraries (Phase B)" (T-B6-1).
       - **Commit:** `Stage B6: The memory files`.
-7. **[Not started] B7 — Fetch the libraries.**
-    - Claude Code: downloads pinned versions of SDL3 (latest stable at the time; 3.4.18 on 2026-10-23) and the Stella source (its `src/os/libretro` core, at the same release tag as the C1 reference app, per D-001) into `third_party\`, each with its licence file and the exact version noted in `docs\DEPENDENCIES.md`. This is a download, so you approve it after seeing the names, sources and sizes.
-    - Done when: both compile as empty libraries.
+7. **[Done] B7 — Fetch the libraries.** *(expanded 2026-10-23, done 2026-10-24)*
+    - **Objective:** Pinned, fingerprinted source code of SDL3 and of Stella (including its libretro core) is in `third_party\`, each with its licence, recorded in `docs\DEPENDENCIES.md`. Both compile with our toolchain as stand-alone libraries that nothing uses yet.
+    - **Why it matters:**
+      - Phase D's program is built from exactly these two libraries.
+      - Pinning them, and keeping the source in the project, means the build never changes behind our back and still works if a website disappears.
+      - Compiling them now finds toolchain problems before any game code exists (Rule 9).
+    - **Prerequisites:** B6 Done (yes; commit `d17cef6`, clean tree). Checked on GitHub's release pages, 2026-10-23:
+      - **SDL3:** latest stable is `release-3.4.18` (2026-10-02), with a source archive `SDL3-3.4.18.tar.gz` of 15,651,004 bytes. GitHub's SHA-256 is `9c75cf16…34a3`. Licence: zlib.
+      - **Stella:** latest release is **7.0** (2024-10-04), with a source archive `stella-7.0-src.tar.xz` of 13,685,208 bytes. No checksum is published. The libretro core is in `src/os/libretro` at tag 7.0. Licence: GNU GPL version 2 (`License.txt`).
+      - **Stella's Windows app** is labelled "7.0c". Tags 7.0a/b/c differ from 7.0 only in two Windows installer files (`src/os/windows/Create_Builds.bat`, `stella.iss`), so the emulator code is identical.
+      - **Stella 7.0's C++ level:** its build files ask for **C++20** (`-std=c++20`, MSVC `/std:c++20`), not C++23 (D-001's note was about Stella's later development code).
+    - **What Claude Code will do:**
+      1. Ask you for D-002 (the Stella version) and approval of the two downloads.
+      2. Download both archives from their official GitHub release pages into a new folder `third_party\_downloads\`, kept out of Git.
+      3. Check sizes and SHA-256 (SDL3 against GitHub's published value; Stella's value is recorded as ours).
+      4. Unpack to `third_party\SDL3\` and `third_party\stella\`, and scan them for ROM-like files.
+      5. Write `third_party\CMakeLists.txt`:
+         - SDL3 as a static library, via its own CMake files.
+         - Stella's libretro core as a static library, built from the source list in Stella's `Makefile.common`, using `/std:c++20`.
+      6. Compile both into `build\b7\`.
+      7. Write `docs\DEPENDENCIES.md` and commit.
+    - **What I must do:** Choose the Stella version (D-002) and approve the downloads.
+    - **Exact instructions:** Answer the question Claude Code shows.
+    - **Required input:** D-002 and the download approval.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - Both archives match their recorded sizes and SHA-256 values.
+      - Both licence files are present.
+      - The build ends with `SDL3-static.lib` and `stella_libretro.lib` (or similar names), with no errors.
+      - `docs\DEPENDENCIES.md` lists the versions, URLs, SHA-256 values and licences.
+    - **Verification:**
+      - Download checksums.
+      - The build log tail and the list of built `.lib` files.
+      - `git status` showing no archive, ROM or build file staged.
+      - ROM SHA-1s unchanged.
+    - **Completion criteria:** All of the above.
+    - **Potential problems:**
+      - Stella's core may need source files or settings that only its Makefile knows about. Claude Code reads the Makefile and copies them faithfully, without changing Stella's code.
+      - The Stella source might contain `.bin`/`.a26` test files, which the ignore list hides from Git. The scan reports them.
+      - Large sources make Git slower. Size is measured and the approach recorded (T-B7-x).
+    - **Recovery:**
+      - Before the commit: delete `third_party\SDL3`, `third_party\stella`, `third_party\_downloads` and `build\b7` (with your OK).
+      - After the commit: return to `d17cef6` (with your OK).
+      - Nothing is installed into Windows.
+    - **Documentation updates:** `docs\DEPENDENCIES.md` (new), `DECISIONS.md` (D-002, T-B7-…), `docs\GLOSSARY.md` (new terms), `PROJECT_STATUS.md`, `PLAN.md`. C1 is adjusted to the D-002 version.
+    - **Git checkpoint:** `Stage B7: Fetch the libraries`.
+    - **Next stage:** B8 — Checkpoint script and a restore test.
+    - **Result (2026-10-24):** D-002 = Stella 7.0, and you approved both downloads.
+      - **SDL3:** `SDL3-3.4.18.tar.gz` SHA-256 equals GitHub's published value.
+      - **Stella:** `stella-7.0-src.tar.xz` SHA-256 `d3fdd7a4…c0bc` recorded. All 1057 unpacked files are identical to tag 7.0.
+      - **Left out (T-B7-1):**
+        - Stella's `test/roms/`: 459 files, including 430 ROM images of other games.
+        - SDL's `CLAUDE.md`/`AGENTS.md`, which are AI-tool instructions.
+        - Result: 0 ROM-like files in `third_party\`.
+      - **Build.** The build file is `third_party\CMakeLists.txt` (T-B7-3), and the build script is `tools\build_third_party.cmd`. Output goes to `build\third_party`, not `build\b7` as planned.
+        - The first attempt failed for two reasons. My source-list parsing read only 1 file, and Stella's `snprintf`→`_snprintf` line broke `json.hpp`.
+        - Both were fixed: exact parsing of 148 files, and a build-time patch on a copy (T-B7-4), with the vendored file untouched.
+        - The clean build then took 62 s, with 0 errors and 0 warnings.
+        - `stella_libretro.dll` is x64, built with `/std:c++20`, and exports all 25 `retro_*` functions. `SDL3.dll` is x64, version 3.4.18.0.
+      - **Git (T-B7-2):**
+        - The vendored sources are committed (3,238 files, 72.1 MB) with line-ending conversion off.
+        - 8 files hidden by the projects' own `.gitignore` files were added explicitly.
+        - The archives stay local.
+      - **Records:** `docs\DEPENDENCIES.md` written, and C1 updated to Stella 7.0c.
 8. **[Not started] B8 — Checkpoint script and a restore test.**
     - Claude Code: writes `tools\make_checkpoint.ps1`, which zips the project (minus `build\`) into the checkpoints folder with the date and stage ID in the name, refusing to run if a `.a26` would be included in a release folder.
     - Verify: make one zip, unzip it to a temp folder, build it there, then remove the temp folder.
@@ -451,6 +512,7 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
 
 1. **[Not started] C1 — Install the reference emulator.**
     - You: download the Windows 64-bit **portable** zip of Stella from stella-emu.github.io (version recorded in D-002), unzip it to `F:\Ports\Tools\Stella`. Portable means nothing is installed into Windows.
+    - *(Updated at B7, D-002.)* The file is `Stella-7.0c-windows.zip` (4,255,411 bytes) on the 7.0 release page, `https://github.com/stella-emu/stella/releases/tag/7.0`. "7.0c" has the same emulation code as the 7.0 source in `third_party\stella`. C1 records its SHA-256.
     - Verify: Stella opens to its game list.
 2. **[Not started] C2 — First run of the original.**
     - You: in Stella, load the copy in `rom\`, play for one minute with the keyboard and with the PS4 pad, then tell Claude Code in a sentence whether it looked and sounded right.

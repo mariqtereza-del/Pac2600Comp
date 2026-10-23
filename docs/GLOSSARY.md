@@ -52,6 +52,14 @@ Every project term in one line of plain English. New terms are added in the stag
 | PowerShell / cmd | The two Windows command-line shells used to run commands and scripts. |
 | MSYS2 | A separate set of Unix-style tools already on the PC; deliberately not used by this project. |
 | dasm | An assembler for 6502 code, planned for rebuilding the ROM from source (Phase F). |
+| Static / shared library (`.lib` / `.dll`) | Ready-made code either built into the program (static) or kept as a separate file the program loads (shared, a DLL). |
+| DLL | "Dynamic-link library": a Windows file of shared code that programs load when they start. |
+| Export (`retro_*`) | A function a DLL offers to other programs; Stella's core offers 25 standard libretro ones. |
+| Vendoring | Keeping an outside library's source inside our project at a fixed version, instead of downloading it at build time. |
+| Source archive (`.tar.gz`, `.tar.xz`) | A compressed bundle of a project's source files, like a zip. |
+| Tag | A permanent name for one exact point in a project's history, e.g. Stella's `7.0`. |
+| Patch | A small, documented change to someone else's code; ours is applied to a copy at build time (T-B7-4). |
+| GPL / zlib licence | Stella's licence (share the source of anything released with it) / SDL's licence (use freely, keep the notice). |
 | Assembler | A tool that turns readable 6502 instructions back into a ROM file. |
 
 ## Git

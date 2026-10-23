@@ -10,6 +10,9 @@
 /rom/
 /reference/
 
+# Downloaded library archives (kept locally; fingerprints are in docs/DEPENDENCIES.md).
+/third_party/_downloads/
+
 # Build output and scratch work.
 /build/
 /out/
@@ -20,6 +23,7 @@ CMakeUserPresets.json
 *.pdb
 *.ilk
 *.exe
+*.log
 
 # Python caches.
 __pycache__/

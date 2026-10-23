@@ -558,8 +558,65 @@ Install only what A5 approved, verify each tool the moment it's installed, and p
         - `tools\build_third_party.cmd` built from the restored copy: 570 steps, 0 errors, 0 warnings, with the same DLL sizes as B7.
       - **Afterwards:** the restore folder was deleted (with your OK), and the ROM SHA-1s are unchanged.
       - **Note:** this checkpoint was taken before B8's commit (T-B8-2).
-9. **[Not started] B9 — Gate B.**
-    - Checklist: all tools verified, ROM locked, Git ignoring ROMs (proved), memory files present, first commit made, first checkpoint zip exists.
+9. **[Done] B9 — Gate B.** *(expanded 2026-10-24; done 2026-10-24: `docs\GATE_B.md`; Gate B met, all 6 items with evidence)*
+    - **Objective:** Check every Gate B item afresh, with new evidence rather than earlier notes. Record the result in `docs\GATE_B.md`. With your OK, make an end-of-phase checkpoint `Gate-B`, and close Phase B.
+    - **Why it matters:** Rule 10 says Phase C (the first work with the reference emulator) must not start until Phase B has met its completion criteria. A gate re-checked from scratch also catches anything that quietly changed since it was first done.
+    - **Prerequisites:**
+      - B8 Done (yes; commit `1bb3e97`, clean tree).
+      - Checkpoint `pacman2600-2026-10-24-B8.zip` exists.
+    - **What Claude Code will do:** run one read-only check per gate item:
+      1. **All tools verified:** Git, Build Tools (`vswhere`), `cl`/CMake/Ninja versions in the Developer environment, Python; then rebuild the libraries with `tools\build_third_party.cmd` to show the whole chain still works.
+      2. **ROM locked:**
+         - the original's SHA-1 equals `rom\EXPECTED_SHA1.txt` and A3's value;
+         - it is read-only;
+         - the open-for-writing test is refused;
+         - the spare in `ROM-originals` matches and is read-only.
+      3. **Git ignoring ROMs (proved):**
+         - `git check-ignore` on the ROM paths;
+         - every commit in the history scanned for ROM file names;
+         - the ROM's own Git fingerprint searched for in all stored objects.
+      4. **Memory files present:**
+         - `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`, `DECISIONS.md` and `docs\GLOSSARY.md` all exist;
+         - the 12 rules are still word for word;
+         - the plan's 102 markers are intact, with B1–B8 Done;
+         - every cited decision exists.
+      5. **First commit made:** `git log` and `git fsck`.
+      6. **First checkpoint zip exists:** its SHA-256 matches its `.sha256` file and it contains no ROM.
+
+      Then: write `docs\GATE_B.md`; with your OK, make checkpoint `Gate-B`; commit.
+    - **What I must do:** Approve the `Gate-B` checkpoint, which writes a zip outside the project.
+    - **Exact instructions:** Answer the approval question.
+    - **Required input:** That approval.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:** all six items PASS with evidence; `docs\GATE_B.md` written; checkpoint `pacman2600-<date>-Gate-B.zip` made; Phase B marked complete.
+    - **Verification:** the command output for each item, shown in the session and summarised in `docs\GATE_B.md`.
+    - **Completion criteria:** Gate B (the six items) all PASS.
+    - **Potential problems:** any item failing. Phase B then stays open, the gap is named, and no Phase C work starts.
+    - **Recovery:** default. The checks only read. The checkpoint is a new file outside the project.
+    - **Documentation updates:** `docs\GATE_B.md` (new), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage B9: Gate B`.
+    - **Next stage:** C1 — Install the reference emulator.
+    - **Gate B:** all tools verified, ROM locked, Git ignoring ROMs (proved), memory files present, first commit made, first checkpoint zip exists.
+    - **Result (2026-10-24): Gate B met. All 6 items PASS**, each re-checked this session (details in `docs\GATE_B.md`):
+      1. **Tools:**
+         - Git 2.56.0, Python 3.14.0, Build Tools 18.11.1, `cl` 19.51.36260 x64, CMake 4.3.1, Ninja 1.13.2.
+         - A fresh library build into `build\gate_b`: 570 steps, 0 errors, 0 warnings.
+      2. **ROM:** original and spare match the expected SHA-1, are read-only, and refuse writing.
+      3. **Git:**
+         - ROM paths are ignored;
+         - 0 ROM-like names in any commit;
+         - the ROM's Git fingerprint `3a7ed122…2361` is absent from all 3,829 objects.
+      4. **Memory files:**
+         - all five exist and are tracked;
+         - the rules are identical to your text;
+         - 102 markers;
+         - all cited decisions exist.
+      5. **Commits:** four commits from `ffef5a0`, and `git fsck --full` is clean.
+      6. **B8 checkpoint:** SHA-256 matches, 7,105 entries, no ROM by name or content.
+
+      **End-of-phase checkpoint** (your approval): `pacman2600-2026-10-24-Gate-B.zip`, 83,537,815 bytes, 7,116 entries, no ROM, SHA-256 `da29d7bd…fe47`.
+
+      **Phase B complete.**
 
 ### Phase C — ROM analysis and reference environment (8 stages)
 

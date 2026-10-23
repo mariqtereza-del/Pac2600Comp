@@ -1,6 +1,6 @@
-Current stage: B9 — Gate B (Phase B)
+Current stage: C1 — Install the reference emulator (Phase C)
 
-Last updated: 2026-10-24, end of Stage B8. Phase A complete (Gate A met).
+Last updated: 2026-10-24, end of Stage B9. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -20,6 +20,7 @@ Last updated: 2026-10-24, end of Stage B8. Phase A complete (Gate A met).
 | B6 — The memory files | `CLAUDE.md`: your 12 rules, identical to your pasted text (scripted comparison, 42 lines), plus working preferences and technical facts. `docs\GLOSSARY.md`. Memory files cross-checked (102 markers, A1–B5 consistent, all cited decisions exist). T-B6-1. |
 | B7 — Fetch the libraries | D-002 = Stella 7.0. SDL3 3.4.18 (SHA-256 = GitHub's) and Stella 7.0 (all 1057 files identical to tag 7.0) in `third_party\`. Stella's 459 test ROM files and SDL's AI-instruction files left out (0 ROM-like files). Both build with our toolchain: `SDL3.dll` 3.4.18, `stella_libretro.dll` (25 `retro_*` exports), 0 errors, 0 warnings. `docs\DEPENDENCIES.md`, T-B7-1…4. |
 | B8 — Checkpoint script and a restore test | `tools\make_checkpoint.ps1` (refusals tested). Checkpoint `pacman2600-2026-10-24-B8.zip` (83.5 MB, 7105 entries, no ROM, SHA-256 file) in `F:\Ports\Pac-Man - Atari 2600 checkpoints\`. Restore test: all files identical, same `git status`, `git fsck` clean, libraries rebuilt with 0 errors. Test folder deleted with your OK. T-B8-1/T-B8-2. |
+| B9 — Gate B | All 6 items PASS, re-checked this session (`docs\GATE_B.md`): tools plus a fresh library build (0 errors), ROM locked (SHA-1, read-only, write refused), no ROM anywhere in Git (by name and by content), memory files and rules intact, history healthy (`git fsck`), B8 checkpoint verified. End-of-phase checkpoint `pacman2600-2026-10-24-Gate-B.zip` made with your OK. |
 
 ## Key facts so far
 
@@ -53,25 +54,24 @@ Last updated: 2026-10-24, end of Stage B8. Phase A complete (Gate A met).
 
 ## Next stage
 
-B9 — Gate B. Claude Code checks the Phase B checklist item by item against the files, with evidence:
-- all tools verified;
-- ROM locked;
-- Git ignoring ROMs (proved);
-- memory files present;
-- first commit made;
-- first checkpoint zip exists.
+C1 — Install the reference emulator (first stage of Phase C).
 
-Phase C only starts if every item passes (Rule 10). Claude Code may propose an end-of-phase checkpoint (`Gate-B`), which writes outside the project and so needs your OK.
+**This needs you:**
+- Download the official Stella Windows zip, `Stella-7.0c-windows.zip` (4,255,411 bytes), from `https://github.com/stella-emu/stella/releases/tag/7.0`, the version you chose in D-002.
+- Unzip it to `F:\Ports\Tools\Stella`. That is outside the project folder, and it is a "portable" copy, so nothing is installed into Windows.
+
+Claude Code gives every click, records the zip's fingerprint, and checks that Stella opens to its game list.
 
 ## Handoff from the last session
 
-Stage B8 done:
-- `tools\make_checkpoint.ps1` zips the whole project, Git history included, into `F:\Ports\Pac-Man - Atari 2600 checkpoints\`.
-- It never includes a ROM (checked by name and by content), never overwrites, and refuses unsafe destinations. All three refusals were tested.
-- The first checkpoint, `pacman2600-2026-10-24-B8.zip` (83.5 MB), was restored to a temporary folder:
-  - every file was identical, and Git showed the same state;
-  - Git's health check found no damage;
-  - the libraries built from it without errors.
-- The temporary folder was then deleted, and so was the old `build_b7.log` (both with your OK).
+Stage B9 done: **Gate B is met, and Phase B (development environment) is complete.**
+- All six checklist items passed, each re-checked from scratch with evidence (`docs\GATE_B.md`):
+  - the tools work, shown by a fresh full build of both libraries;
+  - your ROM is unchanged and locked;
+  - the ROM has never entered Git, by name or by content;
+  - the memory files and rules are intact;
+  - the Git history is healthy;
+  - the first backup is valid.
+- With your OK, an end-of-phase backup was made: `pacman2600-2026-10-24-Gate-B.zip`.
 
-New: `tools\make_checkpoint.ps1`. Updated: `CLAUDE.md`, `DECISIONS.md` (T-B8-1, T-B8-2), `docs\GLOSSARY.md`, `PLAN.md` (B8 entry, Done), `PROJECT_STATUS.md`. Outside the project: the checkpoints folder with the zip and its `.sha256`. Nothing installed, nothing pushed, ROMs untouched.
+New: `docs\GATE_B.md`. Updated: `PLAN.md` (B9 entry, Done), `PROJECT_STATUS.md`. Outside the project: the new Gate-B zip and its `.sha256`. Local only: `build\gate_b\` (the fresh test build, ignored by Git). Nothing installed, nothing deleted, nothing pushed, ROMs untouched.

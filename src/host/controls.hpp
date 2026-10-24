@@ -53,6 +53,38 @@ private:
 struct HelpLine {
   std::string keys, meaning;
 };
-std::vector<HelpLine> helpLines(const Input& current);
+std::vector<HelpLine> helpLines(const Input& current, const std::string& controller = "none");
+
+// ---- Gamepad (Stage D11, DECISIONS.md T-D11-1) ----
+
+// The raw readings of one pad: the D-pad and four buttons as pressed or not, the left stick from -32768 to 32767
+// (up and left are negative, as in SDL). Buttons are named by SDL's layout: Cross = south, Square = west,
+// Options = start, Share = back (SDL's PS4 driver delivers them that way).
+struct PadReading {
+  bool dpadUp = false, dpadDown = false, dpadLeft = false, dpadRight = false;
+  bool cross = false, square = false, options = false, share = false;
+  int stickX = 0, stickY = 0;
+};
+
+// What a pad does to the console.
+struct PadState {
+  bool up = false, down = false, left = false, right = false, fire = false, select = false, reset = false;
+};
+
+// The left stick as one of four directions. A push counts once it passes 50 % of the way and stays counted until it
+// falls under 30 %; if both axes are pushed the stronger one wins, and a direction already held is kept unless the
+// other axis is clearly stronger (25 %), so a stick resting near 45 degrees does not flicker.
+class StickDirection {
+public:
+  enum class Dir { None, Up, Down, Left, Right };
+  Dir update(int x, int y);
+
+private:
+  Dir previous_ = Dir::None;
+};
+
+PadState padState(const PadReading& reading, StickDirection& stick);
+PadState combine(const PadState& a, const PadState& b);  // two pads at once: either one counts
+Input merge(const Input& keyboard, const PadState& pad);  // keyboard and pad at once; opposite directions cancel
 
 }  // namespace controls

@@ -11,9 +11,9 @@ enum class Mode {
 };
 
 // The rows of the 160 x 228 picture that hold the game. Every frame measured has been black above and below them:
-// rows 11-199 over 24,000 frames (docs\DISPLAY.md) and in all eight reference pictures (docs\CAPTURES.md).
+// rows 11-199 (plus 4 black margin rows below) over 24,000 frames (docs\DISPLAY.md) and in all eight reference pictures (docs\CAPTURES.md).
 constexpr int kGameTop = 11;
-constexpr int kGameBottom = 200;  // one past the last row
+constexpr int kGameBottom = 204;  // one past the last row: the game draws to row 199, the 4 black rows below keep the life markers off the screen edge
 
 // The shape of one game pixel: its width is num/den times its height.
 struct PixelShape {

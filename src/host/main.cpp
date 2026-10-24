@@ -22,6 +22,8 @@
 //                                               no window: presses the keys a Phase C input script asks for, in the real
 //                                               keyboard code, and writes the picture fingerprint of every frame to <csv>
 //        pacman2600 --help-check <png> [rom_file]   the F1 key list in the real window, as a screenshot
+//        pacman2600 --pad-check <report> [rom_file] a virtual gamepad plays the real game: every button, the stick,
+//                                               unplugging and plugging in again (no window)
 //        (window mode: F1 = list of keys; arrows/WASD, Space, F2, F3, F5, F6 play the game (controls.cpp);
 //         keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off;
 //         the window can be resized; its size, place and fullscreen are remembered in settings.ini)
@@ -137,7 +139,7 @@ bool parsePair(const std::string& text, char separator, int& first, int& second)
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
-  std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng;
+  std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
   double audioCheckSeconds = 0;
   int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
   bool mute = false;  // play the sound stream with the volume at zero (tests)
@@ -165,6 +167,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--mode") { if(!parseMode(next(), o.mode)) std::fprintf(stderr, "--mode must be sharp, fill, tv or game\n"); }
     else if(a == "--keys-replay") { o.keysReplayScript = next(); o.keysReplayCsv = next(); }
     else if(a == "--help-check") o.helpCheckPng = next();
+    else if(a == "--pad-check") o.padCheckFile = next();
     else if(a == "--audio-check") { o.audioCheckSeconds = std::atof(next().c_str()); o.audioCheckFile = next(); }
     else if(a == "--audio-wav") o.audioWav = next();
     else if(a == "--reset-at") o.resetAt = std::atoi(next().c_str());
@@ -260,7 +263,7 @@ struct Screen {
 
 // --layout-check: run 300 frames in the real window, read its pixels back and check that the picture is where the
 // layout says: nothing outside its rectangle, and the outline of what is drawn inside it where the arithmetic predicts.
-bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::string& romPath, const View& view)
+bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::string& romPath, const View& view, int resetAt = -1)
 {
   std::ofstream report(pngPath + ".txt");
   std::vector<std::uint8_t> bytes;
@@ -273,6 +276,7 @@ bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
   screen.view = view;
   std::vector<std::uint32_t> pixels;
   for(int f = 0; f < 300; ++f) {
+    emulator.setConsoleReset(resetAt >= 0 && f >= resetAt && f < resetAt + 10);
     emulator.runFrame();
     pixels = emulator.colours();
     if(!screen.show(pixels, emulator.height())) { report << "result=texture failed\n"; return false; }
@@ -342,14 +346,14 @@ void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset)
 }
 
 // The F1 list, drawn over the picture with SDL's built-in text.
-void drawHelp(SDL_Renderer* renderer, const controls::Input& current)
+void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std::string& controller)
 {
-  const std::vector<controls::HelpLine> lines = controls::helpLines(current);
+  const std::vector<controls::HelpLine> lines = controls::helpLines(current, controller);
   std::size_t keyWidth = 0, meaningWidth = 0;
   for(const auto& l : lines) { keyWidth = std::max(keyWidth, l.keys.size()); meaningWidth = std::max(meaningWidth, l.meaning.size()); }
   const float charSize = static_cast<float>(SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE);
   const float columns = static_cast<float>(keyWidth + meaningWidth + 6);
-  const float rows = static_cast<float>(lines.size() + 3);
+  const float rows = static_cast<float>(lines.size() + 4);
   int w = 0, h = 0;
   SDL_GetRenderOutputSize(renderer, &w, &h);
   float scale = std::max(1.0f, std::floor(static_cast<float>(h) / 480.0f));
@@ -460,7 +464,7 @@ bool helpCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::st
     emulator.runFrame();
     if(!screen.show(emulator.colours(), emulator.height())) { report << "result=texture failed\n"; return false; }
   }
-  drawHelp(renderer, controls::Input{});
+  drawHelp(renderer, controls::Input{}, "PS4 Controller");
   SDL_Surface* shot = SDL_RenderReadPixels(renderer, nullptr);
   if(!shot) { report << "result=cannot read window pixels\n"; return false; }
   SDL_Surface* rgb = SDL_ConvertSurface(shot, SDL_PIXELFORMAT_XRGB8888);
@@ -476,12 +480,285 @@ bool helpCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::st
     }
   }
   const bool saved = SDL_SavePNG(rgb, pngPath.c_str());
-  const std::size_t listed = controls::helpLines(controls::Input{}).size();
+  const std::size_t listed = controls::helpLines(controls::Input{}, "PS4 Controller").size();
   report << "window_pixels=" << rgb->w << 'x' << rgb->h << "\nlines_listed=" << listed << "\nnear_white_pixels=" << white << "\nother_non_black_pixels=" << coloured
          << "\nscreenshot_saved=" << (saved ? "yes" : "no") << '\n';
   const bool ok = saved && white > 500 && coloured > 1000;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   SDL_DestroySurface(rgb);
+  return ok;
+}
+
+// ---- Gamepads (Stage D11, DECISIONS.md T-D11-1) ----
+
+// All the gamepads SDL knows, opened when they appear and closed when they go. What they are doing is read from them
+// each time round the loop (not remembered from events), so an unplugged pad can never leave a button "held".
+class Pads {
+public:
+  Pads() = default;
+  ~Pads() { stop(); }
+  Pads(const Pads&) = delete;
+  Pads& operator=(const Pads&) = delete;
+
+  bool start()
+  {
+    if(started_) return true;
+    if(!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) { problem_ = SDL_GetError(); return false; }
+    started_ = true;
+    int count = 0;
+    SDL_JoystickID* ids = SDL_GetGamepads(&count);
+    for(int i = 0; ids && i < count; ++i) open(ids[i]);
+    SDL_free(ids);
+    return true;
+  }
+
+  void stop()
+  {
+    for(Pad& p : pads_) SDL_CloseGamepad(p.gamepad);
+    pads_.clear();
+    if(started_) { SDL_QuitSubSystem(SDL_INIT_GAMEPAD); started_ = false; }
+  }
+
+  void handleEvent(const SDL_Event& e)
+  {
+    if(e.type == SDL_EVENT_GAMEPAD_ADDED) open(e.gdevice.which);
+    if(e.type == SDL_EVENT_GAMEPAD_REMOVED) close(e.gdevice.which);
+  }
+
+  // While the window is not in front, the pads do nothing (the keyboard is released the same way).
+  void setActive(bool active) { active_ = active; }
+
+  int count() const { return static_cast<int>(pads_.size()); }
+
+  std::string names() const
+  {
+    if(pads_.empty()) return "none";
+    std::string text;
+    for(const Pad& p : pads_) text += (text.empty() ? "" : ", ") + p.name;
+    return text;
+  }
+
+  // What all the open pads together are doing now.
+  controls::PadState poll()
+  {
+    controls::PadState total;
+    if(!active_) return total;
+    for(Pad& p : pads_) {
+      controls::PadReading r;
+      r.dpadUp = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
+      r.dpadDown = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+      r.dpadLeft = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+      r.dpadRight = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+      r.cross = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_SOUTH);
+      r.square = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_WEST);
+      r.options = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_START);
+      r.share = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_BACK);
+      r.stickX = SDL_GetGamepadAxis(p.gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+      r.stickY = SDL_GetGamepadAxis(p.gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+      total = controls::combine(total, controls::padState(r, p.stick));
+    }
+    return total;
+  }
+
+private:
+  struct Pad {
+    SDL_Gamepad* gamepad = nullptr;
+    SDL_JoystickID id = 0;
+    std::string name;
+    controls::StickDirection stick;
+  };
+
+  void open(SDL_JoystickID id)
+  {
+    for(const Pad& p : pads_)
+      if(p.id == id) return;  // already open (it was found at start-up and the "added" event came too)
+    SDL_Gamepad* g = SDL_OpenGamepad(id);
+    if(!g) return;
+    Pad p;
+    p.gamepad = g;
+    p.id = id;
+    const char* name = SDL_GetGamepadName(g);
+    p.name = name ? name : "gamepad";
+    pads_.push_back(std::move(p));
+  }
+
+  void close(SDL_JoystickID id)
+  {
+    for(auto it = pads_.begin(); it != pads_.end(); ++it)
+      if(it->id == id) { SDL_CloseGamepad(it->gamepad); pads_.erase(it); return; }
+  }
+
+  std::vector<Pad> pads_;
+  bool started_ = false, active_ = true;
+  std::string problem_;
+};
+
+// --pad-check: a virtual gamepad (SDL's own test device, which goes through the same gamepad code as a real pad) plays the
+// real game through the same Pads code the window uses. Every button and the stick are checked against the game's own
+// memory and the console switches; then the pad is unplugged while the stick is held and plugged in again.
+bool padCheck(const Options& o)
+{
+  std::ofstream report(o.padCheckFile);
+  const auto found = rom::findQuietly(o.romArg, o.settingsFile, o.romsDir);
+  std::vector<std::uint8_t> bytes;
+  if(!report || !found || found->check.status != rom::Status::Ok || !readRomBytes(found->check.path, bytes)) { if(report) report << "result=no usable ROM\n"; return false; }
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(found->check.path), bytes); !error.empty()) { report << "result=" << error << '\n'; return false; }
+
+  bool ok = true;
+  auto line = [&](const std::string& name, bool pass, const std::string& detail) {
+    report << name << (pass ? ": ok  " : ": FAIL  ") << detail << '\n';
+    ok = ok && pass;
+  };
+
+  Pads pads;
+  if(!pads.start()) { report << "result=FAIL gamepads could not start\n"; return false; }
+  report << "real_gamepads_found=" << pads.count() << " (" << pads.names() << ")\n";
+  const int realPads = pads.count();
+
+  SDL_VirtualJoystickDesc desc;
+  SDL_INIT_INTERFACE(&desc);
+  desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+  desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
+  desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
+  desc.name = "Test pad (virtual)";
+
+  SDL_JoystickID virtualId = 0;
+  SDL_Joystick* joystick = nullptr;
+  auto plugIn = [&]() {
+    virtualId = SDL_AttachVirtualJoystick(&desc);
+    joystick = virtualId ? SDL_OpenJoystick(virtualId) : nullptr;
+    return joystick != nullptr;
+  };
+  auto button = [&](SDL_GamepadButton b, bool down) { if(joystick) SDL_SetJoystickVirtualButton(joystick, b, down); };
+  auto axis = [&](SDL_GamepadAxis a, int value) { if(joystick) SDL_SetJoystickVirtualAxis(joystick, a, static_cast<Sint16>(value)); };
+
+  controls::Input lastInput;
+  int lastEd = 0, lastSwitches = 0;
+  std::set<int> switchesSeen;
+  // Runs frames, taking the pad from the real Pads code each frame; returns nothing, leaves the last readings behind.
+  auto run = [&](int frames) {
+    for(int f = 0; f < frames; ++f) {
+      for(SDL_Event e; SDL_PollEvent(&e); ) pads.handleEvent(e);
+      SDL_UpdateJoysticks();
+      lastInput = controls::merge(controls::Input{}, pads.poll());
+      applyInput(emulator, lastInput, false);
+      emulator.runFrame();
+      lastEd = emulator.ram()[0xED - 0x80];  // C6: up 1, down 2, left 4, right 8
+      lastSwitches = emulator.consoleSwitches();
+      switchesSeen.insert(lastSwitches);
+    }
+  };
+  auto hex = [](int v) { char t[8]; std::snprintf(t, sizeof t, "%02x", v); return std::string(t); };
+  // A fresh game with Pac-Man alive and free to move (a ghost catches an idle Pac-Man about 420 frames after a game starts,
+  // docs\SOUND.md, and the game then stops reading the joystick): Options, then the start tune.
+  auto newGame = [&]() {
+    button(SDL_GAMEPAD_BUTTON_START, true);
+    run(10);
+    button(SDL_GAMEPAD_BUTTON_START, false);
+    run(190);
+  };
+
+  line("plug in a virtual gamepad", plugIn(), SDL_GetError());
+  run(30);
+  line("the program opened it", pads.count() == realPads + 1, "pads open: " + std::to_string(pads.count()) + " (" + pads.names() + ")");
+
+  run(60);  // attract mode
+  // Share = Game Select: the select switch (bit 1 of the switch register) goes low while held
+  button(SDL_GAMEPAD_BUTTON_BACK, true);
+  run(8);
+  line("Share = Game Select", lastInput.select && (lastSwitches & 0x02) == 0, "switch register " + hex(lastSwitches));
+  button(SDL_GAMEPAD_BUTTON_BACK, false);
+  run(30);
+  // Options = Game Reset: the reset switch (bit 0) goes low while held, and a game starts
+  button(SDL_GAMEPAD_BUTTON_START, true);
+  run(10);
+  line("Options = Game Reset", lastInput.reset && (lastSwitches & 0x01) == 0, "switch register " + hex(lastSwitches));
+  button(SDL_GAMEPAD_BUTTON_START, false);
+  run(200);  // the start tune plays, then Pac-Man can move
+  line("both released: switches back", (lastSwitches & 0x03) == 0x03, "switch register " + hex(lastSwitches));
+
+  line("nothing pressed: joystick byte 0", lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+  // D-pad and stick, all four directions each (the game's joystick byte: up 1, down 2, left 4, right 8)
+  const struct { SDL_GamepadButton pad; int axisValue; bool vertical; int expect; const char* name; } dirs[] = {
+      {SDL_GAMEPAD_BUTTON_DPAD_UP, -32767, true, 1, "up"}, {SDL_GAMEPAD_BUTTON_DPAD_DOWN, 32767, true, 2, "down"},
+      {SDL_GAMEPAD_BUTTON_DPAD_LEFT, -32767, false, 4, "left"}, {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, 32767, false, 8, "right"}};
+  for(const auto& d : dirs) {
+    newGame();  // Pac-Man must be alive for each direction
+    button(d.pad, true);
+    run(6);
+    line(std::string("D-pad ") + d.name, lastEd == d.expect, "RAM $ED = " + std::to_string(lastEd) + " (wanted " + std::to_string(d.expect) + ")");
+    button(d.pad, false);
+    run(6);
+    axis(d.vertical ? SDL_GAMEPAD_AXIS_LEFTY : SDL_GAMEPAD_AXIS_LEFTX, d.axisValue);
+    run(6);
+    line(std::string("left stick ") + d.name, lastEd == d.expect, "RAM $ED = " + std::to_string(lastEd) + " (wanted " + std::to_string(d.expect) + ")");
+    axis(d.vertical ? SDL_GAMEPAD_AXIS_LEFTY : SDL_GAMEPAD_AXIS_LEFTX, 0);
+    run(6);
+    line(std::string("stick back to the middle after ") + d.name, lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+  }
+  newGame();
+  // The dead zone, and a crooked push (mostly right, a little up: one direction, right)
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 8000);
+  run(6);
+  line("stick at 25 %: inside the dead zone", lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 30000);
+  axis(SDL_GAMEPAD_AXIS_LEFTY, -18000);
+  run(6);
+  line("crooked push (right 92 %, up 55 %): right only", lastEd == 8, "RAM $ED = " + std::to_string(lastEd));
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 0);
+  axis(SDL_GAMEPAD_AXIS_LEFTY, 0);
+  run(6);
+  button(SDL_GAMEPAD_BUTTON_SOUTH, true);
+  run(2);
+  line("Cross = fire", lastInput.fire, "");
+  button(SDL_GAMEPAD_BUTTON_SOUTH, false);
+  button(SDL_GAMEPAD_BUTTON_WEST, true);
+  run(2);
+  line("Square = fire", lastInput.fire, "");
+  button(SDL_GAMEPAD_BUTTON_WEST, false);
+  run(2);
+
+  // Unplug with the stick held right: the direction must go with it
+  newGame();
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 32767);
+  run(10);
+  line("stick held right before unplugging", lastEd == 8, "RAM $ED = " + std::to_string(lastEd));
+  SDL_CloseJoystick(joystick);
+  joystick = nullptr;
+  SDL_DetachVirtualJoystick(virtualId);
+  run(10);
+  line("unplugged: the program closed the pad", pads.count() == realPads, "pads open: " + std::to_string(pads.count()));
+  line("unplugged: nothing stays pressed", lastEd == 0 && !lastInput.right, "RAM $ED = " + std::to_string(lastEd));
+  run(120);
+  line("still running 2 seconds later", lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+
+  // Plug in again
+  line("plug in again", plugIn(), SDL_GetError());
+  run(30);
+  line("the program opened it again", pads.count() == realPads + 1, "pads open: " + std::to_string(pads.count()));
+  newGame();
+  axis(SDL_GAMEPAD_AXIS_LEFTX, -32767);
+  run(8);
+  line("works after plugging in again: left", lastEd == 4, "RAM $ED = " + std::to_string(lastEd));
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 0);
+  run(4);
+
+  // While the window is not in front the pad is ignored
+  newGame();
+  axis(SDL_GAMEPAD_AXIS_LEFTY, -32767);
+  pads.setActive(false);
+  run(6);
+  line("window not in front: pad ignored", lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+  pads.setActive(true);
+  run(6);
+  line("window in front again: pad counts at once", lastEd == 1, "RAM $ED = " + std::to_string(lastEd));
+  axis(SDL_GAMEPAD_AXIS_LEFTY, 0);
+
+  if(joystick) { SDL_CloseJoystick(joystick); joystick = nullptr; SDL_DetachVirtualJoystick(virtualId); }
+  report << "console_switch_values_seen=";
+  for(int v : switchesSeen) report << hex(v) << ' ';
+  report << "\nresult=" << (ok ? "OK" : "FAIL") << '\n';
   return ok;
 }
 
@@ -730,7 +1007,7 @@ bool fullscreenCheck(SDL_Window* window, SDL_Renderer* renderer, const Options& 
   View view;
   view.mode = o.mode;
   view.shape = o.pixelShape;
-  const bool pictureOk = layoutCheck(renderer, o.fullscreenCheckFile + ".fullscreen.png", romPath, view);
+  const bool pictureOk = layoutCheck(renderer, o.fullscreenCheckFile + ".fullscreen.png", romPath, view, o.resetAt);
   line("picture in fullscreen (D6 check, details in .fullscreen.png.txt)", pictureOk, "");
 
   const SDL_Event second = altEnter();
@@ -810,6 +1087,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   std::atomic<bool> stop{false};
   std::atomic<std::uint32_t> inputBits{0};  // what the keyboard adds up to (controls::Input::pack), set here, read by the game thread
   controls::Keyboard keyboard;
+  Pads pads;
+  if(!pads.start()) std::fprintf(stderr, "Gamepads could not start; the keyboard still works.\n");
   bool helpOn = false;
   std::mutex lock;  // guards the shared picture below
   std::vector<std::uint32_t> sharedPixels;
@@ -913,9 +1192,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode == SDL_SCANCODE_F1) helpOn = !helpOn;
       if(e.type == SDL_EVENT_KEY_DOWN) keyboard.keyDown(e.key.scancode, e.key.repeat);
       if(e.type == SDL_EVENT_KEY_UP) keyboard.keyUp(e.key.scancode);
-      if(e.type == SDL_EVENT_WINDOW_FOCUS_LOST) keyboard.releaseAll();  // a key let go while another window had the focus must not stay held
-      inputBits = keyboard.input().pack();
+      if(e.type == SDL_EVENT_WINDOW_FOCUS_LOST) { keyboard.releaseAll(); pads.setActive(false); }  // a key let go while another window had the focus must not stay held
+      if(e.type == SDL_EVENT_WINDOW_FOCUS_GAINED) pads.setActive(true);
+      pads.handleEvent(e);
     }
+    const controls::Input input = controls::merge(keyboard.input(), pads.poll());  // keyboard and pads together
+    inputBits = input.pack();
     long long frameNow = 0;
     {
       std::lock_guard<std::mutex> guard(lock);
@@ -931,7 +1213,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       shownCount = 0;
     }
     if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
-    if(helpOn) drawHelp(renderer, keyboard.input());
+    if(helpOn) drawHelp(renderer, input, pads.names());
     const Uint64 beforePresent = SDL_GetTicksNS();
     SDL_RenderPresent(renderer);
     ++presents;
@@ -1106,6 +1388,13 @@ int main(int argc, char* argv[])
   if(!options.findRomFile.empty()) return findRomReport(options);
   if(!options.headlessPng.empty()) return headlessRun(options);
   if(!options.keysReplayScript.empty()) return keysReplay(options);
+  if(!options.padCheckFile.empty()) {
+    if(!SDL_Init(SDL_INIT_GAMEPAD)) { showError("SDL could not start."); return 1; }
+    SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+    const bool ok = padCheck(options);
+    SDL_Quit();
+    return ok ? 0 : 2;
+  }
   if(options.audioCheckSeconds > 0) {
     if(!SDL_Init(SDL_INIT_AUDIO)) { showError("SDL could not start."); return 1; }
     const bool ok = audioCheck(options);
@@ -1157,7 +1446,7 @@ int main(int argc, char* argv[])
       view.mode = options.mode;
       view.shape = options.pixelShape;
       if(!options.layoutCheckPng.empty()) {
-        exitCode = layoutCheck(renderer, options.layoutCheckPng, romPath, view) ? 0 : 2;
+        exitCode = layoutCheck(renderer, options.layoutCheckPng, romPath, view, options.resetAt) ? 0 : 2;
       } else if(!options.helpCheckPng.empty()) {
         exitCode = helpCheck(renderer, options.helpCheckPng, romPath) ? 0 : 2;
       } else if(!options.fullscreenCheckFile.empty()) {

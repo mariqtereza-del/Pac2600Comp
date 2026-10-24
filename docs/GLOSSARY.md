@@ -157,3 +157,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Frame pacing | Starting each game frame at the right moment so the game runs at the right speed and looks smooth. |
 | Scancode | A number for a key's position on the keyboard (not the letter on it), so WASD works the same on every keyboard layout. |
 | Replay | Feeding recorded inputs back into the game to check that it behaves exactly as it did when they were recorded. |
+| Dead zone | The small area around the middle of a stick where a push is ignored, because a stick that is let go never rests exactly in the centre. |
+| Virtual gamepad | A pretend pad made by the program itself for testing; the rest of the program treats it like a real one. |

@@ -160,12 +160,85 @@ int main()
   {
     Input now;
     now.leftDifficultyA = true;
-    const auto lines = controls::helpLines(now);
+    const auto lines = controls::helpLines(now, "Test Pad");
     std::string all;
     for(const auto& l : lines) all += l.keys + " | " + l.meaning + "\n";
-    for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "1 / 2 / 3 / 4", "[now A]", "[now B]"})
+    for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "1 / 2 / 3 / 4", "[now A]", "[now B]", "Controller", "Test Pad", "D-pad / left stick", "Options", "Share", "Cross / Square"})
       expect(all.find(needle) != std::string::npos, std::string("the F1 list contains: ") + needle);
-    expect(lines.size() == controls::bindings().size() + 4, "the F1 list has one line per binding plus four window keys");
+    expect(lines.size() == controls::bindings().size() + 9, "the F1 list has one line per binding, five pad lines and four window keys");
+  }
+
+  // ---- Gamepad (Stage D11) ----
+  using controls::PadReading;
+  using controls::PadState;
+  using controls::StickDirection;
+  {
+    // Buttons: Cross and Square fire, Options resets, Share selects; the D-pad gives the four directions
+    StickDirection st;
+    PadReading r;
+    expect(!controls::padState(r, st).up && !controls::padState(r, st).fire && !controls::padState(r, st).reset, "pad at rest: nothing pressed");
+    r.cross = true;  expect(controls::padState(r, st).fire, "Cross = fire");  r.cross = false;
+    r.square = true; expect(controls::padState(r, st).fire, "Square = fire"); r.square = false;
+    r.options = true; expect(controls::padState(r, st).reset && !controls::padState(r, st).select, "Options = Reset only"); r.options = false;
+    r.share = true; expect(controls::padState(r, st).select && !controls::padState(r, st).reset, "Share = Select only"); r.share = false;
+    r.dpadUp = true;    expect(controls::padState(r, st).up && !controls::padState(r, st).down, "D-pad up");       r.dpadUp = false;
+    r.dpadDown = true;  expect(controls::padState(r, st).down && !controls::padState(r, st).up, "D-pad down");     r.dpadDown = false;
+    r.dpadLeft = true;  expect(controls::padState(r, st).left && !controls::padState(r, st).right, "D-pad left"); r.dpadLeft = false;
+    r.dpadRight = true; expect(controls::padState(r, st).right && !controls::padState(r, st).left, "D-pad right"); r.dpadRight = false;
+  }
+  {
+    // The stick: four directions, dead zone, one direction at a time, no flicker at 45 degrees
+    auto dir = [](StickDirection& st, int x, int y) {
+      PadReading r;
+      r.stickX = x; r.stickY = y;
+      const PadState p = controls::padState(r, st);
+      return std::string(p.up ? "U" : "") + (p.down ? "D" : "") + (p.left ? "L" : "") + (p.right ? "R" : "");
+    };
+    StickDirection st;
+    expect(dir(st, 0, 0).empty(), "stick in the middle: nothing");
+    expect(dir(st, 32767, 0) == "R" && dir(st, 0, 0).empty(), "stick right (full), then middle");
+    expect(dir(st, -32768, 0) == "L" && dir(st, 0, 0).empty(), "stick left (full), then middle");
+    expect(dir(st, 0, -32768) == "U" && dir(st, 0, 0).empty(), "stick up (y negative), then middle");
+    expect(dir(st, 0, 32767) == "D" && dir(st, 0, 0).empty(), "stick down (y positive), then middle");
+    expect(dir(st, 8000, 0).empty() && dir(st, 0, -8000).empty(), "25 % push: inside the dead zone");
+    expect(dir(st, 16000, 0).empty(), "49 % push: not yet");
+    expect(dir(st, 16500, 0) == "R", "50.4 % push: counts");
+    expect(dir(st, 12000, 0) == "R", "pushed back to 37 %: still counts (stays until 30 %)");
+    expect(dir(st, 9000, 0).empty(), "pushed back to 27 %: let go");
+    dir(st, 0, 0);
+    expect(dir(st, 30000, -18000) == "R", "crooked push (right 92 %, up 55 %): only right");
+    expect(dir(st, 18000, -30000) == "U", "crooked push (right 55 %, up 92 %): only up");
+    dir(st, 0, 0);
+    expect(dir(st, 25000, 25000) == "R", "exact 45 degrees: one direction (right wins a tie)");
+    expect(dir(st, 25000, 26000) == "R", "45 degrees, slightly more down: stays right (stickiness)");
+    expect(dir(st, 25000, 32000) == "D", "clearly more down: now down");
+    expect(dir(st, 25000, 26000) == "D", "and back to nearly 45 degrees: stays down");
+    dir(st, 0, 0);
+    expect(dir(st, -20000, -20000) == "L", "up-left diagonal: left (tie goes to the horizontal axis)");
+    // A direction that reverses is not kept
+    dir(st, 0, 0);
+    dir(st, 30000, 0);
+    expect(dir(st, -30000, 0) == "L", "straight from full right to full left: left, no sticking");
+  }
+  {
+    // Two pads at once, and pad plus keyboard
+    PadState a, b;
+    a.up = true; b.fire = true;
+    const PadState c = controls::combine(a, b);
+    expect(c.up && c.fire && !c.down, "two pads: either counts");
+    Keyboard k;
+    k.keyDown(SDL_SCANCODE_LEFT, false);
+    PadState pad;
+    pad.right = true; pad.reset = true;
+    Input m = controls::merge(k.input(), pad);
+    expect(!m.left && !m.right && m.reset, "keyboard left + pad right cancel; the pad's Reset passes");
+    pad.right = false; pad.up = true;
+    m = controls::merge(k.input(), pad);
+    expect(m.left && m.up && !m.right && !m.down, "keyboard left + pad up: both directions");
+    k.keyDown(SDL_SCANCODE_F5, false);
+    m = controls::merge(k.input(), PadState{});
+    expect(m.leftDifficultyA, "the difficulty switches still come from the keyboard");
+    expect(controls::merge(Keyboard{}.input(), PadState{}).pack() == 0, "nothing at all: nothing");
   }
 
   // primaryKey is the first key of the binding

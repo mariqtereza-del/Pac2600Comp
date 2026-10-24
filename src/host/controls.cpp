@@ -1,6 +1,7 @@
 #include "controls.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 
 namespace controls {
 
@@ -84,7 +85,7 @@ Input Keyboard::input() const
   return i;
 }
 
-std::vector<HelpLine> helpLines(const Input& current)
+std::vector<HelpLine> helpLines(const Input& current, const std::string& controller)
 {
   std::vector<HelpLine> lines;
   for(const Binding& b : bindings()) {
@@ -93,11 +94,80 @@ std::vector<HelpLine> helpLines(const Input& current)
     if(b.action == Action::RightDifficulty) meaning += std::string("  [now ") + (current.rightDifficultyA ? "A" : "B") + "]";
     lines.push_back({b.keysText, meaning});
   }
+  lines.push_back({"Controller", controller});
+  lines.push_back({"  D-pad / left stick", "Joystick"});
+  lines.push_back({"  Cross / Square", "Fire button"});
+  lines.push_back({"  Options", "Game Reset: start a new game"});
+  lines.push_back({"  Share", "Game Select: next game variation"});
   lines.push_back({"1 / 2 / 3 / 4", "Picture: Sharp / Fill / TV frame / Game area"});
   lines.push_back({"Alt + Enter", "Fullscreen on / off"});
   lines.push_back({"F1", "Show / hide this list"});
   lines.push_back({"Esc", "Quit"});
   return lines;
+}
+
+// ---- Gamepad (Stage D11) ----
+
+StickDirection::Dir StickDirection::update(int x, int y)
+{
+  constexpr int kPress = 16384;    // 50 % of the way
+  constexpr int kRelease = 9830;   // 30 %
+  const int ax = std::abs(x), ay = std::abs(y);
+  auto strength = [&](Dir d) { return (d == Dir::Left || d == Dir::Right) ? ax : ay; };
+  auto otherStrength = [&](Dir d) { return (d == Dir::Left || d == Dir::Right) ? ay : ax; };
+  auto pointing = [&](Dir d) {
+    switch(d) {
+      case Dir::Left: return x < 0;
+      case Dir::Right: return x > 0;
+      case Dir::Up: return y < 0;
+      case Dir::Down: return y > 0;
+      default: return false;
+    }
+  };
+
+  if(previous_ != Dir::None && pointing(previous_) && strength(previous_) >= kRelease
+     && otherStrength(previous_) * 4 <= strength(previous_) * 5)
+    return previous_;  // still held, and the other axis is not clearly stronger
+
+  if(std::max(ax, ay) < kPress) return previous_ = Dir::None;
+  if(ax >= ay) return previous_ = (x < 0 ? Dir::Left : Dir::Right);
+  return previous_ = (y < 0 ? Dir::Up : Dir::Down);
+}
+
+PadState padState(const PadReading& r, StickDirection& stick)
+{
+  const StickDirection::Dir d = stick.update(r.stickX, r.stickY);
+  PadState p;
+  p.up = r.dpadUp || d == StickDirection::Dir::Up;
+  p.down = r.dpadDown || d == StickDirection::Dir::Down;
+  p.left = r.dpadLeft || d == StickDirection::Dir::Left;
+  p.right = r.dpadRight || d == StickDirection::Dir::Right;
+  p.fire = r.cross || r.square;
+  p.select = r.share;
+  p.reset = r.options;
+  return p;
+}
+
+PadState combine(const PadState& a, const PadState& b)
+{
+  PadState p;
+  p.up = a.up || b.up; p.down = a.down || b.down; p.left = a.left || b.left; p.right = a.right || b.right;
+  p.fire = a.fire || b.fire; p.select = a.select || b.select; p.reset = a.reset || b.reset;
+  return p;
+}
+
+Input merge(const Input& keyboard, const PadState& pad)
+{
+  Input i = keyboard;
+  const bool up = keyboard.up || pad.up, down = keyboard.down || pad.down, left = keyboard.left || pad.left, right = keyboard.right || pad.right;
+  i.up = up && !down;  // a joystick cannot point both ways
+  i.down = down && !up;
+  i.left = left && !right;
+  i.right = right && !left;
+  i.fire = keyboard.fire || pad.fire;
+  i.select = keyboard.select || pad.select;
+  i.reset = keyboard.reset || pad.reset;
+  return i;  // the difficulty switches come from the keyboard only
 }
 
 }  // namespace controls

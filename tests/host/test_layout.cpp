@@ -60,10 +60,10 @@ int main()
       expect(tv.w <= sharp.w && tv.h <= sharp.h, std::string(win.name) + " / " + sh.name + ": TV frame is not bigger than Sharp");
     }
 
-  // Game area: the same pixel shape, but only the rows 11-199 are shown (the always-black rows are left out).
+  // Game area: the same pixel shape, but only the rows 11-203 are shown (the always-black rows are left out).
   {
     constexpr int shownRows = layout::kGameBottom - layout::kGameTop;
-    expect(layout::kGameTop >= 0 && layout::kGameBottom <= ph && shownRows == 189, "game area rows 11..199 (189 rows) lie inside the 228-row picture");
+    expect(layout::kGameTop >= 0 && layout::kGameBottom <= ph && shownRows == 193, "game area rows 11..203 (193 rows) lie inside the 228-row picture");
     for(const auto& win : windows) {
       const auto r = layout::pictureRect(win.w, win.h, pw, shownRows, stella, layout::Mode::GameArea);
       const double got = (static_cast<double>(r.w) / pw) / (static_cast<double>(r.h) / shownRows);

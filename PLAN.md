@@ -1243,7 +1243,26 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D10-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\CONTROLS.md` (the port's keys), `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D10: Keyboard`.
     - **Next stage:** D11 — PS4 controller.
-11. **[Not started] D11 — PS4 controller.** D-pad and left stick for the joystick; Options = Reset, Share = Select. Verify with your pad, including unplugging and replugging mid-game.
+11. **[Done] D11 — PS4 controller.** *(expanded 2026-10-24)*
+    - **Objective:** a PS4 pad (and any pad SDL knows as a gamepad) plays the game: the D-pad and the left stick steer, Cross or Square is the fire button, **Options = Game Reset, Share = Game Select**. Plugging in, unplugging and plugging in again during a game is safe: nothing stays pressed, nothing crashes, the pad works again when it is back. The keyboard keeps working at the same time.
+    - **Why it matters:** this is the way the owner will most likely play; the C6 test showed that Stella itself needs the pad's stick and a button, and the port should do at least that, on purpose.
+    - **Prerequisites:** D10 Done (commit `2ceb865`); the owner's PS4 pad, connected as "Wireless Controller" with DS4Windows **not** running (as in C6).
+    - **What Claude Code will do:**
+      1. `src\host\controls.*` (no window code): pure rules for pad input. Stick: a dead zone (a push must pass 50 % to count and stays counted until it falls under 30 %), one direction at a time (the stronger axis wins, so a slightly crooked push is not a diagonal), with a little stickiness so the direction does not flicker at 45 degrees; D-pad; buttons; the merge with the keyboard (opposite directions cancel). Tested in `tests\host\test_controls.cpp`.
+      2. `main.cpp`: open pads when they appear and close them when they go (SDL's gamepad events), read the state of every open pad each time round the window loop, ignore the pads while the window does not have the focus, add the pad lines and "Controller: <name> / none" to the F1 list.
+      3. `--pad-check <report> <rom>`: attaches a **virtual** gamepad (SDL's own test device, which goes through the same gamepad code as a real one), runs the real game, and checks each button and the stick against the game's own memory and the console switches, then unplugs the pad while the stick is held, checks that nothing stays pressed, plugs it in again and checks it works. Also lists the real pads found.
+    - **What I must do:** connect the PS4 pad (DS4Windows not running), start the program, play with the D-pad and the stick, press Options and Share, and tell me what you see; then pull the cable (or turn the pad off) while moving, and plug it back in. Tell me which buttons feel wrong.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** the PS4 pad; your report.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** Pac-Man follows the stick and D-pad; Options starts a new game; Share steps through the variations; unplugging does not crash and does not leave Pac-Man running into a wall forever; replugging works.
+    - **Verification:** build 0 errors/0 warnings; `test_controls` passes with the new pad checks; `--pad-check` says OK for every button, the stick (all four directions), unplug and replug; the F1 list screenshot looked at; earlier checks still pass (key replay: 0 differences, audio, fingerprints, window state, layout, fullscreen); your play test with the real pad.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the virtual pad proves our code and SDL's gamepad layer, not the pad's own radio or cable; a PS4 pad used through Steam or DS4Windows appears as an Xbox pad (the buttons are then in Xbox positions: Menu/View instead of Options/Share, and the mapping is still sensible); Bluetooth pads sleep after a while; the fire button has no effect during play (C6), so it only matters on the title screen.
+    - **Recovery:** edits to `controls.*`, `main.cpp`, `CMakeLists.txt` and the test only; undo by returning to `2ceb865` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D11-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\CONTROLS.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D11: PS4 controller`.
+    - **Next stage:** D12 — Console switches.
 12. **[Not started] D12 — Console switches.** The difficulty switches and Color/B&W switch available as settings, because the game may read them.
 13. **[Not started] D13 — Input recording and replay.** The host can record every frame's input to a small `.inputs` file and play it back. Replaying must produce identical frames, proved by comparing picture fingerprints of every frame across two runs. This is the foundation of all later testing.
 14. **[Not started] D14 — Side-by-side check.** Same input recording into our build and Stella; frames compared at 10 moments. Differences go to `DISCREPANCIES.md`.

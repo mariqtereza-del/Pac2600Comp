@@ -39,7 +39,7 @@ int main()
     }
   expect(!duplicate, "no key is used for two things");
   expect(!reserved, "no game key is one the window uses (1-4, F1, Esc, Enter, Alt)");
-  expect(controls::bindings().size() == 9, "nine actions are bound");
+  expect(controls::bindings().size() == 10, "ten actions are bound");
 
   // Nothing pressed
   {
@@ -121,6 +121,27 @@ int main()
     expect(!k.input().leftDifficultyA && k.input().rightDifficultyA, "F5 again: left back to B, right still A");
   }
 
+  // The Colour / B&W switch (Stage D12): a real switch on F4, Colour at the start
+  {
+    Keyboard k;
+    expect(!k.input().blackWhite, "start: Colour");
+    k.keyDown(SDL_SCANCODE_F4, false);
+    expect(k.input().blackWhite && k.input().pack() == 512, "F4 once: B&W, nothing else changes");
+    k.keyDown(SDL_SCANCODE_F4, true);
+    k.keyUp(SDL_SCANCODE_F4);
+    expect(k.input().blackWhite, "F4 held and released: the switch stays at B&W");
+    k.releaseAll();
+    expect(k.input().blackWhite, "window loses focus: the switch stays where it is");
+    k.keyDown(SDL_SCANCODE_F4, false);
+    k.keyUp(SDL_SCANCODE_F4);
+    expect(!k.input().blackWhite, "F4 again: Colour");
+    k.setSwitches(true, false, true);
+    expect(k.input().leftDifficultyA && !k.input().rightDifficultyA && k.input().blackWhite, "remembered switches are restored (A, B, B&W)");
+    k.keyDown(SDL_SCANCODE_F5, false);
+    expect(!k.input().leftDifficultyA && k.input().blackWhite, "after restoring, the keys flip from there");
+    expect(controls::merge(k.input(), controls::PadState{}).blackWhite, "a pad does not change the Colour / B&W switch");
+  }
+
   // Key repeat of a held direction does nothing odd
   {
     Keyboard k;
@@ -152,8 +173,8 @@ int main()
   // pack / unpack round trip over every state
   {
     bool ok = true;
-    for(std::uint32_t bits = 0; bits < 512; ++bits) ok = ok && Input::unpack(bits).pack() == bits;
-    expect(ok, "pack and unpack agree for all 512 states");
+    for(std::uint32_t bits = 0; bits < 1024; ++bits) ok = ok && Input::unpack(bits).pack() == bits;
+    expect(ok, "pack and unpack agree for all 1024 states");
   }
 
   // The F1 list names every key and shows the switches

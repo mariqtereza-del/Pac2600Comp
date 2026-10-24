@@ -8,14 +8,14 @@ namespace controls {
 std::uint32_t Input::pack() const
 {
   return (up ? 1u : 0) | (down ? 2u : 0) | (left ? 4u : 0) | (right ? 8u : 0) | (fire ? 16u : 0) | (select ? 32u : 0) | (reset ? 64u : 0)
-         | (leftDifficultyA ? 128u : 0) | (rightDifficultyA ? 256u : 0);
+         | (leftDifficultyA ? 128u : 0) | (rightDifficultyA ? 256u : 0) | (blackWhite ? 512u : 0);
 }
 
 Input Input::unpack(std::uint32_t bits)
 {
   Input i;
   i.up = bits & 1u; i.down = bits & 2u; i.left = bits & 4u; i.right = bits & 8u; i.fire = bits & 16u;
-  i.select = bits & 32u; i.reset = bits & 64u; i.leftDifficultyA = bits & 128u; i.rightDifficultyA = bits & 256u;
+  i.select = bits & 32u; i.reset = bits & 64u; i.leftDifficultyA = bits & 128u; i.rightDifficultyA = bits & 256u; i.blackWhite = bits & 512u;
   return i;
 }
 
@@ -31,6 +31,7 @@ const std::vector<Binding>& bindings()
       {Action::Reset, {SDL_SCANCODE_F3}, "F3 (hold)", "Game Reset: start a new game"},
       {Action::LeftDifficulty, {SDL_SCANCODE_F5}, "F5", "Left difficulty switch A / B"},
       {Action::RightDifficulty, {SDL_SCANCODE_F6}, "F6", "Right difficulty switch A / B"},
+      {Action::TvType, {SDL_SCANCODE_F4}, "F4", "TV type switch Colour / B&W"},
   };
   return table;
 }
@@ -59,6 +60,7 @@ void Keyboard::keyDown(SDL_Scancode key, bool repeat)
     if(std::find(b.keys.begin(), b.keys.end(), key) == b.keys.end()) continue;
     if(b.action == Action::LeftDifficulty) leftA_ = !leftA_;
     if(b.action == Action::RightDifficulty) rightA_ = !rightA_;
+    if(b.action == Action::TvType) bw_ = !bw_;
   }
 }
 
@@ -68,6 +70,13 @@ void Keyboard::keyUp(SDL_Scancode key)
 }
 
 void Keyboard::releaseAll() { down_.clear(); }
+
+void Keyboard::setSwitches(bool leftA, bool rightA, bool blackWhite)
+{
+  leftA_ = leftA;
+  rightA_ = rightA;
+  bw_ = blackWhite;
+}
 
 Input Keyboard::input() const
 {
@@ -82,6 +91,7 @@ Input Keyboard::input() const
   i.reset = held(Action::Reset);
   i.leftDifficultyA = leftA_;
   i.rightDifficultyA = rightA_;
+  i.blackWhite = bw_;
   return i;
 }
 
@@ -92,6 +102,7 @@ std::vector<HelpLine> helpLines(const Input& current, const std::string& control
     std::string meaning = b.meaning;
     if(b.action == Action::LeftDifficulty) meaning += std::string("  [now ") + (current.leftDifficultyA ? "A" : "B") + "]";
     if(b.action == Action::RightDifficulty) meaning += std::string("  [now ") + (current.rightDifficultyA ? "A" : "B") + "]";
+    if(b.action == Action::TvType) meaning += std::string("  [now ") + (current.blackWhite ? "B&W" : "Colour") + "]";
     lines.push_back({b.keysText, meaning});
   }
   lines.push_back({"Controller", controller});
@@ -167,7 +178,7 @@ Input merge(const Input& keyboard, const PadState& pad)
   i.fire = keyboard.fire || pad.fire;
   i.select = keyboard.select || pad.select;
   i.reset = keyboard.reset || pad.reset;
-  return i;  // the difficulty switches come from the keyboard only
+  return i;  // the three real switches (difficulty, TV type) come from the keyboard only
 }
 
 }  // namespace controls

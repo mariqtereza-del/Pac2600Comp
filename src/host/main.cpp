@@ -55,6 +55,7 @@
 #include "emulator.hpp"
 #include "layout.hpp"
 #include "rom_finder.hpp"
+#include "settings.hpp"
 #include "windowstate.hpp"
 
 namespace {
@@ -343,6 +344,7 @@ void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset)
   emulator.setConsoleSelect(in.select);
   emulator.setConsoleReset(in.reset || extraReset);
   emulator.setDifficulty(in.leftDifficultyA, in.rightDifficultyA);
+  emulator.setBlackWhite(in.blackWhite);
 }
 
 // The F1 list, drawn over the picture with SDL's built-in text.
@@ -381,7 +383,7 @@ void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std:
 
 // --keys-replay: runs the game with no window and presses the keys that a Phase C input script (lines "from to NAME",
 // frames counted from 0, both ends included) asks for, in the real keyboard code, so the recorded Phase C runs can be
-// compared frame by frame with what the keys do. Colour/B&W (D12) is not a key yet and is reported as unsupported.
+// compared frame by frame with what the keys do. Colour/B&W is the F4 switch (D12).
 int keysReplay(const Options& o)
 {
   std::ofstream report(o.keysReplayCsv + ".txt");
@@ -411,7 +413,6 @@ int keysReplay(const Options& o)
       {"UP", controls::Action::Up}, {"DOWN", controls::Action::Down}, {"LEFT", controls::Action::Left}, {"RIGHT", controls::Action::Right},
       {"FIRE", controls::Action::Fire}, {"SELECT", controls::Action::Select}, {"RESET", controls::Action::Reset}};
   controls::Keyboard keyboard;
-  std::set<std::string> unsupported;
   std::ofstream csv(o.keysReplayCsv);
   csv << "frame,hash\n";
   char hash[17];
@@ -433,8 +434,9 @@ int keysReplay(const Options& o)
     if(active.count("LDIFF_B")) flip(false, keyboard.input().leftDifficultyA, controls::Action::LeftDifficulty);
     if(active.count("RDIFF_A")) flip(true, keyboard.input().rightDifficultyA, controls::Action::RightDifficulty);
     if(active.count("RDIFF_B")) flip(false, keyboard.input().rightDifficultyA, controls::Action::RightDifficulty);
-    for(const char* name : {"COLOR", "BW"})
-      if(active.count(name)) unsupported.insert(name);
+    // The Colour / B&W switch is a real switch too (F4 flips it).
+    if(active.count("COLOR")) flip(false, keyboard.input().blackWhite, controls::Action::TvType);
+    if(active.count("BW")) flip(true, keyboard.input().blackWhite, controls::Action::TvType);
 
     applyInput(emulator, keyboard.input(), false);
     emulator.runFrame();
@@ -443,9 +445,7 @@ int keysReplay(const Options& o)
   }
   char swchb[8];
   std::snprintf(swchb, sizeof swchb, "%02x", emulator.consoleSwitches());
-  report << "script=" << o.keysReplayScript << "\nframes=" << frames << "\nlast_frame_fingerprint=" << hash << "\nconsole_switches_at_end=" << swchb << "\nunsupported_events=";
-  for(const auto& u : unsupported) report << u << ' ';
-  report << "\nresult=" << (unsupported.empty() ? "OK" : "PARTIAL (unsupported events ignored)") << '\n';
+  report << "script=" << o.keysReplayScript << "\nframes=" << frames << "\nlast_frame_fingerprint=" << hash << "\nconsole_switches_at_end=" << swchb << "\nresult=OK\n";
   return 0;
 }
 
@@ -1087,6 +1087,10 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   std::atomic<bool> stop{false};
   std::atomic<std::uint32_t> inputBits{0};  // what the keyboard adds up to (controls::Input::pack), set here, read by the game thread
   controls::Keyboard keyboard;
+  // The three real switches start where they were left (settings.ini; the defaults are B, B and Colour).
+  keyboard.setSwitches(settings::get(options.settingsFile, "left_difficulty") == "a", settings::get(options.settingsFile, "right_difficulty") == "a",
+                       settings::get(options.settingsFile, "tv_type") == "bw");
+  controls::Input savedSwitches = keyboard.input();
   Pads pads;
   if(!pads.start()) std::fprintf(stderr, "Gamepads could not start; the keyboard still works.\n");
   bool helpOn = false;
@@ -1161,7 +1165,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
           {6.0, SDL_SCANCODE_UP, true}, {6.6, SDL_SCANCODE_UP, false},          // up
           {7.0, SDL_SCANCODE_S, true}, {7.6, SDL_SCANCODE_S, false},            // down, with the letter key
           {8.0, SDL_SCANCODE_F5, true}, {8.1, SDL_SCANCODE_F5, false},          // left difficulty to A
-          {8.5, SDL_SCANCODE_F6, true}, {8.6, SDL_SCANCODE_F6, false}};         // right difficulty to A
+          {8.5, SDL_SCANCODE_F6, true}, {8.6, SDL_SCANCODE_F6, false},          // right difficulty to A
+          {9.0, SDL_SCANCODE_F4, true}, {9.1, SDL_SCANCODE_F4, false}};         // Colour to B&W
       const Uint64 t0 = SDL_GetTicksNS();
       for(const auto& step : plan) {
         while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) SDL_Delay(5);
@@ -1198,6 +1203,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     }
     const controls::Input input = controls::merge(keyboard.input(), pads.poll());  // keyboard and pads together
     inputBits = input.pack();
+    if(input.leftDifficultyA != savedSwitches.leftDifficultyA || input.rightDifficultyA != savedSwitches.rightDifficultyA || input.blackWhite != savedSwitches.blackWhite) {
+      settings::set(options.settingsFile, "left_difficulty", input.leftDifficultyA ? "a" : "b");
+      settings::set(options.settingsFile, "right_difficulty", input.rightDifficultyA ? "a" : "b");
+      settings::set(options.settingsFile, "tv_type", input.blackWhite ? "bw" : "colour");
+      savedSwitches = input;
+    }
     long long frameNow = 0;
     {
       std::lock_guard<std::mutex> guard(lock);

@@ -16,13 +16,14 @@ struct Input {
   bool up = false, down = false, left = false, right = false, fire = false;
   bool select = false, reset = false;
   bool leftDifficultyA = false, rightDifficultyA = false;  // false = B, which is the default for this game (docs\CONTROLS.md)
+  bool blackWhite = false;                                 // the Colour / B&W switch: false = Colour (the default)
 
-  std::uint32_t pack() const;                   // all nine switches in one number, to pass between threads
+  std::uint32_t pack() const;                   // all ten switches in one number, to pass between threads
   static Input unpack(std::uint32_t bits);
   bool operator==(const Input& o) const { return pack() == o.pack(); }
 };
 
-enum class Action { Up, Down, Left, Right, Fire, Select, Reset, LeftDifficulty, RightDifficulty };
+enum class Action { Up, Down, Left, Right, Fire, Select, Reset, LeftDifficulty, RightDifficulty, TvType };
 
 // Every key that does something in the game window, for the tests and for the F1 list.
 struct Binding {
@@ -40,13 +41,14 @@ class Keyboard {
 public:
   void keyDown(SDL_Scancode key, bool repeat);  // repeat = the key is only being held down
   void keyUp(SDL_Scancode key);
-  void releaseAll();  // the window lost focus: no key may stay "held" (the difficulty switches stay where they are)
+  void releaseAll();  // the window lost focus: no key may stay "held" (the three real switches stay where they are)
+  void setSwitches(bool leftA, bool rightA, bool blackWhite);  // where the switches start (remembered from last time)
   Input input() const;
 
 private:
   bool held(Action action) const;
   std::vector<SDL_Scancode> down_;
-  bool leftA_ = false, rightA_ = false;
+  bool leftA_ = false, rightA_ = false, bw_ = false;
 };
 
 // The lines of the F1 list: key text and meaning (the keys that are not game controls are included).

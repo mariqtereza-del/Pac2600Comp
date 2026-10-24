@@ -159,3 +159,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Replay | Feeding recorded inputs back into the game to check that it behaves exactly as it did when they were recorded. |
 | Dead zone | The small area around the middle of a stick where a push is ignored, because a stick that is let go never rests exactly in the centre. |
 | Virtual gamepad | A pretend pad made by the program itself for testing; the rest of the program treats it like a real one. |
+| Latched switch | A key that flips something and leaves it there (the difficulty switches and Colour / B&W), unlike Select and Reset, which only count while the key is held. |

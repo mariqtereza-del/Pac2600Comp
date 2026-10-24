@@ -33,6 +33,7 @@ public:
   void setJoystick(bool up, bool down, bool left, bool right, bool fire);
   void setConsoleSelect(bool pressed);
   void setDifficulty(bool leftA, bool rightA);
+  void setBlackWhite(bool blackWhite);  // the Colour / B&W switch
   std::uint8_t consoleSwitches() const;  // the console switch register (SWCHB) as the game reads it
 
   void setConsoleReset(bool pressed);  // the console's Reset switch (starts a game); held until set again

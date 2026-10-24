@@ -1,6 +1,6 @@
-Current stage: D12 — Console switches (Phase D) — not started
+Current stage: D13 — Input recording and replay (Phase D) — not started
 
-Last updated: 2026-10-25, Stage D11 done (owner: the PS4 pad works without issue, including hotplugging; also fixed: mode 4 now leaves 4 black rows under the life markers). Stage D10 done (owner: the keys feel right). Stage D9 done (owner: it feels right). Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-25, Stage D12 done (owner: F4, the F1 list and the remembered switches work, no issues). Stage D11 done (owner: the PS4 pad works without issue, including hotplugging; also fixed: mode 4 now leaves 4 black rows under the life markers). Stage D10 done (owner: the keys feel right). Stage D9 done (owner: it feels right). Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -40,6 +40,7 @@ Last updated: 2026-10-25, Stage D11 done (owner: the PS4 pad works without issue
 | D9 — Frame pacing | The game runs at exactly 60.000 frames a second (Stella's rate), started from a steady timer steered by the sound card's queue (`Pacer` in `main.cpp`); the monitor is never the clock (T-D9-1, T-D9-2). 10-minute muted window run on 2560x1440 at 180 Hz: 59.9993 frames a second, 0 underruns, 0 dropped, 93.4 % of game frames shown for exactly 3 refreshes (2 or 4 for the rest, 3 of 36,000 never shown). 800 ms window freeze: 0 underruns. Earlier checks still pass (audio identical to C5, fingerprints = C3, window state, ROM finder, layout, fullscreen). Owner: it feels right; the ghost flicker is the original game (one ghost per frame), softened by phosphor blending (`docs\DISPLAY.md`). |
 | D10 — Keyboard | `src\host\controls.*`, F1 list, applied to the console each frame (T-D10-1). Keys: arrows/WASD, Space/Z fire, F2 Select, F3 Reset, F5/F6 difficulty, 1-4 picture, Alt+Enter fullscreen, Esc quit. `test_controls` 70 checks; replay of recorded Phase C inputs through the real key code: 55 experiments + 6,000 frames of random play = 344,460 frames, **0 differences** (`tools\d10_replay_compare.py`); injected keys in the real window reached the game's joystick memory and the switches; F1 list screenshot looked at. Earlier checks still pass. Owner: the keys feel right; wafer blip, power-pellet sound and ghost-eating sound heard (the last two were not in C5). Owner could not report on game variations or the difficulty switches (their effects are not yet determined, `docs\CONTROLS.md`). |
 | D11 — PS4 controller | SDL gamepad layer (`Pads` in `main.cpp`, rules in `controls.*`, T-D11-1): D-pad/left stick = joystick (50 % press, 30 % release, one direction), Cross/Square = fire, Options = Reset, Share = Select; pad read each loop so unplugging cannot stick a direction. `test_controls` 108 checks; `--pad-check` with a virtual gamepad 31 of 31 OK (all buttons, stick, dead zone, unplug and replug); earlier checks still pass (key replay 344,460 frames 0 differences, audio = C5, fingerprints = C3). Owner: the real PS4 pad works without issue, including hotplugging. Also T-D11-2: mode 4 (Game area) shows rows 11-203 so the life markers no longer touch the screen edge. |
+| D12 — Console switches | F4 = Colour / B&W (latched like F5/F6); all three switches saved in `settings.ini` and restored at start (T-D12-1). `test_controls` 117 checks; replay of all recorded Phase C inputs now incl. `switches\bw`: 350,460 frames, 0 differences; injected F4/F5/F6 in the real window gave switch values 3f 7f ff f7 and the ini lines; a second run started from them (f7). Earlier checks still pass (pad-check 31, audio = C5, fingerprints = C3). Owner: no issues. |
 
 ## Key facts so far
 
@@ -78,12 +79,14 @@ Last updated: 2026-10-25, Stage D11 done (owner: the PS4 pad works without issue
 
 ## Next stage
 
-D12 - Console switches: the difficulty switches and the Colour/B&W switch available as settings (they are already on F5/F6; this stage adds Colour/B&W and remembers them), because the game may read them.
+D13 - Input recording and replay: the program records every frame's input to a small `.inputs` file and plays it back; replaying must give identical frames, proved by picture fingerprints of every frame across two runs.
 
 ## Handoff from the last session
 
-Stage D11 done: **the PS4 pad plays the game** (D-pad or left stick, Cross/Square = fire, Options = Reset, Share = Select). You confirmed it works without issue, including unplugging and replugging. You also noticed that key 4 seemed to cut off the bottom in fullscreen: nothing was cut, but the three life markers touched the very edge of the screen, so mode 4 now leaves four black rows under them (T-D11-2). Proof: virtual-gamepad check 31 of 31, 108 control checks, 173 layout checks, fullscreen check in game-area mode OK.
+Stage D12 done: **F4 flips Colour / B&W, and the three console switches are remembered between runs.** You confirmed it works. Proof: the replay of all recorded inputs (now including B&W) matches in 350,460 frames with 0 differences.
 
-Updated: `src\host\controls.*`, `src\host\main.cpp`, `src\host\layout.hpp`, `tests\host\test_controls.cpp`, `tests\host\test_layout.cpp`, `DECISIONS.md` (T-D11-1, T-D11-2), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\CONTROLS.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d11\`. The ROM was only read; nothing installed, deleted or pushed.
+What the difficulty switches change is still not fully known (Phase E/F).
+
+Updated: `src\host\controls.*`, `src\host\emulator.*`, `src\host\main.cpp`, `tests\host\test_controls.cpp`, `tools\d10_replay_compare.py`, `DECISIONS.md` (T-D12-1), `CLAUDE.md`, `docs\CONTROLS.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d11\`. The ROM was only read; nothing installed, deleted or pushed.
 
 Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and the `d7_`-`d11_` ini files. Delete only with your OK.

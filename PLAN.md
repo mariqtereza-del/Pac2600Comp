@@ -1263,7 +1263,26 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D11-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\CONTROLS.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D11: PS4 controller`.
     - **Next stage:** D12 — Console switches.
-12. **[Not started] D12 — Console switches.** The difficulty switches and Color/B&W switch available as settings, because the game may read them.
+12. **[Done] D12 — Console switches.** *(expanded 2026-10-25)*
+    - **Objective:** the three real switches of the console (left difficulty, right difficulty, Colour / B&W) are all available on the keyboard (F5, F6, **F4**), start where they were left last time (remembered in `settings.ini`), and the F1 list says where each one is now.
+    - **Why it matters:** the game reads all three (C6: B&W makes the game itself switch to grey; the difficulty switches change the bonus item and the two-player game). Phase E/F need to flip them to find out the rules, and the owner needs to see them.
+    - **Prerequisites:** D11 Done (commit `67bf4f4`).
+    - **What Claude Code will do:**
+      1. `controls.*`: a tenth action, TV type on F4, as a latched switch like F5/F6 (Colour at the start); `Input.blackWhite`; `Keyboard::setSwitches` to restore remembered positions; the F1 line shows the position; pads never change it.
+      2. `emulator.*`: `setBlackWhite` (Stella's own Colour and Black/White events). `main.cpp`: all three switches are read from `settings.ini` at start and written whenever one of them changes; `--keys-replay` now plays COLOR and BW.
+      3. `tools\d10_replay_compare.py` no longer skips the B&W experiment.
+    - **What I must do:** start the program, press F4 and watch the picture go grey and back, press F1 to see the list; close and start again: the switches must be where you left them.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your report.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** F4 turns the picture grey (the game itself changes its colours) and back; F5/F6 as before; the three positions come back after a restart.
+    - **Verification:** build 0 errors; `test_controls` (new F4 checks); replay of all recorded Phase C inputs including `switches\bw` with 0 differences; injected F4 in the real window reaches the switch register and the ini file; a second run restores the switches; F1 list screenshot; earlier checks still pass.
+    - **Completion criteria:** all of the above plus the owner's try.
+    - **Potential problems:** B&W only changes what the game asks for; this port does not tint the picture itself. The difficulty switches' rules are still unknown (Phase E/F).
+    - **Recovery:** edits to `controls.*`, `emulator.*`, `main.cpp`, one test and one tool; undo by returning to `67bf4f4` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D12-1), `docs\CONTROLS.md`, `docs\GLOSSARY.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D12: Console switches`.
+    - **Next stage:** D13 — Input recording and replay.
 13. **[Not started] D13 — Input recording and replay.** The host can record every frame's input to a small `.inputs` file and play it back. Replaying must produce identical frames, proved by comparing picture fingerprints of every frame across two runs. This is the foundation of all later testing.
 14. **[Not started] D14 — Side-by-side check.** Same input recording into our build and Stella; frames compared at 10 moments. Differences go to `DISCREPANCIES.md`.
 15. **[Not started] D15 — Release folder.** `tools\make_release.ps1` builds `PacMan2600-0.1.0-windows.zip` (name changes after J2) with the `.exe`, needed DLLs, licences, README and *no ROM*. The script scans the zip and fails if any `.a26` or 4 KB file of unknown origin is inside.

@@ -70,6 +70,12 @@ void Emulator::setDifficulty(bool leftA, bool rightA)
   impl_->core.setInputEvent(Event::ConsoleRightDiffB, rightA ? 0 : 1);
 }
 
+void Emulator::setBlackWhite(bool blackWhite)
+{
+  impl_->core.setInputEvent(Event::ConsoleColor, blackWhite ? 0 : 1);
+  impl_->core.setInputEvent(Event::ConsoleBlackWhite, blackWhite ? 1 : 0);
+}
+
 std::uint8_t Emulator::consoleSwitches() const { return impl_->core.osystem().console().switches().read(); }
 
 void Emulator::setConsoleReset(bool pressed) { impl_->core.setInputEvent(Event::ConsoleReset, pressed ? 1 : 0); }

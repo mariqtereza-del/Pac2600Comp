@@ -7,7 +7,7 @@ which presses the keys in the real keyboard code, and compares the picture finge
 Phase C tool recorded. Prints one line per experiment and a total; exit code 0 only if every compared frame is equal.
 
 Usage: python -I tools\\d10_replay_compare.py <rom> [<scratch folder>]   (run from the project folder)
-Experiments that use Colour/B&W (Stage D12) are reported as skipped, not as passed.
+Colour/B&W experiments are included since Stage D12 (F4 switch).
 """
 import csv
 import os
@@ -54,9 +54,6 @@ def main():
             if not (os.path.isfile(script) and os.path.isfile(frames_csv)):
                 continue
             text = open(script).read()
-            if ' COLOR' in text or ' BW' in text:
-                skipped.append(group + '/' + exp)
-                continue
             want = read_hashes(frames_csv, 'hash')
             got = replay(script, os.path.join(scratch, 'd10_replay.csv'), rom, settings, len(want))
             diff = sum(1 for a, b in zip(want, got) if a != b) + abs(len(want) - len(got))

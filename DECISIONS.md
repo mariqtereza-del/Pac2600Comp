@@ -74,6 +74,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D12-1 — The Colour / B&W switch on F4; all three switches remembered (2026-10-25, Stage D12)
+
+- **Choice:** F4 flips the TV type switch (latched like F5/F6, Colour at the very first start). The three switches are saved in `settings.ini` (`left_difficulty=a|b`, `right_difficulty=a|b`, `tv_type=colour|bw`) the moment one changes and restored at start, so a game is played the way it was left. Pads cannot change them. Stella's own events are used (`ConsoleColor` / `ConsoleBlackWhite`, sent every frame like the difficulty events).
+- **The picture is not tinted by us:** B&W is what the game does when it reads the switch (C6: it uses grey colours itself).
+- **Proof:** `test_controls` 117 checks (9 new); the replay of all recorded Phase C inputs now includes `switches\bw` through the real key code: **350,460 frames, 0 differences** (6,000 more than D10); injected F4/F5/F6 in the real window: switch register values 3f, 7f, ff, f7 (B&W clears bit 3) and the ini file held `left_difficulty=a right_difficulty=a tv_type=bw`; a second run started from that file saw f7 at once (restored); `--headless` 2,500 frames: fingerprints 0 differences from C3 and audio identical to the C5 reference (with Reset at 1800 as in C3); `--pad-check` 31 OK; self-check, layout-check, fullscreen-check, F1 screenshot OK.
+- **Not proved by me:** how it looks to the owner's eyes (their try).
+- **Reversible:** Yes.
+
 ### T-D11-2 — Game area (key 4): four black rows of margin below the life markers (2026-10-25, Stage D11)
 
 - **Found by the owner:** in fullscreen, key 4 "cuts off a small part of the bottom".

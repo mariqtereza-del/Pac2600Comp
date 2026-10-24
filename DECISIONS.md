@@ -74,6 +74,17 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D4-1 — Emulator wrapper, headless mode, and how "same as the reference" is proved (2026-10-24, Stage D4)
+
+- **Choice:**
+  - `src\host\emulator.*` wraps `StellaLIBRETRO` behind a pointer-to-implementation class, so no Stella header reaches any other host file (T-D1-1). `stella_core` is linked into the host through it. It defines `libretro_read_rom`, which Stella's file layer calls to get the ROM bytes (same as the Phase C tools).
+  - The wrapper gives the picture two ways: palette **indexes** (`tia.frameBuffer()`, 160 x 228), which are exact, and **colours** (the core's own display buffer, as Stella shows it, with its palette and phosphor settings). Proofs use the indexes; the PNG uses the colours.
+  - `pacman2600 --headless <png> [rom] [--frames N] [--save-frame N] [--raw f] [--fingerprints csv]` runs with no window or dialog (defaults 600 and 300) and writes the PNG and `<png>.txt`. Exit codes: 0 done, 4 ROM problem, 5 no ROM, 6 other failure. The PNG is written with SDL3's own `SDL_SavePNG`: no new library.
+  - The picture fingerprint is the same FNV-1a over the indexed picture that the Phase C tools record, so the host's frames can be compared directly with `reference\c3\dump1\frames.csv`.
+- **Proof of equivalence:** all 600 per-frame fingerprints equal C3's (0 differences); a run to frame 1500 equals C7's `01_title` raw picture byte for byte; two runs are identical. The host does not send the "Reset released" input every frame as the C3 probe did; the fingerprints show it makes no difference.
+- **Not decided here:** how colours, phosphor blending and scaling are presented (D5-D7); the colour PNG is for viewing.
+- **Reversible:** Yes.
+
 ### T-D3-1 — ROM finding: own SHA-1, search order, what is remembered, what "Use anyway" means (2026-10-24, Stage D3)
 
 - **Choice:**

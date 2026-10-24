@@ -1081,7 +1081,31 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D3-1), `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D3: Finding your ROM`.
     - **Next stage:** D4 — Emulator running blind.
-4. **[Not started] D4 — Emulator running blind.** The Stella core runs the ROM without a window for 600 frames and saves frame 300 as a PNG. Compared against C7's matching snapshot.
+4. **[Done] D4 — Emulator running blind.** *(expanded and done 2026-10-24)*
+    - **Objective:** the host runs the checked ROM in Stella's core with no window for 600 frames and saves frame 300 as a PNG, and that picture is proved identical to the reference.
+    - **Why it matters:** it is the first time our own program runs the original game. Every later stage shows, hears or controls what this step produces, and the proof against Phase C's reference starts here.
+    - **Prerequisites:** D3 Done (commit `666b60d`); Gate C reference data in `reference\` (C3 fingerprints, C7 pictures).
+    - **What Claude Code will do (T-D4-1):**
+      1. Add `src\host\emulator.*`: the only host file that includes Stella headers (ARCHITECTURE.md, T-D1-1). It loads the ROM bytes, runs one frame at a time, and returns the picture as palette indexes (160 x 228) and as colours, plus the 128 bytes of RAM. `stella_core` is linked into the host.
+      2. Add `pacman2600 --headless <out_png> [rom_file] [--frames N] [--save-frame N] [--raw <file>] [--settings <ini>] [--roms-dir <dir>]` (defaults 600 and 300). No window, no dialog. It writes the PNG, an optional raw picture, and `<out_png>.txt` (ROM SHA-1, frames, picture size, fingerprint of every frame to a `.csv` option).
+      3. Compare with the reference: frame 300's fingerprint and all 600 frames' fingerprints against C3's `reference\c3\dump1\frames.csv`; a run to frame 1500 against C7's `01_title` raw picture, byte for byte.
+      4. Look at the PNG by eye.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** None.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:** `reference\d4\frame300.png` showing the attract-mode maze, with fingerprints equal to C3's and the frame-1500 picture equal to C7's.
+    - **Verification:**
+      - Build 0 errors, 0 warnings; ROM only read (SHA-1 unchanged).
+      - All 600 per-frame fingerprints equal C3's; frame-1500 raw picture equal to C7's `frame_001500_160x228.raw`; a second run gives identical output.
+      - The program ends with exit code 0 and no window opens; no leftover process.
+      - The earlier tests (`test_rom_finder`) and window mode still work.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** Stella's headers may clash with Windows or SDL headers (kept apart: only `emulator.cpp` sees Stella); C3's probe sets the Reset input to "off" every frame (checked: the fingerprints must still match without it); the colour picture depends on Stella's palette and phosphor settings (the exact comparison uses the palette indexes).
+    - **Recovery:** new files and `build\host` only. Undo by returning to `666b60d` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D4-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D4: Emulator running blind`.
+    - **Next stage:** D5 — The game on screen.
 5. **[Not started] D5 — The game on screen.** Frames shown in the window, unscaled and small. You: confirm the title screen appears.
 6. **[Not started] D6 — Correct shape and scaling.** See the dedicated section below.
 7. **[Not started] D7 — Windowed and fullscreen.** Borderless fullscreen on your main monitor; **Alt+Enter** toggles; window size and position remembered. Verify on your 2560×1440 screen and with the window dragged to odd sizes.

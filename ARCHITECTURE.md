@@ -36,7 +36,7 @@ The program is honestly an **emulator front-end**: our code for everything aroun
 | --- | --- | --- | --- |
 | `src\host\main.cpp` | Ours | D2 (built) | Starts SDL3, makes the window, runs the main loop, closes cleanly. Also `src\host\CMakeLists.txt` and `tools\build_host.cmd` |
 | `src\host\rom_finder.*` | Ours | D3 (built) | Finds the ROM (command line, saved path, `roms` folder, file dialog) and checks size and SHA-1 `0940fea7…dbb1`. Tests: `tests\host\test_rom_finder.cpp` |
-| `src\host\emulator.*` | Ours | D4 | Thin wrapper around `StellaLIBRETRO`: load, run frame, picture, RAM, state. The only host file that includes Stella headers |
+| `src\host\emulator.*` | Ours | D4 (built) | Thin wrapper around `StellaLIBRETRO`: load, run frame, picture, RAM, state. The only host file that includes Stella headers |
 | `src\host\video.*` | Ours | D5-D7 | Palette to colours, picture to window, correct shape (12:7 to be confirmed), whole-number scaling, fullscreen |
 | `src\host\audio.*` | Ours | D8 | Core audio samples to an SDL3 audio stream with a small steady buffer |
 | `src\host\pacing.*` | Ours | D9 | Advances the game at its own measured rate, not the monitor's (60.000 Hz vs 59.923 Hz is decided in D9) |

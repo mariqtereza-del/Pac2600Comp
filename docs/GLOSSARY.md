@@ -145,3 +145,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Core (emulation core) | The part of Stella that pretends to be the 2600's chips. |
 | Self-check | A command-line switch on our program that makes it test itself and quit, so a test can run without anyone watching. |
 | SHA-1 / fingerprint | A 40-character code worked out from a file's contents. If one bit of the file changes, the code changes completely, so it proves which file it is. |
+| Headless | Running without a window or any screen output; used for automatic tests. |
+| Frame fingerprint | A short code worked out from one picture. If two runs give the same code for every frame, they drew identical pictures. |

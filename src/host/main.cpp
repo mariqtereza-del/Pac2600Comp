@@ -6,11 +6,16 @@
 //        pacman2600 --self-check <file>         open the window, write what it looks like to <file>, quit
 //        pacman2600 --find-rom <file> [rom_file] [--settings <ini>] [--roms-dir <dir>]
 //                                               the quiet part of the ROM search, no window; writes the result to <file>
+//        pacman2600 --headless <png> [rom_file] [--frames N] [--save-frame N] [--raw <file>] [--fingerprints <csv>]
+//                   [--settings <ini>] [--roms-dir <dir>]
+//                                               runs the game with no window (default 600 frames) and saves frame
+//                                               N (default 300) as a PNG, with a report in <png>.txt
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <mutex>
@@ -18,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "emulator.hpp"
 #include "rom_finder.hpp"
 
 namespace {
@@ -60,6 +66,8 @@ bool selfCheck(SDL_Window* window, SDL_Renderer* renderer, const char* path)
 
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
+  std::string headlessPng, rawFile, fingerprintFile;
+  int frames = 600, saveFrame = 300;
 };
 
 Options parseArguments(int argc, char* argv[])
@@ -70,6 +78,11 @@ Options parseArguments(int argc, char* argv[])
     auto next = [&]() -> std::string { return i + 1 < argc ? argv[++i] : std::string(); };
     if(a == "--self-check") o.selfCheckFile = next();
     else if(a == "--find-rom") o.findRomFile = next();
+    else if(a == "--headless") o.headlessPng = next();
+    else if(a == "--frames") o.frames = std::atoi(next().c_str());
+    else if(a == "--save-frame") o.saveFrame = std::atoi(next().c_str());
+    else if(a == "--raw") o.rawFile = next();
+    else if(a == "--fingerprints") o.fingerprintFile = next();
     else if(a == "--settings") o.settingsFile = next();
     else if(a == "--roms-dir") o.romsDir = next();
     else if(o.romArg.empty()) o.romArg = a;
@@ -96,6 +109,59 @@ int findRomReport(const Options& o)
   out << "source=" << found->source << "\nstatus=" << static_cast<int>(found->check.status) << "\nsize=" << found->check.size
       << "\nsha1=" << found->check.sha1 << "\nmessage:\n" << rom::describe(found->check) << '\n';
   return found->check.status == rom::Status::Ok ? 0 : 4;
+}
+
+std::string fileNameOf(const std::string& path)
+{
+  const std::size_t cut = path.find_last_of("/\\");
+  return cut == std::string::npos ? path : path.substr(cut + 1);
+}
+
+// --headless: run the game with no window. Exit code 0 = done, 4 = problem with the ROM, 5 = no ROM found, 6 = other failure.
+int headlessRun(const Options& o)
+{
+  const std::string reportPath = o.headlessPng + ".txt";
+  std::ofstream report(reportPath);
+  if(!report) return 6;
+
+  const auto found = rom::findQuietly(o.romArg, o.settingsFile, o.romsDir);
+  if(!found) { report << "result=no ROM found\n"; return 5; }
+  if(found->check.status != rom::Status::Ok) { report << "result=ROM problem\n" << rom::describe(found->check) << '\n'; return 4; }
+
+  std::vector<std::uint8_t> bytes(rom::kExpectedSize);
+  {
+    std::ifstream in(found->check.path, std::ios::binary);  // read only
+    if(!in.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) { report << "result=cannot read ROM\n"; return 6; }
+  }
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(found->check.path), bytes); !error.empty()) { report << "result=" << error << '\n'; return 6; }
+
+  std::ofstream fingerprints;
+  if(!o.fingerprintFile.empty()) { fingerprints.open(o.fingerprintFile); fingerprints << "frame,hash\n"; }
+
+  bool saved = false;
+  char hash[17];
+  for(int f = 0; f < o.frames; ++f) {
+    emulator.runFrame();
+    std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
+    if(fingerprints) fingerprints << f << ',' << hash << '\n';
+    if(f != o.saveFrame) continue;
+
+    const int h = emulator.height();
+    std::vector<std::uint32_t> pixels = emulator.colours();
+    SDL_Surface* surface = SDL_CreateSurfaceFrom(Emulator::kWidth, h, SDL_PIXELFORMAT_XRGB8888, pixels.data(), Emulator::kWidth * 4);
+    saved = surface && SDL_SavePNG(surface, o.headlessPng.c_str());
+    if(surface) SDL_DestroySurface(surface);
+    if(!o.rawFile.empty()) {
+      std::ofstream raw(o.rawFile, std::ios::binary);
+      raw.write(reinterpret_cast<const char*>(emulator.indexed()), static_cast<std::streamsize>(h) * Emulator::kWidth);
+    }
+    report << "saved_frame=" << f << "\nsaved_picture=" << Emulator::kWidth << 'x' << h
+           << "\nsaved_frame_fingerprint=" << hash << '\n';
+  }
+  report << "rom=" << found->check.path << "\nrom_sha1=" << found->check.sha1 << "\nframes_run=" << o.frames
+         << "\nlast_frame_fingerprint=" << hash << "\npng_saved=" << (saved ? "yes" : "no") << "\nresult=" << (saved ? "OK" : "FAIL") << '\n';
+  return saved ? 0 : 6;
 }
 
 // The Open file dialog reports back from SDL, possibly on another thread.
@@ -127,11 +193,6 @@ bool askAboutProblem(SDL_Window* window, const rom::Check& check)
   return pressed == 2;
 }
 
-std::string fileNameOf(const std::string& path)
-{
-  const std::size_t cut = path.find_last_of("/\\");
-  return cut == std::string::npos ? path : path.substr(cut + 1);
-}
 
 // Finds a usable ROM, asking the person when needed. Returns the chosen path, or empty if they gave up.
 std::string resolveRom(SDL_Window* window, const Options& o)
@@ -171,6 +232,7 @@ int main(int argc, char* argv[])
 {
   const Options options = parseArguments(argc, argv);
   if(!options.findRomFile.empty()) return findRomReport(options);
+  if(!options.headlessPng.empty()) return headlessRun(options);
 
   if(!SDL_Init(SDL_INIT_VIDEO)) { showError("SDL could not start."); return 1; }
 

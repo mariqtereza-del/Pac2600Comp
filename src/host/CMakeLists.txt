@@ -17,10 +17,14 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party third_party)
 add_library(rom_finder STATIC rom_finder.cpp)
 target_compile_options(rom_finder PRIVATE /W4 /permissive-)
 
+# The only host code that includes Stella headers (ARCHITECTURE.md, T-D1-1).
+add_library(emulator STATIC emulator.cpp)
+target_link_libraries(emulator PUBLIC stella_core)
+
 # WIN32 = a normal windowed program (no console window when double-clicked).
 add_executable(pacman2600 WIN32 main.cpp)
 target_compile_options(pacman2600 PRIVATE /W4 /permissive-)
-target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder)
+target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator)
 
 # Tests for the ROM finder (Stage D3): build/host/test_rom_finder.exe <scratch folder> <rom copy>
 add_executable(test_rom_finder ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_rom_finder.cpp)

@@ -1106,7 +1106,32 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D4-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D4: Emulator running blind`.
     - **Next stage:** D5 — The game on screen.
-5. **[Not started] D5 — The game on screen.** Frames shown in the window, unscaled and small. You: confirm the title screen appears.
+5. **[Done] D5 — The game on screen.** *(expanded and done 2026-10-24)*
+    - **Objective:** the window shows the original game's picture, live: the emulator's frames drawn unscaled (one game pixel = one screen pixel, 160 x 228) in the middle of the black window, at normal game speed.
+    - **Why it matters:** the first time the game is visible in our own program; D6 (shape and scaling), D7 (fullscreen) and D9 (proper pacing) build on this picture path.
+    - **Prerequisites:** D4 Done (commit `68af2f2`).
+    - **What Claude Code will do (T-D5-1):**
+      1. Create a streaming texture of the emulator's colour picture and draw it each frame, nearest-pixel, unscaled, centred.
+      2. Step the emulator from a simple 60.000 Hz clock (temporary; D9 replaces it with real pacing) and ask for vsync explicitly.
+      3. Add `--screen-check <png> [rom_file]`: run 300 frames with no clock, read the window's pixels back, compare them with the emulator's colour picture, save the screenshot, write `<png>.txt`.
+      4. Check by script, then by eye (the screenshot), then ask you.
+    - **What I must do:** start `pacman2600.exe` (it remembers the ROM), look at the window, and say whether the title screen with the maze appears and moves normally (ghosts drifting), then close it.
+    - **Exact instructions:** (given at the end of the stage).
+    - **Required input:** Your report of what you saw.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:** a small, unscaled maze picture in the middle of the black window; attract mode runs; no controls yet.
+    - **Verification:**
+      - Build 0 errors/0 warnings; earlier checks (`test_rom_finder`, `--self-check`, `--headless` fingerprints) still pass.
+      - `--screen-check`: pixels read back from the window equal the emulator's colours at the picture's place; the rest of the window is black; screenshot looked at.
+      - Window mode runs for several seconds, responds, closes with exit code 0, no leftover process.
+      - Speed: frames run per second measured at the clock's rate (about 60), not the monitor's.
+      - Your report.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the screen may draw slightly off if Windows scales the window (the check reports real pixel sizes); the temporary clock may drift against the monitor (acceptable until D9); phosphor-blended colours may look dimmer than in Stella (D6).
+    - **Recovery:** edits to `src\host\main.cpp` and `CMakeLists.txt` only. Undo by returning to `68af2f2` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D5-1), `ARCHITECTURE.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D5: The game on screen`.
+    - **Next stage:** D6 — Correct shape and scaling.
 6. **[Not started] D6 — Correct shape and scaling.** See the dedicated section below.
 7. **[Not started] D7 — Windowed and fullscreen.** Borderless fullscreen on your main monitor; **Alt+Enter** toggles; window size and position remembered. Verify on your 2560×1440 screen and with the window dragged to odd sizes.
 8. **[Not started] D8 — Sound.** TIA sound from the core played through SDL with a small, steady buffer. Verify by ear against C5 clips and by Claude Code checking the sample rate and that no buffer underruns are logged in 5 minutes.

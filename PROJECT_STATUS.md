@@ -1,6 +1,6 @@
-Current stage: D5 — The game on screen (Phase D)
+Current stage: D6 — Correct shape and scaling (Phase D)
 
-Last updated: 2026-10-24, end of Stage D4. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage D5. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -33,6 +33,7 @@ Last updated: 2026-10-24, end of Stage D4. Phase C complete (Gate C met, `docs\G
 | D2 — An empty window | First host code: `src\host\main.cpp`, `CMakeLists.txt`, `tools\build_host.cmd` -> `build\host\pacman2600.exe` + `SDL3.dll`. Build 0 errors, 0 warnings. `--self-check`: title "pacman2600 (working name)", 960x720 pixels, centre pixel black, exit 0. Normal start: responding window, close request -> exit 0, no leftover process. Your double-click: black window, closed, no errors. T-D2-1. |
 | D3 — Finding your ROM | `src\host\rom_finder.*`, `main.cpp`, `tests\host\test_rom_finder.cpp`. Build 0 errors/0 warnings. Test program: all pass on two runs (SHA-1 vectors, real ROM accepted, missing/empty/100-byte/wrong-content/one-bit-flipped/folder rejected with plain messages, settings round trip, search order). `--find-rom`: good exit 0, failure cases exit 4, none exit 5, `roms` folder and saved path found. Normal start: title shows the file name, exit 0, absolute path saved. Your check: black window with `pacman.a26` in the title, second start without asking. Mistake reported and fixed: the first test copied the ROM into `build\host\test_tmp\roms`; you approved deleting it, the test no longer copies. T-D3-1. |
 | D4 — Emulator running blind | `src\host\emulator.*` (only host code that includes Stella) and `pacman2600 --headless`. Build 0 errors/0 warnings. 600 frames run with no window: all 600 picture fingerprints equal C3's (0 differences), frame 300 = `a961ba2e7bbfbd17` in both; a run to frame 1500 equals C7's `01_title` raw picture byte for byte; two runs identical. Frame 300 saved as `reference\d4\frame300.png` (160x228, attract maze, looked at by eye). A bad ROM gives exit 4 and no picture. `test_rom_finder`, `--self-check`, `--find-rom` and window mode still work. ROM only read. T-D4-1. |
+| D5 — The game on screen | The emulator's frames are drawn in the window, unscaled (160x228, centred, nearest pixel), stepped by a temporary 60 Hz clock; vsync requested explicitly. `--screen-check`: window pixels read back = emulator colours, 0 differing, 0 non-black outside the picture, screenshot looked at (maze, status bar). `--timed 10`: 60.046 frames/s. Earlier checks still pass (`test_rom_finder`, `--self-check`, headless fingerprints = C3). Window mode: responding, closes with exit 0, no leftover process. T-D5-1. Your check: title screen appeared, looked right, moved at normal speed; you noted the picture is hard to judge because it is so small (D6 enlarges it). |
 
 ## Key facts so far
 
@@ -71,12 +72,12 @@ Last updated: 2026-10-24, end of Stage D4. Phase C complete (Gate C met, `docs\G
 
 ## Next stage
 
-D5 — The game on screen: frames from the emulator shown in the window, unscaled and small. You will be asked to confirm that the title screen appears.
+D6 — Correct shape and scaling: the picture is enlarged with the correct pixel shape (about 12:7, to be confirmed), in three modes (Sharp, Fill, TV frame), with an automatic shape test for five screen sizes. It addresses your remark that the unscaled picture is too small to judge. You will compare a screenshot with a C7 picture and later choose the default mode.
 
 ## Handoff from the last session
 
-Stage D4 done: **our own program runs the original game with no window and the pictures are identical to the reference.** 600 frames, every picture fingerprint equal to C3's; frame 1500 identical to C7's title picture. Frame 300 saved as a PNG (`reference\d4\frame300.png`, local).
+Stage D5 done: **the game is shown live in our window**, unscaled (160x228, centred) at normal speed, checked pixel for pixel against the emulator. You confirmed: title screen appeared, looked right, normal speed; the picture is very small (expected: scaling is D6).
 
-New: `src\host\emulator.hpp/.cpp`. Updated: `src\host\main.cpp`, `src\host\CMakeLists.txt`, `DECISIONS.md` (T-D4-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d4\`. The ROM was only read; nothing installed, deleted or pushed.
+Updated: `src\host\main.cpp`, `DECISIONS.md` (T-D5-1), `ARCHITECTURE.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d5\`. The ROM was only read; nothing installed, deleted or pushed.
 
-Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` (the ROM with one bit changed, made by the test each run). Delete only with your OK.
+Still in `build\host	est_tmp` (ignored by Git): small test files, including `flipped.a26` (the ROM with one bit changed, made by the test each run). Delete only with your OK.

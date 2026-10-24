@@ -74,6 +74,18 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D5-1 — The picture in the window: streaming texture, unscaled, temporary 60 Hz clock, pixel-exact check (2026-10-24, Stage D5)
+
+- **Choice:**
+  - Each frame the emulator's colour picture (160 x 228, `Emulator::colours()`) is uploaded to a streaming SDL texture (`XRGB8888`) and drawn **unscaled** (one game pixel = one screen pixel) with nearest-pixel sampling, centred in the 960 x 720 window; the rest stays black. The window is cleared and redrawn on every present, because a presented buffer is not kept.
+  - **Temporary pacing:** the emulator is stepped from a simple 60.000 Hz clock (`SDL_GetTicksNS`), at most 5 frames to catch up, then it gives up catching up. 60.000 Hz is what Stella itself plays at (`docs\TIMING.md`). Stage D9 replaces this with the real pacing, so the choice between 60.000 and 59.923 Hz is **not** made here.
+  - **Vsync is asked for explicitly** (`SDL_SetRenderVSync`). The D2 code's comment assumed present waits for the screen; that was not verified, and this now makes it so.
+  - `--screen-check <png> [rom]` runs 300 frames with no clock, reads the window's own pixels back and compares them with the emulator's colours: 0 pixels differing, 0 non-black pixels outside the picture, and saves a screenshot. `--timed <seconds> <file> [rom]` plays for that long and writes the frames per second it achieved.
+- **Why:** unscaled first keeps the picture path simple and exactly checkable; shape and scaling are D6, fullscreen D7. A pixel-exact readback replaces "it looks right".
+- **Measured:** 60.046 frames per second over 10 s on this PC (180 Hz screen).
+- **Not decided here:** scaling, pixel shape, colour/phosphor presentation (D6), pacing against the monitor (D9).
+- **Reversible:** Yes.
+
 ### T-D4-1 — Emulator wrapper, headless mode, and how "same as the reference" is proved (2026-10-24, Stage D4)
 
 - **Choice:**

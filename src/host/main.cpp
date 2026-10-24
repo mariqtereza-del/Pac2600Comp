@@ -1,11 +1,14 @@
-// pacman2600 host. Stage D2: an empty black window that closes cleanly. Stage D3: finds and checks the ROM
-// (DECISIONS.md T-D2-1, T-D3-1). Later stages add the emulator core, picture, sound and controls (ARCHITECTURE.md).
+// pacman2600 host. D2: a window that closes cleanly. D3: finds and checks the ROM. D4: the emulator runs the ROM.
+// D5: the game picture is shown in the window (DECISIONS.md T-D2-1 ... T-D5-1). Later stages add scaling, sound and
+// controls (ARCHITECTURE.md).
 //
 // Usage: pacman2600 [rom_file]                  open the window; the ROM is looked for in this order: the file given
 //                                               here, the saved path, a "roms" folder next to the program, a dialog
 //        pacman2600 --self-check <file>         open the window, write what it looks like to <file>, quit
 //        pacman2600 --find-rom <file> [rom_file] [--settings <ini>] [--roms-dir <dir>]
 //                                               the quiet part of the ROM search, no window; writes the result to <file>
+//        pacman2600 --screen-check <png> [rom_file]   run 300 frames in the window, compare its pixels with the emulator's
+//        pacman2600 --timed <seconds> <file> [rom_file]  play for that long, then write the frame rate to <file>
 //        pacman2600 --headless <png> [rom_file] [--frames N] [--save-frame N] [--raw <file>] [--fingerprints <csv>]
 //                   [--settings <ini>] [--roms-dir <dir>]
 //                                               runs the game with no window (default 600 frames) and saves frame
@@ -66,7 +69,8 @@ bool selfCheck(SDL_Window* window, SDL_Renderer* renderer, const char* path)
 
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
-  std::string headlessPng, rawFile, fingerprintFile;
+  std::string headlessPng, rawFile, fingerprintFile, screenCheckPng, timedReport;
+  double timedSeconds = 0;
   int frames = 600, saveFrame = 300;
 };
 
@@ -79,6 +83,8 @@ Options parseArguments(int argc, char* argv[])
     if(a == "--self-check") o.selfCheckFile = next();
     else if(a == "--find-rom") o.findRomFile = next();
     else if(a == "--headless") o.headlessPng = next();
+    else if(a == "--screen-check") o.screenCheckPng = next();
+    else if(a == "--timed") { o.timedSeconds = std::atof(next().c_str()); o.timedReport = next(); }
     else if(a == "--frames") o.frames = std::atoi(next().c_str());
     else if(a == "--save-frame") o.saveFrame = std::atoi(next().c_str());
     else if(a == "--raw") o.rawFile = next();
@@ -115,6 +121,123 @@ std::string fileNameOf(const std::string& path)
 {
   const std::size_t cut = path.find_last_of("/\\");
   return cut == std::string::npos ? path : path.substr(cut + 1);
+}
+
+// Reads the 4096 ROM bytes of a file that has already passed the checks (read only).
+bool readRomBytes(const std::string& path, std::vector<std::uint8_t>& bytes)
+{
+  bytes.assign(rom::kExpectedSize, 0);
+  std::ifstream in(path, std::ios::binary);
+  return static_cast<bool>(in.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size())));
+}
+
+// The game picture, drawn unscaled (one game pixel = one screen pixel) in the middle of the window (Stage D5, T-D5-1).
+struct Screen {
+  SDL_Renderer* renderer = nullptr;
+  SDL_Texture* texture = nullptr;
+  SDL_FRect where{};
+  ~Screen() { if(texture) SDL_DestroyTexture(texture); }
+
+  bool show(const std::vector<std::uint32_t>& pixels, int height)
+  {
+    if(!texture) {
+      texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, Emulator::kWidth, height);
+      if(!texture) return false;
+      SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+      where = {static_cast<float>((kWidth - Emulator::kWidth) / 2), static_cast<float>((kHeight - height) / 2),
+               static_cast<float>(Emulator::kWidth), static_cast<float>(height)};
+    }
+    SDL_UpdateTexture(texture, nullptr, pixels.data(), Emulator::kWidth * 4);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+    SDL_RenderTexture(renderer, texture, nullptr, &where);
+    return true;
+  }
+};
+
+// --screen-check: run 300 frames, then compare what the window shows with what the emulator drew. No clock, no waiting.
+bool screenCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::string& romPath)
+{
+  std::ofstream report(pngPath + ".txt");
+  std::vector<std::uint8_t> bytes;
+  if(!report || !readRomBytes(romPath, bytes)) return false;
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(romPath), bytes); !error.empty()) { report << "result=" << error << '\n'; return false; }
+
+  Screen screen;
+  screen.renderer = renderer;
+  std::vector<std::uint32_t> pixels;
+  for(int f = 0; f < 300; ++f) {
+    emulator.runFrame();
+    pixels = emulator.colours();
+    if(!screen.show(pixels, emulator.height())) { report << "result=texture failed\n"; return false; }
+  }
+  SDL_Surface* shot = SDL_RenderReadPixels(renderer, nullptr);  // the window's pixels, before presenting
+  if(!shot) { report << "result=cannot read window pixels\n"; return false; }
+  SDL_Surface* rgb = SDL_ConvertSurface(shot, SDL_PIXELFORMAT_XRGB8888);
+  SDL_DestroySurface(shot);
+  if(!rgb) return false;
+
+  const int h = emulator.height();
+  const int x0 = static_cast<int>(screen.where.x), y0 = static_cast<int>(screen.where.y);
+  long long differing = 0, outsideNotBlack = 0, picturePixelsNotBlack = 0;
+  for(int y = 0; y < rgb->h; ++y) {
+    const auto* row = reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(rgb->pixels) + y * rgb->pitch);
+    for(int x = 0; x < rgb->w; ++x) {
+      const bool inside = x >= x0 && x < x0 + Emulator::kWidth && y >= y0 && y < y0 + h;
+      const std::uint32_t seen = row[x] & 0x00FFFFFF;
+      if(inside) {
+        const std::uint32_t expected = pixels[static_cast<std::size_t>(y - y0) * Emulator::kWidth + (x - x0)] & 0x00FFFFFF;
+        if(seen != expected) ++differing;
+        if(expected != 0) ++picturePixelsNotBlack;
+      } else if(seen != 0) {
+        ++outsideNotBlack;
+      }
+    }
+  }
+  const bool saved = SDL_SavePNG(rgb, pngPath.c_str());
+  report << "window_pixels=" << rgb->w << 'x' << rgb->h << "\npicture_at=" << x0 << ',' << y0 << ' ' << Emulator::kWidth << 'x' << h
+         << "\npixels_differing_from_emulator=" << differing << "\npixels_outside_picture_not_black=" << outsideNotBlack
+         << "\npicture_pixels_not_black=" << picturePixelsNotBlack << "\nscreenshot_saved=" << (saved ? "yes" : "no") << '\n';
+  const bool ok = saved && differing == 0 && outsideNotBlack == 0 && picturePixelsNotBlack > 1000 && rgb->w == kWidth && rgb->h == kHeight;
+  report << "result=" << (ok ? "OK" : "FAIL") << '\n';
+  SDL_DestroySurface(rgb);
+  return ok;
+}
+
+// The game window: one emulator frame per 1/60 s from a simple clock (temporary; real pacing is Stage D9).
+// With maxSeconds > 0 it stops by itself after that long and returns the frames per second it managed (for tests).
+double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string& romPath, double maxSeconds)
+{
+  std::vector<std::uint8_t> bytes;
+  Emulator emulator;
+  if(!readRomBytes(romPath, bytes)) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, "The ROM file could not be read.", window); return 0; }
+  if(const std::string error = emulator.load(fileNameOf(romPath), bytes); !error.empty()) {
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, error.c_str(), window);
+    return 0;
+  }
+  Screen screen;
+  screen.renderer = renderer;
+
+  constexpr Uint64 kFrameNs = 1000000000ull / 60;  // Stella plays NTSC at exactly 60 Hz (docs\TIMING.md)
+  Uint64 next = SDL_GetTicksNS();
+  const Uint64 started = next;
+  long long frames = 0;
+  std::vector<std::uint32_t> pixels;
+  for(bool running = true; running; ) {
+    for(SDL_Event e; SDL_PollEvent(&e); ) {
+      if(e.type == SDL_EVENT_QUIT || (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_ESCAPE)) running = false;
+    }
+    const Uint64 now = SDL_GetTicksNS();
+    int steps = 0;
+    while(now >= next && steps < 5) { emulator.runFrame(); next += kFrameNs; ++steps; ++frames; }
+    if(steps == 5 && now >= next) next = now;  // far behind (window dragged, for example): do not try to catch up
+    if(steps > 0) pixels = emulator.colours();
+    if(!pixels.empty() && !screen.show(pixels, emulator.height())) return 0;  // redrawn every time: a presented buffer is not kept
+    SDL_RenderPresent(renderer);
+    if(maxSeconds > 0 && static_cast<double>(now - started) >= maxSeconds * 1e9) running = false;
+  }
+  return static_cast<double>(frames) * 1e9 / static_cast<double>(SDL_GetTicksNS() - started);
 }
 
 // --headless: run the game with no window. Exit code 0 = done, 4 = problem with the ROM, 5 = no ROM found, 6 = other failure.
@@ -243,6 +366,7 @@ int main(int argc, char* argv[])
     SDL_Quit();
     return 1;
   }
+  SDL_SetRenderVSync(renderer, 1);  // present once per screen refresh, so the loop does not spin
 
   int exitCode = 0;
   if(!options.selfCheckFile.empty()) {
@@ -259,13 +383,14 @@ int main(int argc, char* argv[])
     } else {
       const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath);
       SDL_SetWindowTitle(window, title.c_str());
-      for(bool running = true; running; ) {
-        for(SDL_Event e; SDL_PollEvent(&e); ) {
-          if(e.type == SDL_EVENT_QUIT || (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_ESCAPE)) running = false;
+      if(!options.screenCheckPng.empty()) {
+        exitCode = screenCheck(renderer, options.screenCheckPng, romPath) ? 0 : 2;
+      } else {
+        const double rate = playWindow(window, renderer, romPath, options.timedSeconds);
+        if(options.timedSeconds > 0) {
+          std::ofstream out(options.timedReport);
+          out << "seconds=" << options.timedSeconds << "\nframes_per_second=" << rate << '\n';
         }
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
-        SDL_RenderPresent(renderer);  // waits for the screen refresh, so the loop does not spin
       }
     }
   }

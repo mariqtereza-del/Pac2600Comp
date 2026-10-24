@@ -1,6 +1,6 @@
-Current stage: D1 — Architecture note (Phase D)
+Current stage: D2 — An empty window (Phase D)
 
-Last updated: 2026-10-24, end of Stage C8. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage D1. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -29,6 +29,7 @@ Last updated: 2026-10-24, end of Stage C8. Phase C complete (Gate C met, `docs\G
 | C6 — Controls and game variations | `stella_script.exe` (T-C6-1), idle script identical to C3. Defaults B/B/Colour. Select: games 1-8 x 1/2 players (16), power-on 1(1P). Reset and fire start a game (fire: from attract/game over only). Directions read into $ED. B&W: game uses greys. Difficulty switches change when the bonus item appears (left P1, right P2). Variations: idle catch timings repeat every 4 games; Pac-Man speed differs. PS4 pad in Stella: stick and a button work. `docs\CONTROLS.md`. |
 | C7 — Reference captures | Eight numbered pictures in `reference\screens\` (local only): title, game start, power pill, ghost eaten, death, bonus item, level end, game over, each checked by eye. Made by a search-based bot (`stella_bot.exe`) whose route script `tools\captures\c7_route.txt` is replayed from power-on by `stella_script.exe` (`tools\captures\c7_captures.txt`); two replays byte-identical (frames.csv and all 8 pictures). Level 1 cleared (1 wafer left at frame 7310, map refilled 7311), 4 deaths, game over frame 9391. `docs\CAPTURES.md`, T-C7-1. |
 | C8 — Gate C | All 6 items PASS, re-checked this session (`docs\GATE_C.md`): fresh C7 replay reproduced all 8 picture fingerprints and the C7 per-frame log; fresh 6,000-frame idle run has 0 fingerprint differences from C3; ROM SHA-1s unchanged; no ROM or `reference\` file in Git; `git fsck` clean. `docs\REFERENCE.md` (how to recreate the reference, 9 open items). The Stella app folder was not re-read (outside the project). |
+| D1 — Architecture note | `ARCHITECTURE.md`: the three parts (host, Stella core, ROM), data flow, planned file table for D2-D13, who decides what (with `docs\` evidence), what Phase 2 replaces, licences, open choices. T-D1-1: static link of `stella_core`, calling `StellaLIBRETRO`. Checked by script: every named path exists or is marked planned, every `docs\` file exists, D2-D13 exist in `PLAN.md`, the five wrapper calls are used by the probes. No code written. |
 
 ## Key facts so far
 
@@ -67,10 +68,10 @@ Last updated: 2026-10-24, end of Stage C8. Phase C complete (Gate C met, `docs\G
 
 ## Next stage
 
-D1 — Architecture note: `ARCHITECTURE.md` with the three-part table (which code is ours, which is Stella's, which behaviour comes from the ROM, and what Phase 2 will replace).
+D2 — An empty window: a black 960x720 window titled with the project name that closes cleanly (first host code, first CMake target for `src\host`). You will be asked to double-click the `.exe` and close it.
 
 ## Handoff from the last session
 
-Stage C8 done: **Gate C passed, Phase C is complete.** `docs\GATE_C.md` checks six items against fresh runs; `docs\REFERENCE.md` says how to recreate the reference and lists 9 open items with the stage that settles each. An end-of-phase checkpoint zip (as for Gate B) is offered but not made: it writes outside the project and needs your OK.
+Stage D1 done: **`ARCHITECTURE.md` written** (top level of the project). It says which code is ours, Stella's or the ROM's, where each Phase D file will go, and what Phase 2 replaces. One technical choice recorded (T-D1-1). No code, no build, nothing outside the project. The Gate C checkpoint zip was made earlier with your OK.
 
-New: `docs\REFERENCE.md`, `docs\GATE_C.md`. Updated: `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c8\`. Nothing installed, deleted or pushed; Stella not started; ROMs untouched.
+New: `ARCHITECTURE.md`. Updated: `DECISIONS.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`.

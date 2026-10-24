@@ -141,3 +141,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Preservation / modernization | Keeping the game exactly as it was / adding new features; kept separate (Rules 2–3). |
 | Reference capture | A numbered picture of the original game at a known moment (title, power pill, death...), recreatable from an input script. |
 | Bot | A program that plays the game for us by trying moves ahead; its moves are saved as a script, and only a replay of the script counts. |
+| Host | Our own program around the game: window, sound, controls, speed. In Phase 1 the game itself is run by Stella's core. |
+| Core (emulation core) | The part of Stella that pretends to be the 2600's chips. |

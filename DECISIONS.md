@@ -74,6 +74,16 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D1-1 — The host links Stella's core as a static library and calls its libretro wrapper class (2026-10-24, Stage D1)
+
+- **Choice:** the Phase 1 host links `stella_core` (the static library built by `third_party\CMakeLists.txt`) and calls `StellaLIBRETRO` directly. It does not load `stella_libretro.dll` through the `retro_*` functions.
+- **Why:**
+  - D-001 names Stella's own libretro port as the core. `StellaLIBRETRO` is that port's class, so the emulation code is the same.
+  - All five Phase C tools already work this way, and they gave reproducible frames, RAM reads, input events and save/load (C3-C7). The direct class also gives access to the console's internals (the TIA picture buffer, the RIOT's RAM) that tests will compare.
+  - One program, no DLL to ship, simpler licence packaging (GPL source offer covers one binary).
+- **Limits:** only `src\host\emulator.*` (D4) may include Stella headers, so a later change of link style stays local.
+- **Reversible:** Yes.
+
 ### T-C7-1 — Reference captures from a search-based bot, proved by replay (2026-10-24, Stage C7)
 
 - **Choice:**

@@ -1022,7 +1022,23 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
 
 Grow the host program one visible feature at a time, each checked against Stella, until it is a complete Phase 1 release.
 
-1. **[Not started] D1 — Architecture note.** `ARCHITECTURE.md` with the three-part table from section 2, file by file: which code is ours, which is Stella's, which behaviour comes from the ROM, and what Phase 2 will replace.
+1. **[Done] D1 — Architecture note.** *(expanded and done 2026-10-24)*
+    - **Objective:** `ARCHITECTURE.md` (project top level) with the three-part table from section 2, file by file: which code is ours, which is Stella's, which behaviour comes from the ROM, and what Phase 2 will replace.
+    - **Why it matters:** every Phase D stage adds a host file; this note fixes where each goes and which part owns each behaviour, so the host never starts changing game rules (Rule 2) and Phase 2 knows what to swap.
+    - **Prerequisites:** Gate C passed (`docs\GATE_C.md`), commit `8867c7b`, clean tree.
+    - **What Claude Code will do:** read what exists (plan section 2, D-001/D-002, `third_party\CMakeLists.txt`, the probes' use of Stella's wrapper, the fact documents), write the note, and record the link style as T-D1-1. No code is written or built.
+    - **What I must do:** read the note if you wish and say if anything reads wrong.
+    - **Exact instructions:** none.
+    - **Required input:** None.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:** `ARCHITECTURE.md` with: the three parts, a data-flow sketch, a planned file table with owning stage (D2-D13), a "who decides what" table citing measured documents, the Phase 2 replacement table, licences, and open choices.
+    - **Verification:** every file path named in the note exists or is marked planned (checked by script); every `docs\` citation exists; every D-stage cited matches `PLAN.md`; no ROM or `reference\` file staged.
+    - **Completion criteria:** the checks above pass and the note's open choices point to the stage that settles them.
+    - **Potential problems:** a path or API name written from memory could be wrong (hence the script check); the plan's "libretro core" wording could be read as the DLL (T-D1-1 states the actual link style).
+    - **Recovery:** new file only. Undo by returning to `8867c7b` (with your OK).
+    - **Documentation updates:** `ARCHITECTURE.md` (new), `DECISIONS.md` (T-D1-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D1: Architecture note`.
+    - **Next stage:** D2 — An empty window.
 2. **[Not started] D2 — An empty window.** A black 960×720 window titled with the project name that closes cleanly. You: double-click the `.exe` Claude Code points you to and close it.
 3. **[Not started] D3 — Finding your ROM.**
     - First launch with no ROM known: a Windows "Open file" dialog asks for the `.a26`. The path is remembered in `settings.ini` next to the `.exe`.

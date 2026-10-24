@@ -37,6 +37,10 @@ public:
   // One frame's sound: 16-bit stereo, left and right interleaved, `frames` pairs.
   void push(const std::int16_t* stereo, int frames);
 
+  // How much sound is waiting to be played, and how much there should be (Stage D9 runs a game frame whenever it is less).
+  int queuedPairs() const { return queuedFrames(); }
+  int targetPairs() const { return targetFrames_; }
+
   Stats stats() const;
   const std::string& problem() const { return problem_; }
   std::string describe() const;  // device name, device format, source format, buffer sizes

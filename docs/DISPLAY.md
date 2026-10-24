@@ -82,3 +82,7 @@ Pictures saved every 300 frames (`png\frame_NNNNNN_160x228.png`, drawn 4× wide 
    - All 13 later full runs (with and without picture saving) completed, plus one 5-frame logging run.
    - The probe now prints the location of any crash (offset into `stella_probe.exe`; see the linker map `build\stella_probe\stella_probe.map`).
    - Cause unknown; listed as an open problem.
+
+## Ghost flicker in the PC port (Stage D9, owner's observation)
+
+The owner saw the ghosts flicker, most visibly where they overlap, and took it for stutter. It is the original behaviour: the four ghosts take turns, one drawn per frame (each ghost colour is present in about one frame in four, see above). The port also blends each picture slightly with the previous one (Stella's phosphor effect, on by default for this ROM): a gameplay frame (headless frame 2100, Game Reset at 1800) has 6 TIA colours in the raw picture but 10 colours on screen, the extras being blends. This softens the flicker but cannot remove it. A stronger anti-flicker view would be an optional modernization (Phase I), not preservation.

@@ -74,3 +74,7 @@ The logic runs in the two places where the CPU is not drawing: the top area afte
 
 - The waits really are idle loops. Reads arrive about every 7 cycles (for example 148 reads over 13 lines = 988 cycles), the cost of a two-instruction "read timer, branch if not done" loop. The instructions themselves aren't identified until Phase F.
 - An earlier version of the tool sampled once per scanline. Its numbers were unreliable, because Stella's `updateScanline()` stops at the first instruction boundary after a line ends, a few cycles late. That version was replaced; none of its numbers are used here.
+
+## What the port does (Stage D9)
+
+The PC port runs at **60.000 frames a second**, the rate Stella plays at, steered by the sound card's clock so the music cannot drift against the picture. It is not paced by the monitor. The 59.923 Hz of the console's crystal is not used. Measured over 10 minutes on a 180 Hz screen: 59.9993 frames a second, 93.4 % of game frames shown for exactly 3 refreshes. See `DECISIONS.md` T-D9-1 and T-D9-2.

@@ -74,6 +74,28 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D9-1 — Game speed is 60.000 frames a second, set by the sound card's clock (2026-10-24, Stage D9)
+
+- **The question (left open by C4):** pace at **60.000 Hz** (what Stella plays at and what C4 measured: 1,194,720 cycles a second) or **59.923 Hz** (what the console's own crystal gives)?
+- **Choice:** **60.000 Hz.** It is the reference the whole project is compared against (Stella, C3 to C7), it keeps the sound exactly 524 sample pairs per frame (31,440 / 60), and the side-by-side checks of D14 compare frames, not seconds. 59.923 Hz stays a possible optional setting later (the real hardware's speed is 0.13 % slower, one frame in 13 seconds).
+- **The monitor is never the clock.** The window shows the newest finished picture on every monitor refresh (here 180 Hz, measured 179.94 to 180.06 presents a second), whatever the game speed is.
+- **Proof (my side):** see T-D9-2.
+- **Reversible:** Yes (one constant, `Pacer::kFrameNs`, plus the sound rate).
+
+### T-D9-2 — Frames are started from a steady timer whose speed is steered by the sound card (2026-10-24, Stage D9)
+
+- **First try (rejected):** run a frame whenever less than the target sound is waiting (the sound card as a pure trigger). Speed was right (60.026 frames a second in 30 s, 0 shortages) but the evenness was poor: because the sound card takes sound in 10 ms chunks, frames were started in an irregular rhythm and on the 180 Hz screen game frames got 2, 3 or 4 refreshes in nearly equal numbers (572, 576 and 616 of 1,801), which would look like judder.
+- **Choice:** a **steady PC timer** (evenly spaced frames, precise sleep) whose period is lengthened or shortened by a very small amount depending on how much sound is waiting: `period = 1/60 s x (1 + 4e-6 x (average queue - target))`, never more than 0.1 %. The queue is averaged over about 50 frames to smooth out the sound card's chunks. The result: on average the game runs exactly as fast as the sound card plays; frames are evenly spaced. With no sound device, or `--timer-clock`, the steering is off and the PC's clock is used. If the sound card is very far off, the sound code still pads or drops (counted).
+- **Proof (real window, 2560x1440 at 180 Hz, Focusrite USB sound at 44.1 kHz, muted):**
+  - **10 minutes** (`--timed 600`): **59.9993 frames a second** (36,000 frames, 0.001 % from 60.000; the limit was 0.1 %), **0 underruns, 0 dropped sound pairs**, 31,438.8 sound pairs pushed per second, queue 30.1 to 70.1 ms, the game thread's longest wait 21.2 ms, no wait over 30 ms. The average steering was +21 ppm (the PC clock and the sound card's clock differ by about 0.002 %).
+  - **Refreshes per game frame** (10 minutes, 107,964 presents, 179.94 a second): 3 refreshes: **33,635 (93.4 %)**; 2 refreshes: 1,183; 4 refreshes: 1,166; 1: 9; 5 or more: 3; frames never shown: 3 of 36,000.
+  - **Why not 100 % threes:** the sound card's clock, the PC's clock and the monitor's clock all differ by a few thousandths of a percent, so the game's frame time slowly slides across the monitor's refresh boundary (about once every 15 seconds) and for a short stretch frames flip between 2 and 4 refreshes (a timing shift of 1/180 s, about 5.6 ms, for that frame). Removing it would need the picture to be tied to the monitor's refresh (a repeated or skipped game frame now and then). Left as a possible later polish.
+  - **Comparison, PC timer only** (`--timer-clock`, 30 s): 3 refreshes for 99 % of frames, but 60.028 frames a second (this PC's clock against the sound card's) and the music would slowly drift against the picture over time; the sound-card steering is what the stage asks for.
+  - **Freezes:** an 800 ms freeze of the window thread: 0 underruns, 0 dropped (the game and its sound are on their own thread, T-D8-2); a 300 ms freeze of the game loop itself in `--audio-check`: 24 counted underruns (shows the counter still works).
+  - **Earlier checks still pass:** headless audio for 2,500 frames byte-identical to C5, picture fingerprints 0 differences from C3, window-state (29), ROM finder, layout (173), `--self-check`, `--layout-check` and `--fullscreen-check` all OK; ROM SHA-1s unchanged.
+- **Not proved by me:** how the speed and smoothness look and feel. The owner's play is the check. Also not tested: a monitor other than this 180 Hz one, and a PC with no sound device (the code falls back to the timer; I could not remove the device to try it).
+- **Reversible:** Yes.
+
 ### T-D8-3 — The remaining crackle is the original sound: no smoothing (2026-10-24, Stage D8)
 
 - **What the owner reported (second listen, after T-D8-2):** the crackle is still there; the owner thinks it may be inherent to how the 2600 plays sound and asked whether it should be resolved.

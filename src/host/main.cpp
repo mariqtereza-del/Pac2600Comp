@@ -15,7 +15,7 @@
 //                                               checked in fullscreen, the state saved to <ini> (fullscreen on)
 //        pacman2600 --state-report <report> --settings <ini>
 //                                               start from the state saved in <ini>, report what was restored, quit
-//        pacman2600 --audio-check <seconds> <report> [rom_file] [--mute] [--reset-at N] [--settings <ini>]
+//        pacman2600 --audio-check <seconds> <report> [rom_file] [--mute] [--reset-at N] [--timer-clock] [--settings <ini>]
 //                                               no window: runs the game at 60 frames/s into the real sound device for that
 //                                               long and writes the device format and the buffer statistics to <report>
 //        (window mode: keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off; R = Game Reset;
@@ -133,6 +133,7 @@ struct Options {
   double audioCheckSeconds = 0;
   int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
   bool mute = false;  // play the sound stream with the volume at zero (tests)
+  bool timerClock = false;  // pace the game from the PC clock instead of the sound card (comparison only)
   int stallMs = 0;    // tests: freeze the loop once, 5 seconds in (--audio-check: the game loop; the game window: the window thread)
   bool windowGiven = false;  // --window on the command line: do not use the remembered window
   layout::Mode mode = layout::Mode::Sharp;
@@ -157,6 +158,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--audio-wav") o.audioWav = next();
     else if(a == "--reset-at") o.resetAt = std::atoi(next().c_str());
     else if(a == "--mute") o.mute = true;
+    else if(a == "--timer-clock") o.timerClock = true;
     else if(a == "--stall-ms") o.stallMs = std::atoi(next().c_str());
     else if(a == "--fullscreen-check") o.fullscreenCheckFile = next();
     else if(a == "--state-report") o.stateReportFile = next();
@@ -316,6 +318,59 @@ bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
   return ok;
 }
 
+// ---- Frame pacing (Stage D9, DECISIONS.md T-D9-1 and T-D9-2) ----
+
+// Decides when the next game frame is due. Frames are started from a steady PC timer (so they are evenly spaced, which a
+// monitor needs to show each one for the same number of refreshes), but the timer's speed is steered by the sound card:
+// when more sound is waiting than the target the next frames are started a little later, when less, a little sooner.
+// So on average the game runs exactly as fast as the sound card plays (60.000 frames a second for this game: 524 sound
+// pairs per frame at 31,440 per second), and music and picture cannot drift apart. Without a sound device, or with
+// --timer-clock, the steering is simply off and the PC's clock is used.
+class Pacer {
+public:
+  Pacer(const AudioOutput& audio, bool timerOnly) : audio_(audio), useAudio_(audio.isOpen() && !timerOnly), next_(SDL_GetTicksNS()) {}
+
+  bool due(Uint64 now) const { return now >= next_; }
+
+  // Nanoseconds until the next frame is due (0 if it is due now).
+  Uint64 untilDue(Uint64 now) const { return now >= next_ ? 0 : next_ - now; }
+
+  void ran(Uint64 now)
+  {
+    double correction = 0;  // fraction by which this frame's period is lengthened (waiting sound above target) or shortened
+    if(useAudio_) {
+      const double queued = audio_.queuedPairs();
+      smoothed_ = frames_ == 0 ? queued : smoothed_ + 0.02 * (queued - smoothed_);  // the device takes sound in chunks: average them out
+      correction = std::clamp(kGain * (smoothed_ - audio_.targetPairs()), -kMaxCorrection, kMaxCorrection);
+      correctionSum_ += correction;
+    }
+    ++frames_;
+    next_ += static_cast<Uint64>(static_cast<double>(kFrameNs) * (1.0 + correction));
+    if(now > next_ + 5 * kFrameNs) next_ = now;  // far behind (the PC was busy): do not try to catch up
+  }
+
+  bool usesSoundClock() const { return useAudio_; }
+  double averageCorrectionPpm() const { return frames_ ? 1e6 * correctionSum_ / static_cast<double>(frames_) : 0.0; }
+
+private:
+  static constexpr Uint64 kFrameNs = 1000000000ull / 60;  // Stella plays NTSC at exactly 60 Hz (docs\TIMING.md)
+  static constexpr double kGain = 4e-6;           // period change per sound pair above target (a time constant of about 8 s)
+  static constexpr double kMaxCorrection = 1e-3;  // never more than 0.1 %
+  const AudioOutput& audio_;
+  bool useAudio_;
+  Uint64 next_;
+  double smoothed_ = 0, correctionSum_ = 0;
+  long long frames_ = 0;
+};
+
+// Sleeps until the time given (nanoseconds from now), in small steps and ending with a precise wait, so that frames start
+// within a fraction of a millisecond of when they are due.
+void waitFor(Uint64 ns)
+{
+  if(ns > 2000000) ns = 1000000;  // look again after 1 ms: the clock may have been steered, or the program may be closing
+  SDL_DelayPrecise(ns);
+}
+
 // ---- Sound (Stage D8, DECISIONS.md T-D8-1) ----
 
 std::string audioStatsText(const AudioOutput& audio, double seconds)
@@ -344,27 +399,25 @@ bool audioCheck(const Options& o)
   AudioOutput audio;
   if(!audio.open(emulator.audioRate(), o.mute)) { report << "result=FAIL " << audio.problem() << '\n'; return false; }
 
-  constexpr Uint64 kFrameNs = 1000000000ull / 60;  // the same temporary clock as the game window
+  Pacer pacer(audio, o.timerClock);  // the same pacing as the game window
   const Uint64 started = SDL_GetTicksNS();
-  Uint64 next = started;
   long long frames = 0;
   bool stalled = false;
   while(static_cast<double>(SDL_GetTicksNS() - started) < o.audioCheckSeconds * 1e9) {
     if(o.stallMs > 0 && !stalled && static_cast<double>(SDL_GetTicksNS() - started) >= 5e9) { SDL_Delay(static_cast<Uint32>(o.stallMs)); stalled = true; }
     const Uint64 now = SDL_GetTicksNS();
     int steps = 0;
-    while(now >= next && steps < 5) {
+    while(steps < 5 && pacer.due(now)) {
       emulator.setConsoleReset(o.resetAt >= 0 && frames >= o.resetAt && frames < o.resetAt + 10);
       emulator.runFrame();
       audio.push(emulator.audio(), emulator.audioFrames());
-      next += kFrameNs; ++steps; ++frames;
+      pacer.ran(now); ++steps; ++frames;
     }
-    if(steps == 5 && now >= next) next = now;
-    SDL_Delay(1);
+    waitFor(pacer.untilDue(SDL_GetTicksNS()));
   }
   const double seconds = static_cast<double>(SDL_GetTicksNS() - started) / 1e9;
   const AudioOutput::Stats st = audio.stats();
-  report << audioStatsText(audio, seconds) << "frames=" << frames << "\nframes_per_second=" << frames / seconds << '\n';
+  report << audioStatsText(audio, seconds) << "clock=" << (pacer.usesSoundClock() ? "sound card" : "PC timer") << "\naverage_clock_correction_ppm=" << pacer.averageCorrectionPpm() << "\nframes=" << frames << "\nframes_per_second=" << frames / seconds << '\n';
   const bool ok = st.underruns == 0 && st.pushedFrames > 0;
   report << "result=" << (ok ? "OK" : "CHECK underruns or no sound pushed") << '\n';
   return ok;
@@ -595,11 +648,14 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   double longestGapMs = 0;
   int gapsOver30 = 0;
   std::string gapLog;
+  bool usedSoundClock = false;
+  double averageCorrectionPpm = 0;
   const Uint64 started = SDL_GetTicksNS();
 
   std::thread game([&]() {
-    constexpr Uint64 kFrameNs = 1000000000ull / 60;  // Stella plays NTSC at exactly 60 Hz (docs\TIMING.md)
-    Uint64 next = SDL_GetTicksNS(), lastLoop = next;
+    Pacer pacer(audio, options.timerClock);
+    usedSoundClock = pacer.usesSoundClock();
+    Uint64 lastLoop = SDL_GetTicksNS();
     long long frames = 0;
     while(!stop.load()) {
       const Uint64 now = SDL_GetTicksNS();
@@ -612,13 +668,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       longestGapMs = std::max(longestGapMs, gap);
 
       int steps = 0;
-      while(now >= next && steps < 5) {
+      while(steps < 5 && pacer.due(now)) {
         emulator.setConsoleReset(resetKey.load() || (options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10));
         emulator.runFrame();
         audio.push(emulator.audio(), emulator.audioFrames());
-        next += kFrameNs; ++steps; ++frames;
+        pacer.ran(now); ++steps; ++frames;
       }
-      if(steps == 5 && now >= next) next = now;  // far behind (the PC was busy): do not try to catch up
       if(steps > 0) {
         std::vector<std::uint32_t> picture = emulator.colours();
         std::lock_guard<std::mutex> guard(lock);
@@ -626,13 +681,17 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         sharedHeight = emulator.height();
         sharedFrame = frames;
       }
-      SDL_DelayPrecise(1000000);  // 1 ms
+      waitFor(pacer.untilDue(SDL_GetTicksNS()));
     }
+    averageCorrectionPpm = pacer.averageCorrectionPpm();
   });
 
   std::vector<std::uint32_t> pixels;
   int height = 0;
   bool failed = false, stalled = false;
+  // How many monitor refreshes (presents) each game frame was on screen: [0]=1 ... [4]=5 or more; and frames never shown.
+  long long refreshHistogram[5] = {0, 0, 0, 0, 0}, framesNeverShown = 0, presents = 0;
+  long long shownFrame = 0, shownCount = 0;
   for(bool running = true; running; ) {
     // Test only (--stall-ms): freeze this thread once, as dragging the window does, to show the sound does not depend on it.
     if(options.stallMs > 0 && !stalled && static_cast<double>(SDL_GetTicksNS() - started) >= 5e9) { SDL_Delay(static_cast<Uint32>(options.stallMs)); stalled = true; }
@@ -647,12 +706,26 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       }
       if((e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_KEY_UP) && e.key.key == SDLK_R) resetKey = e.type == SDL_EVENT_KEY_DOWN;  // temporary (D10)
     }
+    long long frameNow = 0;
     {
       std::lock_guard<std::mutex> guard(lock);
-      if(!sharedPixels.empty()) { pixels = sharedPixels; height = sharedHeight; }
+      if(!sharedPixels.empty() && sharedFrame != shownFrame) { pixels = sharedPixels; height = sharedHeight; }
+      frameNow = sharedFrame;
+    }
+    if(frameNow != shownFrame) {  // a new game frame: close the count of the previous one
+      if(shownFrame > 0) {
+        ++refreshHistogram[std::min<long long>(shownCount, 5) - 1];
+        framesNeverShown += frameNow - shownFrame - 1;
+      }
+      shownFrame = frameNow;
+      shownCount = 0;
     }
     if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
+    const Uint64 beforePresent = SDL_GetTicksNS();
     SDL_RenderPresent(renderer);
+    ++presents;
+    if(frameNow > 0) ++shownCount;
+    if(SDL_GetTicksNS() - beforePresent < 500000) SDL_Delay(1);  // a present that does not wait for the monitor (window hidden): do not spin
     if(maxSeconds > 0 && static_cast<double>(SDL_GetTicksNS() - started) >= maxSeconds * 1e9) running = false;
   }
   stop = true;
@@ -663,7 +736,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   if(audio.isOpen()) {  // a short note on how the sound did, next to the settings (read by whoever tests)
     std::ofstream log(options.settingsFile + ".audio.txt");
     log << audioStatsText(audio, elapsed) << "game_thread_longest_gap_ms=" << longestGapMs << "\ngame_thread_gaps_over_30ms=" << gapsOver30
-        << "\ngame_thread_gaps=" << gapLog << '\n';
+        << "\ngame_thread_gaps=" << gapLog << "\nclock=" << (usedSoundClock ? "sound card" : "PC timer") << "\naverage_clock_correction_ppm=" << averageCorrectionPpm
+        << "\npresents=" << presents << "\npresents_per_second=" << static_cast<double>(presents) / elapsed
+        << "\ngame_frames=" << sharedFrame << "\ngame_frames_per_second=" << static_cast<double>(sharedFrame) / elapsed
+        << "\nrefreshes_per_game_frame_1=" << refreshHistogram[0] << "\nrefreshes_per_game_frame_2=" << refreshHistogram[1]
+        << "\nrefreshes_per_game_frame_3=" << refreshHistogram[2] << "\nrefreshes_per_game_frame_4=" << refreshHistogram[3]
+        << "\nrefreshes_per_game_frame_5_or_more=" << refreshHistogram[4] << "\ngame_frames_never_shown=" << framesNeverShown << '\n';
   }
   return static_cast<double>(sharedFrame) / elapsed;
 }

@@ -153,3 +153,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Sample rate | How many sound readings per second (31,440 for this game). More readings per second means finer sound. |
 | Underrun | The sound card wanted more sound than the program had ready, so it played silence: heard as a click or a gap. |
 | Buffer (cushion) | A small store of sound waiting to be played, so a short hiccup in the program is not heard. Bigger is safer but adds delay. |
+| Refresh rate | How many times a second the monitor redraws the screen (180 on the owner's). The game runs at 60 frames a second, so each game frame is shown for about 3 refreshes. |
+| Frame pacing | Starting each game frame at the right moment so the game runs at the right speed and looks smooth. |

@@ -1197,7 +1197,29 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D8-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\SOUND.md` (what D8 proved), `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D8: Sound`.
     - **Next stage:** D9 — Frame pacing on a 180 Hz screen.
-9. **[Not started] D9 — Frame pacing on a 180 Hz screen.** The game advances at the console's measured rate (from C4), never at the monitor's rate. Each game frame is shown for about three refreshes; sound timing is the master clock so music never drifts. Verify: a 10-minute run logs game frames per second within 0.1% of C4's value and no audio gaps.
+9. **[Done] D9 — Frame pacing on a 180 Hz screen.** *(expanded 2026-10-24)*
+    - **Objective:** the game advances at the console's rate (60.000 frames a second, the rate Stella plays at and C4 measured), whatever the monitor's rate is. The sound card's clock is the master clock: a game frame is run only when the sound card has used up enough sound, so the music can never drift against the picture. The window shows the newest game picture on every monitor refresh (about three refreshes per game frame on a 180 Hz screen), and the program counts how many refreshes each game frame really got.
+    - **Why it matters:** this is what makes the game feel right on any monitor. Pacing from the monitor would run the game 3 times too fast at 180 Hz; pacing from a separate PC clock slowly drifts from the sound.
+    - **Prerequisites:** D8 Done (commit `72926b1`); `docs\TIMING.md` (C4).
+    - **Technical decision (T-D9-1, made by Claude Code):** pace at **60.000 Hz** (Stella's own rate, which C4 measured and the reference recordings use), not 59.923 Hz (the real console's crystal rate). It keeps every side-by-side check with Stella exact, and the sound already has exactly 524 sample pairs per frame (31,440 / 60). A 59.923 Hz option stays a possible later setting.
+    - **What Claude Code will do:**
+      1. `AudioOutput`: report how much sound is waiting and the target.
+      2. Game thread: run a frame when less than the target (4 frames, 67 ms) is waiting, one at a time and at most 5 per turn; fall back to the old timer clock when there is no sound device, or if the sound device has not used any sound for 100 ms (so the picture never freezes). `--timer-clock` forces the timer for comparison.
+      3. Count, on the window thread, how many presents (monitor refreshes) each game frame was on screen (1, 2, 3, 4, 5 or more), the presents per second, and write them with the sound numbers to `<settings>.audio.txt`.
+      4. `--audio-check` uses the same pacing.
+      5. A 10-minute muted run of the real window; shorter runs with the timer clock for comparison.
+    - **What I must do:** play for a minute or two in the window and in fullscreen and say whether the speed and smoothness feel right (no stutter, same speed as before); optionally say which refresh rate your monitor is set to.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your report.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the game runs at the same speed as before (60 frames a second) and the sound has no gaps; frames are shown evenly.
+    - **Verification:** build 0 errors/0 warnings; a 10-minute muted window run shows frames per second within 0.1 % of 60.000, 0 underruns and 0 dropped sound; the refresh counts per game frame are reported (on 180 Hz mostly 3); an 800 ms window freeze and the timer-clock fallback behave; earlier checks still pass (headless audio and fingerprints, layout, window state, fullscreen); your report.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** a monitor whose rate is not a whole multiple of 60 Hz (for example 144 Hz) cannot show every game frame for the same number of refreshes, so a slight unevenness is unavoidable without variable refresh; the sound card's clock differs a little from the PC's clock, so the game runs a few parts per million off the PC clock (harmless, and what keeps sound and picture together); a sound device that is unplugged mid-game triggers the timer fallback.
+    - **Recovery:** edits to `audio.*`, `main.cpp` only; undo by returning to `72926b1` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D9-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\TIMING.md` (what D9 chose), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D9: Frame pacing`.
+    - **Next stage:** D10 — Keyboard.
 10. **[Not started] D10 — Keyboard.** Arrows and WASD for the joystick, plus keys for Select, Reset and the difficulty switches. Listed on screen with **F1**.
 11. **[Not started] D11 — PS4 controller.** D-pad and left stick for the joystick; Options = Reset, Share = Select. Verify with your pad, including unplugging and replugging mid-game.
 12. **[Not started] D12 — Console switches.** The difficulty switches and Color/B&W switch available as settings, because the game may read them.

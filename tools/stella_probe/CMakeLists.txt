@@ -32,3 +32,8 @@ target_link_options(stella_sound PRIVATE /MAP)
 add_executable(stella_script script.cpp)
 target_link_libraries(stella_script PRIVATE stella_core)
 target_link_options(stella_script PRIVATE /MAP)
+
+# stella_bot: search-based player that writes input scripts (Stage C7, DECISIONS.md T-C7-1).
+add_executable(stella_bot bot.cpp)
+target_link_libraries(stella_bot PRIVATE stella_core)
+target_link_options(stella_bot PRIVATE /MAP)

@@ -139,3 +139,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Resume prompt | The standard message pasted at the start of each session. |
 | `CLAUDE.md` | The rules file Claude Code reads automatically every session. |
 | Preservation / modernization | Keeping the game exactly as it was / adding new features; kept separate (Rules 2–3). |
+| Reference capture | A numbered picture of the original game at a known moment (title, power pill, death...), recreatable from an input script. |
+| Bot | A program that plays the game for us by trying moves ahead; its moves are saved as a script, and only a replay of the script counts. |

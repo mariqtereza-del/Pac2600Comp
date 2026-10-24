@@ -74,6 +74,18 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-C7-1 — Reference captures from a search-based bot, proved by replay (2026-10-24, Stage C7)
+
+- **Choice:**
+  - `tools\stella_probe\bot.cpp` (`stella_bot.exe`) plays the game by trying short move plans ahead with Stella's own save/load and writes its moves as an input script. The pictures are taken only from a replay of that script from power-on with `stella_script.exe` (new `region` line, which also records the colours under the ghost pen to spot the bonus item).
+  - `tools\c7_captures.py` finds the moments from RAM; the committed script is `tools\captures\c7_captures.txt`.
+- **Why:**
+  - You can't be asked to play an exact sequence, and a human session is not reproducible. A script gives the same pictures on any PC and is reusable for Phase D lockstep tests.
+  - The replay is the evidence: it reproduced the bot's outcome, two replays are byte-identical, so save/load is not part of the result.
+  - No new dependency; same toolchain as C3–C6.
+- **Limits:** the RAM meanings are working labels (`docs\CAPTURES.md`), to be confirmed in Phase F. The fallback (a play session by you) was not needed.
+- **Reversible:** Yes. New files only.
+
 ### T-C6-1 — A general input-script tool for controls and variations (2026-10-24, Stage C6)
 
 - **Choice:**

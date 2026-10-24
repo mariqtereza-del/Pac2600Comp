@@ -1,6 +1,6 @@
-Current stage: C7 — Reference captures (Phase C)
+Current stage: C8 — Gate C: reproducible reference (Phase C)
 
-Last updated: 2026-10-24, end of Stage C6. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage C7. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -27,6 +27,7 @@ Last updated: 2026-10-24, end of Stage C6. Phase A complete (Gate A met). Phase 
 | C4 — Timing facts | `stella_timing.exe` (T-C4-1), fingerprints identical to C3. 19,912 cycles/frame (76/line). Stella plays at 60.000 Hz; its NTSC console clock gives 59.923 Hz (+0.128 %). Every frame: VSYNC L259-261, logic, wait to L33, drawing from L34, timer at L195, logic, wait to L258. Spare time at least 6 lines (top), 24 (bottom), no overruns. `docs\TIMING.md`. |
 | C5 — Sound facts | `stella_sound.exe` (T-C5-1), idle run identical to C3; 8 runs incl. scripted joystick play. Only 3 sounds: start tune (2 channels, 63 frames), scoring blip (C9 F9, 8 frames, 376/376 with a score change), death sound (C4, AUDF 31->0 rising, about 2.1 s). Attract silent, no background sound. Power pill, ghost eaten, level clear not captured. `docs\SOUND.md`. |
 | C6 — Controls and game variations | `stella_script.exe` (T-C6-1), idle script identical to C3. Defaults B/B/Colour. Select: games 1-8 x 1/2 players (16), power-on 1(1P). Reset and fire start a game (fire: from attract/game over only). Directions read into $ED. B&W: game uses greys. Difficulty switches change when the bonus item appears (left P1, right P2). Variations: idle catch timings repeat every 4 games; Pac-Man speed differs. PS4 pad in Stella: stick and a button work. `docs\CONTROLS.md`. |
+| C7 — Reference captures | Eight numbered pictures in `reference\screens\` (local only): title, game start, power pill, ghost eaten, death, bonus item, level end, game over, each checked by eye. Made by a search-based bot (`stella_bot.exe`) whose route script `tools\captures\c7_route.txt` is replayed from power-on by `stella_script.exe` (`tools\captures\c7_captures.txt`); two replays byte-identical (frames.csv and all 8 pictures). Level 1 cleared (1 wafer left at frame 7310, map refilled 7311), 4 deaths, game over frame 9391. `docs\CAPTURES.md`, T-C7-1. |
 
 ## Key facts so far
 
@@ -65,34 +66,10 @@ Last updated: 2026-10-24, end of Stage C6. Phase A complete (Gate A met). Phase 
 
 ## Next stage
 
-C7 — Reference captures: a numbered set of reference pictures of the key moments:
-- title (attract) screen;
-- start of a game;
-- a power pill in effect;
-- a death;
-- the bonus item;
-- a level end;
-- game over.
-
-Most can come from the scripted tools. **A power pill in effect and a level end need real play:** the scripted player never achieved them (C5, C6). Claude Code will likely ask you for a short play session in the Stella app, taking snapshots (F12) at those moments, or try a smarter scripted route first. Starting Stella needs your OK.
+C8 — Gate C: reproducible reference. Write `docs\REFERENCE.md` (how anyone recreates this exact setup: Stella version, settings, ROM fingerprint) and check Gate C item by item: display, timing, sound, controls and variations documented, pictures present, nothing "believed" without a measurement noted.
 
 ## Handoff from the last session
 
-Stage C6 done: **the controls and game variations are measured** (`docs\DISPLAY.md`, `TIMING.md`, `SOUND.md` and now `docs\CONTROLS.md`), using a fourth tool that plays from small input scripts. Its idle script matches C3 exactly. You tested the PS4 pad in Stella.
-- **Game Select:**
-  - 16 choices: game 1–8, each for 1 or 2 players. The power-on choice is game 1, one player.
-  - During play, Select ends the game.
-- **Reset and fire:** Game Reset starts a new game. The **fire button also starts a new game** from attract mode or after game over, and does nothing found during play.
-- **Joystick:** all four directions are read. At the start position up and down are blocked by walls.
-- **Switches:**
-  - Stella's defaults are both difficulty switches on B and Colour.
-  - B&W makes the game use its own greys.
-  - The difficulty switches change **when the bonus item** (the square under the ghost pen) appears: left for player 1, right for player 2.
-- **Variations:**
-  - The game number isn't shown during play.
-  - How fast the ghosts catch an idle Pac-Man repeats every 4 games.
-  - Pac-Man's speed differs between some games.
-  - What each variation is meant to change isn't determined yet.
-- **PS4 pad in Stella:** the left stick moves Pac-Man and a pad button starts the game. The d-pad wasn't confirmed.
+Stage C7 done: **eight reference pictures of the original game** exist in `reference\screens\` and can be recreated exactly from a committed script (`tools\captures\c7_captures.txt`, listed in `docs\CAPTURES.md`). A bot found the route; only the replay counts, and two replays were identical. No play session from you was needed. Not captured: two-player, other variations, level 2.
 
-New: `docs\CONTROLS.md`, `tools\stella_probe\script.cpp`, `tools\c6_experiments.py`, `tools\raw_to_png.py`. Updated: `tools\stella_probe\CMakeLists.txt`, `tools\build_stella_probe.cmd`, `CLAUDE.md`, `DECISIONS.md` (T-C6-1), `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c6\`. Stella was started once (your pad test) and only updated its own settings file; nothing installed, deleted or pushed; ROMs untouched.
+New: `docs\CAPTURES.md`, `tools\stella_probe\bot.cpp`, `tools\c7_captures.py`, `tools\captures\`. Updated: `tools\stella_probe\script.cpp` (region line), `tools\stella_probe\CMakeLists.txt`, `tools\build_stella_probe.cmd`, `CLAUDE.md`, `DECISIONS.md` (T-C7-1), `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c7\`, `reference\screens\`. Nothing installed, deleted or pushed; Stella not started; ROM SHA-1s unchanged.

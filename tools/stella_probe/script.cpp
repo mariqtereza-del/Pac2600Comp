@@ -9,6 +9,7 @@
 //                           UP DOWN LEFT RIGHT FIRE SELECT RESET (held while active) or
 //                           LDIFF_A LDIFF_B RDIFF_A RDIFF_B COLOR BW (switches: stay where set)
 //   dump <from> <to> <step> save the picture of frames from, from+step, ... to as frame_NNNNNN_160xH.raw
+//   region <y0> <y1> <x0> <x1>  also record the colours inside this picture area (rows y0..y1, columns x0..x1)
 
 #include <cstdint>
 #include <cstdio>
@@ -72,6 +73,7 @@ int main(int argc, char* argv[])
 
   std::vector<Hold> holds;
   std::set<int> dump;
+  int region[4] = {-1, -1, -1, -1};
   std::ifstream script(argv[4]);
   if(!script) { std::fprintf(stderr, "cannot read script %s\n", argv[4]); return 3; }
   for(std::string line; std::getline(script, line); ) {
@@ -83,6 +85,11 @@ int main(int argc, char* argv[])
       int a, b, s;
       if(!(in >> a >> b >> s) || s <= 0) { std::fprintf(stderr, "bad dump line: %s\n", line.c_str()); return 3; }
       for(int f = a; f <= b; f += s) dump.insert(f);
+      continue;
+    }
+    if(first == "region") {
+      if(!(in >> region[0] >> region[1] >> region[2] >> region[3]) || region[0] > region[1] || region[2] > region[3]
+         || region[0] < 0 || region[3] >= kWidth) { std::fprintf(stderr, "bad region line: %s\n", line.c_str()); return 3; }
       continue;
     }
     Hold h{std::stoi(first), 0, ""};
@@ -107,7 +114,7 @@ int main(int argc, char* argv[])
   info.close();
 
   std::ofstream csv(outDir + "/frames.csv");
-  csv << "frame,inputs,left_diff,right_diff,tv,hash,status_hash,colors,ram\n";
+  csv << "frame,inputs,left_diff,right_diff,tv,hash,status_hash,colors,ram" << (region[0] >= 0 ? ",region_colors" : "") << '\n';
 
   for(int f = 0; f < frames; ++f) {
     std::set<std::string> active;
@@ -135,7 +142,17 @@ int main(int argc, char* argv[])
 
     csv << f << ',' << (inputs.empty() ? "-" : inputs) << ',' << (sw.leftDifficultyA() ? 'A' : 'B') << ','
         << (sw.rightDifficultyA() ? 'A' : 'B') << ',' << (sw.tvColor() ? "color" : "bw") << ','
-        << hash << ',' << statusHash << ',' << colors << ',' << ram << '\n';
+        << hash << ',' << statusHash << ',' << colors << ',' << ram;
+    if(region[0] >= 0) {
+      bool inRegion[256] = {};
+      for(int y = region[0]; y <= region[1] && y < static_cast<int>(tia.height()); ++y)
+        for(int x = region[2]; x <= region[3]; ++x) inRegion[fb[y * kWidth + x]] = true;
+      std::string rc;
+      for(int c = 0; c < 256; ++c)
+        if(inRegion[c]) { char b[4]; std::snprintf(b, sizeof b, "%02x", c); rc += (rc.empty() ? "" : ":"); rc += b; }
+      csv << ',' << rc;
+    }
+    csv << '\n';
 
     if(dump.count(f)) {
       char name[64];

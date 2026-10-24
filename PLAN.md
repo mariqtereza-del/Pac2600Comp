@@ -948,8 +948,52 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
       - **Variations:** no game number shown in play. Idle ghost-catch timings repeat every 4 games, and Pac-Man's speed over the same 12 px is 20 frames (games 1, 7, 8) versus 16 (2–6). What each variation means is not determined.
       - **Two players:** a red bar for player 2, turns alternate.
       - **PS4 pad in Stella (your test):** the left stick moves Pac-Man and a pad button starts the game. The d-pad was not confirmed.
-7. **[Not started] C7 — Reference captures.**
-    - Claude Code: guides you to take numbered Stella snapshots of the title screen, start of game, a power pill in effect, a death, a fruit/vitamin, a level end and game over, saved to `reference\screens\`. If you want video too, you choose then whether to install OBS (optional).
+7. **[Done] C7 — Reference captures.** *(expanded and done 2026-10-24)*
+    - **Objective:** a numbered, **reproducible** set of reference pictures in `reference\screens\` (local only), each recreatable from a committed input script:
+      1. title (attract) screen;
+      2. start of a game;
+      3. a power pill in effect;
+      4. a ghost being eaten, if reached;
+      5. a death;
+      6. the bonus item;
+      7. a level end;
+      8. game over.
+
+      Plus `docs\CAPTURES.md` listing each picture with its frame, the script that makes it, and what it shows.
+    - **Why it matters:** these are the fixed "this is how the original looks at that moment" references for the port (Phase D lockstep, D6 shape check) and for Phase E. Being script-based, anyone can recreate them byte-for-byte.
+    - **Prerequisites:** C6 Done (yes; commit `090aa6d`, clean tree). Found on 2026-10-24 in C6's recorded runs:
+      - **Lives:** RAM $98 counts lives remaining (3 at start, then 2/1/0 exactly at the life-marker changes).
+      - **Dying:** $D2 = 64 while Pac-Man is dying (set at each death, cleared when the next life starts).
+      - **Wafer map:** player 1's is $88–$97, with 126 one-bits at game start. Each bit clears exactly when the score goes up. Player 2's identical map is at $9C–$AB.
+      - These are working labels, to be confirmed in Phase F.
+    - **What Claude Code will do (T-C7-1):**
+      1. Add a search-based player, `tools\stella_probe\bot.cpp` → `stella_bot.exe`. At regular decision points it saves the emulator state, tries short move sequences ahead using Stella's own save/load, and picks one that eats wafers ($88–$97) without dying ($D2).
+      2. It writes its moves as an ordinary **input script**.
+      3. **Replay that script from power-on with `stella_script.exe`.** Only the replay counts: it must reproduce the outcome, proving the captures don't depend on save/load.
+      4. Find the moments in the replay (power pill in effect, ghost eaten, death, bonus item, level end, game over) from RAM and pictures.
+      5. Save numbered pictures and write `docs\CAPTURES.md`.
+      6. **Fallback:** if the bot can't reach a power pill or a level end, Claude Code asks you for a short play session in Stella with F12 snapshots of the missing moments, marked "not reproducible".
+    - **What I must do:** Nothing, unless the fallback is needed. Optionally, look at the pictures.
+    - **Exact instructions:** only if the fallback is needed (given then).
+    - **Required input:** None.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - Committed scripts in `tools\captures\` that recreate every picture.
+      - Up to 8 numbered pictures in `reference\screens\`, each checked by eye.
+      - `docs\CAPTURES.md`.
+      - Anything not reached is listed as such.
+    - **Verification:**
+      - The replay outcome (wafers left, lives) equals the bot's search.
+      - Picture fingerprints listed in `docs\CAPTURES.md`, and a second replay giving identical fingerprints.
+      - ROM SHA-1s unchanged.
+    - **Completion criteria:** at least the scriptable moments (title, start, death, bonus item, game over) captured and reproducible. Power pill and level end either captured the same way, or covered by the fallback, or listed as not captured with your agreement.
+    - **Potential problems:**
+      - The search may get stuck (long empty corridors) or keep dying. Search depth and horizon are tuned and recorded.
+      - Save/load might not be perfectly identical to continuous play. The replay check catches that.
+    - **Recovery:** new files only, plus local output in `reference\c7\` and `reference\screens\`. Undo by returning to `090aa6d` (with your OK).
+    - **Documentation updates:** `docs\CAPTURES.md` (new), `DECISIONS.md` (T-C7-1), `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage C7: Reference captures`.
+    - **Next stage:** C8 — Gate C: reproducible reference.
 8. **[Not started] C8 — Gate C: reproducible reference.**
     - `docs\REFERENCE.md` explains how anyone can recreate this exact setup (Stella version, settings, ROM fingerprint). Gate checklist: display, timing, sound, controls and variations documented; snapshots present; nothing is "believed" without a measurement noted.
 

@@ -4,6 +4,7 @@
 
 #include "StellaLIBRETRO.hxx"
 #include "Console.hxx"
+#include "Event.hxx"
 #include "OSystem.hxx"
 #include "System.hxx"
 #include "M6532.hxx"
@@ -42,6 +43,14 @@ std::string Emulator::load(const std::string& romName, const std::vector<std::ui
 }
 
 void Emulator::runFrame() { impl_->core.runFrame(); }
+
+const std::int16_t* Emulator::audio() const { return impl_->core.getAudioBuffer(); }
+
+int Emulator::audioFrames() const { return static_cast<int>(impl_->core.getAudioSize()); }
+
+int Emulator::audioRate() const { return static_cast<int>(impl_->core.getAudioRate() + 0.5f); }
+
+void Emulator::setConsoleReset(bool pressed) { impl_->core.setInputEvent(Event::ConsoleReset, pressed ? 1 : 0); }
 
 int Emulator::height() const { return static_cast<int>(impl_->core.osystem().console().tia().height()); }
 

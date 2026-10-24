@@ -15,10 +15,13 @@
 //                                               checked in fullscreen, the state saved to <ini> (fullscreen on)
 //        pacman2600 --state-report <report> --settings <ini>
 //                                               start from the state saved in <ini>, report what was restored, quit
-//        (window mode: keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off;
+//        pacman2600 --audio-check <seconds> <report> [rom_file] [--mute] [--reset-at N] [--settings <ini>]
+//                                               no window: runs the game at 60 frames/s into the real sound device for that
+//                                               long and writes the device format and the buffer statistics to <report>
+//        (window mode: keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off; R = Game Reset;
 //         the window can be resized; its size, place and fullscreen are remembered in settings.ini)
 //        pacman2600 --headless <png> [rom_file] [--frames N] [--save-frame N] [--raw <file>] [--fingerprints <csv>]
-//                   [--settings <ini>] [--roms-dir <dir>]
+//                   [--settings <ini>] [--roms-dir <dir>] [--reset-at N] [--audio-wav <file>]
 //                                               runs the game with no window (default 600 frames) and saves frame
 //                                               N (default 300) as a PNG, with a report in <png>.txt
 
@@ -30,12 +33,15 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <atomic>
 #include <fstream>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <vector>
 
+#include "audio.hpp"
 #include "emulator.hpp"
 #include "layout.hpp"
 #include "rom_finder.hpp"
@@ -123,6 +129,11 @@ bool parsePair(const std::string& text, char separator, int& first, int& second)
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
+  std::string audioCheckFile, audioWav;
+  double audioCheckSeconds = 0;
+  int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
+  bool mute = false;  // play the sound stream with the volume at zero (tests)
+  int stallMs = 0;    // tests: freeze the loop once, 5 seconds in (--audio-check: the game loop; the game window: the window thread)
   bool windowGiven = false;  // --window on the command line: do not use the remembered window
   layout::Mode mode = layout::Mode::Sharp;
   layout::PixelShape pixelShape{0, 0};  // {0, 0} = Stella's shape for the picture
@@ -142,6 +153,11 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--headless") o.headlessPng = next();
     else if(a == "--layout-check") o.layoutCheckPng = next();
     else if(a == "--mode") { if(!parseMode(next(), o.mode)) std::fprintf(stderr, "--mode must be sharp, fill, tv or game\n"); }
+    else if(a == "--audio-check") { o.audioCheckSeconds = std::atof(next().c_str()); o.audioCheckFile = next(); }
+    else if(a == "--audio-wav") o.audioWav = next();
+    else if(a == "--reset-at") o.resetAt = std::atoi(next().c_str());
+    else if(a == "--mute") o.mute = true;
+    else if(a == "--stall-ms") o.stallMs = std::atoi(next().c_str());
     else if(a == "--fullscreen-check") o.fullscreenCheckFile = next();
     else if(a == "--state-report") o.stateReportFile = next();
     else if(a == "--window") { o.windowGiven = true; if(!parsePair(next(), 'x', o.windowW, o.windowH)) std::fprintf(stderr, "--window must look like 1280x960\n"); }
@@ -297,6 +313,60 @@ bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
   const bool ok = saved && off <= 2 && outsideNotBlack == 0 && cutOff == 0 && std::fabs(shapeSeen - static_cast<double>(shape.num) / shape.den) / (static_cast<double>(shape.num) / shape.den) <= 0.005;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   SDL_DestroySurface(rgb);
+  return ok;
+}
+
+// ---- Sound (Stage D8, DECISIONS.md T-D8-1) ----
+
+std::string audioStatsText(const AudioOutput& audio, double seconds)
+{
+  const AudioOutput::Stats st = audio.stats();
+  char text[1024];
+  std::snprintf(text, sizeof text,
+                "%s\nseconds=%.1f\npushes=%lld\npushed_pairs=%lld\npushed_pairs_per_second=%.1f\npadded_pairs=%lld\ndropped_pairs=%lld\n"
+                "underruns=%lld\nshortfall_bytes=%lld\nqueued_ms_target=%.1f\nqueued_ms_smallest=%.1f\nqueued_ms_largest=%.1f\n",
+                audio.describe().c_str(), seconds, st.pushes, st.pushedFrames, seconds > 0 ? static_cast<double>(st.pushedFrames) / seconds : 0.0,
+                st.paddedFrames, st.droppedFrames, st.underruns, st.shortfallBytes, st.targetMs, st.minQueuedMs, st.maxQueuedMs);
+  return text;
+}
+
+// --audio-check: the game runs at 60 frames per second (no window) and its sound goes to the real sound device.
+bool audioCheck(const Options& o)
+{
+  std::ofstream report(o.audioCheckFile);
+  if(!report) return false;
+  const auto found = rom::findQuietly(o.romArg, o.settingsFile, o.romsDir);
+  std::vector<std::uint8_t> bytes;
+  if(!found || found->check.status != rom::Status::Ok || !readRomBytes(found->check.path, bytes)) { report << "result=no usable ROM\n"; return false; }
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(found->check.path), bytes); !error.empty()) { report << "result=" << error << '\n'; return false; }
+
+  AudioOutput audio;
+  if(!audio.open(emulator.audioRate(), o.mute)) { report << "result=FAIL " << audio.problem() << '\n'; return false; }
+
+  constexpr Uint64 kFrameNs = 1000000000ull / 60;  // the same temporary clock as the game window
+  const Uint64 started = SDL_GetTicksNS();
+  Uint64 next = started;
+  long long frames = 0;
+  bool stalled = false;
+  while(static_cast<double>(SDL_GetTicksNS() - started) < o.audioCheckSeconds * 1e9) {
+    if(o.stallMs > 0 && !stalled && static_cast<double>(SDL_GetTicksNS() - started) >= 5e9) { SDL_Delay(static_cast<Uint32>(o.stallMs)); stalled = true; }
+    const Uint64 now = SDL_GetTicksNS();
+    int steps = 0;
+    while(now >= next && steps < 5) {
+      emulator.setConsoleReset(o.resetAt >= 0 && frames >= o.resetAt && frames < o.resetAt + 10);
+      emulator.runFrame();
+      audio.push(emulator.audio(), emulator.audioFrames());
+      next += kFrameNs; ++steps; ++frames;
+    }
+    if(steps == 5 && now >= next) next = now;
+    SDL_Delay(1);
+  }
+  const double seconds = static_cast<double>(SDL_GetTicksNS() - started) / 1e9;
+  const AudioOutput::Stats st = audio.stats();
+  report << audioStatsText(audio, seconds) << "frames=" << frames << "\nframes_per_second=" << frames / seconds << '\n';
+  const bool ok = st.underruns == 0 && st.pushedFrames > 0;
+  report << "result=" << (ok ? "OK" : "CHECK underruns or no sound pushed") << '\n';
   return ok;
 }
 
@@ -494,7 +564,7 @@ bool stateReport(SDL_Window* window, const Options& o, const windowstate::State&
 // The game window: one emulator frame per 1/60 s from a simple clock (temporary; real pacing is Stage D9).
 // With maxSeconds > 0 it stops by itself after that long and returns the frames per second it managed (for tests).
 // Keys 1, 2, 3, 4 choose Sharp, Fill, TV frame, Game area; Alt+Enter toggles fullscreen (temporary; Stage D10 gives the keys their final home).
-double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string& romPath, double maxSeconds, View view, Tracker& tracker)
+double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string& romPath, double maxSeconds, View view, Tracker& tracker, const Options& options)
 {
   std::vector<std::uint8_t> bytes;
   Emulator emulator;
@@ -503,6 +573,9 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, error.c_str(), window);
     return 0;
   }
+  AudioOutput audio;
+  if(!audio.open(emulator.audioRate(), options.mute)) std::fprintf(stderr, "%s\nThe game goes on without sound.\n", audio.problem().c_str());
+
   Screen screen;
   screen.renderer = renderer;
   screen.view = view;
@@ -512,12 +585,57 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   };
   retitle();
 
-  constexpr Uint64 kFrameNs = 1000000000ull / 60;  // Stella plays NTSC at exactly 60 Hz (docs\TIMING.md)
-  Uint64 next = SDL_GetTicksNS();
-  const Uint64 started = next;
-  long long frames = 0;
+  // The game and its sound run on their own thread (DECISIONS.md T-D8-2), so that a window that is being dragged or
+  // resized, which freezes this thread on Windows, cannot starve the sound card. This thread only shows the pictures.
+  std::atomic<bool> stop{false}, resetKey{false};
+  std::mutex lock;  // guards the shared picture below
+  std::vector<std::uint32_t> sharedPixels;
+  int sharedHeight = 0;
+  long long sharedFrame = 0;  // number of the picture in sharedPixels (frames run so far)
+  double longestGapMs = 0;
+  int gapsOver30 = 0;
+  std::string gapLog;
+  const Uint64 started = SDL_GetTicksNS();
+
+  std::thread game([&]() {
+    constexpr Uint64 kFrameNs = 1000000000ull / 60;  // Stella plays NTSC at exactly 60 Hz (docs\TIMING.md)
+    Uint64 next = SDL_GetTicksNS(), lastLoop = next;
+    long long frames = 0;
+    while(!stop.load()) {
+      const Uint64 now = SDL_GetTicksNS();
+      const double gap = static_cast<double>(now - lastLoop) / 1e6;  // how long this thread went without running
+      lastLoop = now;
+      if(gap > 30.0) {
+        ++gapsOver30;
+        if(gapLog.size() < 400) gapLog += " " + std::to_string(static_cast<int>(gap)) + "ms@frame" + std::to_string(frames);
+      }
+      longestGapMs = std::max(longestGapMs, gap);
+
+      int steps = 0;
+      while(now >= next && steps < 5) {
+        emulator.setConsoleReset(resetKey.load() || (options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10));
+        emulator.runFrame();
+        audio.push(emulator.audio(), emulator.audioFrames());
+        next += kFrameNs; ++steps; ++frames;
+      }
+      if(steps == 5 && now >= next) next = now;  // far behind (the PC was busy): do not try to catch up
+      if(steps > 0) {
+        std::vector<std::uint32_t> picture = emulator.colours();
+        std::lock_guard<std::mutex> guard(lock);
+        sharedPixels = std::move(picture);
+        sharedHeight = emulator.height();
+        sharedFrame = frames;
+      }
+      SDL_DelayPrecise(1000000);  // 1 ms
+    }
+  });
+
   std::vector<std::uint32_t> pixels;
+  int height = 0;
+  bool failed = false, stalled = false;
   for(bool running = true; running; ) {
+    // Test only (--stall-ms): freeze this thread once, as dragging the window does, to show the sound does not depend on it.
+    if(options.stallMs > 0 && !stalled && static_cast<double>(SDL_GetTicksNS() - started) >= 5e9) { SDL_Delay(static_cast<Uint32>(options.stallMs)); stalled = true; }
     for(SDL_Event e; SDL_PollEvent(&e); ) {
       if(e.type == SDL_EVENT_QUIT || (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_ESCAPE)) running = false;
       if(handleWindowEvent(window, tracker, e)) continue;
@@ -527,17 +645,27 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         if(e.key.key == SDLK_3) { screen.view.mode = layout::Mode::TvFrame; retitle(); }
         if(e.key.key == SDLK_4) { screen.view.mode = layout::Mode::GameArea; retitle(); }
       }
+      if((e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_KEY_UP) && e.key.key == SDLK_R) resetKey = e.type == SDL_EVENT_KEY_DOWN;  // temporary (D10)
     }
-    const Uint64 now = SDL_GetTicksNS();
-    int steps = 0;
-    while(now >= next && steps < 5) { emulator.runFrame(); next += kFrameNs; ++steps; ++frames; }
-    if(steps == 5 && now >= next) next = now;  // far behind (window dragged, for example): do not try to catch up
-    if(steps > 0) pixels = emulator.colours();
-    if(!pixels.empty() && !screen.show(pixels, emulator.height())) return 0;  // redrawn every time: a presented buffer is not kept
+    {
+      std::lock_guard<std::mutex> guard(lock);
+      if(!sharedPixels.empty()) { pixels = sharedPixels; height = sharedHeight; }
+    }
+    if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
     SDL_RenderPresent(renderer);
-    if(maxSeconds > 0 && static_cast<double>(now - started) >= maxSeconds * 1e9) running = false;
+    if(maxSeconds > 0 && static_cast<double>(SDL_GetTicksNS() - started) >= maxSeconds * 1e9) running = false;
   }
-  return static_cast<double>(frames) * 1e9 / static_cast<double>(SDL_GetTicksNS() - started);
+  stop = true;
+  game.join();
+  if(failed) return 0;
+
+  const double elapsed = static_cast<double>(SDL_GetTicksNS() - started) / 1e9;
+  if(audio.isOpen()) {  // a short note on how the sound did, next to the settings (read by whoever tests)
+    std::ofstream log(options.settingsFile + ".audio.txt");
+    log << audioStatsText(audio, elapsed) << "game_thread_longest_gap_ms=" << longestGapMs << "\ngame_thread_gaps_over_30ms=" << gapsOver30
+        << "\ngame_thread_gaps=" << gapLog << '\n';
+  }
+  return static_cast<double>(sharedFrame) / elapsed;
 }
 
 // --headless: run the game with no window. Exit code 0 = done, 4 = problem with the ROM, 5 = no ROM found, 6 = other failure.
@@ -562,10 +690,28 @@ int headlessRun(const Options& o)
   std::ofstream fingerprints;
   if(!o.fingerprintFile.empty()) { fingerprints.open(o.fingerprintFile); fingerprints << "frame,hash\n"; }
 
+  // Optional audio file: a standard WAV, 16-bit stereo at the emulator's rate, like the one the Phase C tool wrote.
+  std::ofstream wav;
+  std::uint32_t wavBytes = 0;
+  auto put32 = [&](std::uint32_t v) { for(int i = 0; i < 4; ++i) wav.put(static_cast<char>((v >> (8 * i)) & 0xFF)); };
+  auto put16 = [&](std::uint32_t v) { for(int i = 0; i < 2; ++i) wav.put(static_cast<char>((v >> (8 * i)) & 0xFF)); };
+  const std::uint32_t rate = static_cast<std::uint32_t>(emulator.audioRate());
+  if(!o.audioWav.empty()) {
+    wav.open(o.audioWav, std::ios::binary);
+    wav.write("RIFF", 4); put32(0); wav.write("WAVEfmt ", 8); put32(16);
+    put16(1); put16(2); put32(rate); put32(rate * 4); put16(4); put16(16);
+    wav.write("data", 4); put32(0);
+  }
+
   bool saved = false;
   char hash[17];
   for(int f = 0; f < o.frames; ++f) {
+    emulator.setConsoleReset(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10);
     emulator.runFrame();
+    if(wav) {
+      wav.write(reinterpret_cast<const char*>(emulator.audio()), static_cast<std::streamsize>(emulator.audioFrames()) * 4);
+      wavBytes += static_cast<std::uint32_t>(emulator.audioFrames()) * 4;
+    }
     std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
     if(fingerprints) fingerprints << f << ',' << hash << '\n';
     if(f != o.saveFrame) continue;
@@ -581,6 +727,12 @@ int headlessRun(const Options& o)
     }
     report << "saved_frame=" << f << "\nsaved_picture=" << Emulator::kWidth << 'x' << h
            << "\nsaved_frame_fingerprint=" << hash << '\n';
+  }
+  if(wav) {  // fill in the two sizes of the WAV header
+    wav.seekp(4); put32(36 + wavBytes);
+    wav.seekp(40); put32(wavBytes);
+    wav.close();
+    report << "audio_wav=" << o.audioWav << "\naudio_rate=" << rate << "\naudio_bytes=" << wavBytes << '\n';
   }
   report << "rom=" << found->check.path << "\nrom_sha1=" << found->check.sha1 << "\nframes_run=" << o.frames
          << "\nlast_frame_fingerprint=" << hash << "\npng_saved=" << (saved ? "yes" : "no") << "\nresult=" << (saved ? "OK" : "FAIL") << '\n';
@@ -656,6 +808,12 @@ int main(int argc, char* argv[])
   const Options options = parseArguments(argc, argv);
   if(!options.findRomFile.empty()) return findRomReport(options);
   if(!options.headlessPng.empty()) return headlessRun(options);
+  if(options.audioCheckSeconds > 0) {
+    if(!SDL_Init(SDL_INIT_AUDIO)) { showError("SDL could not start."); return 1; }
+    const bool ok = audioCheck(options);
+    SDL_Quit();
+    return ok ? 0 : 2;
+  }
 
   if(!SDL_Init(SDL_INIT_VIDEO)) { showError("SDL could not start."); return 1; }
 
@@ -705,7 +863,7 @@ int main(int argc, char* argv[])
       } else if(!options.fullscreenCheckFile.empty()) {
         exitCode = fullscreenCheck(window, renderer, options, romPath) ? 0 : 2;
       } else {
-        const double rate = playWindow(window, renderer, romPath, options.timedSeconds, view, tracker);
+        const double rate = playWindow(window, renderer, romPath, options.timedSeconds, view, tracker, options);
         // Remember the window for next time (not for timed test runs, which must not change the settings).
         if(options.timedSeconds <= 0 && !options.windowGiven) {
           rememberWindowedRect(window, tracker);

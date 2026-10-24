@@ -1175,7 +1175,28 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D7-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D7: Windowed and fullscreen`.
     - **Next stage:** D8 — Sound.
-8. **[Not started] D8 — Sound.** TIA sound from the core played through SDL with a small, steady buffer. Verify by ear against C5 clips and by Claude Code checking the sample rate and that no buffer underruns are logged in 5 minutes.
+8. **[Done] D8 — Sound.** *(expanded 2026-10-24)*
+    - **Objective:** the sound the Stella core makes is played through the PC's speakers by SDL, with a small steady buffer (about 4 frames, roughly 67 ms), and the program counts every moment the sound ran short or ran long.
+    - **Why it matters:** the music and effects are half of the game's feel; a buffer that is too big adds delay, too small makes crackles. D9 (frame pacing) will build on this buffer, with sound as the master clock.
+    - **Prerequisites:** D7 Done (commit `4660834`). The sound facts in `docs\SOUND.md` (31,440 Hz, 16-bit stereo, 524 samples per frame, silent attract mode).
+    - **What Claude Code will do:**
+      1. `Emulator`: hand out each frame's audio (`audio()`, `audioRate()`), and a console Reset input (`setConsoleReset`) so sound can be produced and tested.
+      2. `src\host\audio.*`: an SDL audio stream at 31,440 Hz (SDL converts it to the device's format), prefilled with silence, kept near the target by dropping data that would make the delay too long, and a counter for every time the device asked for sound the stream did not have (an underrun). `--mute` plays the stream with the volume at zero, for tests that must not make noise.
+      3. The game window pushes each frame's audio; temporary key **R** = Game Reset (held while pressed) so the three sounds can be heard before the real keyboard of D10.
+      4. `--headless ... --audio-wav <file> [--reset-at N]`: writes the audio as a WAV so it can be compared with the C5 reference (`reference\audio\idle\audio.wav`) sample for sample.
+      5. `--audio-check <seconds> <report> [rom] [--mute]`: plays for that long on the real sound device and writes the sample rate, the device format, the buffer statistics and the number of underruns.
+    - **What I must do:** start the program, press **R** to start a game, listen (the start tune, a blip for each wafer, the death sound) and say whether it sounds right (no crackling, no delay you notice). Needs your speakers on at a safe volume.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your report.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the sounds of C5 come out of the speakers in time with the picture, with no crackle.
+    - **Verification:** build 0 errors/0 warnings; the audio of the host (2,500 frames with Reset at 1800) equals `reference\audio\idle\audio.wav` byte for byte for those frames; a muted 5-minute run on the real device logs 0 underruns (or a counted, explained number); the report shows the device accepted 31,440 Hz and the queue stayed near the target; earlier checks still pass; your ear test.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** I cannot hear, so "sounds right" rests on the sample-for-sample comparison and on you; with the temporary 60 Hz clock the game and the sound card clocks differ slightly, so the buffer slowly drifts (the program trims it and counts it; D9 removes the cause); dragging the window freezes the loop and can cause an underrun; a PC with no sound device must not crash the game (it plays silently and says so).
+    - **Recovery:** new files plus edits to `emulator.*`, `main.cpp`, `CMakeLists.txt`; undo by returning to `e9629ab` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D8-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\SOUND.md` (what D8 proved), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D8: Sound`.
+    - **Next stage:** D9 — Frame pacing on a 180 Hz screen.
 9. **[Not started] D9 — Frame pacing on a 180 Hz screen.** The game advances at the console's measured rate (from C4), never at the monitor's rate. Each game frame is shown for about three refreshes; sound timing is the master clock so music never drifts. Verify: a 10-minute run logs game frames per second within 0.1% of C4's value and no audio gaps.
 10. **[Not started] D10 — Keyboard.** Arrows and WASD for the joystick, plus keys for Select, Reset and the difficulty switches. Listed on screen with **F1**.
 11. **[Not started] D11 — PS4 controller.** D-pad and left stick for the joystick; Options = Reset, Share = Select. Verify with your pad, including unplugging and replugging mid-game.

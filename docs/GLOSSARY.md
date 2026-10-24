@@ -150,3 +150,6 @@ Every project term in one line of plain English. New terms are added in the stag
 | Pixel shape (aspect) | How wide a game pixel is compared with its height. The 2600's pixels are wider than tall, so the picture must be stretched sideways to look right. |
 | Letterbox / pillarbox | Black bars above and below (letterbox) or at the sides (pillarbox) when the window's shape differs from the picture's. |
 | Borderless fullscreen | A window with no frame that covers the whole monitor, at the desktop's own resolution. Switching is instant and the screen does not flicker, because no video mode changes. |
+| Sample rate | How many sound readings per second (31,440 for this game). More readings per second means finer sound. |
+| Underrun | The sound card wanted more sound than the program had ready, so it played silence: heard as a click or a gap. |
+| Buffer (cushion) | A small store of sound waiting to be played, so a short hiccup in the program is not heard. Bigger is safer but adds delay. |

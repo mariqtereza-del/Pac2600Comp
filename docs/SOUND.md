@@ -89,3 +89,7 @@ Register notation: `C4 F12 V8 ×16` means AUDC = 4, AUDF = 12, AUDV = 8, held fo
 - **What a clip contains:** each clip is the game's whole audio output during that time (both channels mixed), from 6 frames before the sound to 6 frames after it. A clip named "ch0" can therefore also contain channel 1.
 - **Full-run audio:** `audio.wav` in each run folder (50 MB each) is the whole 6 min 40 s.
 - **About `idle_check`:** that folder is a repeat of `idle`, made to prove that a tool change kept the idle run byte-identical.
+
+## Played by the host (Stage D8)
+
+The host's own audio for 2,500 frames (Game Reset at frame 1800) is byte-identical to the first 5,237,904 bytes of `reference\audio\idle\audio.wav`, so the sound the PC port plays is the sound recorded in C5, including the one-scanline volume dip each frame. See `DECISIONS.md` T-D8-1.

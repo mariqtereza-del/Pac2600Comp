@@ -1,6 +1,6 @@
-Current stage: D8 — Sound (Phase D) — not started
+Current stage: D9 — Frame pacing on a 180 Hz screen (Phase D) — not started
 
-Last updated: 2026-10-24, Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -36,6 +36,7 @@ Last updated: 2026-10-24, Stage D7 done (owner confirmed fullscreen and scaling)
 | D5 — The game on screen | The emulator's frames are drawn in the window, unscaled (160x228, centred, nearest pixel), stepped by a temporary 60 Hz clock; vsync requested explicitly. `--screen-check`: window pixels read back = emulator colours, 0 differing, 0 non-black outside the picture, screenshot looked at (maze, status bar). `--timed 10`: 60.046 frames/s. Earlier checks still pass (`test_rom_finder`, `--self-check`, headless fingerprints = C3). Window mode: responding, closes with exit 0, no leftover process. T-D5-1. Your check: title screen appeared, looked right, moved at normal speed; you noted the picture is hard to judge because it is so small (D6 enlarges it). |
 | D6 — Correct shape and scaling | `src\host\layout.*`, `tests\host\test_layout.cpp`, resizable window (opens 1280x960), three modes. Finding: Stella's own aspect correction makes a game pixel 19:10 for this 160x228 picture (not the plan's 12:7); default = Stella's shape, 12:7 selectable. `test_layout`: 148 checks, 0 failures (five window sizes x three modes x two shapes; Fill in 960x720 = Stella's rectangle). `--layout-check`: 11 real-window combinations, outline difference 0 px, nothing outside; screenshots looked at. Earlier checks still pass; 60.04 frames/s. Owner tested the first version (key 3 smaller; 1 = already Sharp, 2 only 5 % bigger; maze edges not meeting the window edges = black rows of the picture). Compared with Stella 7.0c itself (PrintWindow capture, with owner OK): same rows 34..609 and columns 0..959 as our Fill at 960x720. Mode 4 "Game area" added at the owner's request (crops always-black rows 0-10 and 200-227; 173 layout checks pass; `--layout-check` in 9 more combinations: 0 px outline difference, 0 non-black pixels cut off). Keys not verified by me. T-D6-1. Owner's check of version 2: key 4 fits the maze exactly top to bottom, key 3 works as intended, and the small 1-versus-2 difference is expected on a 1440p screen (the window is already close to the Fill size). |
 | D7 — Windowed and fullscreen | Alt+Enter toggles borderless fullscreen (monitor-sized, no video mode change); window size, place and fullscreen remembered in `settings.ini`, corrected if off screen; `settings` module keeps other lines. `test_windowstate` 29 checks; `--fullscreen-check` on 2560x1440: covers the monitor, picture check OK (0 px), odd size/place restored exactly; `--state-report` restores saved states. Earlier checks still pass; headless = C3 (0 differences); 60.03 frames/s. T-D7-1. Owner: fullscreen works great, scaling too (so the real Alt+Enter works). |
+| D8 — Sound | The core's 31,440 Hz stereo sound plays through one SDL audio stream (`src\host\audio.*`) with a 4-frame cushion and counted shortages; the game and sound run on their own thread (T-D8-2); temporary key R = Game Reset. Host audio for 2,500 frames is byte-identical to the C5 reference. Real device (Focusrite, 44.1 kHz): 5-minute muted run 0 underruns, queue 46.8-66.8 ms; an 800 ms window freeze 0 underruns; the owner's 91.8 s listen 0 underruns. Earlier checks still pass; headless = C3. T-D8-1..3. Owner: tune and wail play, no delay; crackle remains and is judged inherent (60 Hz volume dip every frame); the wafer blip cannot be tried until D10. |
 
 ## Key facts so far
 
@@ -74,12 +75,12 @@ Last updated: 2026-10-24, Stage D7 done (owner confirmed fullscreen and scaling)
 
 ## Next stage
 
-D8 - Sound: the core's TIA sound played through SDL with a small, steady buffer; verified against the C5 clips and by checking for buffer underruns.
+D9 - Frame pacing on a 180 Hz screen: the game advances at the console's measured rate, never the monitor's; sound timing becomes the master clock; a 10-minute run must stay within 0.1 % of C4's rate with no audio gaps.
 
 ## Handoff from the last session
 
-Stage D7 done: **borderless fullscreen with Alt+Enter, and the window is remembered** (size, place, fullscreen) in `settings.ini`. You confirmed fullscreen and scaling work. Proof: 29 window-state checks, a real-window fullscreen check on 2560x1440, restore checks, earlier checks unchanged. Not tried by you or me: a second monitor, restart after dragging (proved by my check only).
+Stage D8 done: **the game's sound plays through your speakers** (start tune, wail; wafer blip in the verified stream but not yet heard, no controls until D10). The crackle you hear is judged to be the original sound: the stream is byte-identical to Stella's, your own run logged 0 shortages, and the game itself cuts the volume for 64 microseconds every frame. Temporary key R = Game Reset.
 
-Updated: `src\host\settings.*`, `src\host\windowstate.*`, `src\host\main.cpp`, `src\hostom_finder.*`, `src\host\CMakeLists.txt`, `tools\build_host.cmd`, `tests\host\test_windowstate.cpp`, `DECISIONS.md` (T-D7-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d7\`. The ROM was only read; nothing installed, deleted or pushed.
+Updated: `src\host\audio.*`, `src\host\emulator.*`, `src\host\main.cpp`, `src\host\CMakeLists.txt`, `DECISIONS.md` (T-D8-1..3), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\SOUND.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d8\`. The ROM was only read; nothing installed, deleted or pushed.
 
-Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and some `d7_*.ini`. Delete only with your OK.
+Optional: compare the sound with Stella's own app (needs your OK to start it). Still in `build\host\test_tmp` (ignored by Git): small test files. Delete only with your OK.

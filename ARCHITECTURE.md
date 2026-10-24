@@ -40,6 +40,7 @@ The program is honestly an **emulator front-end**: our code for everything aroun
 | `src\host\layout.*` | Ours | D6 (built) | Where the picture goes in the window: pixel shape (Stella's 19:10 for this ROM), Sharp / Fill / TV frame. Tests: `tests\host\test_layout.cpp` |
 | `src\host\settings.*` | Ours | D7 (built) | Reads and writes single `key=value` lines of `settings.ini`, keeping the other lines. Used by `rom_finder` and `windowstate` |
 | `src\host\windowstate.*` | Ours | D7 (built) | The remembered window (position, size, fullscreen) and its safety correction for monitors. Tests: `tests\host\test_windowstate.cpp` |
+| `src\host\audio.*` | Ours | D8 (built) | Plays the emulator's sound through one SDL audio stream with a 4-frame cushion; counts shortages, drops and padding |
 | `src\host\video.*` | Ours | D5-D7 (D5-D6: drawn from `main.cpp` for now) | Palette to colours, picture to window, correct shape (12:7 to be confirmed), whole-number scaling, fullscreen |
 | `src\host\audio.*` | Ours | D8 | Core audio samples to an SDL3 audio stream with a small steady buffer |
 | `src\host\pacing.*` | Ours | D9 | Advances the game at its own measured rate, not the monitor's (60.000 Hz vs 59.923 Hz is decided in D9) |

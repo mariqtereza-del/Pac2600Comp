@@ -74,6 +74,45 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D8-3 — The remaining crackle is the original sound: no smoothing (2026-10-24, Stage D8)
+
+- **What the owner reported (second listen, after T-D8-2):** the crackle is still there; the owner thinks it may be inherent to how the 2600 plays sound and asked whether it should be resolved.
+- **Evidence it is not our program:** the program's own log for that session (`settings.ini.audio.txt`): 91.8 s, 0 underruns, 0 dropped, 0 shortfall bytes, queue 60.1 to 76.8 ms, game thread's longest wait 17.1 ms. The audio stream is byte-identical to the Stella 7.0 core's output for 2,500 frames (T-D8-1), so any crackle in the samples is also in the reference.
+- **Likely source (from `docs\SOUND.md`, C5):** every frame with sound, the game writes volume 0 at scanline 226 and the real volume at scanline 227: a gap of about 64 microseconds 60 times a second. That is audible as a buzz or crackle on the tune and the wail. Rapid pitch steps and the 2600's square-wave tones add to the harshness.
+- **Choice:** leave it. Rule 2 (preserve the original behaviour) and Rule 3 (modernization separate): smoothing or filtering would change the original sound. If wanted, it can be an optional, off-by-default setting in a later modernization stage.
+- **Not proved by me:** that it sounds the same as Stella's own app by ear. That check (start Stella with `tools\run_stella.cmd`, with the owner's OK, and listen to the same tune and wail) was offered; it is optional.
+- **Reversible:** Yes.
+
+### T-D8-2 — The game and its sound run on their own thread (2026-10-24, Stage D8, after the owner's first listen)
+
+- **What the owner heard:** the start tune and the death wail play, no delay, but **crackling**. The program's own note from that run (`settings.ini.audio.txt`): 11.4 s, 40 underruns (the device asked for sound the stream did not have), 49,832 bytes short, queue down to 0.2 ms, 657 pushes instead of about 684, i.e. the loop stopped for roughly half a second once. Runs without anyone touching the window (10 s, 20 s, 30 s, 40 s, 5 minutes) had 0 underruns, and the longest gap of the loop was 25 ms.
+- **Cause (likely, not seen directly):** the sound was fed by the same loop that draws the window. On Windows a window that is being moved or resized freezes that loop for as long as the mouse button is held, so no sound is made and the cushion of 67 ms runs dry. The owner's saved window size (1650x1360 at 640,31) shows the window had been moved or resized in that session.
+- **Choice:** the emulator, the 60 Hz clock and the sound push now run on a **game thread**; the window thread (events, drawing, Alt+Enter, keys) only copies the latest finished picture under a lock. The R key is passed on as an atomic flag. The picture may freeze while the window is dragged, but the sound goes on. The game thread's longest wait is logged in `<settings>.audio.txt` (`game_thread_longest_gap_ms`).
+- **Proof:** `--timed 15 ... --stall-ms 800` freezes the window thread for 0.8 s (like a drag): **0 underruns**, queue 50.1 to 66.8 ms, game thread's longest gap 13.5 ms. Before the change, the same kind of freeze in the sound loop gave 24 underruns for 0.3 s (T-D8-1).
+- **Five minutes with the new structure** (real window, muted, `--timed 300`): 0 underruns, 0 dropped, 2,100 padded (the start-up cushion only), queue 46.8 to 66.8 ms, 31,439.8 sound pairs pushed per second (nominal 31,440), 60.003 frames per second, game thread's longest gap 20.0 ms. The sample-for-sample comparison with the C5 audio is still byte-identical (2,500 frames), headless fingerprints 0 differences from C3, and all earlier tests pass.
+- **The wafer blip:** the owner has no controls yet (D10), so its sound could not be tried by ear. It is in the byte-identical stream (the blips of C5 are in frames 1928 onward of the compared audio); its ear check moves to D10, when Pac-Man can be steered.
+- **Unexplained, noted:** one earlier `--timed 30` window run ended after 8.3 s although nothing in the program stops it; the same command then ran the full 30 s twice. Possibly a key press or window event from the owner's session reached the test window. Not seen again.
+- **Still for D9:** the game thread is still driven by the temporary 60 Hz clock, not by the sound card's clock; the cushion and drop rules absorb the small difference (0 dropped, 0 padded after start-up in 5 minutes).
+- **Not proved by me:** that the crackling the owner heard was this cause; the owner's second listen is the check. If crackling remains, the next suspects are the sound device's own buffer size or the 31,440 to 44,100 Hz conversion.
+- **Reversible:** Yes.
+
+### T-D8-1 — Sound: SDL audio stream at the emulator's own rate, 4-frame cushion, counted shortages, temporary R key (2026-10-24, Stage D8)
+
+- **Choice:** the core's sound (31,440 Hz, 16-bit stereo, about 524 pairs per frame; `docs\SOUND.md`) goes into **one SDL audio stream opened at 31,440 Hz** on the default playback device. SDL converts it to the device's format (here 44,100 Hz, 32-bit float) itself, so no resampling code of ours is needed.
+- **Buffer:** before playing, the stream is given a cushion of silence of 4 TV frames (66.8 ms), then the device is started. A frame's sound is dropped if more than 8 frames (about 133 ms) are already waiting, so a slowly drifting clock cannot build up delay; after a shortage a new cushion of silence is added. Every case is counted (`AudioOutput::Stats`: pushed, padded, dropped, underruns, smallest and largest queue).
+- **How a shortage is detected:** SDL's "get" callback reports how many bytes the device wanted beyond what the stream had; any value above 0 counts as an underrun. Proof that the counter works: `--audio-check ... --stall-ms 300` freezes the loop once for 0.3 s and the counter reports 24 underruns (28900 bytes short), 4,193 pairs of padding and 1,572 dropped.
+- **No sound device:** the game goes on without sound and says so on the error output (no crash).
+- **Why not make the sound the master clock now:** that is D9's job. For now the temporary 60 Hz clock still drives the game, so the cushion and drop rules absorb the small difference between that clock and the sound card's.
+- **Temporary key R** = the console's Reset switch (held while pressed), because attract mode is silent and the real keyboard is D10. `--reset-at N` does the same from frame N for tests.
+- **Test options:** `--mute` plays the stream at zero volume (the whole path runs, nothing is heard); `--audio-check <seconds> <report>` runs with no window; the game window writes `<settings file>.audio.txt` at exit with the same numbers.
+- **Proof (my side):**
+  - **Sample for sample:** `--headless ... --frames 2500 --reset-at 1800 --audio-wav` gives 5,237,904 bytes of audio (2,500 frames, 31,440 Hz) that are **byte-identical** to the first 5,237,904 bytes of the data in `reference\audio\idle\audio.wav` (the C5 reference made by the Phase C tool). It contains 164,110 non-zero samples: the start tune, the wafer blips and a death sound.
+  - **Real device:** the default playback device here is "Speakers (2- Focusrite USB Audio)" at 44,100 Hz, 2 channels, 32-bit float; SDL accepted 31,440 Hz input.
+  - **20 s muted run:** 0 underruns, queue 46.8 to 66.8 ms.
+  - **5-minute muted run (300.0 s):** 0 underruns, 0 dropped pairs, 2100 padded pairs (start-up cushion), queue 46.8 to 66.8 ms, 60 frames per second, 31438.3 pairs pushed per second (nominal 31,440).
+- **Not proved by me:** how it sounds. I cannot hear; the byte-identical stream and the counters are the evidence, and the owner's ear is the check. The owner's first listen (see T-D8-2) heard crackling.
+- **Reversible:** Yes.
+
 ### T-D7-1 — Borderless fullscreen with Alt+Enter, remembered window state in settings.ini (2026-10-24, Stage D7)
 
 - **Choice:** Alt+Enter calls `SDL_SetWindowFullscreen` with no fullscreen mode set, which in SDL3 means *borderless fullscreen at the desktop's own size* on the monitor the window is on (the primary one at first). No video mode is changed, so switching is instant and other windows are not disturbed. The cursor is hidden in fullscreen. Only Alt+Enter toggles (the plan's key); Esc still quits for now (D10 decides the final keys).

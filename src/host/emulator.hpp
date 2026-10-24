@@ -20,7 +20,15 @@ public:
   // Starts the console with these ROM bytes (a copy is made; the file is not touched). Empty string = ok.
   std::string load(const std::string& romName, const std::vector<std::uint8_t>& romBytes);
 
-  void runFrame();  // one whole TV frame, no input
+  void runFrame();  // one whole TV frame; the console's Reset switch is as last set by setConsoleReset
+
+  // Sound made by the last runFrame (Stage D8): 16-bit stereo, left and right interleaved, audioFrames() pairs.
+  // For this ROM that is 31,440 Hz and about 524 pairs per frame (docs\SOUND.md). Valid until the next runFrame.
+  const std::int16_t* audio() const;
+  int audioFrames() const;
+  int audioRate() const;
+
+  void setConsoleReset(bool pressed);  // the console's Reset switch (starts a game); held until set again
 
   int height() const;                       // picture rows (228 for this ROM)
   const std::uint8_t* indexed() const;      // height() x kWidth palette indexes, exactly what the TIA drew

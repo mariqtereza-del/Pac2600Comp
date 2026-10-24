@@ -37,7 +37,8 @@ The program is honestly an **emulator front-end**: our code for everything aroun
 | `src\host\main.cpp` | Ours | D2 (built) | Starts SDL3, makes the window, runs the main loop, closes cleanly. Also `src\host\CMakeLists.txt` and `tools\build_host.cmd` |
 | `src\host\rom_finder.*` | Ours | D3 (built) | Finds the ROM (command line, saved path, `roms` folder, file dialog) and checks size and SHA-1 `0940fea7…dbb1`. Tests: `tests\host\test_rom_finder.cpp` |
 | `src\host\emulator.*` | Ours | D4 (built) | Thin wrapper around `StellaLIBRETRO`: load, run frame, picture, RAM, state. The only host file that includes Stella headers |
-| `src\host\video.*` | Ours | D5-D7 (D5: drawn from `main.cpp` for now, unscaled) | Palette to colours, picture to window, correct shape (12:7 to be confirmed), whole-number scaling, fullscreen |
+| `src\host\layout.*` | Ours | D6 (built) | Where the picture goes in the window: pixel shape (Stella's 19:10 for this ROM), Sharp / Fill / TV frame. Tests: `tests\host\test_layout.cpp` |
+| `src\host\video.*` | Ours | D5-D7 (D5-D6: drawn from `main.cpp` for now) | Palette to colours, picture to window, correct shape (12:7 to be confirmed), whole-number scaling, fullscreen |
 | `src\host\audio.*` | Ours | D8 | Core audio samples to an SDL3 audio stream with a small steady buffer |
 | `src\host\pacing.*` | Ours | D9 | Advances the game at its own measured rate, not the monitor's (60.000 Hz vs 59.923 Hz is decided in D9) |
 | `src\host\input.*` | Ours | D10-D12 | Keyboard, PS4 pad, Select/Reset, difficulty and Colour/B&W switches |
@@ -83,6 +84,6 @@ When every recorded frame matches, the core is removed from the release build. I
 
 ## 7. Not decided yet
 
-- Exact picture pixel shape (12:7 is the standard value; D6 confirms against Stella and `reference\screens`).
+- Default scaling mode (Gate D). The pixel shape is settled in D6: Stella's own 19:10 for this ROM (T-D6-1); 12:7 stays selectable.
 - Pacing rate (D9) and flicker presentation (D6).
 - Whether the `.inputs` format is shared with the test tools' script format (D13).

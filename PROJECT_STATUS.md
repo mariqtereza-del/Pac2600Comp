@@ -1,6 +1,6 @@
-Current stage: D6 — Correct shape and scaling (Phase D)
+Current stage: D7 — Windowed and fullscreen (Phase D) — not started
 
-Last updated: 2026-10-24, end of Stage D5. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, Stage D6 done (owner confirmed version 2). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -34,6 +34,7 @@ Last updated: 2026-10-24, end of Stage D5. Phase C complete (Gate C met, `docs\G
 | D3 — Finding your ROM | `src\host\rom_finder.*`, `main.cpp`, `tests\host\test_rom_finder.cpp`. Build 0 errors/0 warnings. Test program: all pass on two runs (SHA-1 vectors, real ROM accepted, missing/empty/100-byte/wrong-content/one-bit-flipped/folder rejected with plain messages, settings round trip, search order). `--find-rom`: good exit 0, failure cases exit 4, none exit 5, `roms` folder and saved path found. Normal start: title shows the file name, exit 0, absolute path saved. Your check: black window with `pacman.a26` in the title, second start without asking. Mistake reported and fixed: the first test copied the ROM into `build\host\test_tmp\roms`; you approved deleting it, the test no longer copies. T-D3-1. |
 | D4 — Emulator running blind | `src\host\emulator.*` (only host code that includes Stella) and `pacman2600 --headless`. Build 0 errors/0 warnings. 600 frames run with no window: all 600 picture fingerprints equal C3's (0 differences), frame 300 = `a961ba2e7bbfbd17` in both; a run to frame 1500 equals C7's `01_title` raw picture byte for byte; two runs identical. Frame 300 saved as `reference\d4\frame300.png` (160x228, attract maze, looked at by eye). A bad ROM gives exit 4 and no picture. `test_rom_finder`, `--self-check`, `--find-rom` and window mode still work. ROM only read. T-D4-1. |
 | D5 — The game on screen | The emulator's frames are drawn in the window, unscaled (160x228, centred, nearest pixel), stepped by a temporary 60 Hz clock; vsync requested explicitly. `--screen-check`: window pixels read back = emulator colours, 0 differing, 0 non-black outside the picture, screenshot looked at (maze, status bar). `--timed 10`: 60.046 frames/s. Earlier checks still pass (`test_rom_finder`, `--self-check`, headless fingerprints = C3). Window mode: responding, closes with exit 0, no leftover process. T-D5-1. Your check: title screen appeared, looked right, moved at normal speed; you noted the picture is hard to judge because it is so small (D6 enlarges it). |
+| D6 — Correct shape and scaling | `src\host\layout.*`, `tests\host\test_layout.cpp`, resizable window (opens 1280x960), three modes. Finding: Stella's own aspect correction makes a game pixel 19:10 for this 160x228 picture (not the plan's 12:7); default = Stella's shape, 12:7 selectable. `test_layout`: 148 checks, 0 failures (five window sizes x three modes x two shapes; Fill in 960x720 = Stella's rectangle). `--layout-check`: 11 real-window combinations, outline difference 0 px, nothing outside; screenshots looked at. Earlier checks still pass; 60.04 frames/s. Owner tested the first version (key 3 smaller; 1 = already Sharp, 2 only 5 % bigger; maze edges not meeting the window edges = black rows of the picture). Compared with Stella 7.0c itself (PrintWindow capture, with owner OK): same rows 34..609 and columns 0..959 as our Fill at 960x720. Mode 4 "Game area" added at the owner's request (crops always-black rows 0-10 and 200-227; 173 layout checks pass; `--layout-check` in 9 more combinations: 0 px outline difference, 0 non-black pixels cut off). Keys not verified by me. T-D6-1. Owner's check of version 2: key 4 fits the maze exactly top to bottom, key 3 works as intended, and the small 1-versus-2 difference is expected on a 1440p screen (the window is already close to the Fill size). |
 
 ## Key facts so far
 
@@ -72,12 +73,12 @@ Last updated: 2026-10-24, end of Stage D5. Phase C complete (Gate C met, `docs\G
 
 ## Next stage
 
-D6 — Correct shape and scaling: the picture is enlarged with the correct pixel shape (about 12:7, to be confirmed), in three modes (Sharp, Fill, TV frame), with an automatic shape test for five screen sizes. It addresses your remark that the unscaled picture is too small to judge. You will compare a screenshot with a C7 picture and later choose the default mode.
+D7 - Windowed and fullscreen: borderless fullscreen on your main monitor, Alt+Enter toggles, window size and position remembered. Also at Gate D you choose the default scaling mode (Sharp, Fill, TV frame or Game area).
 
 ## Handoff from the last session
 
-Stage D5 done: **the game is shown live in our window**, unscaled (160x228, centred) at normal speed, checked pixel for pixel against the emulator. You confirmed: title screen appeared, looked right, normal speed; the picture is very small (expected: scaling is D6).
+Stage D6 done: **the picture is shown in the correct shape and scaled**, in four modes (keys 1 Sharp, 2 Fill, 3 TV frame, 4 Game area), in a resizable window that opens at 1280x960. A game pixel is 19:10 (Stella's own shape, T-D6-1); 12:7 stays selectable. You confirmed: key 4 fits the maze top to bottom, key 3 works, the small 1-versus-2 difference is expected on your screen. Proof: 173 layout checks, 0 failures; real-window checks with 0 px outline difference; matches Stella's own window; earlier checks still pass.
 
-Updated: `src\host\main.cpp`, `DECISIONS.md` (T-D5-1), `ARCHITECTURE.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d5\`. The ROM was only read; nothing installed, deleted or pushed.
+Updated: `src\host\layout.*`, `src\host\main.cpp`, `tests\host\test_layout.cpp`, `src\host\CMakeLists.txt`, `tools\build_host.cmd`, `DECISIONS.md` (T-D6-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d6\`. The ROM was only read; nothing installed or pushed. One local file was deleted with your OK (`reference\d6\stella_window.png`).
 
 Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` (the ROM with one bit changed, made by the test each run). Delete only with your OK.

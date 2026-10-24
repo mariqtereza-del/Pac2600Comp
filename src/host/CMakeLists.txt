@@ -17,6 +17,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party third_party)
 add_library(rom_finder STATIC rom_finder.cpp)
 target_compile_options(rom_finder PRIVATE /W4 /permissive-)
 
+# Where the picture goes in the window: pure arithmetic, no window code.
+add_library(layout STATIC layout.cpp)
+target_compile_options(layout PRIVATE /W4 /permissive-)
+
 # The only host code that includes Stella headers (ARCHITECTURE.md, T-D1-1).
 add_library(emulator STATIC emulator.cpp)
 target_link_libraries(emulator PUBLIC stella_core)
@@ -24,12 +28,17 @@ target_link_libraries(emulator PUBLIC stella_core)
 # WIN32 = a normal windowed program (no console window when double-clicked).
 add_executable(pacman2600 WIN32 main.cpp)
 target_compile_options(pacman2600 PRIVATE /W4 /permissive-)
-target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator)
+target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator layout)
 
 # Tests for the ROM finder (Stage D3): build/host/test_rom_finder.exe <scratch folder> <rom copy>
 add_executable(test_rom_finder ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_rom_finder.cpp)
 target_compile_options(test_rom_finder PRIVATE /W4 /permissive-)
 target_link_libraries(test_rom_finder PRIVATE rom_finder)
+
+# Tests for the layout (Stage D6): build/host/test_layout.exe
+add_executable(test_layout ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_layout.cpp)
+target_compile_options(test_layout PRIVATE /W4 /permissive-)
+target_link_libraries(test_layout PRIVATE layout)
 
 # Put SDL3.dll next to the program so a double-click finds it.
 add_custom_command(TARGET pacman2600 POST_BUILD

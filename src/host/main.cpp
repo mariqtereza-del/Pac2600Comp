@@ -7,8 +7,10 @@
 //        pacman2600 --self-check <file>         open the window, write what it looks like to <file>, quit
 //        pacman2600 --find-rom <file> [rom_file] [--settings <ini>] [--roms-dir <dir>]
 //                                               the quiet part of the ROM search, no window; writes the result to <file>
-//        pacman2600 --screen-check <png> [rom_file]   run 300 frames in the window, compare its pixels with the emulator's
+//        pacman2600 --layout-check <png> [rom_file] [--mode sharp|fill|tv|game] [--window WxH] [--pixel-aspect W:H]
+//                                               run 300 frames in the window, check where the picture is, save a screenshot
 //        pacman2600 --timed <seconds> <file> [rom_file]  play for that long, then write the frame rate to <file>
+//        (window mode: keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; the window can be resized)
 //        pacman2600 --headless <png> [rom_file] [--frames N] [--save-frame N] [--raw <file>] [--fingerprints <csv>]
 //                   [--settings <ini>] [--roms-dir <dir>]
 //                                               runs the game with no window (default 600 frames) and saves frame
@@ -17,6 +19,8 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -27,12 +31,13 @@
 #include <vector>
 
 #include "emulator.hpp"
+#include "layout.hpp"
 #include "rom_finder.hpp"
 
 namespace {
 
 constexpr const char* kTitle = "pacman2600 (working name)";  // real name is chosen in Stage J2
-constexpr int kWidth = 960, kHeight = 720;
+constexpr int kWindowW = 1280, kWindowH = 960;  // first window size; 4:3 like the picture
 
 void showError(const char* what)
 {
@@ -55,7 +60,7 @@ bool selfCheck(SDL_Window* window, SDL_Renderer* renderer, const char* path)
     SDL_ReadSurfacePixel(shot, shot->w / 2, shot->h / 2, &r, &g, &b, &a);
     SDL_DestroySurface(shot);
   }
-  const bool ok = shot && w == kWidth && h == kHeight && r == 0 && g == 0 && b == 0
+  const bool ok = shot && w == kWindowW && h == kWindowH && r == 0 && g == 0 && b == 0
                   && std::strcmp(SDL_GetWindowTitle(window), kTitle) == 0;
   char text[512];
   std::snprintf(text, sizeof text, "title=%s\nsize_pixels=%dx%d\ncentre_pixel_rgb=%d,%d,%d\nrenderer=%s\nsdl=%d.%d.%d\nresult=%s\n",
@@ -67,9 +72,53 @@ bool selfCheck(SDL_Window* window, SDL_Renderer* renderer, const char* path)
   return ok;
 }
 
+// How the picture is laid out in the window (Stage D6, T-D6-1).
+struct View {
+  layout::Mode mode = layout::Mode::Sharp;
+  layout::PixelShape shape{0, 0};  // {0, 0} = Stella's shape for the picture's size (layout::stellaShape)
+};
+
+const char* modeName(layout::Mode m)
+{
+  switch(m) {
+    case layout::Mode::Sharp: return "Sharp";
+    case layout::Mode::Fill: return "Fill";
+    case layout::Mode::TvFrame: return "TV frame";
+    case layout::Mode::GameArea: return "Game area";
+  }
+  return "?";
+}
+
+bool parseMode(const std::string& text, layout::Mode& mode)
+{
+  if(text == "sharp") mode = layout::Mode::Sharp;
+  else if(text == "fill") mode = layout::Mode::Fill;
+  else if(text == "tv") mode = layout::Mode::TvFrame;
+  else if(text == "game") mode = layout::Mode::GameArea;
+  else return false;
+  return true;
+}
+
+// Splits "AxB" or "A:B" into two whole numbers; false if it is not in that form.
+bool parsePair(const std::string& text, char separator, int& first, int& second)
+{
+  const std::size_t cut = text.find(separator);
+  if(cut == std::string::npos || cut == 0 || cut + 1 >= text.size()) return false;
+  try {
+    first = std::stoi(text.substr(0, cut));
+    second = std::stoi(text.substr(cut + 1));
+  } catch(...) {
+    return false;
+  }
+  return first > 0 && second > 0;
+}
+
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
-  std::string headlessPng, rawFile, fingerprintFile, screenCheckPng, timedReport;
+  std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport;
+  layout::Mode mode = layout::Mode::Sharp;
+  layout::PixelShape pixelShape{0, 0};  // {0, 0} = Stella's shape for the picture
+  int windowW = kWindowW, windowH = kWindowH;
   double timedSeconds = 0;
   int frames = 600, saveFrame = 300;
 };
@@ -83,7 +132,10 @@ Options parseArguments(int argc, char* argv[])
     if(a == "--self-check") o.selfCheckFile = next();
     else if(a == "--find-rom") o.findRomFile = next();
     else if(a == "--headless") o.headlessPng = next();
-    else if(a == "--screen-check") o.screenCheckPng = next();
+    else if(a == "--layout-check") o.layoutCheckPng = next();
+    else if(a == "--mode") { if(!parseMode(next(), o.mode)) std::fprintf(stderr, "--mode must be sharp, fill, tv or game\n"); }
+    else if(a == "--window") { if(!parsePair(next(), 'x', o.windowW, o.windowH)) std::fprintf(stderr, "--window must look like 1280x960\n"); }
+    else if(a == "--pixel-aspect") { if(!parsePair(next(), ':', o.pixelShape.num, o.pixelShape.den)) std::fprintf(stderr, "--pixel-aspect must look like 12:7\n"); }
     else if(a == "--timed") { o.timedSeconds = std::atof(next().c_str()); o.timedReport = next(); }
     else if(a == "--frames") o.frames = std::atoi(next().c_str());
     else if(a == "--save-frame") o.saveFrame = std::atoi(next().c_str());
@@ -131,11 +183,13 @@ bool readRomBytes(const std::string& path, std::vector<std::uint8_t>& bytes)
   return static_cast<bool>(in.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size())));
 }
 
-// The game picture, drawn unscaled (one game pixel = one screen pixel) in the middle of the window (Stage D5, T-D5-1).
+// The game picture, enlarged to its correct shape and centred in the window (Stage D6, T-D6-1).
 struct Screen {
   SDL_Renderer* renderer = nullptr;
   SDL_Texture* texture = nullptr;
-  SDL_FRect where{};
+  layout::Rect where{};  // where the picture was drawn in the window, in window pixels
+  int shownTop = 0, shownHeight = 0;  // which rows of the 228-row picture are shown (all of them, or the game area)
+  View view;
   ~Screen() { if(texture) SDL_DestroyTexture(texture); }
 
   bool show(const std::vector<std::uint32_t>& pixels, int height)
@@ -143,20 +197,30 @@ struct Screen {
     if(!texture) {
       texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, Emulator::kWidth, height);
       if(!texture) return false;
-      SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
-      where = {static_cast<float>((kWidth - Emulator::kWidth) / 2), static_cast<float>((kHeight - height) / 2),
-               static_cast<float>(Emulator::kWidth), static_cast<float>(height)};
+      SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_PIXELART);  // sharp pixels, only their edges are blended when the scale is not whole
     }
+    int windowW = 0, windowH = 0;
+    SDL_GetRenderOutputSize(renderer, &windowW, &windowH);
+    // The pixel shape always comes from the whole picture (Stella's); Game area only leaves out the always-black rows.
+    const layout::PixelShape shape = view.shape.num > 0 ? view.shape : layout::stellaShape(Emulator::kWidth, height);
+    const bool crop = view.mode == layout::Mode::GameArea && layout::kGameBottom <= height;
+    const int top = crop ? layout::kGameTop : 0, shownRows = crop ? layout::kGameBottom - layout::kGameTop : height;
+    where = layout::pictureRect(windowW, windowH, Emulator::kWidth, shownRows, shape, view.mode);
+    const SDL_FRect dst{static_cast<float>(where.x), static_cast<float>(where.y), static_cast<float>(where.w), static_cast<float>(where.h)};
+    const SDL_FRect src{0.0f, static_cast<float>(top), static_cast<float>(Emulator::kWidth), static_cast<float>(shownRows)};
     SDL_UpdateTexture(texture, nullptr, pixels.data(), Emulator::kWidth * 4);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
-    SDL_RenderTexture(renderer, texture, nullptr, &where);
+    SDL_RenderTexture(renderer, texture, &src, &dst);
+    shownTop = top;
+    shownHeight = shownRows;
     return true;
   }
 };
 
-// --screen-check: run 300 frames, then compare what the window shows with what the emulator drew. No clock, no waiting.
-bool screenCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::string& romPath)
+// --layout-check: run 300 frames in the real window, read its pixels back and check that the picture is where the
+// layout says: nothing outside its rectangle, and the outline of what is drawn inside it where the arithmetic predicts.
+bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::string& romPath, const View& view)
 {
   std::ofstream report(pngPath + ".txt");
   std::vector<std::uint8_t> bytes;
@@ -166,6 +230,7 @@ bool screenCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
 
   Screen screen;
   screen.renderer = renderer;
+  screen.view = view;
   std::vector<std::uint32_t> pixels;
   for(int f = 0; f < 300; ++f) {
     emulator.runFrame();
@@ -179,27 +244,47 @@ bool screenCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
   if(!rgb) return false;
 
   const int h = emulator.height();
-  const int x0 = static_cast<int>(screen.where.x), y0 = static_cast<int>(screen.where.y);
-  long long differing = 0, outsideNotBlack = 0, picturePixelsNotBlack = 0;
+  const layout::Rect r = screen.where;
+  const int shownTop = screen.shownTop, shownRows = screen.shownHeight;
+
+  // Outline of what the emulator drew in the rows that are shown (anything not black), in picture pixels,
+  // and how many non-black pixels lie in rows that are NOT shown (cut off by Game area: must be none).
+  int c0 = Emulator::kWidth, c1 = -1, r0 = h, r1 = -1;
+  long long cutOff = 0;
+  for(int y = 0; y < h; ++y)
+    for(int x = 0; x < Emulator::kWidth; ++x)
+      if((pixels[static_cast<std::size_t>(y) * Emulator::kWidth + x] & 0x00FFFFFF) != 0) {
+        if(y < shownTop || y >= shownTop + shownRows) { ++cutOff; continue; }
+        c0 = std::min(c0, x); c1 = std::max(c1, x); r0 = std::min(r0, y - shownTop); r1 = std::max(r1, y - shownTop);
+      }
+  // The same outline predicted in window pixels.
+  const double sx = static_cast<double>(r.w) / Emulator::kWidth, sy = static_cast<double>(r.h) / shownRows;
+  const int ex0 = r.x + static_cast<int>(std::floor(c0 * sx)), ex1 = r.x + static_cast<int>(std::ceil((c1 + 1) * sx)) - 1;
+  const int ey0 = r.y + static_cast<int>(std::floor(r0 * sy)), ey1 = r.y + static_cast<int>(std::ceil((r1 + 1) * sy)) - 1;
+
+  // Outline of what the window really shows, and any non-black pixel outside the picture's rectangle.
+  int ax0 = rgb->w, ax1 = -1, ay0 = rgb->h, ay1 = -1;
+  long long outsideNotBlack = 0;
   for(int y = 0; y < rgb->h; ++y) {
     const auto* row = reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(rgb->pixels) + y * rgb->pitch);
     for(int x = 0; x < rgb->w; ++x) {
-      const bool inside = x >= x0 && x < x0 + Emulator::kWidth && y >= y0 && y < y0 + h;
-      const std::uint32_t seen = row[x] & 0x00FFFFFF;
-      if(inside) {
-        const std::uint32_t expected = pixels[static_cast<std::size_t>(y - y0) * Emulator::kWidth + (x - x0)] & 0x00FFFFFF;
-        if(seen != expected) ++differing;
-        if(expected != 0) ++picturePixelsNotBlack;
-      } else if(seen != 0) {
-        ++outsideNotBlack;
-      }
+      if((row[x] & 0x00FFFFFF) == 0) continue;
+      const bool inside = x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
+      if(!inside) ++outsideNotBlack;
+      ax0 = std::min(ax0, x); ax1 = std::max(ax1, x); ay0 = std::min(ay0, y); ay1 = std::max(ay1, y);
     }
   }
+  const int off = std::max({std::abs(ax0 - ex0), std::abs(ax1 - ex1), std::abs(ay0 - ey0), std::abs(ay1 - ey1)});
   const bool saved = SDL_SavePNG(rgb, pngPath.c_str());
-  report << "window_pixels=" << rgb->w << 'x' << rgb->h << "\npicture_at=" << x0 << ',' << y0 << ' ' << Emulator::kWidth << 'x' << h
-         << "\npixels_differing_from_emulator=" << differing << "\npixels_outside_picture_not_black=" << outsideNotBlack
-         << "\npicture_pixels_not_black=" << picturePixelsNotBlack << "\nscreenshot_saved=" << (saved ? "yes" : "no") << '\n';
-  const bool ok = saved && differing == 0 && outsideNotBlack == 0 && picturePixelsNotBlack > 1000 && rgb->w == kWidth && rgb->h == kHeight;
+  const layout::PixelShape shape = view.shape.num > 0 ? view.shape : layout::stellaShape(Emulator::kWidth, h);
+  const double shapeSeen = (static_cast<double>(r.w) / Emulator::kWidth) / (static_cast<double>(r.h) / shownRows);
+  report << "mode=" << modeName(view.mode) << "\nwindow_pixels=" << rgb->w << 'x' << rgb->h << "\npicture_rect=" << r.x << ',' << r.y << ' ' << r.w << 'x' << r.h
+         << "\npixel_shape_wanted=" << static_cast<double>(shape.num) / shape.den << "\npixel_shape_in_window=" << shapeSeen
+         << "\noutline_predicted=" << ex0 << ',' << ey0 << " to " << ex1 << ',' << ey1 << "\noutline_seen=" << ax0 << ',' << ay0 << " to " << ax1 << ',' << ay1
+         << "\nrows_shown=" << shownTop << ".." << shownTop + shownRows - 1 << "\nnon_black_pixels_in_rows_not_shown=" << cutOff
+         << "\noutline_largest_difference_px=" << off << "\npixels_outside_picture_rect_not_black=" << outsideNotBlack
+         << "\nscreenshot_saved=" << (saved ? "yes" : "no") << '\n';
+  const bool ok = saved && off <= 2 && outsideNotBlack == 0 && cutOff == 0 && std::fabs(shapeSeen - static_cast<double>(shape.num) / shape.den) / (static_cast<double>(shape.num) / shape.den) <= 0.005;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   SDL_DestroySurface(rgb);
   return ok;
@@ -207,7 +292,8 @@ bool screenCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
 
 // The game window: one emulator frame per 1/60 s from a simple clock (temporary; real pacing is Stage D9).
 // With maxSeconds > 0 it stops by itself after that long and returns the frames per second it managed (for tests).
-double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string& romPath, double maxSeconds)
+// Keys 1, 2, 3, 4 choose Sharp, Fill, TV frame, Game area (temporary; Stage D10 gives the keys their final home).
+double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string& romPath, double maxSeconds, View view)
 {
   std::vector<std::uint8_t> bytes;
   Emulator emulator;
@@ -218,6 +304,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   }
   Screen screen;
   screen.renderer = renderer;
+  screen.view = view;
+  auto retitle = [&]() {
+    const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath) + " - " + modeName(screen.view.mode);
+    SDL_SetWindowTitle(window, title.c_str());
+  };
+  retitle();
 
   constexpr Uint64 kFrameNs = 1000000000ull / 60;  // Stella plays NTSC at exactly 60 Hz (docs\TIMING.md)
   Uint64 next = SDL_GetTicksNS();
@@ -227,6 +319,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   for(bool running = true; running; ) {
     for(SDL_Event e; SDL_PollEvent(&e); ) {
       if(e.type == SDL_EVENT_QUIT || (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_ESCAPE)) running = false;
+      if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat) {
+        if(e.key.key == SDLK_1) { screen.view.mode = layout::Mode::Sharp; retitle(); }
+        if(e.key.key == SDLK_2) { screen.view.mode = layout::Mode::Fill; retitle(); }
+        if(e.key.key == SDLK_3) { screen.view.mode = layout::Mode::TvFrame; retitle(); }
+        if(e.key.key == SDLK_4) { screen.view.mode = layout::Mode::GameArea; retitle(); }
+      }
     }
     const Uint64 now = SDL_GetTicksNS();
     int steps = 0;
@@ -361,7 +459,7 @@ int main(int argc, char* argv[])
 
   SDL_Window* window = nullptr;
   SDL_Renderer* renderer = nullptr;
-  if(!SDL_CreateWindowAndRenderer(kTitle, kWidth, kHeight, 0, &window, &renderer)) {
+  if(!SDL_CreateWindowAndRenderer(kTitle, options.windowW, options.windowH, SDL_WINDOW_RESIZABLE, &window, &renderer)) {
     showError("The window could not be created.");
     SDL_Quit();
     return 1;
@@ -381,12 +479,13 @@ int main(int argc, char* argv[])
     if(romPath.empty()) {
       exitCode = 3;  // no ROM chosen: nothing to run yet
     } else {
-      const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath);
-      SDL_SetWindowTitle(window, title.c_str());
-      if(!options.screenCheckPng.empty()) {
-        exitCode = screenCheck(renderer, options.screenCheckPng, romPath) ? 0 : 2;
+      View view;
+      view.mode = options.mode;
+      view.shape = options.pixelShape;
+      if(!options.layoutCheckPng.empty()) {
+        exitCode = layoutCheck(renderer, options.layoutCheckPng, romPath, view) ? 0 : 2;
       } else {
-        const double rate = playWindow(window, renderer, romPath, options.timedSeconds);
+        const double rate = playWindow(window, renderer, romPath, options.timedSeconds, view);
         if(options.timedSeconds > 0) {
           std::ofstream out(options.timedReport);
           out << "seconds=" << options.timedSeconds << "\nframes_per_second=" << rate << '\n';

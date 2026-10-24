@@ -1132,7 +1132,28 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D5-1), `ARCHITECTURE.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D5: The game on screen`.
     - **Next stage:** D6 — Correct shape and scaling.
-6. **[Not started] D6 — Correct shape and scaling.** See the dedicated section below.
+6. **[Done] D6 — Correct shape and scaling.** *(expanded 2026-10-24; see also "Getting the shape right" below)*
+    - **Objective:** the game picture is enlarged with the correct pixel shape, in three modes (Sharp, Fill, TV frame), centred with black bars chosen automatically by the window's shape, and the shape is proved by an automatic test on five screen sizes.
+    - **Why it matters:** the 2600's pixels are not square, so the raw picture is the wrong shape; the unscaled picture of D5 is also too small to judge. Everything the player sees from here on goes through this layout.
+    - **Prerequisites:** D5 Done (commit `9550dde`, follow-up `e5c2d30`).
+    - **Finding made at the start (T-D6-1):** Stella's own source (`emucore\TIASurface.cxx` lines 97-98 and 449, `Console.cxx` line 734, `TIAConstants.hxx`) shows that with aspect correction on (its default) the whole picture, `width` x `height` = 160 x 228 for this ROM, is stretched to fill a 4:3 box (its default window is 320 x 240 at zoom 3 = 960 x 720). So a game pixel is `(4/3) x 228 / 160` = **19:10** wide-to-tall here. The 12:7 in the plan assumed a 192-line picture. D6 uses the value derived from the measured height and keeps 12:7 as a selectable alternative for comparison.
+    - **What Claude Code will do:**
+      1. `src\host\layout.*` (no window code): pixel shape, the three modes and the picture rectangle for any window size.
+      2. `tests\host\test_layout.cpp`: five window sizes (1920x1080, 2560x1440, 3840x2160, 3440x1440, 1280x1024) x three modes x two pixel shapes; checks shape within 0.5 %, inside the window, centred, Sharp has a whole-number vertical scale, Fill touches the window on one axis, TV frame is smaller; and that Fill in a 960 x 720 window equals Stella's rectangle exactly.
+      3. Window mode: resizable, opens at 1280 x 960; picture drawn with SDL's pixel-art scaling; keys 1, 2, 3 choose Sharp, Fill, TV frame (temporary; D10 gives the keys their final home); `--mode`, `--window WxH` and `--pixel-aspect W:H` options.
+      4. `--layout-check <png> [rom]`: opens the real window at the given size/mode, runs 300 frames, reads the pixels back and checks that the drawn picture's outline is where the layout says it should be.
+    - **What I must do:** start the program, try keys 1/2/3 and resize the window, and say whether the maze looks right (not stretched or squashed). Optionally compare with Stella (needs your OK to start it; the command is given then).
+    - **Exact instructions:** (given at the end of the stage).
+    - **Required input:** Your report; the default mode is chosen later, at Gate D.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:** a clearly larger, correctly proportioned picture; three modes; no distortion at any window size.
+    - **Verification:** build 0 errors/0 warnings; `test_layout` all pass; `--layout-check` at several sizes and modes (outline within 2 px of the prediction) with screenshots looked at; earlier checks still pass (`test_rom_finder`, headless fingerprints = C3, `--screen-check` updated); your report.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** integer scales rarely give the exact shape on common screens (so Sharp keeps a whole-number vertical scale and takes the horizontal size from the shape); Windows display scaling can change real pixel sizes (the checks read real pixels); the pixel-art filter slightly blends column edges when the horizontal factor is not a whole number.
+    - **Recovery:** new files plus edits to `main.cpp`/`CMakeLists.txt`; undo by returning to `e5c2d30` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D6-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D6: Correct shape and scaling`.
+    - **Next stage:** D7 — Windowed and fullscreen.
 7. **[Not started] D7 — Windowed and fullscreen.** Borderless fullscreen on your main monitor; **Alt+Enter** toggles; window size and position remembered. Verify on your 2560×1440 screen and with the window dragged to odd sizes.
 8. **[Not started] D8 — Sound.** TIA sound from the core played through SDL with a small, steady buffer. Verify by ear against C5 clips and by Claude Code checking the sample rate and that no buffer underruns are logged in 5 minutes.
 9. **[Not started] D9 — Frame pacing on a 180 Hz screen.** The game advances at the console's measured rate (from C4), never at the monitor's rate. Each game frame is shown for about three refreshes; sound timing is the master clock so music never drifts. Verify: a 10-minute run logs game frames per second within 0.1% of C4's value and no audio gaps.
@@ -1145,6 +1166,8 @@ Grow the host program one visible feature at a time, each checked against Stella
 16. **[Not started] D16 — Gate D: Phase 1 done.** You play a full game from the release zip, unzipped somewhere new. Checklist: correct shape, fullscreen and windowed, sound, keyboard, pad, ROM picker, replays identical, discrepancies list reviewed, version 0.1.0 tagged in Git.
 
 #### Getting the shape right (stage D6 in detail)
+
+**Result of D6 (2026-10-24):** the 12:7 below assumed a 192-line picture. Stella's own aspect correction, read from its source, stretches the whole 160 x 228 picture of this ROM to a 4:3 box, which makes a game pixel 19:10. That is the default; 12:7 stays selectable. See `DECISIONS.md` T-D6-1.
 
 The 2600 does not have square pixels, so the emulator's raw picture is the wrong shape. Stretching it to the monitor is also wrong.
 

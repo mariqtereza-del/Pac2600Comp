@@ -147,3 +147,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | SHA-1 / fingerprint | A 40-character code worked out from a file's contents. If one bit of the file changes, the code changes completely, so it proves which file it is. |
 | Headless | Running without a window or any screen output; used for automatic tests. |
 | Frame fingerprint | A short code worked out from one picture. If two runs give the same code for every frame, they drew identical pictures. |
+| Pixel shape (aspect) | How wide a game pixel is compared with its height. The 2600's pixels are wider than tall, so the picture must be stretched sideways to look right. |
+| Letterbox / pillarbox | Black bars above and below (letterbox) or at the sides (pillarbox) when the window's shape differs from the picture's. |

@@ -155,3 +155,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Buffer (cushion) | A small store of sound waiting to be played, so a short hiccup in the program is not heard. Bigger is safer but adds delay. |
 | Refresh rate | How many times a second the monitor redraws the screen (180 on the owner's). The game runs at 60 frames a second, so each game frame is shown for about 3 refreshes. |
 | Frame pacing | Starting each game frame at the right moment so the game runs at the right speed and looks smooth. |
+| Scancode | A number for a key's position on the keyboard (not the letter on it), so WASD works the same on every keyboard layout. |
+| Replay | Feeding recorded inputs back into the game to check that it behaves exactly as it did when they were recorded. |

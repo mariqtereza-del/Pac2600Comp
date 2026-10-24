@@ -1220,7 +1220,29 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D9-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\TIMING.md` (what D9 chose), `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D9: Frame pacing`.
     - **Next stage:** D10 — Keyboard.
-10. **[Not started] D10 — Keyboard.** Arrows and WASD for the joystick, plus keys for Select, Reset and the difficulty switches. Listed on screen with **F1**.
+10. **[Done] D10 — Keyboard.** *(expanded 2026-10-24)*
+    - **Objective:** the game can be played from the keyboard: arrows or WASD steer, Space is the fire button, F2 is Game Select, F3 is Game Reset (both held while pressed, like the console's switches), F5 and F6 flip the left and right difficulty switches. F1 shows the list of keys on top of the picture. The keys of the earlier stages get their final homes (1-4 picture modes, Alt+Enter fullscreen, Esc quits); the temporary R key is replaced by F3.
+    - **Why it matters:** until now nobody could steer Pac-Man; the wafer-eating blip could not even be heard (D8). Everything after this (controller, recordings, side-by-side checks) builds on one shared way of turning input into console events.
+    - **Prerequisites:** D9 Done (commit `988a2e1`); `docs\CONTROLS.md` (C6: how the game reads the joystick, the switches and the fire button).
+    - **What Claude Code will do:**
+      1. `src\host\controls.*` (no window code, only SDL's key-code names): the key table, a keyboard state (keys down, opposite directions cancel, everything released when the window loses focus, difficulty switches flip on a fresh press only), and the text of the F1 list. Tested by `tests\host\test_controls.cpp`.
+      2. `Emulator`: joystick, Select, difficulty switches and a read-back of the console switch register (for tests).
+      3. Window: the window thread turns key events into an input state and hands it to the game thread through one atomic number; the game thread applies it at the start of every frame.
+      4. F1 overlay drawn with SDL's built-in text; the window title says "F1 = keys".
+      5. `--keys-replay <script> <csv> [rom]`: no window; replays a Phase C input script (`from to NAME`, the format of `tools\stella_script`) **by pressing the real keys in the real keyboard code**, and writes the picture fingerprint of every frame. The fingerprints are compared with the recorded Phase C runs (`reference\c6\*` experiments and `reference\audio\play1`, 6,000 frames of random joystick play).
+      6. `--help-check <png> [rom]`: real window with the F1 list up; reads the pixels back and saves a screenshot.
+    - **What I must do:** start the program, press F3 to start a game, steer with the arrows or WASD, listen for the wafer blip, press F1, try F2/F5/F6 if you like, and tell me whether the keys feel right and whether anything is awkward (a key you would rather have elsewhere is a fine answer).
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your report.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** Pac-Man moves with the keys; Game Select and Reset behave as in Stella; the F1 list names every key.
+    - **Verification:** build 0 errors/0 warnings; `test_controls` passes; the replays reproduce the recorded fingerprints with 0 differences (select, difficulty switches, fire, directions, turns, and the 6,000-frame random play); the F1 screenshot looked at; earlier checks still pass; your play test.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the replay proves the keys reach the right console events, not that a physical keyboard key arrives (a keyboard with ghosting can drop three-key combinations); two opposite directions at once cancel (a real joystick cannot do both); Colour/B&W is D12; the game's own use of the difficulty switches is only partly known (`docs\CONTROLS.md`).
+    - **Recovery:** new files plus edits to `emulator.*`, `main.cpp` and `CMakeLists.txt`; undo by returning to `988a2e1` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D10-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\CONTROLS.md` (the port's keys), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D10: Keyboard`.
+    - **Next stage:** D11 — PS4 controller.
 11. **[Not started] D11 — PS4 controller.** D-pad and left stick for the joystick; Options = Reset, Share = Select. Verify with your pad, including unplugging and replugging mid-game.
 12. **[Not started] D12 — Console switches.** The difficulty switches and Color/B&W switch available as settings, because the game may read them.
 13. **[Not started] D13 — Input recording and replay.** The host can record every frame's input to a small `.inputs` file and play it back. Replaying must produce identical frames, proved by comparing picture fingerprints of every frame across two runs. This is the foundation of all later testing.

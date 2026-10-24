@@ -93,3 +93,7 @@ Register notation: `C4 F12 V8 ×16` means AUDC = 4, AUDF = 12, AUDV = 8, held fo
 ## Played by the host (Stage D8)
 
 The host's own audio for 2,500 frames (Game Reset at frame 1800) is byte-identical to the first 5,237,904 bytes of `reference\audio\idle\audio.wav`, so the sound the PC port plays is the sound recorded in C5, including the one-scanline volume dip each frame. See `DECISIONS.md` T-D8-1.
+
+## Heard by the owner (Stage D10)
+
+With the keyboard of D10 the owner played and heard the wafer-eating blip, a **power pellet sound** and the sound of **eating a ghost**. The last two were listed above as "not yet captured": the scripted joystick of C5 never produced them. They are heard, not measured, so their registers and lengths are still to be recorded (Phase E recordings of real play).

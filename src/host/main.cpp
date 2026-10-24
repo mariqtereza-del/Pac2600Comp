@@ -18,7 +18,12 @@
 //        pacman2600 --audio-check <seconds> <report> [rom_file] [--mute] [--reset-at N] [--timer-clock] [--settings <ini>]
 //                                               no window: runs the game at 60 frames/s into the real sound device for that
 //                                               long and writes the device format and the buffer statistics to <report>
-//        (window mode: keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off; R = Game Reset;
+//        pacman2600 --keys-replay <script> <csv> [rom_file] [--frames N]
+//                                               no window: presses the keys a Phase C input script asks for, in the real
+//                                               keyboard code, and writes the picture fingerprint of every frame to <csv>
+//        pacman2600 --help-check <png> [rom_file]   the F1 key list in the real window, as a screenshot
+//        (window mode: F1 = list of keys; arrows/WASD, Space, F2, F3, F5, F6 play the game (controls.cpp);
+//         keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off;
 //         the window can be resized; its size, place and fullscreen are remembered in settings.ini)
 //        pacman2600 --headless <png> [rom_file] [--frames N] [--save-frame N] [--raw <file>] [--fingerprints <csv>]
 //                   [--settings <ini>] [--roms-dir <dir>] [--reset-at N] [--audio-wav <file>]
@@ -37,11 +42,14 @@
 #include <fstream>
 #include <mutex>
 #include <optional>
+#include <set>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "audio.hpp"
+#include "controls.hpp"
 #include "emulator.hpp"
 #include "layout.hpp"
 #include "rom_finder.hpp"
@@ -129,10 +137,11 @@ bool parsePair(const std::string& text, char separator, int& first, int& second)
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
-  std::string audioCheckFile, audioWav;
+  std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng;
   double audioCheckSeconds = 0;
   int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
   bool mute = false;  // play the sound stream with the volume at zero (tests)
+  bool pushKeys = false;  // tests: a helper thread presses keys in the real window's event queue (--push-keys)
   bool timerClock = false;  // pace the game from the PC clock instead of the sound card (comparison only)
   int stallMs = 0;    // tests: freeze the loop once, 5 seconds in (--audio-check: the game loop; the game window: the window thread)
   bool windowGiven = false;  // --window on the command line: do not use the remembered window
@@ -154,11 +163,14 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--headless") o.headlessPng = next();
     else if(a == "--layout-check") o.layoutCheckPng = next();
     else if(a == "--mode") { if(!parseMode(next(), o.mode)) std::fprintf(stderr, "--mode must be sharp, fill, tv or game\n"); }
+    else if(a == "--keys-replay") { o.keysReplayScript = next(); o.keysReplayCsv = next(); }
+    else if(a == "--help-check") o.helpCheckPng = next();
     else if(a == "--audio-check") { o.audioCheckSeconds = std::atof(next().c_str()); o.audioCheckFile = next(); }
     else if(a == "--audio-wav") o.audioWav = next();
     else if(a == "--reset-at") o.resetAt = std::atoi(next().c_str());
     else if(a == "--mute") o.mute = true;
     else if(a == "--timer-clock") o.timerClock = true;
+    else if(a == "--push-keys") o.pushKeys = true;
     else if(a == "--stall-ms") o.stallMs = std::atoi(next().c_str());
     else if(a == "--fullscreen-check") o.fullscreenCheckFile = next();
     else if(a == "--state-report") o.stateReportFile = next();
@@ -313,6 +325,161 @@ bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
          << "\noutline_largest_difference_px=" << off << "\npixels_outside_picture_rect_not_black=" << outsideNotBlack
          << "\nscreenshot_saved=" << (saved ? "yes" : "no") << '\n';
   const bool ok = saved && off <= 2 && outsideNotBlack == 0 && cutOff == 0 && std::fabs(shapeSeen - static_cast<double>(shape.num) / shape.den) / (static_cast<double>(shape.num) / shape.den) <= 0.005;
+  report << "result=" << (ok ? "OK" : "FAIL") << '\n';
+  SDL_DestroySurface(rgb);
+  return ok;
+}
+
+// ---- Keyboard (Stage D10, DECISIONS.md T-D10-1) ----
+
+// Gives the console what the keyboard adds up to. extraReset is for tests that press Reset by frame number.
+void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset)
+{
+  emulator.setJoystick(in.up, in.down, in.left, in.right, in.fire);
+  emulator.setConsoleSelect(in.select);
+  emulator.setConsoleReset(in.reset || extraReset);
+  emulator.setDifficulty(in.leftDifficultyA, in.rightDifficultyA);
+}
+
+// The F1 list, drawn over the picture with SDL's built-in text.
+void drawHelp(SDL_Renderer* renderer, const controls::Input& current)
+{
+  const std::vector<controls::HelpLine> lines = controls::helpLines(current);
+  std::size_t keyWidth = 0, meaningWidth = 0;
+  for(const auto& l : lines) { keyWidth = std::max(keyWidth, l.keys.size()); meaningWidth = std::max(meaningWidth, l.meaning.size()); }
+  const float charSize = static_cast<float>(SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE);
+  const float columns = static_cast<float>(keyWidth + meaningWidth + 6);
+  const float rows = static_cast<float>(lines.size() + 3);
+  int w = 0, h = 0;
+  SDL_GetRenderOutputSize(renderer, &w, &h);
+  float scale = std::max(1.0f, std::floor(static_cast<float>(h) / 480.0f));
+  while(scale > 1.0f && (columns * charSize * scale > static_cast<float>(w) * 0.95f || rows * charSize * scale > static_cast<float>(h) * 0.95f)) scale -= 1.0f;
+
+  SDL_SetRenderScale(renderer, scale, scale);
+  const float boxW = columns * charSize, boxH = rows * charSize;
+  const float x0 = (static_cast<float>(w) / scale - boxW) / 2, y0 = (static_cast<float>(h) / scale - boxH) / 2;
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 235);
+  const SDL_FRect box{x0, y0, boxW, boxH};
+  SDL_RenderFillRect(renderer, &box);
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+  float y = y0 + charSize;
+  SDL_RenderDebugText(renderer, x0 + 2 * charSize, y, "KEYS   (F1 closes this list)");
+  y += 2 * charSize;
+  for(const auto& l : lines) {
+    SDL_RenderDebugText(renderer, x0 + 2 * charSize, y, l.keys.c_str());
+    SDL_RenderDebugText(renderer, x0 + (2 + static_cast<float>(keyWidth) + 2) * charSize, y, l.meaning.c_str());
+    y += charSize;
+  }
+  SDL_SetRenderScale(renderer, 1.0f, 1.0f);
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+}
+
+// --keys-replay: runs the game with no window and presses the keys that a Phase C input script (lines "from to NAME",
+// frames counted from 0, both ends included) asks for, in the real keyboard code, so the recorded Phase C runs can be
+// compared frame by frame with what the keys do. Colour/B&W (D12) is not a key yet and is reported as unsupported.
+int keysReplay(const Options& o)
+{
+  std::ofstream report(o.keysReplayCsv + ".txt");
+  const auto found = rom::findQuietly(o.romArg, o.settingsFile, o.romsDir);
+  std::vector<std::uint8_t> bytes;
+  if(!report || !found || found->check.status != rom::Status::Ok || !readRomBytes(found->check.path, bytes)) { if(report) report << "result=no usable ROM\n"; return 5; }
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(found->check.path), bytes); !error.empty()) { report << "result=" << error << '\n'; return 6; }
+
+  struct Span { int from, to; std::string name; };
+  std::vector<Span> spans;
+  {
+    std::ifstream in(o.keysReplayScript);
+    if(!in) { report << "result=cannot read the script\n"; return 6; }
+    for(std::string line; std::getline(in, line); ) {
+      if(line.empty() || line[0] == '#' || line.rfind("dump", 0) == 0) continue;
+      std::istringstream ls(line);
+      Span sp{};
+      if(ls >> sp.from >> sp.to >> sp.name) spans.push_back(sp);
+    }
+  }
+  int last = 0;
+  for(const Span& sp : spans) last = std::max(last, sp.to);
+  const int frames = o.frames == 600 ? last + 1 : o.frames;  // --frames not given: run to the end of the script
+
+  const struct { const char* name; controls::Action action; } held[] = {
+      {"UP", controls::Action::Up}, {"DOWN", controls::Action::Down}, {"LEFT", controls::Action::Left}, {"RIGHT", controls::Action::Right},
+      {"FIRE", controls::Action::Fire}, {"SELECT", controls::Action::Select}, {"RESET", controls::Action::Reset}};
+  controls::Keyboard keyboard;
+  std::set<std::string> unsupported;
+  std::ofstream csv(o.keysReplayCsv);
+  csv << "frame,hash\n";
+  char hash[17];
+  for(int f = 0; f < frames; ++f) {
+    std::set<std::string> active;
+    for(const Span& sp : spans)
+      if(f >= sp.from && f <= sp.to) active.insert(sp.name);
+    for(const auto& h : held) {
+      const SDL_Scancode key = controls::primaryKey(h.action);
+      if(active.count(h.name)) keyboard.keyDown(key, false); else keyboard.keyUp(key);
+    }
+    // The difficulty switches are real switches: a script asking for A or B when it is not there yet presses the key once.
+    auto flip = [&](bool wantA, bool isA, controls::Action action) {
+      if(wantA == isA) return;
+      keyboard.keyDown(controls::primaryKey(action), false);
+      keyboard.keyUp(controls::primaryKey(action));
+    };
+    if(active.count("LDIFF_A")) flip(true, keyboard.input().leftDifficultyA, controls::Action::LeftDifficulty);
+    if(active.count("LDIFF_B")) flip(false, keyboard.input().leftDifficultyA, controls::Action::LeftDifficulty);
+    if(active.count("RDIFF_A")) flip(true, keyboard.input().rightDifficultyA, controls::Action::RightDifficulty);
+    if(active.count("RDIFF_B")) flip(false, keyboard.input().rightDifficultyA, controls::Action::RightDifficulty);
+    for(const char* name : {"COLOR", "BW"})
+      if(active.count(name)) unsupported.insert(name);
+
+    applyInput(emulator, keyboard.input(), false);
+    emulator.runFrame();
+    std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
+    csv << f << ',' << hash << '\n';
+  }
+  char swchb[8];
+  std::snprintf(swchb, sizeof swchb, "%02x", emulator.consoleSwitches());
+  report << "script=" << o.keysReplayScript << "\nframes=" << frames << "\nlast_frame_fingerprint=" << hash << "\nconsole_switches_at_end=" << swchb << "\nunsupported_events=";
+  for(const auto& u : unsupported) report << u << ' ';
+  report << "\nresult=" << (unsupported.empty() ? "OK" : "PARTIAL (unsupported events ignored)") << '\n';
+  return 0;
+}
+
+// --help-check: the F1 list in the real window. 300 frames, then the list is drawn, the window's pixels are read back and
+// saved, and the check counts the near-white pixels (the text), which must exist, and that the picture is still there.
+bool helpCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::string& romPath)
+{
+  std::ofstream report(pngPath + ".txt");
+  std::vector<std::uint8_t> bytes;
+  if(!report || !readRomBytes(romPath, bytes)) return false;
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(romPath), bytes); !error.empty()) { report << "result=" << error << '\n'; return false; }
+  Screen screen;
+  screen.renderer = renderer;
+  for(int f = 0; f < 300; ++f) {
+    emulator.runFrame();
+    if(!screen.show(emulator.colours(), emulator.height())) { report << "result=texture failed\n"; return false; }
+  }
+  drawHelp(renderer, controls::Input{});
+  SDL_Surface* shot = SDL_RenderReadPixels(renderer, nullptr);
+  if(!shot) { report << "result=cannot read window pixels\n"; return false; }
+  SDL_Surface* rgb = SDL_ConvertSurface(shot, SDL_PIXELFORMAT_XRGB8888);
+  SDL_DestroySurface(shot);
+  if(!rgb) return false;
+  long long white = 0, coloured = 0;
+  for(int y = 0; y < rgb->h; ++y) {
+    const auto* row = reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(rgb->pixels) + y * rgb->pitch);
+    for(int x = 0; x < rgb->w; ++x) {
+      const std::uint32_t c = row[x] & 0x00FFFFFF;
+      if((c >> 16) > 235 && ((c >> 8) & 0xFF) > 235 && (c & 0xFF) > 235) ++white;
+      else if(c != 0) ++coloured;
+    }
+  }
+  const bool saved = SDL_SavePNG(rgb, pngPath.c_str());
+  const std::size_t listed = controls::helpLines(controls::Input{}).size();
+  report << "window_pixels=" << rgb->w << 'x' << rgb->h << "\nlines_listed=" << listed << "\nnear_white_pixels=" << white << "\nother_non_black_pixels=" << coloured
+         << "\nscreenshot_saved=" << (saved ? "yes" : "no") << '\n';
+  const bool ok = saved && white > 500 && coloured > 1000;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   SDL_DestroySurface(rgb);
   return ok;
@@ -633,14 +800,17 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   screen.renderer = renderer;
   screen.view = view;
   auto retitle = [&]() {
-    const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath) + " - " + modeName(screen.view.mode);
+    const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath) + " - " + modeName(screen.view.mode) + " - F1 = keys";
     SDL_SetWindowTitle(window, title.c_str());
   };
   retitle();
 
   // The game and its sound run on their own thread (DECISIONS.md T-D8-2), so that a window that is being dragged or
   // resized, which freezes this thread on Windows, cannot starve the sound card. This thread only shows the pictures.
-  std::atomic<bool> stop{false}, resetKey{false};
+  std::atomic<bool> stop{false};
+  std::atomic<std::uint32_t> inputBits{0};  // what the keyboard adds up to (controls::Input::pack), set here, read by the game thread
+  controls::Keyboard keyboard;
+  bool helpOn = false;
   std::mutex lock;  // guards the shared picture below
   std::vector<std::uint32_t> sharedPixels;
   int sharedHeight = 0;
@@ -650,6 +820,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   std::string gapLog;
   bool usedSoundClock = false;
   double averageCorrectionPpm = 0;
+  std::uint32_t joystickValuesSeen = 0;      // bit n set = the game's joystick byte (RAM $ED) held the value n
+  std::set<int> switchValuesSeen;            // the console switch register values the game could read
   const Uint64 started = SDL_GetTicksNS();
 
   std::thread game([&]() {
@@ -669,9 +841,14 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
 
       int steps = 0;
       while(steps < 5 && pacer.due(now)) {
-        emulator.setConsoleReset(resetKey.load() || (options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10));
+        applyInput(emulator, controls::Input::unpack(inputBits.load()), options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10);
         emulator.runFrame();
         audio.push(emulator.audio(), emulator.audioFrames());
+        if(options.pushKeys) {
+          const int joystick = emulator.ram()[0xED - 0x80];  // C6: up 1, down 2, left 4, right 8
+          if(joystick < 32) joystickValuesSeen |= 1u << joystick;
+          switchValuesSeen.insert(emulator.consoleSwitches());
+        }
         pacer.ran(now); ++steps; ++frames;
       }
       if(steps > 0) {
@@ -685,6 +862,35 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     }
     averageCorrectionPpm = pacer.averageCorrectionPpm();
   });
+
+  // Test only (--push-keys): a helper thread puts key presses into this window's event queue, as the operating system would.
+  std::thread pusher;
+  if(options.pushKeys) {
+    pusher = std::thread([&]() {
+      auto key = [](SDL_Scancode code, bool down) {
+        SDL_Event e{};
+        e.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
+        e.key.scancode = code;
+        e.key.key = SDL_GetKeyFromScancode(code, SDL_KMOD_NONE, false);
+        e.key.down = down;
+        SDL_PushEvent(&e);
+      };
+      const struct { double at; SDL_Scancode code; bool down; } plan[] = {
+          {0.5, SDL_SCANCODE_F3, true}, {0.8, SDL_SCANCODE_F3, false},          // Game Reset: a game starts
+          {4.0, SDL_SCANCODE_RIGHT, true}, {4.6, SDL_SCANCODE_RIGHT, false},    // joystick right (Pac-Man starts moving at about 2 s)
+          {5.0, SDL_SCANCODE_A, true}, {5.6, SDL_SCANCODE_A, false},            // left, with the letter key
+          {6.0, SDL_SCANCODE_UP, true}, {6.6, SDL_SCANCODE_UP, false},          // up
+          {7.0, SDL_SCANCODE_S, true}, {7.6, SDL_SCANCODE_S, false},            // down, with the letter key
+          {8.0, SDL_SCANCODE_F5, true}, {8.1, SDL_SCANCODE_F5, false},          // left difficulty to A
+          {8.5, SDL_SCANCODE_F6, true}, {8.6, SDL_SCANCODE_F6, false}};         // right difficulty to A
+      const Uint64 t0 = SDL_GetTicksNS();
+      for(const auto& step : plan) {
+        while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) SDL_Delay(5);
+        if(stop.load()) break;
+        key(step.code, step.down);
+      }
+    });
+  }
 
   std::vector<std::uint32_t> pixels;
   int height = 0;
@@ -704,7 +910,11 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         if(e.key.key == SDLK_3) { screen.view.mode = layout::Mode::TvFrame; retitle(); }
         if(e.key.key == SDLK_4) { screen.view.mode = layout::Mode::GameArea; retitle(); }
       }
-      if((e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_KEY_UP) && e.key.key == SDLK_R) resetKey = e.type == SDL_EVENT_KEY_DOWN;  // temporary (D10)
+      if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode == SDL_SCANCODE_F1) helpOn = !helpOn;
+      if(e.type == SDL_EVENT_KEY_DOWN) keyboard.keyDown(e.key.scancode, e.key.repeat);
+      if(e.type == SDL_EVENT_KEY_UP) keyboard.keyUp(e.key.scancode);
+      if(e.type == SDL_EVENT_WINDOW_FOCUS_LOST) keyboard.releaseAll();  // a key let go while another window had the focus must not stay held
+      inputBits = keyboard.input().pack();
     }
     long long frameNow = 0;
     {
@@ -721,6 +931,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       shownCount = 0;
     }
     if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
+    if(helpOn) drawHelp(renderer, keyboard.input());
     const Uint64 beforePresent = SDL_GetTicksNS();
     SDL_RenderPresent(renderer);
     ++presents;
@@ -730,6 +941,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   }
   stop = true;
   game.join();
+  if(pusher.joinable()) pusher.join();
   if(failed) return 0;
 
   const double elapsed = static_cast<double>(SDL_GetTicksNS() - started) / 1e9;
@@ -742,6 +954,13 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         << "\nrefreshes_per_game_frame_1=" << refreshHistogram[0] << "\nrefreshes_per_game_frame_2=" << refreshHistogram[1]
         << "\nrefreshes_per_game_frame_3=" << refreshHistogram[2] << "\nrefreshes_per_game_frame_4=" << refreshHistogram[3]
         << "\nrefreshes_per_game_frame_5_or_more=" << refreshHistogram[4] << "\ngame_frames_never_shown=" << framesNeverShown << '\n';
+    if(options.pushKeys) {
+      log << "joystick_ram_values_seen=";
+      for(int n = 0; n < 32; ++n) if(joystickValuesSeen & (1u << n)) log << n << ' ';
+      log << "\nconsole_switch_values_seen=";
+      for(int v : switchValuesSeen) { char t[8]; std::snprintf(t, sizeof t, "%02x ", v); log << t; }
+      log << '\n';
+    }
   }
   return static_cast<double>(sharedFrame) / elapsed;
 }
@@ -886,6 +1105,7 @@ int main(int argc, char* argv[])
   const Options options = parseArguments(argc, argv);
   if(!options.findRomFile.empty()) return findRomReport(options);
   if(!options.headlessPng.empty()) return headlessRun(options);
+  if(!options.keysReplayScript.empty()) return keysReplay(options);
   if(options.audioCheckSeconds > 0) {
     if(!SDL_Init(SDL_INIT_AUDIO)) { showError("SDL could not start."); return 1; }
     const bool ok = audioCheck(options);
@@ -896,7 +1116,7 @@ int main(int argc, char* argv[])
   if(!SDL_Init(SDL_INIT_VIDEO)) { showError("SDL could not start."); return 1; }
 
   // The remembered window (Stage D7) is used for playing and for --state-report, not for the other checks or when --window is given.
-  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty();
+  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty();
   windowstate::State remembered;
   if(!otherCheck && !options.windowGiven) remembered = windowstate::fitToMonitors(windowstate::load(options.settingsFile), monitorAreas());
 
@@ -938,6 +1158,8 @@ int main(int argc, char* argv[])
       view.shape = options.pixelShape;
       if(!options.layoutCheckPng.empty()) {
         exitCode = layoutCheck(renderer, options.layoutCheckPng, romPath, view) ? 0 : 2;
+      } else if(!options.helpCheckPng.empty()) {
+        exitCode = helpCheck(renderer, options.helpCheckPng, romPath) ? 0 : 2;
       } else if(!options.fullscreenCheckFile.empty()) {
         exitCode = fullscreenCheck(window, renderer, options, romPath) ? 0 : 2;
       } else {

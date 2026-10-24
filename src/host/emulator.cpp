@@ -5,6 +5,7 @@
 #include "StellaLIBRETRO.hxx"
 #include "Console.hxx"
 #include "Event.hxx"
+#include "Switches.hxx"
 #include "OSystem.hxx"
 #include "System.hxx"
 #include "M6532.hxx"
@@ -49,6 +50,27 @@ const std::int16_t* Emulator::audio() const { return impl_->core.getAudioBuffer(
 int Emulator::audioFrames() const { return static_cast<int>(impl_->core.getAudioSize()); }
 
 int Emulator::audioRate() const { return static_cast<int>(impl_->core.getAudioRate() + 0.5f); }
+
+void Emulator::setJoystick(bool up, bool down, bool left, bool right, bool fire)
+{
+  impl_->core.setInputEvent(Event::LeftJoystickUp, up ? 1 : 0);
+  impl_->core.setInputEvent(Event::LeftJoystickDown, down ? 1 : 0);
+  impl_->core.setInputEvent(Event::LeftJoystickLeft, left ? 1 : 0);
+  impl_->core.setInputEvent(Event::LeftJoystickRight, right ? 1 : 0);
+  impl_->core.setInputEvent(Event::LeftJoystickFire, fire ? 1 : 0);
+}
+
+void Emulator::setConsoleSelect(bool pressed) { impl_->core.setInputEvent(Event::ConsoleSelect, pressed ? 1 : 0); }
+
+void Emulator::setDifficulty(bool leftA, bool rightA)
+{
+  impl_->core.setInputEvent(Event::ConsoleLeftDiffA, leftA ? 1 : 0);
+  impl_->core.setInputEvent(Event::ConsoleLeftDiffB, leftA ? 0 : 1);
+  impl_->core.setInputEvent(Event::ConsoleRightDiffA, rightA ? 1 : 0);
+  impl_->core.setInputEvent(Event::ConsoleRightDiffB, rightA ? 0 : 1);
+}
+
+std::uint8_t Emulator::consoleSwitches() const { return impl_->core.osystem().console().switches().read(); }
 
 void Emulator::setConsoleReset(bool pressed) { impl_->core.setInputEvent(Event::ConsoleReset, pressed ? 1 : 0); }
 

@@ -1,6 +1,6 @@
-Current stage: D10 — Keyboard (Phase D) — not started
+Current stage: D11 — PS4 controller (Phase D) — not started
 
-Last updated: 2026-10-24, Stage D9 done (owner: it feels right). Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, Stage D10 done (owner: the keys feel right). Stage D9 done (owner: it feels right). Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -38,6 +38,7 @@ Last updated: 2026-10-24, Stage D9 done (owner: it feels right). Stage D8 done (
 | D7 — Windowed and fullscreen | Alt+Enter toggles borderless fullscreen (monitor-sized, no video mode change); window size, place and fullscreen remembered in `settings.ini`, corrected if off screen; `settings` module keeps other lines. `test_windowstate` 29 checks; `--fullscreen-check` on 2560x1440: covers the monitor, picture check OK (0 px), odd size/place restored exactly; `--state-report` restores saved states. Earlier checks still pass; headless = C3 (0 differences); 60.03 frames/s. T-D7-1. Owner: fullscreen works great, scaling too (so the real Alt+Enter works). |
 | D8 — Sound | The core's 31,440 Hz stereo sound plays through one SDL audio stream (`src\host\audio.*`) with a 4-frame cushion and counted shortages; the game and sound run on their own thread (T-D8-2); temporary key R = Game Reset. Host audio for 2,500 frames is byte-identical to the C5 reference. Real device (Focusrite, 44.1 kHz): 5-minute muted run 0 underruns, queue 46.8-66.8 ms; an 800 ms window freeze 0 underruns; the owner's 91.8 s listen 0 underruns. Earlier checks still pass; headless = C3. T-D8-1..3. Owner: tune and wail play, no delay; crackle remains and is judged inherent (60 Hz volume dip every frame); the wafer blip cannot be tried until D10. |
 | D9 — Frame pacing | The game runs at exactly 60.000 frames a second (Stella's rate), started from a steady timer steered by the sound card's queue (`Pacer` in `main.cpp`); the monitor is never the clock (T-D9-1, T-D9-2). 10-minute muted window run on 2560x1440 at 180 Hz: 59.9993 frames a second, 0 underruns, 0 dropped, 93.4 % of game frames shown for exactly 3 refreshes (2 or 4 for the rest, 3 of 36,000 never shown). 800 ms window freeze: 0 underruns. Earlier checks still pass (audio identical to C5, fingerprints = C3, window state, ROM finder, layout, fullscreen). Owner: it feels right; the ghost flicker is the original game (one ghost per frame), softened by phosphor blending (`docs\DISPLAY.md`). |
+| D10 — Keyboard | `src\host\controls.*`, F1 list, applied to the console each frame (T-D10-1). Keys: arrows/WASD, Space/Z fire, F2 Select, F3 Reset, F5/F6 difficulty, 1-4 picture, Alt+Enter fullscreen, Esc quit. `test_controls` 70 checks; replay of recorded Phase C inputs through the real key code: 55 experiments + 6,000 frames of random play = 344,460 frames, **0 differences** (`tools\d10_replay_compare.py`); injected keys in the real window reached the game's joystick memory and the switches; F1 list screenshot looked at. Earlier checks still pass. Owner: the keys feel right; wafer blip, power-pellet sound and ghost-eating sound heard (the last two were not in C5). Owner could not report on game variations or the difficulty switches (their effects are not yet determined, `docs\CONTROLS.md`). |
 
 ## Key facts so far
 
@@ -76,12 +77,14 @@ Last updated: 2026-10-24, Stage D9 done (owner: it feels right). Stage D8 done (
 
 ## Next stage
 
-D10 - Keyboard: arrows and WASD for the joystick, plus keys for Select, Reset and the difficulty switches, listed on screen with F1. (This is where the temporary R key and the number keys get their final homes, and where the wafer-eating blip can finally be heard.)
+D11 - PS4 controller: D-pad and left stick for the joystick; Options = Reset, Share = Select. Verified with your pad, including unplugging and replugging mid-game. This needs your PS4 pad (DS4Windows not running).
 
 ## Handoff from the last session
 
-Stage D9 done: **the game runs at exactly 60 frames a second, paced by the sound card, never by the monitor.** You confirmed it feels right. Proof: 10 minutes at 59.9993 frames a second with no sound gaps; 93.4 % of frames shown for exactly 3 refreshes on your 180 Hz screen. The ghost flicker you noticed is the original game.
+Stage D10 done: **the game is playable from the keyboard** (arrows or WASD, Space, F3 = Reset, F2 = Select, F5/F6 = difficulty, F1 = key list). You confirmed the keys feel right and heard the blip, the power-pellet sound and the ghost-eating sound. Proof: the keys replay 344,460 recorded frames with 0 differences.
 
-Updated: `src\host\main.cpp`, `src\host\audio.hpp`, `DECISIONS.md` (T-D9-1, T-D9-2), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\TIMING.md`, `docs\DISPLAY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d9\`. The ROM was only read; nothing installed, deleted or pushed.
+What the game variations (F2) and difficulty switches (F5/F6) change is **not yet known**: `docs\CONTROLS.md` records only what C6 measured (different start values in memory, a different ghost-catch timing, a different bonus-item timing); the rules need long play recordings (Phase E) or the code (Phase F).
 
-Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and the `d7_`, `d8_` and `d9_` ini files. Delete only with your OK.
+Updated: `src\host\controls.*`, `src\host\emulator.*`, `src\host\main.cpp`, `src\host\CMakeLists.txt`, `tools\build_host.cmd`, `tools\d10_replay_compare.py`, `tests\host\test_controls.cpp`, `DECISIONS.md` (T-D10-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\CONTROLS.md`, `docs\SOUND.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d10\`. The ROM was only read; nothing installed, deleted or pushed.
+
+Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and the `d7_`-`d10_` ini files. Delete only with your OK.

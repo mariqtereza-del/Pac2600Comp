@@ -41,6 +41,7 @@ The program is honestly an **emulator front-end**: our code for everything aroun
 | `src\host\settings.*` | Ours | D7 (built) | Reads and writes single `key=value` lines of `settings.ini`, keeping the other lines. Used by `rom_finder` and `windowstate` |
 | `src\host\windowstate.*` | Ours | D7 (built) | The remembered window (position, size, fullscreen) and its safety correction for monitors. Tests: `tests\host\test_windowstate.cpp` |
 | `src\host\audio.*` | Ours | D8 (built) | Plays the emulator's sound through one SDL audio stream with a 4-frame cushion; counts shortages, drops and padding. D9: the `Pacer` in `main.cpp` starts game frames from a timer steered by the sound queue |
+| `src\host\controls.*` | Ours | D10 (built) | The key table, the keyboard state (what keys add up to, opposite directions cancel, release on focus loss) and the text of the F1 list. Tests: `tests\host\test_controls.cpp` |
 | `src\host\video.*` | Ours | D5-D7 (D5-D6: drawn from `main.cpp` for now) | Palette to colours, picture to window, correct shape (12:7 to be confirmed), whole-number scaling, fullscreen |
 | `src\host\audio.*` | Ours | D8 | Core audio samples to an SDL3 audio stream with a small steady buffer |
 | `src\host\pacing.*` | Ours | D9 | Advances the game at its own measured rate, not the monitor's (60.000 Hz vs 59.923 Hz is decided in D9) |

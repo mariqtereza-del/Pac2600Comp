@@ -28,6 +28,13 @@ public:
   int audioFrames() const;
   int audioRate() const;
 
+  // The left joystick and the console switches (Stage D10). Each call sets the state for the next frames; the
+  // difficulty switches are real switches (true = position A), the others are held while true.
+  void setJoystick(bool up, bool down, bool left, bool right, bool fire);
+  void setConsoleSelect(bool pressed);
+  void setDifficulty(bool leftA, bool rightA);
+  std::uint8_t consoleSwitches() const;  // the console switch register (SWCHB) as the game reads it
+
   void setConsoleReset(bool pressed);  // the console's Reset switch (starts a game); held until set again
 
   int height() const;                       // picture rows (228 for this ROM)

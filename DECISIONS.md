@@ -74,6 +74,33 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D10-1 — The keys, and how they become console input (2026-10-24, Stage D10)
+
+- **Keys chosen by Claude Code** (the owner may ask for others; they are one table, `controls::bindings()`):
+
+| Key | Does |
+| --- | --- |
+| Arrows or W A S D | Joystick (opposite directions at once cancel: a real stick cannot do both) |
+| Space or Z | Fire button |
+| F2 (held) | Game Select |
+| F3 (held) | Game Reset (replaces the temporary R key) |
+| F5, F6 | Left, right difficulty switch A / B (real switches: they flip on a fresh press and stay) |
+| 1, 2, 3, 4 | Picture mode (D6) |
+| Alt+Enter | Fullscreen (D7) |
+| F1 | Shows the list of keys over the picture |
+| Esc | Quit |
+
+- **Why these:** the game keys are far from anything that does damage by accident (Reset abandons a game, so it is an F-key, not a letter next to WASD). Select and Reset are "held while pressed" because they are the console's momentary switches; the difficulty switches latch because the console's are real switches. Keys are read by **position** (SDL scancodes), so WASD is right on any keyboard layout. When the window loses focus, every held key is released (a key let go while another window had the focus must not stay pressed); the difficulty switches stay where they are. Colour/B&W is D12.
+- **How it works:** the window thread turns key events into a small number (nine on/off values); the game thread reads it and gives it to the console at the start of every frame (`applyInput`). The game thread keeps running while the window is dragged (T-D8-2).
+- **Proof (my side):**
+  - `test_controls`: 70 checks (table, no key used twice and none of the window's keys, arrows and letters, two keys for one direction, opposite keys cancel, held and latched switches, key repeat, focus lost, unrelated keys, the F1 list).
+  - **Replay of recorded Phase C inputs through the real key code** (`tools\d10_replay_compare.py`, `--keys-replay`): 55 experiments (`reference\c6\*`: directions, turns, select, fire, left/right/both difficulty A, game variations 1-8, two players, mid-game Reset and Select, and more) **plus** 6,000 frames of random joystick play (`reference\audio\play1`): **344,460 frames compared, 0 differences** in the picture fingerprint of every frame (`reference\d10\replay_compare.txt`). The one experiment that uses Colour/B&W (`switches\bw`) is skipped (D12).
+  - **The real window's event loop** (`--timed 11 ... --push-keys`: a helper thread puts F3, Right, A, Up, S, F5 and F6 key events into the window's queue): the game's own joystick byte (RAM $ED, C6: up 1, down 2, left 4, right 8) took the values 0, 1, 2, 4 and 8, and the console switch register took the values 3e (Reset held), 3f, 7f (left difficulty A) and ff (both A). Underruns 0.
+  - **F1 list:** `--help-check` in the real window at 1280x960 and 2560x1440, screenshot looked at: all 13 lines readable (`reference\d10\help.png`).
+  - **Earlier checks still pass:** audio for 2,500 frames still byte-identical to C5, picture fingerprints 0 differences from C3, window state (29), ROM finder, layout (173), self-check, layout-check, fullscreen-check; 59.99 frames a second, 0 underruns; ROM SHA-1s unchanged.
+- **Not proved by me:** that a physical key press arrives (my events are injected into the same queue, not typed); a keyboard that cannot report three keys at once (ghosting) may drop a combination such as two directions plus Fire; how the keys feel.
+- **Reversible:** Yes.
+
 ### T-D9-1 — Game speed is 60.000 frames a second, set by the sound card's clock (2026-10-24, Stage D9)
 
 - **The question (left open by C4):** pace at **60.000 Hz** (what Stella plays at and what C4 measured: 1,194,720 cycles a second) or **59.923 Hz** (what the console's own crystal gives)?

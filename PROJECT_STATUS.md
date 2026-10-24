@@ -80,4 +80,4 @@ Stage D5 done: **the game is shown live in our window**, unscaled (160x228, cent
 
 Updated: `src\host\main.cpp`, `DECISIONS.md` (T-D5-1), `ARCHITECTURE.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d5\`. The ROM was only read; nothing installed, deleted or pushed.
 
-Still in `build\host	est_tmp` (ignored by Git): small test files, including `flipped.a26` (the ROM with one bit changed, made by the test each run). Delete only with your OK.
+Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` (the ROM with one bit changed, made by the test each run). Delete only with your OK.

@@ -1,6 +1,6 @@
-Current stage: C8 — Gate C: reproducible reference (Phase C)
+Current stage: D1 — Architecture note (Phase D)
 
-Last updated: 2026-10-24, end of Stage C7. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage C8. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -28,6 +28,7 @@ Last updated: 2026-10-24, end of Stage C7. Phase A complete (Gate A met). Phase 
 | C5 — Sound facts | `stella_sound.exe` (T-C5-1), idle run identical to C3; 8 runs incl. scripted joystick play. Only 3 sounds: start tune (2 channels, 63 frames), scoring blip (C9 F9, 8 frames, 376/376 with a score change), death sound (C4, AUDF 31->0 rising, about 2.1 s). Attract silent, no background sound. Power pill, ghost eaten, level clear not captured. `docs\SOUND.md`. |
 | C6 — Controls and game variations | `stella_script.exe` (T-C6-1), idle script identical to C3. Defaults B/B/Colour. Select: games 1-8 x 1/2 players (16), power-on 1(1P). Reset and fire start a game (fire: from attract/game over only). Directions read into $ED. B&W: game uses greys. Difficulty switches change when the bonus item appears (left P1, right P2). Variations: idle catch timings repeat every 4 games; Pac-Man speed differs. PS4 pad in Stella: stick and a button work. `docs\CONTROLS.md`. |
 | C7 — Reference captures | Eight numbered pictures in `reference\screens\` (local only): title, game start, power pill, ghost eaten, death, bonus item, level end, game over, each checked by eye. Made by a search-based bot (`stella_bot.exe`) whose route script `tools\captures\c7_route.txt` is replayed from power-on by `stella_script.exe` (`tools\captures\c7_captures.txt`); two replays byte-identical (frames.csv and all 8 pictures). Level 1 cleared (1 wafer left at frame 7310, map refilled 7311), 4 deaths, game over frame 9391. `docs\CAPTURES.md`, T-C7-1. |
+| C8 — Gate C | All 6 items PASS, re-checked this session (`docs\GATE_C.md`): fresh C7 replay reproduced all 8 picture fingerprints and the C7 per-frame log; fresh 6,000-frame idle run has 0 fingerprint differences from C3; ROM SHA-1s unchanged; no ROM or `reference\` file in Git; `git fsck` clean. `docs\REFERENCE.md` (how to recreate the reference, 9 open items). The Stella app folder was not re-read (outside the project). |
 
 ## Key facts so far
 
@@ -66,10 +67,10 @@ Last updated: 2026-10-24, end of Stage C7. Phase A complete (Gate A met). Phase 
 
 ## Next stage
 
-C8 — Gate C: reproducible reference. Write `docs\REFERENCE.md` (how anyone recreates this exact setup: Stella version, settings, ROM fingerprint) and check Gate C item by item: display, timing, sound, controls and variations documented, pictures present, nothing "believed" without a measurement noted.
+D1 — Architecture note: `ARCHITECTURE.md` with the three-part table (which code is ours, which is Stella's, which behaviour comes from the ROM, and what Phase 2 will replace).
 
 ## Handoff from the last session
 
-Stage C7 done: **eight reference pictures of the original game** exist in `reference\screens\` and can be recreated exactly from a committed script (`tools\captures\c7_captures.txt`, listed in `docs\CAPTURES.md`). A bot found the route; only the replay counts, and two replays were identical. No play session from you was needed. Not captured: two-player, other variations, level 2.
+Stage C8 done: **Gate C passed, Phase C is complete.** `docs\GATE_C.md` checks six items against fresh runs; `docs\REFERENCE.md` says how to recreate the reference and lists 9 open items with the stage that settles each. An end-of-phase checkpoint zip (as for Gate B) is offered but not made: it writes outside the project and needs your OK.
 
-New: `docs\CAPTURES.md`, `tools\stella_probe\bot.cpp`, `tools\c7_captures.py`, `tools\captures\`. Updated: `tools\stella_probe\script.cpp` (region line), `tools\stella_probe\CMakeLists.txt`, `tools\build_stella_probe.cmd`, `CLAUDE.md`, `DECISIONS.md` (T-C7-1), `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c7\`, `reference\screens\`. Nothing installed, deleted or pushed; Stella not started; ROM SHA-1s unchanged.
+New: `docs\REFERENCE.md`, `docs\GATE_C.md`. Updated: `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c8\`. Nothing installed, deleted or pushed; Stella not started; ROMs untouched.

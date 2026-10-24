@@ -994,8 +994,29 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
     - **Documentation updates:** `docs\CAPTURES.md` (new), `DECISIONS.md` (T-C7-1), `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage C7: Reference captures`.
     - **Next stage:** C8 — Gate C: reproducible reference.
-8. **[Not started] C8 — Gate C: reproducible reference.**
-    - `docs\REFERENCE.md` explains how anyone can recreate this exact setup (Stella version, settings, ROM fingerprint). Gate checklist: display, timing, sound, controls and variations documented; snapshots present; nothing is "believed" without a measurement noted.
+8. **[Done] C8 — Gate C: reproducible reference.** *(expanded and done 2026-10-24)*
+    - **Objective:** prove Phase C is complete: write `docs\REFERENCE.md` (how anyone recreates this exact reference setup) and `docs\GATE_C.md` (the gate checklist, each item re-checked against the files and tools, not against earlier notes).
+    - **Why it matters:** Phase D builds the port and compares it with this reference. The gate makes sure the reference is complete, repeatable and honest about what is still unknown.
+    - **Prerequisites:** C1–C7 Done (commit `85e4630`, clean tree).
+    - **What Claude Code will do:**
+      1. Re-check the reference emulator folder against the official zip's recorded hashes, the three ROM copies, and Git (no ROM committed).
+      2. Re-run the C7 replay and compare its pictures with the fingerprints in `docs\CAPTURES.md`; re-run an idle script and compare it with C3's fingerprints.
+      3. Cross-check each fact document (display, timing, sound, controls/variations, captures) for its measurement source and for an explicit "not yet measured" list.
+      4. Write `docs\REFERENCE.md` and `docs\GATE_C.md`; record anything open as an open item with the stage that will settle it.
+    - **What I must do:** nothing, unless a check fails.
+    - **Exact instructions:** none.
+    - **Required input:** None.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:** every Gate C item PASS with evidence, or a clear list of what fails.
+    - **Verification:**
+      - Gate items: display, timing, sound, controls and variations documented; snapshots present; nothing "believed" without a note of how it was measured; reference setup recreatable from `docs\REFERENCE.md`.
+      - ROM SHA-1s unchanged; staged list free of ROMs.
+    - **Completion criteria:** all Gate C items PASS. Otherwise Phase D does not start (Rule 10).
+    - **Potential problems:** a document may cite a measurement that cannot be reproduced now (fix the document or the tool); Stella's folder may have changed (re-compare with the zip).
+    - **Recovery:** new documents only plus local output in `reference\c8\`. Undo by returning to `85e4630` (with your OK).
+    - **Documentation updates:** `docs\REFERENCE.md`, `docs\GATE_C.md` (new), `DECISIONS.md` (T-C8-n if any), `CLAUDE.md` if facts change, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage C8: Gate C reproducible reference`. An end-of-phase checkpoint zip (as for Gate B) is offered; it writes outside the project, so it needs your OK.
+    - **Next stage:** D1 — Architecture note (only if Gate C passes).
 
 ### Phase D — First working PC executable (16 stages)
 

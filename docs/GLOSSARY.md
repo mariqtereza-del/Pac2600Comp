@@ -47,6 +47,12 @@ Every project term in one line of plain English. New terms are added in the stag
 | Game Properties | Stella's window (Tab → Game Properties…) showing what it knows and detects about the loaded game. |
 | Auto-detect | Stella working out a setting (cartridge type, TV format) from the ROM itself instead of from its database. |
 | NTSC / PAL | The US and European TV standards; NTSC draws about 60 pictures per second, PAL about 50. This ROM is NTSC. |
+| Game Select / Game Reset | The console's two buttons: Select chooses the game number and players, Reset starts a new game. |
+| Difficulty switches (A/B) | Two console switches, left for player 1 and right for player 2; here they change when the bonus item appears. |
+| Game variation | One of the game numbers 1–8 chosen with Select; each can be for one or two players. |
+| Bonus item | The small square that appears under the ghost pen at times during play. |
+| Input script | A text file telling our tool which buttons and directions to press on which frames. |
+| RAM byte ($80–$FF) | One of the console's 128 memory cells; the game keeps its state (position, score, settings) there. |
 | AUDC / AUDF / AUDV | The TIA's three sound settings per channel: tone type (AUDC), pitch (AUDF, higher number = lower note) and volume (AUDV). |
 | Sound channel | The TIA has two independent voices (0 and 1); this game uses channel 0 for everything and channel 1 only in the start tune. |
 | Sample rate | How many audio values per second a sound file holds; Stella's is 31,440 Hz. |

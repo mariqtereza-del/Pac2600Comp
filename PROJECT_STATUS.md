@@ -1,6 +1,6 @@
-Current stage: C6 — Controls and game variations (Phase C)
+Current stage: C7 — Reference captures (Phase C)
 
-Last updated: 2026-10-24, end of Stage C5. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage C6. Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -26,6 +26,7 @@ Last updated: 2026-10-24, end of Stage C5. Phase A complete (Gate A met). Phase 
 | C3 — Display facts, measured | `tools\stella_probe` (Stella 7.0 core, T-C3-1), 24,000 frames: 262 lines per frame throughout (frame 0: 45), visible window line 23 + 228 lines, drawn scanlines 34–222 over 160 columns, 9 play colours (ghost flicker ¼ each), 87 overall (idle colour shifting). 13 identical runs. Level change not reached. `docs\DISPLAY.md`. |
 | C4 — Timing facts | `stella_timing.exe` (T-C4-1), fingerprints identical to C3. 19,912 cycles/frame (76/line). Stella plays at 60.000 Hz; its NTSC console clock gives 59.923 Hz (+0.128 %). Every frame: VSYNC L259-261, logic, wait to L33, drawing from L34, timer at L195, logic, wait to L258. Spare time at least 6 lines (top), 24 (bottom), no overruns. `docs\TIMING.md`. |
 | C5 — Sound facts | `stella_sound.exe` (T-C5-1), idle run identical to C3; 8 runs incl. scripted joystick play. Only 3 sounds: start tune (2 channels, 63 frames), scoring blip (C9 F9, 8 frames, 376/376 with a score change), death sound (C4, AUDF 31->0 rising, about 2.1 s). Attract silent, no background sound. Power pill, ghost eaten, level clear not captured. `docs\SOUND.md`. |
+| C6 — Controls and game variations | `stella_script.exe` (T-C6-1), idle script identical to C3. Defaults B/B/Colour. Select: games 1-8 x 1/2 players (16), power-on 1(1P). Reset and fire start a game (fire: from attract/game over only). Directions read into $ED. B&W: game uses greys. Difficulty switches change when the bonus item appears (left P1, right P2). Variations: idle catch timings repeat every 4 games; Pac-Man speed differs. PS4 pad in Stella: stick and a button work. `docs\CONTROLS.md`. |
 
 ## Key facts so far
 
@@ -64,25 +65,34 @@ Last updated: 2026-10-24, end of Stage C5. Phase A complete (Gate A met). Phase 
 
 ## Next stage
 
-C6 — Controls and game variations. Claude Code documents in `docs\CONTROLS.md`:
-- the joystick directions;
-- whether the fire button does anything;
-- Game Select and Game Reset;
-- each game variation;
-- what the two difficulty switches change.
+C7 — Reference captures: a numbered set of reference pictures of the key moments:
+- title (attract) screen;
+- start of a game;
+- a power pill in effect;
+- a death;
+- the bonus item;
+- a level end;
+- game over.
 
-Much of this can be measured with the same tools (pressing Select or the difficulty switches by script, then looking at the pictures). **Your part:** the PS4 controller test left over from C2, which needs you, the pad and the Stella app. Claude Code decides the rest at the start of C6.
+Most can come from the scripted tools. **A power pill in effect and a level end need real play:** the scripted player never achieved them (C5, C6). Claude Code will likely ask you for a short play session in the Stella app, taking snapshots (F12) at those moments, or try a smarter scripted route first. Starting Stella needs your OK.
 
 ## Handoff from the last session
 
-Stage C5 done: **the game's sounds are measured** (`docs\SOUND.md`), using a third tool built on the same Stella 7.0 code. Its idle run matches C3 exactly. It includes a "scripted player" that steers Pac-Man by a fixed recipe, so no one had to play.
-- **Only three sounds** occurred in 8 runs (about 53 minutes of game time):
-  1. **The start tune:** two voices, 1.05 s, at the start of each game and after each lost life.
-  2. **A short blip:** 0.13 s, every time the score goes up (all 376 times). That's eating a wafer.
-  3. **The death sound:** 2.1 s, with a rising note and a volume that ramps down four times over.
-- **Silences:** attract mode is silent, and there's no background sound during play.
-- **Not captured:** power pills, eating a ghost and clearing a level. The scripted player never achieved them.
-- **WAV clips:** each sound is in `reference\audio\` (local only).
-- **Fixed during the stage:** I'd first described the death sound's note as falling. Stella's sound-chip code shows a smaller pitch number is a higher note, so the note rises. Also, one count in my draft was corrected (738 sound frames in the idle run).
+Stage C6 done: **the controls and game variations are measured** (`docs\DISPLAY.md`, `TIMING.md`, `SOUND.md` and now `docs\CONTROLS.md`), using a fourth tool that plays from small input scripts. Its idle script matches C3 exactly. You tested the PS4 pad in Stella.
+- **Game Select:**
+  - 16 choices: game 1–8, each for 1 or 2 players. The power-on choice is game 1, one player.
+  - During play, Select ends the game.
+- **Reset and fire:** Game Reset starts a new game. The **fire button also starts a new game** from attract mode or after game over, and does nothing found during play.
+- **Joystick:** all four directions are read. At the start position up and down are blocked by walls.
+- **Switches:**
+  - Stella's defaults are both difficulty switches on B and Colour.
+  - B&W makes the game use its own greys.
+  - The difficulty switches change **when the bonus item** (the square under the ghost pen) appears: left for player 1, right for player 2.
+- **Variations:**
+  - The game number isn't shown during play.
+  - How fast the ghosts catch an idle Pac-Man repeats every 4 games.
+  - Pac-Man's speed differs between some games.
+  - What each variation is meant to change isn't determined yet.
+- **PS4 pad in Stella:** the left stick moves Pac-Man and a pad button starts the game. The d-pad wasn't confirmed.
 
-New: `docs\SOUND.md`, `tools\stella_probe\sound.cpp`, `tools\c5_report.py`. Updated: `tools\stella_probe\CMakeLists.txt`, `tools\build_stella_probe.cmd`, `CLAUDE.md`, `DECISIONS.md` (T-C5-1), `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\audio\` (9 run folders, about 50 MB of audio each). Stella app not started; nothing installed, deleted or pushed; ROMs untouched.
+New: `docs\CONTROLS.md`, `tools\stella_probe\script.cpp`, `tools\c6_experiments.py`, `tools\raw_to_png.py`. Updated: `tools\stella_probe\CMakeLists.txt`, `tools\build_stella_probe.cmd`, `CLAUDE.md`, `DECISIONS.md` (T-C6-1), `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\c6\`. Stella was started once (your pad test) and only updated its own settings file; nothing installed, deleted or pushed; ROMs untouched.

@@ -74,6 +74,19 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-C6-1 — A general input-script tool for controls and variations (2026-10-24, Stage C6)
+
+- **Choice:**
+  - `tools\stella_probe\script.cpp` builds `stella_script.exe`. It runs Stella's normal `runFrame()` with inputs from a small text script. Each line holds an input over a frame range: directions, fire, Select, Reset, and switch positions, which stay where they're set, as in Stella's `Switches::update()`.
+  - Per frame it records the picture and status-bar fingerprints, the colours, the switch positions and the 128 bytes of RAM, plus pictures on request.
+  - `tools\c6_experiments.py` generates the scripts and compares runs, and `tools\raw_to_png.py` makes viewable pictures.
+- **Why:**
+  - Every control can be tried in isolation and compared frame by frame with an otherwise identical run, which shows exactly when and where it makes a difference.
+  - The plan had you pressing Select and the switches by hand. The script does it repeatably, and you only did the PS4 pad test, which needs real hardware.
+  - The same tool can drive C7's reference captures and Phase E's input recordings.
+- **Proof it doesn't change the emulation:** the idle script reproduced all 24,000 of C3's picture fingerprints.
+- **Reversible:** Yes. It's a separate program.
+
 ### T-C5-1 — Sound measured with a third tool and scripted joystick play (2026-10-24, Stage C5)
 
 - **Choice:**

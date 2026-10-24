@@ -883,9 +883,71 @@ Set up the standalone Stella app as the "ruler" we measure everything against, a
       - **Corrected during the stage:**
         - The death sound's note rises, not falls (checked in Stella's `AudioChannel.cxx`).
         - The count of idle sound frames is 738.
-6. **[Not started] C6 — Controls and game variations.**
-    - You: with Claude Code guiding, press Game Select and watch the variation number; try the two difficulty switches.
-    - Claude Code: documents joystick directions, fire button use (if any), Select/Reset, each game variation's settings, and what the difficulty switches change. Writes `docs\CONTROLS.md`.
+6. **[Done] C6 — Controls and game variations.** *(expanded 2026-10-24, done 2026-10-24)*
+    - **Objective:** `docs\CONTROLS.md` records, each with how it was measured:
+      - what each joystick direction does;
+      - whether the fire button does anything;
+      - what Game Select and Game Reset do;
+      - how many game variations there are, and what is observably different in each;
+      - what the two difficulty switches and the Colour/B&W switch change;
+      - the switch positions Stella uses by default.
+    - **Why it matters:** the port must offer exactly the same controls and options, mapped sensibly to keyboard and game pad. A missed variation or switch effect would be a fidelity gap.
+    - **Prerequisites:** C5 Done (yes; commit `9004fef`, clean tree). Checked in the Stella 7.0 source on 2026-10-24:
+      - **Momentary:** `ConsoleSelect` and `ConsoleReset` are pressed only while the event is held.
+      - **Switches that stay put:** `ConsoleLeftDiffA/B`, `ConsoleRightDiffA/B` and `ConsoleColor/BlackWhite` set a position that remains (`Switches::update()`).
+      - **Defaults:** they come from the game's properties (`Switches.cxx` line 37). The positions can be read with `Switches::leftDifficultyA()`, `rightDifficultyA()` and `tvColor()`.
+    - **What Claude Code will do (T-C6-1):**
+      1. Add a general input-script tool, `tools\stella_probe\script.cpp` → `stella_script.exe`. It reads a text file of timed inputs (directions, fire, Select, Reset, switch positions) and records per frame:
+         - the picture fingerprint and status-bar fingerprint, and the colours used;
+         - the switch positions;
+         - the 128 bytes of console RAM;
+         - pictures at chosen frames.
+
+         It's built the same way as C3–C5, and its idle script must reproduce C3's fingerprints.
+      2. Run experiments:
+         - (a) press Game Select repeatedly and read the variation shown on screen until it wraps around;
+         - (b) for each variation, start a game and compare it with variation 1 (lives, picture, RAM, and Pac-Man's movement under the same joystick script);
+         - (c) the same scripted game with each difficulty switch on A versus B;
+         - (d) with versus without the fire button;
+         - (e) each direction held from the start;
+         - (f) Colour versus B&W;
+         - (g) Select and Reset pressed during play.
+      3. Look at the pictures where runs differ, and write `docs\CONTROLS.md`.
+      4. **Optional, needs you:** the PS4 controller test in the Stella app, left over from C2. It is offered, not required. The port's own controller support is a Phase D matter.
+    - **What I must do:** Nothing required. Optionally, test the PS4 pad in Stella if Claude Code asks and you have it to hand.
+    - **Exact instructions:** Given in the session if you take the optional pad test.
+    - **Required input:** None.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:**
+      - The number of variations and their on-screen labels.
+      - Per variation, the observed differences (or "no difference found in this test").
+      - Per switch and the fire button, the effect or "no effect found", with the frame where runs first differ.
+      - The direction mapping and the default switch positions.
+    - **Verification:**
+      - Tool output.
+      - Fingerprint comparisons between runs. Identical fingerprints mean "no visible effect in this scenario".
+      - Pictures checked by eye.
+      - The idle-script check against C3.
+      - ROM SHA-1s unchanged.
+    - **Completion criteria:** every item above answered with evidence, or marked "not determined" with the reason and the stage that will determine it.
+    - **Potential problems:**
+      - An effect may only show in situations the script doesn't reach, for example a later level. "No effect found" is then stated as limited to the tested scenario, never as "no effect".
+      - The meaning of RAM bytes is a Phase F job. C6 only notes which bytes differ.
+    - **Recovery:** new files only, plus local output in `reference\c6\`. Undo by returning to `9004fef` (with your OK).
+    - **Documentation updates:** `docs\CONTROLS.md` (new), `DECISIONS.md` (T-C6-1), `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage C6: Controls and game variations`.
+    - **Next stage:** C7 — Reference captures.
+    - **Result (2026-10-24):** `stella_script.exe` (T-C6-1); its idle script reproduced C3 exactly. Details in `docs\CONTROLS.md`.
+      - **Defaults:** both difficulty switches on B, TV type Colour.
+      - **Select:** 16 selections, games 1–8 × 1 or 2 players, starting at 1 (1P). During play it ends the game and moves to the next selection.
+      - **Reset and fire:** Reset starts a new game. **Fire starts a new game from attract mode or after game over; no effect found during play.**
+      - **Directions:** all 4 read (RAM $ED = 1/2/4/8). Left/right move Pac-Man; up/down are blocked at the start by walls but work elsewhere.
+      - **B&W:** the game itself uses grey colours.
+      - **Left difficulty:** changes when the bonus item under the ghost pen is shown (player 1).
+      - **Right difficulty:** the same, for player 2 only; no effect in one-player games.
+      - **Variations:** no game number shown in play. Idle ghost-catch timings repeat every 4 games, and Pac-Man's speed over the same 12 px is 20 frames (games 1, 7, 8) versus 16 (2–6). What each variation means is not determined.
+      - **Two players:** a red bar for player 2, turns alternate.
+      - **PS4 pad in Stella (your test):** the left stick moves Pac-Man and a pad button starts the game. The d-pad was not confirmed.
 7. **[Not started] C7 — Reference captures.**
     - Claude Code: guides you to take numbered Stella snapshots of the title screen, start of game, a power pill in effect, a death, a fruit/vitamin, a level end and game over, saved to `reference\screens\`. If you want video too, you choose then whether to install OBS (optional).
 8. **[Not started] C8 — Gate C: reproducible reference.**

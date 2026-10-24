@@ -27,3 +27,8 @@ target_link_options(stella_timing PRIVATE /MAP)
 add_executable(stella_sound sound.cpp)
 target_link_libraries(stella_sound PRIVATE stella_core)
 target_link_options(stella_sound PRIVATE /MAP)
+
+# stella_script: scripted inputs, per-frame fingerprints, switches and RAM (Stage C6, DECISIONS.md T-C6-1).
+add_executable(stella_script script.cpp)
+target_link_libraries(stella_script PRIVATE stella_core)
+target_link_options(stella_script PRIVATE /MAP)

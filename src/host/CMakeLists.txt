@@ -1,0 +1,23 @@
+# pacman2600 host (Phase D). Stage D2: an empty window (DECISIONS.md T-D2-1).
+cmake_minimum_required(VERSION 3.30)
+project(pacman2600_host LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+# MSVC 14.51 ignores /std:c++23; pin the fixed C++23 mode (DECISIONS.md T-B3-2).
+if(MSVC)
+  set(CMAKE_CXX23_STANDARD_COMPILE_OPTION "/std:c++23preview")
+  set(CMAKE_CXX23_EXTENSION_COMPILE_OPTION "/std:c++23preview")
+endif()
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party third_party)
+
+# WIN32 = a normal windowed program (no console window when double-clicked).
+add_executable(pacman2600 WIN32 main.cpp)
+target_compile_options(pacman2600 PRIVATE /W4 /permissive-)
+target_link_libraries(pacman2600 PRIVATE SDL3::SDL3)
+
+# Put SDL3.dll next to the program so a double-click finds it.
+add_custom_command(TARGET pacman2600 POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL3::SDL3> $<TARGET_FILE_DIR:pacman2600>)

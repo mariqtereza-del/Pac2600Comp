@@ -1039,7 +1039,27 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `ARCHITECTURE.md` (new), `DECISIONS.md` (T-D1-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D1: Architecture note`.
     - **Next stage:** D2 — An empty window.
-2. **[Not started] D2 — An empty window.** A black 960×720 window titled with the project name that closes cleanly. You: double-click the `.exe` Claude Code points you to and close it.
+2. **[Done] D2 — An empty window.** *(expanded and done 2026-10-24)*
+    - **Objective:** the first host program: `pacman2600.exe` opens a black 960×720 window titled with the project's working name and closes cleanly (close button, Alt+F4 or Escape), exit code 0.
+    - **Why it matters:** it proves our own code, SDL3 and the compiler work together end to end, and it is the base every later Phase D stage grows from.
+    - **Prerequisites:** D1 Done (`ARCHITECTURE.md`, commit `a2ca7f3`); SDL3 builds (B7).
+    - **What Claude Code will do (T-D2-1):**
+      1. Add `src\host\main.cpp` and `src\host\CMakeLists.txt` (C++23 settings as in T-B3-2, links `SDL3::SDL3`), and `tools\build_host.cmd` (output in `build\host`; `SDL3.dll` copied next to the `.exe`).
+      2. The window is created with SDL3 and cleared to black each frame by SDL's renderer. The program is a Windows-subsystem program (no console window) and reports errors in a message box.
+      3. A command-line check, `--self-check <file>`, opens the window, reads back its title, size and the colour of a pixel, writes them to the file and quits by itself. Used for the automatic proof; a normal start has no such behaviour.
+      4. Build with 0 errors and 0 warnings, run the self-check, then ask you to double-click.
+    - **What I must do:** double-click `build\host\pacman2600.exe` (path given at the end), see a black window, close it, and tell me what you saw.
+    - **Exact instructions:** Open the folder `F:\Ports\Pac-Man - Atari 2600\build\host` in File Explorer, double-click `pacman2600.exe`. A black window should appear. Close it with its X button. Nothing should be left running, and no error box should appear.
+    - **Required input:** Your report of what you saw.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:** a black 960×720 window; clean exit.
+    - **Verification:** build log (0 errors, 0 warnings); self-check output (title, size 960×720, pixel black, exit code 0); process list shows no leftover process; your double-click report; ROM SHA-1s unchanged; no ROM staged.
+    - **Completion criteria:** all of the above, including your confirmation.
+    - **Potential problems:** `SDL3.dll` not found on a double-click (the copy next to the `.exe` prevents it); Windows display scaling can make the window look larger or smaller than 960×720 pixels (the check reports the real pixel size); a security prompt for an unsigned program may appear (tell me).
+    - **Recovery:** new files only plus `build\host`. Undo by returning to `a2ca7f3` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D2-1), `ARCHITECTURE.md` (file table: D2 file built), `docs\GLOSSARY.md`, `CLAUDE.md` (build command), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D2: An empty window`.
+    - **Next stage:** D3 — Finding your ROM.
 3. **[Not started] D3 — Finding your ROM.**
     - First launch with no ROM known: a Windows "Open file" dialog asks for the `.a26`. The path is remembered in `settings.ini` next to the `.exe`.
     - Also accepted: a `roms` folder next to the `.exe`, or a path on the command line.

@@ -1,6 +1,6 @@
-Current stage: D2 — An empty window (Phase D)
+Current stage: D3 — Finding your ROM (Phase D)
 
-Last updated: 2026-10-24, end of Stage D1. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage D2. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -30,6 +30,7 @@ Last updated: 2026-10-24, end of Stage D1. Phase C complete (Gate C met, `docs\G
 | C7 — Reference captures | Eight numbered pictures in `reference\screens\` (local only): title, game start, power pill, ghost eaten, death, bonus item, level end, game over, each checked by eye. Made by a search-based bot (`stella_bot.exe`) whose route script `tools\captures\c7_route.txt` is replayed from power-on by `stella_script.exe` (`tools\captures\c7_captures.txt`); two replays byte-identical (frames.csv and all 8 pictures). Level 1 cleared (1 wafer left at frame 7310, map refilled 7311), 4 deaths, game over frame 9391. `docs\CAPTURES.md`, T-C7-1. |
 | C8 — Gate C | All 6 items PASS, re-checked this session (`docs\GATE_C.md`): fresh C7 replay reproduced all 8 picture fingerprints and the C7 per-frame log; fresh 6,000-frame idle run has 0 fingerprint differences from C3; ROM SHA-1s unchanged; no ROM or `reference\` file in Git; `git fsck` clean. `docs\REFERENCE.md` (how to recreate the reference, 9 open items). The Stella app folder was not re-read (outside the project). |
 | D1 — Architecture note | `ARCHITECTURE.md`: the three parts (host, Stella core, ROM), data flow, planned file table for D2-D13, who decides what (with `docs\` evidence), what Phase 2 replaces, licences, open choices. T-D1-1: static link of `stella_core`, calling `StellaLIBRETRO`. Checked by script: every named path exists or is marked planned, every `docs\` file exists, D2-D13 exist in `PLAN.md`, the five wrapper calls are used by the probes. No code written. |
+| D2 — An empty window | First host code: `src\host\main.cpp`, `CMakeLists.txt`, `tools\build_host.cmd` -> `build\host\pacman2600.exe` + `SDL3.dll`. Build 0 errors, 0 warnings. `--self-check`: title "pacman2600 (working name)", 960x720 pixels, centre pixel black, exit 0. Normal start: responding window, close request -> exit 0, no leftover process. Your double-click: black window, closed, no errors. T-D2-1. |
 
 ## Key facts so far
 
@@ -68,10 +69,10 @@ Last updated: 2026-10-24, end of Stage D1. Phase C complete (Gate C met, `docs\G
 
 ## Next stage
 
-D2 — An empty window: a black 960x720 window titled with the project name that closes cleanly (first host code, first CMake target for `src\host`). You will be asked to double-click the `.exe` and close it.
+D3 — Finding your ROM: on first start with no ROM known, a Windows "Open file" dialog asks for the `.a26`; the path is remembered in `settings.ini` next to the `.exe`. Also accepted: a `roms` folder next to the `.exe`, or a path on the command line. Size and fingerprint are checked, with clear messages for the four failure cases. You will be asked to pick your ROM file in the dialog.
 
 ## Handoff from the last session
 
-Stage D1 done: **`ARCHITECTURE.md` written** (top level of the project). It says which code is ours, Stella's or the ROM's, where each Phase D file will go, and what Phase 2 replaces. One technical choice recorded (T-D1-1). No code, no build, nothing outside the project. The Gate C checkpoint zip was made earlier with your OK.
+Stage D2 done: **`pacman2600.exe` opens a black 960x720 window and closes cleanly.** You double-clicked it: black, closed, no errors. Window title is a working name (the real name is chosen in J2; "Pac-Man" is a trademark).
 
-New: `ARCHITECTURE.md`. Updated: `DECISIONS.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+New: `src\host\main.cpp`, `src\host\CMakeLists.txt`, `tools\build_host.cmd`. Updated: `DECISIONS.md` (T-D2-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `build\host\`, `reference\d2\`. Nothing installed, deleted or pushed; ROMs untouched.

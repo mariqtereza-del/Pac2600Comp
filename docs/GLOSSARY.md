@@ -143,3 +143,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Bot | A program that plays the game for us by trying moves ahead; its moves are saved as a script, and only a replay of the script counts. |
 | Host | Our own program around the game: window, sound, controls, speed. In Phase 1 the game itself is run by Stella's core. |
 | Core (emulation core) | The part of Stella that pretends to be the 2600's chips. |
+| Self-check | A command-line switch on our program that makes it test itself and quit, so a test can run without anyone watching. |

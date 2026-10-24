@@ -74,6 +74,17 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D2-1 — Host skeleton: SDL3 renderer window, working name as title, self-check flag (2026-10-24, Stage D2)
+
+- **Choice:**
+  - `src\host\main.cpp` + `src\host\CMakeLists.txt`, built by `tools\build_host.cmd` into `build\host`. A Windows-subsystem program (no console window), C++23 (T-B3-2), warnings `/W4`. `SDL3.dll` is copied next to the `.exe` after the build.
+  - Window 960x720 created with `SDL_CreateWindowAndRenderer` and cleared to black every frame (the present call waits for the screen refresh, so the loop doesn't spin). It closes on the close button, Alt+F4 or Escape.
+  - Title: **"pacman2600 (working name)"**. "Pac-Man" is a Bandai Namco trademark, so the real project name is left to J2; `pacman2600` is already the name of our checkpoint files.
+  - `--self-check <file>` makes the program open the window, write its title, pixel size and centre-pixel colour to the file, and quit with exit code 0 (OK) or 2 (wrong). It exists only so the proof doesn't depend on someone looking at a screen.
+- **Why:** SDL's renderer is the simplest way to a window that D5-D7 can reuse for pictures and scaling; no extra library. A GUI-subsystem program is what a double-click expects.
+- **Not decided here:** high-DPI handling and scaling (D6, D7).
+- **Reversible:** Yes.
+
 ### T-D1-1 — The host links Stella's core as a static library and calls its libretro wrapper class (2026-10-24, Stage D1)
 
 - **Choice:** the Phase 1 host links `stella_core` (the static library built by `third_party\CMakeLists.txt`) and calls `StellaLIBRETRO` directly. It does not load `stella_libretro.dll` through the `retro_*` functions.

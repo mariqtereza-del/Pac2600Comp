@@ -1,6 +1,6 @@
-Current stage: D3 — Finding your ROM (Phase D)
+Current stage: D4 — Emulator running blind (Phase D)
 
-Last updated: 2026-10-24, end of Stage D2. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, end of Stage D3. Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -31,6 +31,7 @@ Last updated: 2026-10-24, end of Stage D2. Phase C complete (Gate C met, `docs\G
 | C8 — Gate C | All 6 items PASS, re-checked this session (`docs\GATE_C.md`): fresh C7 replay reproduced all 8 picture fingerprints and the C7 per-frame log; fresh 6,000-frame idle run has 0 fingerprint differences from C3; ROM SHA-1s unchanged; no ROM or `reference\` file in Git; `git fsck` clean. `docs\REFERENCE.md` (how to recreate the reference, 9 open items). The Stella app folder was not re-read (outside the project). |
 | D1 — Architecture note | `ARCHITECTURE.md`: the three parts (host, Stella core, ROM), data flow, planned file table for D2-D13, who decides what (with `docs\` evidence), what Phase 2 replaces, licences, open choices. T-D1-1: static link of `stella_core`, calling `StellaLIBRETRO`. Checked by script: every named path exists or is marked planned, every `docs\` file exists, D2-D13 exist in `PLAN.md`, the five wrapper calls are used by the probes. No code written. |
 | D2 — An empty window | First host code: `src\host\main.cpp`, `CMakeLists.txt`, `tools\build_host.cmd` -> `build\host\pacman2600.exe` + `SDL3.dll`. Build 0 errors, 0 warnings. `--self-check`: title "pacman2600 (working name)", 960x720 pixels, centre pixel black, exit 0. Normal start: responding window, close request -> exit 0, no leftover process. Your double-click: black window, closed, no errors. T-D2-1. |
+| D3 — Finding your ROM | `src\host\rom_finder.*`, `main.cpp`, `tests\host\test_rom_finder.cpp`. Build 0 errors/0 warnings. Test program: all pass on two runs (SHA-1 vectors, real ROM accepted, missing/empty/100-byte/wrong-content/one-bit-flipped/folder rejected with plain messages, settings round trip, search order). `--find-rom`: good exit 0, failure cases exit 4, none exit 5, `roms` folder and saved path found. Normal start: title shows the file name, exit 0, absolute path saved. Your check: black window with `pacman.a26` in the title, second start without asking. Mistake reported and fixed: the first test copied the ROM into `build\host\test_tmp\roms`; you approved deleting it, the test no longer copies. T-D3-1. |
 
 ## Key facts so far
 
@@ -69,10 +70,12 @@ Last updated: 2026-10-24, end of Stage D2. Phase C complete (Gate C met, `docs\G
 
 ## Next stage
 
-D3 — Finding your ROM: on first start with no ROM known, a Windows "Open file" dialog asks for the `.a26`; the path is remembered in `settings.ini` next to the `.exe`. Also accepted: a `roms` folder next to the `.exe`, or a path on the command line. Size and fingerprint are checked, with clear messages for the four failure cases. You will be asked to pick your ROM file in the dialog.
+D4 — Emulator running blind: the Stella core runs the checked ROM without a window for 600 frames and saves frame 300 as a PNG, compared with C7's matching picture. First stage where the host links Stella (`src\host\emulator.*`, T-D1-1).
 
 ## Handoff from the last session
 
-Stage D2 done: **`pacman2600.exe` opens a black 960x720 window and closes cleanly.** You double-clicked it: black, closed, no errors. Window title is a working name (the real name is chosen in J2; "Pac-Man" is a trademark).
+Stage D3 done: **the program finds and checks your ROM.** Order: command line, saved path, `roms` folder, Open file dialog. Wrong files give plain-words messages; only a fully checked ROM is remembered (in `build\host\settings.ini`, local). You tested it: the file name shows in the title and the second start doesn't ask.
 
-New: `src\host\main.cpp`, `src\host\CMakeLists.txt`, `tools\build_host.cmd`. Updated: `DECISIONS.md` (T-D2-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `build\host\`, `reference\d2\`. Nothing installed, deleted or pushed; ROMs untouched.
+New: `src\host\rom_finder.hpp/.cpp`, `tests\host\test_rom_finder.cpp`. Updated: `src\host\main.cpp`, `src\host\CMakeLists.txt`, `tools\build_host.cmd`, `DECISIONS.md` (T-D3-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `build\host\`, `reference\d3\`.
+
+Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26`, a 4096-byte copy of the ROM with one bit changed, made by the test each run. Delete only with your OK.

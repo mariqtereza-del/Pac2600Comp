@@ -144,3 +144,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Host | Our own program around the game: window, sound, controls, speed. In Phase 1 the game itself is run by Stella's core. |
 | Core (emulation core) | The part of Stella that pretends to be the 2600's chips. |
 | Self-check | A command-line switch on our program that makes it test itself and quit, so a test can run without anyone watching. |
+| SHA-1 / fingerprint | A 40-character code worked out from a file's contents. If one bit of the file changes, the code changes completely, so it proves which file it is. |

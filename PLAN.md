@@ -1060,11 +1060,27 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D2-1), `ARCHITECTURE.md` (file table: D2 file built), `docs\GLOSSARY.md`, `CLAUDE.md` (build command), `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D2: An empty window`.
     - **Next stage:** D3 — Finding your ROM.
-3. **[Not started] D3 — Finding your ROM.**
-    - First launch with no ROM known: a Windows "Open file" dialog asks for the `.a26`. The path is remembered in `settings.ini` next to the `.exe`.
-    - Also accepted: a `roms` folder next to the `.exe`, or a path on the command line.
-    - Checks: file exists, size matches, fingerprint matches A3. A different fingerprint shows a clear warning naming the expected file, with "Use anyway" or "Choose another".
-    - Verify: Claude Code runs the four failure cases (missing, empty, wrong size, unknown fingerprint) and shows each message.
+3. **[Done] D3 — Finding your ROM.** *(expanded and done 2026-10-24)*
+    - **Objective:** the program finds the player's own ROM, checks it is the right file, remembers where it is, and says clearly what is wrong when it is not.
+    - **Why it matters:** the ROM is never shipped (Rule 7). Every later stage needs a checked ROM, and a wrong or broken file must give a plain message, not a crash or a strange picture.
+    - **Prerequisites:** D2 Done (commit `154bf84`).
+    - **What Claude Code will do (T-D3-1):**
+      1. Add `src\host\rom_finder.*` (no window code): size and SHA-1 check (own small SHA-1, no library), `settings.ini` next to the `.exe` (key `rom_path`), and the search order: path on the command line, then the saved path, then a `roms` folder next to the `.exe`, then a Windows "Open file" dialog (SDL3's).
+      2. In `main.cpp`: show a plain-words message for every problem, with "Choose another" and, only when the size is right but the fingerprint differs, "Use anyway" (used for this run only, never remembered). Remember only a ROM that passed all checks.
+      3. Add `--find-rom <out_file>` (with optional `--settings <file>`, `--roms-dir <dir>`, and a ROM path) which runs the search without any window or dialog and writes the result, and a test program `tests\host\test_rom_finder.cpp`.
+      4. Run the four failure cases plus the good case and show each message.
+    - **What I must do:** start `pacman2600.exe` once, pick `rom\pacman.a26` in the dialog, close the window, start it again and say whether it opened without asking.
+    - **Exact instructions:** (given at the end of the stage).
+    - **Required input:** Your report of the two starts.
+    - **Claude Code prompt:** The resume prompt.
+    - **Expected result:** first start asks for the file; second start does not; wrong files give clear messages.
+    - **Verification:** build with 0 errors/warnings; test program passes all cases (good ROM, missing, empty, 100-byte, 4096-byte wrong content, settings round-trip, search order, a huge-size file is rejected without reading it); `--find-rom` output for each case; your two-start report; the ROM and its SHA-1 unchanged (only read); no ROM staged.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the dialog's callback may arrive on another thread (handled with a lock); Windows paths with non-English letters (handled as UTF-8); the saved path may point at a moved file (then the search continues).
+    - **Recovery:** new files plus a local `settings.ini` in `build\host`. Undo by returning to `154bf84` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D3-1), `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D3: Finding your ROM`.
+    - **Next stage:** D4 — Emulator running blind.
 4. **[Not started] D4 — Emulator running blind.** The Stella core runs the ROM without a window for 600 frames and saves frame 300 as a PNG. Compared against C7's matching snapshot.
 5. **[Not started] D5 — The game on screen.** Frames shown in the window, unscaled and small. You: confirm the title screen appears.
 6. **[Not started] D6 — Correct shape and scaling.** See the dedicated section below.

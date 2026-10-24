@@ -74,6 +74,20 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D3-1 — ROM finding: own SHA-1, search order, what is remembered, what "Use anyway" means (2026-10-24, Stage D3)
+
+- **Choice:**
+  - `src\host\rom_finder.*` (no window code) holds the logic. SHA-1 is a small piece of our own code, checked against the three published test vectors ("abc", empty, a million "a") and against the ROM. No library was added (Rule 5).
+  - **Search order:** a path given on the command line (used as it is, good or bad, so its problem can be explained); then the saved path; then a `roms` folder next to the `.exe` (any `.a26` that passes, either letter case); then SDL3's Open file dialog.
+  - **Checks:** the file exists and is a file; not empty; exactly 4096 bytes (a file of any other size is **not read**, so a huge file can't stall the program); SHA-1 equals `0940fea7…dbb1`.
+  - **Remembering:** only a ROM that passed every check is saved, as an absolute path, in `settings.ini` next to the `.exe` (one line, `rom_path=`).
+  - **"Use anyway"** appears only when the size is right but the fingerprint differs. It applies to that run only and is never saved. Every other problem offers only "Choose another".
+  - Closing the dialog without choosing ends the program (exit code 3) with nothing run.
+  - The ROM file is only ever opened for reading.
+- **Test hooks:** `--find-rom <file>` (with `--settings`, `--roms-dir` and an optional ROM path) runs the quiet part of the search with no window; `tests\host\test_rom_finder.cpp` builds `build\host\test_rom_finder.exe`. The test never copies or deletes anything.
+- **Why:** the ROM is never shipped (Rule 7), so a wrong file must give a clear message; later stages (D4+) need a checked ROM. The 4096-byte rule fits this ROM (plain 4 KB, A4); other games are outside this project.
+- **Reversible:** Yes.
+
 ### T-D2-1 — Host skeleton: SDL3 renderer window, working name as title, self-check flag (2026-10-24, Stage D2)
 
 - **Choice:**

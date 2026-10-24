@@ -13,10 +13,19 @@ endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party third_party)
 
+# The ROM finding and checking logic, with no window code.
+add_library(rom_finder STATIC rom_finder.cpp)
+target_compile_options(rom_finder PRIVATE /W4 /permissive-)
+
 # WIN32 = a normal windowed program (no console window when double-clicked).
 add_executable(pacman2600 WIN32 main.cpp)
 target_compile_options(pacman2600 PRIVATE /W4 /permissive-)
-target_link_libraries(pacman2600 PRIVATE SDL3::SDL3)
+target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder)
+
+# Tests for the ROM finder (Stage D3): build/host/test_rom_finder.exe <scratch folder> <rom copy>
+add_executable(test_rom_finder ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_rom_finder.cpp)
+target_compile_options(test_rom_finder PRIVATE /W4 /permissive-)
+target_link_libraries(test_rom_finder PRIVATE rom_finder)
 
 # Put SDL3.dll next to the program so a double-click finds it.
 add_custom_command(TARGET pacman2600 POST_BUILD

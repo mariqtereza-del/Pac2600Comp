@@ -10,7 +10,13 @@
 //        pacman2600 --layout-check <png> [rom_file] [--mode sharp|fill|tv|game] [--window WxH] [--pixel-aspect W:H]
 //                                               run 300 frames in the window, check where the picture is, save a screenshot
 //        pacman2600 --timed <seconds> <file> [rom_file]  play for that long, then write the frame rate to <file>
-//        (window mode: keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; the window can be resized)
+//        pacman2600 --fullscreen-check <report> <rom_file> --settings <ini>
+//                                               in the real window: odd size and place, Alt+Enter on and off, the picture
+//                                               checked in fullscreen, the state saved to <ini> (fullscreen on)
+//        pacman2600 --state-report <report> --settings <ini>
+//                                               start from the state saved in <ini>, report what was restored, quit
+//        (window mode: keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off;
+//         the window can be resized; its size, place and fullscreen are remembered in settings.ini)
 //        pacman2600 --headless <png> [rom_file] [--frames N] [--save-frame N] [--raw <file>] [--fingerprints <csv>]
 //                   [--settings <ini>] [--roms-dir <dir>]
 //                                               runs the game with no window (default 600 frames) and saves frame
@@ -33,6 +39,7 @@
 #include "emulator.hpp"
 #include "layout.hpp"
 #include "rom_finder.hpp"
+#include "windowstate.hpp"
 
 namespace {
 
@@ -115,7 +122,8 @@ bool parsePair(const std::string& text, char separator, int& first, int& second)
 
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
-  std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport;
+  std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
+  bool windowGiven = false;  // --window on the command line: do not use the remembered window
   layout::Mode mode = layout::Mode::Sharp;
   layout::PixelShape pixelShape{0, 0};  // {0, 0} = Stella's shape for the picture
   int windowW = kWindowW, windowH = kWindowH;
@@ -134,7 +142,9 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--headless") o.headlessPng = next();
     else if(a == "--layout-check") o.layoutCheckPng = next();
     else if(a == "--mode") { if(!parseMode(next(), o.mode)) std::fprintf(stderr, "--mode must be sharp, fill, tv or game\n"); }
-    else if(a == "--window") { if(!parsePair(next(), 'x', o.windowW, o.windowH)) std::fprintf(stderr, "--window must look like 1280x960\n"); }
+    else if(a == "--fullscreen-check") o.fullscreenCheckFile = next();
+    else if(a == "--state-report") o.stateReportFile = next();
+    else if(a == "--window") { o.windowGiven = true; if(!parsePair(next(), 'x', o.windowW, o.windowH)) std::fprintf(stderr, "--window must look like 1280x960\n"); }
     else if(a == "--pixel-aspect") { if(!parsePair(next(), ':', o.pixelShape.num, o.pixelShape.den)) std::fprintf(stderr, "--pixel-aspect must look like 12:7\n"); }
     else if(a == "--timed") { o.timedSeconds = std::atof(next().c_str()); o.timedReport = next(); }
     else if(a == "--frames") o.frames = std::atoi(next().c_str());
@@ -290,10 +300,201 @@ bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
   return ok;
 }
 
+// ---- Window state and fullscreen (Stage D7, DECISIONS.md T-D7-1) ----
+
+// The monitors' usable rectangles (without the taskbar), the first being the primary one.
+std::vector<windowstate::Area> monitorAreas()
+{
+  std::vector<windowstate::Area> areas;
+  int count = 0;
+  SDL_DisplayID* ids = SDL_GetDisplays(&count);
+  const SDL_DisplayID primary = SDL_GetPrimaryDisplay();
+  auto add = [&](SDL_DisplayID id) {
+    SDL_Rect r{};
+    if(SDL_GetDisplayUsableBounds(id, &r) || SDL_GetDisplayBounds(id, &r)) areas.push_back({r.x, r.y, r.w, r.h});
+  };
+  if(primary) add(primary);
+  for(int i = 0; ids && i < count; ++i)
+    if(ids[i] != primary) add(ids[i]);
+  SDL_free(ids);
+  return areas;
+}
+
+// What the program knows about its window: the rectangle it has when not fullscreen, and whether it is fullscreen.
+struct Tracker {
+  windowstate::State state;  // state.known becomes true once a windowed rectangle has been seen
+};
+
+bool windowIsFree(SDL_Window* window)  // neither fullscreen, maximized nor minimized: its rectangle is the "windowed" one
+{
+  const SDL_WindowFlags f = SDL_GetWindowFlags(window);
+  return (f & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_MAXIMIZED | SDL_WINDOW_MINIMIZED)) == 0;
+}
+
+void rememberWindowedRect(SDL_Window* window, Tracker& t)
+{
+  if(!windowIsFree(window)) return;
+  windowstate::Area a;
+  SDL_GetWindowPosition(window, &a.x, &a.y);
+  SDL_GetWindowSize(window, &a.w, &a.h);
+  if(a.w < windowstate::kMinW || a.h < windowstate::kMinH) return;
+  t.state.area = a;
+  t.state.known = true;
+}
+
+void setFullscreen(SDL_Window* window, Tracker& t, bool on)
+{
+  if(on) rememberWindowedRect(window, t);  // before the window jumps to the monitor's size
+  t.state.fullscreen = on;
+  SDL_SetWindowFullscreenMode(window, nullptr);  // no mode: borderless fullscreen at the desktop's own size
+  SDL_SetWindowFullscreen(window, on);
+  if(on) SDL_HideCursor(); else SDL_ShowCursor();
+}
+
+// Events about the window itself, and Alt+Enter; shared by the game window and the checks. True if the event was used.
+bool handleWindowEvent(SDL_Window* window, Tracker& t, const SDL_Event& e)
+{
+  switch(e.type) {
+    case SDL_EVENT_WINDOW_MOVED:
+    case SDL_EVENT_WINDOW_RESIZED:
+    case SDL_EVENT_WINDOW_RESTORED:
+      rememberWindowedRect(window, t);
+      return true;
+    case SDL_EVENT_KEY_DOWN:
+      if(!e.key.repeat && (e.key.key == SDLK_RETURN || e.key.key == SDLK_KP_ENTER) && (e.key.mod & SDL_KMOD_ALT)) {
+        setFullscreen(window, t, !t.state.fullscreen);
+        return true;
+      }
+      return false;
+    default:
+      return false;
+  }
+}
+
+// A made-up Alt+Enter, handled by the same code as the real key.
+SDL_Event altEnter()
+{
+  SDL_Event e{};
+  e.type = SDL_EVENT_KEY_DOWN;
+  e.key.key = SDLK_RETURN;
+  e.key.mod = SDL_KMOD_LALT;
+  return e;
+}
+
+// Lets the window system finish (fullscreen changes are asynchronous) and feeds the events to the tracker.
+void settle(SDL_Window* window, Tracker& t, int milliseconds = 400)
+{
+  SDL_SyncWindow(window);
+  for(int waited = 0; waited < milliseconds; waited += 10) {
+    for(SDL_Event e; SDL_PollEvent(&e); ) handleWindowEvent(window, t, e);
+    SDL_Delay(10);
+  }
+  SDL_SyncWindow(window);
+}
+
+std::string where(int w, int h, int x, int y)
+{
+  return std::to_string(w) + "x" + std::to_string(h) + " at " + std::to_string(x) + "," + std::to_string(y);
+}
+
+// --fullscreen-check: the real window goes to an odd size and place, into fullscreen (as Alt+Enter does), is checked there,
+// comes back, and goes into fullscreen again; the state is saved as the program does when it closes.
+bool fullscreenCheck(SDL_Window* window, SDL_Renderer* renderer, const Options& o, const std::string& romPath)
+{
+  std::ofstream report(o.fullscreenCheckFile);
+  if(!report) return false;
+  bool ok = true;
+  auto line = [&](const char* name, bool pass, const std::string& detail) {
+    report << name << (pass ? ": ok  " : ": FAIL  ") << detail << '\n';
+    ok = ok && pass;
+  };
+  Tracker t;
+
+  constexpr int oddX = 123, oddY = 87, oddW = 1011, oddH = 757;
+  SDL_SetWindowSize(window, oddW, oddH);
+  SDL_SetWindowPosition(window, oddX, oddY);
+  settle(window, t);
+  int x = 0, y = 0, w = 0, h = 0;
+  SDL_GetWindowPosition(window, &x, &y);
+  SDL_GetWindowSize(window, &w, &h);
+  const int winX = x, winY = y, winW = w, winH = h;  // what Windows really gave (it may adjust a little)
+  line("odd windowed size and place", w == oddW && h == oddH && std::abs(x - oddX) <= 8 && std::abs(y - oddY) <= 40, where(w, h, x, y));
+  rememberWindowedRect(window, t);
+
+  const SDL_Event first = altEnter();
+  handleWindowEvent(window, t, first);
+  settle(window, t);
+  SDL_Rect bounds{};
+  SDL_GetDisplayBounds(SDL_GetDisplayForWindow(window), &bounds);
+  int pw = 0, ph = 0;
+  SDL_GetWindowSizeInPixels(window, &pw, &ph);
+  SDL_GetWindowPosition(window, &x, &y);
+  const bool fullFlag = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
+  line("Alt+Enter enters fullscreen", fullFlag && t.state.fullscreen, fullFlag ? "window flag set" : "window flag not set");
+  line("borderless (no video mode change)", SDL_GetWindowFullscreenMode(window) == nullptr, "fullscreen mode = desktop");
+  line("covers the whole monitor", x == bounds.x && y == bounds.y && pw == bounds.w && ph == bounds.h,
+       where(pw, ph, x, y) + "; monitor " + where(bounds.w, bounds.h, bounds.x, bounds.y));
+  line("windowed place remembered while fullscreen", t.state.area.w == winW && t.state.area.h == winH && t.state.area.x == winX && t.state.area.y == winY,
+       where(t.state.area.w, t.state.area.h, t.state.area.x, t.state.area.y));
+
+  View view;
+  view.mode = o.mode;
+  view.shape = o.pixelShape;
+  const bool pictureOk = layoutCheck(renderer, o.fullscreenCheckFile + ".fullscreen.png", romPath, view);
+  line("picture in fullscreen (D6 check, details in .fullscreen.png.txt)", pictureOk, "");
+
+  const SDL_Event second = altEnter();
+  handleWindowEvent(window, t, second);
+  settle(window, t);
+  SDL_GetWindowPosition(window, &x, &y);
+  SDL_GetWindowSize(window, &w, &h);
+  line("Alt+Enter leaves fullscreen", (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) == 0 && !t.state.fullscreen, "");
+  line("the odd size and place came back", w == winW && h == winH && x == winX && y == winY, where(w, h, x, y));
+
+  const SDL_Event third = altEnter();
+  handleWindowEvent(window, t, third);
+  settle(window, t);
+  line("fullscreen again", t.state.fullscreen && (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0, "");
+  line("state saved", windowstate::save(o.settingsFile, t.state),
+       "window " + where(t.state.area.w, t.state.area.h, t.state.area.x, t.state.area.y) + ", fullscreen " + (t.state.fullscreen ? "on" : "off"));
+  report << "result=" << (ok ? "OK" : "FAIL") << '\n';
+  return ok;
+}
+
+// --state-report: what the window looks like right after start-up from the saved state, then after leaving fullscreen.
+bool stateReport(SDL_Window* window, const Options& o, const windowstate::State& wanted)
+{
+  std::ofstream report(o.stateReportFile);
+  if(!report) return false;
+  Tracker t;
+  t.state = wanted;
+  settle(window, t);
+  int x = 0, y = 0, w = 0, h = 0;
+  SDL_GetWindowPosition(window, &x, &y);
+  SDL_GetWindowSize(window, &w, &h);
+  const bool full = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) != 0;
+  report << "saved_state_found=" << (wanted.known ? "yes" : "no") << "\nsaved=" << where(wanted.area.w, wanted.area.h, wanted.area.x, wanted.area.y)
+         << " fullscreen " << (wanted.fullscreen ? "on" : "off") << "\nstarted_fullscreen=" << (full ? "yes" : "no")
+         << "\nstarted_window=" << where(w, h, x, y) << '\n';
+  bool ok = full == wanted.fullscreen;
+  if(full) {
+    const SDL_Event leave = altEnter();
+    handleWindowEvent(window, t, leave);
+    settle(window, t);
+    SDL_GetWindowPosition(window, &x, &y);
+    SDL_GetWindowSize(window, &w, &h);
+    report << "after_leaving_fullscreen=" << where(w, h, x, y) << '\n';
+  }
+  if(wanted.known) ok = ok && w == wanted.area.w && h == wanted.area.h && x == wanted.area.x && y == wanted.area.y;
+  else ok = !full && w == kWindowW && h == kWindowH;  // nothing remembered: the program's own first window
+  report << "result=" << (ok ? "OK" : "FAIL") << '\n';
+  return ok;
+}
+
 // The game window: one emulator frame per 1/60 s from a simple clock (temporary; real pacing is Stage D9).
 // With maxSeconds > 0 it stops by itself after that long and returns the frames per second it managed (for tests).
-// Keys 1, 2, 3, 4 choose Sharp, Fill, TV frame, Game area (temporary; Stage D10 gives the keys their final home).
-double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string& romPath, double maxSeconds, View view)
+// Keys 1, 2, 3, 4 choose Sharp, Fill, TV frame, Game area; Alt+Enter toggles fullscreen (temporary; Stage D10 gives the keys their final home).
+double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string& romPath, double maxSeconds, View view, Tracker& tracker)
 {
   std::vector<std::uint8_t> bytes;
   Emulator emulator;
@@ -319,6 +520,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   for(bool running = true; running; ) {
     for(SDL_Event e; SDL_PollEvent(&e); ) {
       if(e.type == SDL_EVENT_QUIT || (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_ESCAPE)) running = false;
+      if(handleWindowEvent(window, tracker, e)) continue;
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat) {
         if(e.key.key == SDLK_1) { screen.view.mode = layout::Mode::Sharp; retitle(); }
         if(e.key.key == SDLK_2) { screen.view.mode = layout::Mode::Fill; retitle(); }
@@ -457,18 +659,34 @@ int main(int argc, char* argv[])
 
   if(!SDL_Init(SDL_INIT_VIDEO)) { showError("SDL could not start."); return 1; }
 
+  // The remembered window (Stage D7) is used for playing and for --state-report, not for the other checks or when --window is given.
+  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty();
+  windowstate::State remembered;
+  if(!otherCheck && !options.windowGiven) remembered = windowstate::fitToMonitors(windowstate::load(options.settingsFile), monitorAreas());
+
   SDL_Window* window = nullptr;
   SDL_Renderer* renderer = nullptr;
-  if(!SDL_CreateWindowAndRenderer(kTitle, options.windowW, options.windowH, SDL_WINDOW_RESIZABLE, &window, &renderer)) {
+  const int startW = remembered.known ? remembered.area.w : options.windowW, startH = remembered.known ? remembered.area.h : options.windowH;
+  if(!SDL_CreateWindowAndRenderer(kTitle, startW, startH, SDL_WINDOW_RESIZABLE, &window, &renderer)) {
     showError("The window could not be created.");
     SDL_Quit();
     return 1;
   }
   SDL_SetRenderVSync(renderer, 1);  // present once per screen refresh, so the loop does not spin
 
+  Tracker tracker;
+  if(remembered.known) {
+    SDL_SetWindowPosition(window, remembered.area.x, remembered.area.y);
+    tracker.state = remembered;
+    tracker.state.fullscreen = false;
+    if(remembered.fullscreen) setFullscreen(window, tracker, true);
+  }
+
   int exitCode = 0;
   if(!options.selfCheckFile.empty()) {
     exitCode = selfCheck(window, renderer, options.selfCheckFile.c_str()) ? 0 : 2;
+  } else if(!options.stateReportFile.empty()) {
+    exitCode = stateReport(window, options, remembered) ? 0 : 2;
   } else {
     // Black while the Open file dialog or a message is up, so the window is not left undrawn.
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -484,8 +702,15 @@ int main(int argc, char* argv[])
       view.shape = options.pixelShape;
       if(!options.layoutCheckPng.empty()) {
         exitCode = layoutCheck(renderer, options.layoutCheckPng, romPath, view) ? 0 : 2;
+      } else if(!options.fullscreenCheckFile.empty()) {
+        exitCode = fullscreenCheck(window, renderer, options, romPath) ? 0 : 2;
       } else {
-        const double rate = playWindow(window, renderer, romPath, options.timedSeconds, view);
+        const double rate = playWindow(window, renderer, romPath, options.timedSeconds, view, tracker);
+        // Remember the window for next time (not for timed test runs, which must not change the settings).
+        if(options.timedSeconds <= 0 && !options.windowGiven) {
+          rememberWindowedRect(window, tracker);
+          if(tracker.state.known) windowstate::save(options.settingsFile, tracker.state);
+        }
         if(options.timedSeconds > 0) {
           std::ofstream out(options.timedReport);
           out << "seconds=" << options.timedSeconds << "\nframes_per_second=" << rate << '\n';

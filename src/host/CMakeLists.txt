@@ -13,9 +13,17 @@ endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../third_party third_party)
 
+# settings.ini reading and writing (Stage D7), and the remembered window state; no window code.
+add_library(settings STATIC settings.cpp)
+target_compile_options(settings PRIVATE /W4 /permissive-)
+add_library(windowstate STATIC windowstate.cpp)
+target_compile_options(windowstate PRIVATE /W4 /permissive-)
+target_link_libraries(windowstate PUBLIC settings)
+
 # The ROM finding and checking logic, with no window code.
 add_library(rom_finder STATIC rom_finder.cpp)
 target_compile_options(rom_finder PRIVATE /W4 /permissive-)
+target_link_libraries(rom_finder PUBLIC settings)
 
 # Where the picture goes in the window: pure arithmetic, no window code.
 add_library(layout STATIC layout.cpp)
@@ -28,7 +36,7 @@ target_link_libraries(emulator PUBLIC stella_core)
 # WIN32 = a normal windowed program (no console window when double-clicked).
 add_executable(pacman2600 WIN32 main.cpp)
 target_compile_options(pacman2600 PRIVATE /W4 /permissive-)
-target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator layout)
+target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator layout windowstate)
 
 # Tests for the ROM finder (Stage D3): build/host/test_rom_finder.exe <scratch folder> <rom copy>
 add_executable(test_rom_finder ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_rom_finder.cpp)
@@ -39,6 +47,11 @@ target_link_libraries(test_rom_finder PRIVATE rom_finder)
 add_executable(test_layout ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_layout.cpp)
 target_compile_options(test_layout PRIVATE /W4 /permissive-)
 target_link_libraries(test_layout PRIVATE layout)
+
+# Tests for the settings file and the remembered window state (Stage D7): build/host/test_windowstate.exe <scratch folder>
+add_executable(test_windowstate ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_windowstate.cpp)
+target_compile_options(test_windowstate PRIVATE /W4 /permissive-)
+target_link_libraries(test_windowstate PRIVATE windowstate rom_finder)
 
 # Put SDL3.dll next to the program so a double-click finds it.
 add_custom_command(TARGET pacman2600 POST_BUILD

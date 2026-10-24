@@ -27,7 +27,7 @@ std::string sha1Hex(const std::uint8_t* data, std::size_t size);
 Check checkFile(const std::string& path);
 std::string describe(const Check& check);  // plain-words message for a person
 
-// settings.ini: one line "rom_path=<UTF-8 path>".
+// settings.ini: the line "rom_path=<UTF-8 path>" (other lines are kept; see settings.hpp).
 std::string loadSavedPath(const std::string& settingsFile);  // empty if none
 // Stores the absolute form of `path`.
 bool savePath(const std::string& settingsFile, const std::string& path);

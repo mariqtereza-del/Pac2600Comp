@@ -1154,7 +1154,27 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D6-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D6: Correct shape and scaling`.
     - **Next stage:** D7 — Windowed and fullscreen.
-7. **[Not started] D7 — Windowed and fullscreen.** Borderless fullscreen on your main monitor; **Alt+Enter** toggles; window size and position remembered. Verify on your 2560×1440 screen and with the window dragged to odd sizes.
+7. **[Done] D7 — Windowed and fullscreen.** *(expanded 2026-10-24)*
+    - **Objective:** borderless fullscreen on the monitor the window is on (your main one at first), toggled with Alt+Enter; the windowed size and position, and whether you were in fullscreen, are remembered between runs; a remembered position that is no longer on any monitor is corrected.
+    - **Why it matters:** the game is meant to be played big and uninterrupted; and a port that forgets its window every time feels unfinished. Fullscreen also exercises the layout of D6 at the real 2560x1440 size.
+    - **Prerequisites:** D6 Done (commit `ae6bfee`).
+    - **What Claude Code will do:**
+      1. `src\host\settings.*`: read and write single `key=value` lines of `settings.ini` without losing the other lines (today saving the ROM path would erase anything else). `rom_finder` uses it.
+      2. `src\host\windowstate.*` (no window code): the remembered state (position, size, fullscreen), reading/writing it, and a correction step that keeps the window on a real monitor and at a sensible size. Tested by `tests\host\test_windowstate.cpp`.
+      3. `main.cpp`: window created from the remembered state; Alt+Enter toggles SDL's borderless desktop fullscreen; the windowed rectangle is tracked while not fullscreen and saved on quit.
+      4. `--fullscreen-check <report> [rom]`: in the real window, moves it to an odd size and place, enters fullscreen with the same key handler Alt+Enter uses, checks the window covers the whole monitor and the picture is laid out right (reusing the D6 pixel check), leaves fullscreen and checks the odd size and place came back, then saves. `--state-report <report>` restarts from the saved file and reports what was restored.
+    - **What I must do:** start the program, press Alt+Enter, drag and resize the window, close it, start it again, and say what you saw (details at the end of the stage).
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your report.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** Alt+Enter switches between a normal window and a borderless full-screen picture; the window reopens where and how big you left it.
+    - **Verification:** build 0 errors/0 warnings; `test_windowstate` and `test_rom_finder` pass; `--fullscreen-check` says OK on this 2560x1440 screen; `--state-report` shows the saved state restored; earlier checks still pass (`test_layout`, `--self-check`, headless fingerprints = C3, `--timed`); your report.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the program cannot press Alt+Enter on a real keyboard for me (the check uses the same handler, your key press is the proof); a second monitor that is unplugged leaves a saved position off screen (the correction handles it, tested with made-up monitor lists); Windows display scaling may change reported sizes (the checks read real pixels); a maximized window is not remembered as maximized.
+    - **Recovery:** new files plus edits to `main.cpp`, `rom_finder.cpp` and `CMakeLists.txt`; undo by returning to `ae6bfee` (with your OK). Deleting `settings.ini` resets the remembered state.
+    - **Documentation updates:** `DECISIONS.md` (T-D7-n), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D7: Windowed and fullscreen`.
+    - **Next stage:** D8 — Sound.
 8. **[Not started] D8 — Sound.** TIA sound from the core played through SDL with a small, steady buffer. Verify by ear against C5 clips and by Claude Code checking the sample rate and that no buffer underruns are logged in 5 minutes.
 9. **[Not started] D9 — Frame pacing on a 180 Hz screen.** The game advances at the console's measured rate (from C4), never at the monitor's rate. Each game frame is shown for about three refreshes; sound timing is the master clock so music never drifts. Verify: a 10-minute run logs game frames per second within 0.1% of C4's value and no audio gaps.
 10. **[Not started] D10 — Keyboard.** Arrows and WASD for the joystick, plus keys for Select, Reset and the difficulty switches. Listed on screen with **F1**.

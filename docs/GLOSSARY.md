@@ -149,3 +149,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Frame fingerprint | A short code worked out from one picture. If two runs give the same code for every frame, they drew identical pictures. |
 | Pixel shape (aspect) | How wide a game pixel is compared with its height. The 2600's pixels are wider than tall, so the picture must be stretched sideways to look right. |
 | Letterbox / pillarbox | Black bars above and below (letterbox) or at the sides (pillarbox) when the window's shape differs from the picture's. |
+| Borderless fullscreen | A window with no frame that covers the whole monitor, at the desktop's own resolution. Switching is instant and the screen does not flicker, because no video mode changes. |

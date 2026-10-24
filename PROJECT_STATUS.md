@@ -1,6 +1,6 @@
-Current stage: D7 — Windowed and fullscreen (Phase D) — not started
+Current stage: D8 — Sound (Phase D) — not started
 
-Last updated: 2026-10-24, Stage D6 done (owner confirmed version 2). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-24, Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -35,6 +35,7 @@ Last updated: 2026-10-24, Stage D6 done (owner confirmed version 2). Phase C com
 | D4 — Emulator running blind | `src\host\emulator.*` (only host code that includes Stella) and `pacman2600 --headless`. Build 0 errors/0 warnings. 600 frames run with no window: all 600 picture fingerprints equal C3's (0 differences), frame 300 = `a961ba2e7bbfbd17` in both; a run to frame 1500 equals C7's `01_title` raw picture byte for byte; two runs identical. Frame 300 saved as `reference\d4\frame300.png` (160x228, attract maze, looked at by eye). A bad ROM gives exit 4 and no picture. `test_rom_finder`, `--self-check`, `--find-rom` and window mode still work. ROM only read. T-D4-1. |
 | D5 — The game on screen | The emulator's frames are drawn in the window, unscaled (160x228, centred, nearest pixel), stepped by a temporary 60 Hz clock; vsync requested explicitly. `--screen-check`: window pixels read back = emulator colours, 0 differing, 0 non-black outside the picture, screenshot looked at (maze, status bar). `--timed 10`: 60.046 frames/s. Earlier checks still pass (`test_rom_finder`, `--self-check`, headless fingerprints = C3). Window mode: responding, closes with exit 0, no leftover process. T-D5-1. Your check: title screen appeared, looked right, moved at normal speed; you noted the picture is hard to judge because it is so small (D6 enlarges it). |
 | D6 — Correct shape and scaling | `src\host\layout.*`, `tests\host\test_layout.cpp`, resizable window (opens 1280x960), three modes. Finding: Stella's own aspect correction makes a game pixel 19:10 for this 160x228 picture (not the plan's 12:7); default = Stella's shape, 12:7 selectable. `test_layout`: 148 checks, 0 failures (five window sizes x three modes x two shapes; Fill in 960x720 = Stella's rectangle). `--layout-check`: 11 real-window combinations, outline difference 0 px, nothing outside; screenshots looked at. Earlier checks still pass; 60.04 frames/s. Owner tested the first version (key 3 smaller; 1 = already Sharp, 2 only 5 % bigger; maze edges not meeting the window edges = black rows of the picture). Compared with Stella 7.0c itself (PrintWindow capture, with owner OK): same rows 34..609 and columns 0..959 as our Fill at 960x720. Mode 4 "Game area" added at the owner's request (crops always-black rows 0-10 and 200-227; 173 layout checks pass; `--layout-check` in 9 more combinations: 0 px outline difference, 0 non-black pixels cut off). Keys not verified by me. T-D6-1. Owner's check of version 2: key 4 fits the maze exactly top to bottom, key 3 works as intended, and the small 1-versus-2 difference is expected on a 1440p screen (the window is already close to the Fill size). |
+| D7 — Windowed and fullscreen | Alt+Enter toggles borderless fullscreen (monitor-sized, no video mode change); window size, place and fullscreen remembered in `settings.ini`, corrected if off screen; `settings` module keeps other lines. `test_windowstate` 29 checks; `--fullscreen-check` on 2560x1440: covers the monitor, picture check OK (0 px), odd size/place restored exactly; `--state-report` restores saved states. Earlier checks still pass; headless = C3 (0 differences); 60.03 frames/s. T-D7-1. Owner: fullscreen works great, scaling too (so the real Alt+Enter works). |
 
 ## Key facts so far
 
@@ -73,12 +74,12 @@ Last updated: 2026-10-24, Stage D6 done (owner confirmed version 2). Phase C com
 
 ## Next stage
 
-D7 - Windowed and fullscreen: borderless fullscreen on your main monitor, Alt+Enter toggles, window size and position remembered. Also at Gate D you choose the default scaling mode (Sharp, Fill, TV frame or Game area).
+D8 - Sound: the core's TIA sound played through SDL with a small, steady buffer; verified against the C5 clips and by checking for buffer underruns.
 
 ## Handoff from the last session
 
-Stage D6 done: **the picture is shown in the correct shape and scaled**, in four modes (keys 1 Sharp, 2 Fill, 3 TV frame, 4 Game area), in a resizable window that opens at 1280x960. A game pixel is 19:10 (Stella's own shape, T-D6-1); 12:7 stays selectable. You confirmed: key 4 fits the maze top to bottom, key 3 works, the small 1-versus-2 difference is expected on your screen. Proof: 173 layout checks, 0 failures; real-window checks with 0 px outline difference; matches Stella's own window; earlier checks still pass.
+Stage D7 done: **borderless fullscreen with Alt+Enter, and the window is remembered** (size, place, fullscreen) in `settings.ini`. You confirmed fullscreen and scaling work. Proof: 29 window-state checks, a real-window fullscreen check on 2560x1440, restore checks, earlier checks unchanged. Not tried by you or me: a second monitor, restart after dragging (proved by my check only).
 
-Updated: `src\host\layout.*`, `src\host\main.cpp`, `tests\host\test_layout.cpp`, `src\host\CMakeLists.txt`, `tools\build_host.cmd`, `DECISIONS.md` (T-D6-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d6\`. The ROM was only read; nothing installed or pushed. One local file was deleted with your OK (`reference\d6\stella_window.png`).
+Updated: `src\host\settings.*`, `src\host\windowstate.*`, `src\host\main.cpp`, `src\hostom_finder.*`, `src\host\CMakeLists.txt`, `toolsuild_host.cmd`, `tests\host	est_windowstate.cpp`, `DECISIONS.md` (T-D7-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d7\`. The ROM was only read; nothing installed, deleted or pushed.
 
-Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` (the ROM with one bit changed, made by the test each run). Delete only with your OK.
+Still in `build\host	est_tmp` (ignored by Git): small test files, including `flipped.a26` and some `d7_*.ini`. Delete only with your OK.

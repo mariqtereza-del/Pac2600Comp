@@ -1,5 +1,7 @@
 #include "rom_finder.hpp"
 
+#include "settings.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -112,22 +114,14 @@ std::string describe(const Check& c)
 
 std::string loadSavedPath(const std::string& settingsFile)
 {
-  std::ifstream in(toPath(settingsFile));
-  for(std::string line; std::getline(in, line); ) {
-    if(!line.empty() && line.back() == '\r') line.pop_back();
-    if(line.rfind("rom_path=", 0) == 0) return line.substr(9);
-  }
-  return {};
+  return settings::get(settingsFile, "rom_path");
 }
 
 bool savePath(const std::string& settingsFile, const std::string& path)
 {
-  std::ofstream out(toPath(settingsFile), std::ios::trunc);
-  if(!out) return false;
   std::error_code ec;
   const fs::path absolute = fs::absolute(toPath(path), ec);  // a relative path would break when started from another folder
-  out << "rom_path=" << (ec ? path : toUtf8(absolute)) << '\n';
-  return static_cast<bool>(out);
+  return settings::set(settingsFile, "rom_path", ec ? path : toUtf8(absolute));  // other lines (window state) are kept
 }
 
 std::optional<Found> findQuietly(const std::string& commandLinePath, const std::string& settingsFile,

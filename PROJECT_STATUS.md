@@ -80,6 +80,6 @@ D8 - Sound: the core's TIA sound played through SDL with a small, steady buffer;
 
 Stage D7 done: **borderless fullscreen with Alt+Enter, and the window is remembered** (size, place, fullscreen) in `settings.ini`. You confirmed fullscreen and scaling work. Proof: 29 window-state checks, a real-window fullscreen check on 2560x1440, restore checks, earlier checks unchanged. Not tried by you or me: a second monitor, restart after dragging (proved by my check only).
 
-Updated: `src\host\settings.*`, `src\host\windowstate.*`, `src\host\main.cpp`, `src\hostom_finder.*`, `src\host\CMakeLists.txt`, `toolsuild_host.cmd`, `tests\host	est_windowstate.cpp`, `DECISIONS.md` (T-D7-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d7\`. The ROM was only read; nothing installed, deleted or pushed.
+Updated: `src\host\settings.*`, `src\host\windowstate.*`, `src\host\main.cpp`, `src\hostom_finder.*`, `src\host\CMakeLists.txt`, `tools\build_host.cmd`, `tests\host\test_windowstate.cpp`, `DECISIONS.md` (T-D7-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d7\`. The ROM was only read; nothing installed, deleted or pushed.
 
-Still in `build\host	est_tmp` (ignored by Git): small test files, including `flipped.a26` and some `d7_*.ini`. Delete only with your OK.
+Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and some `d7_*.ini`. Delete only with your OK.

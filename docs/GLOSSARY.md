@@ -177,3 +177,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Assembler | The opposite: turns the readable instructions back into bytes. Disassemble then assemble must give the original bytes, or something was lost. |
 | Opcode | The first byte of a 6502 instruction; it says which instruction it is and how many bytes follow. |
 | Coverage map | A map of the ROM saying which bytes the processor actually ran as instructions and which it only read as data, made by running the recorded games (Stage F1). |
+| Label | A name written in front of a line of the listing (`L_F123:`) so that jumps and data references can say where they go instead of using a number. |

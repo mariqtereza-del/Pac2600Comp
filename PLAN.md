@@ -1612,7 +1612,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F1_TOOLS.md`, `DECISIONS.md` (T-F1-1, T-F1-2), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F1: Analysis tools`.
     - **Next stage:** F2 — Raw disassembly that rebuilds exactly.
-2. **[Not started] F2 — Raw disassembly that rebuilds exactly.** Disassemble, reassemble with `dasm`, and compare fingerprints. Byte-identical rebuild = proof the listing is complete. Stored in `reference\disasm\` (local only). **Changed in F1:** uses `tools\f1_6502.py` (our own assembler) and the code/data map `reference\f1\coverage_union.txt` instead of `dasm` (T-F1-1).
+2. **[Done] F2 — Raw disassembly that rebuilds exactly.** *(expanded and done 2026-10-26)*
+    - **Objective:** a readable listing of the whole 4 KB program, split into instructions and data, with a label on every address that is jumped to or read, that assembles back to exactly the original bytes.
+    - **Why it matters:** a byte-identical rebuild is the proof that the listing is complete and that nothing is hiding: every later stage (names, routines, the C++ translation) edits this listing and must keep it rebuilding.
+    - **Prerequisites:** F1 Done (`10b53f4`): `tools\f1_6502.py`, the code/data map.
+    - **What Claude Code will do:**
+      1. `tools\f2_disasm.py`: reads the map, splits the ROM, labels every branch, jump, call and absolute reference (`L_Fxxx` for instruction starts, `D_Fxxx` for data), writes `reference\disasm\pacman_raw.asm` (local only: it is the original program in readable form, Rule 7), assembles it and compares.
+      2. Run the rebuilt ROM bytes through every baseline entry (all 70 golden traces) as the independent proof that the rebuilt bytes behave exactly like the original.
+      3. `docs\F2_RAW_DISASSEMBLY.md`: what the listing is made of (numbers only; no program text).
+    - **What I must do:** nothing. (You said a `dasm` second opinion would help if I were uncertain: I am not, for the reasons in T-F2-1, so nothing was downloaded; say so if you want it anyway.)
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the listing, a byte-identical rebuild (same SHA-1 and SHA-256), the statistics.
+    - **Verification:** `python -I tools\f2_disasm.py rom\pacman.a26` says BYTE-IDENTICAL; `baseline.py check reference\disasm\pacman_rebuilt.bin` of all 70 entries equals every stored SHA-256.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the split into code and data comes from the games played (F1): eight never-run instructions were recognised by their shape (two calls and two `PLA PLA RTS` pieces); a data byte that is really code is impossible to see from a rebuild alone (a rebuild is byte-exact either way), so F4 onward reads each routine.
+    - **Recovery:** new tool and local files; undo by returning to `10b53f4` (with your OK).
+    - **Documentation updates:** `docs\F2_RAW_DISASSEMBLY.md`, `DECISIONS.md` (T-F2-1, T-F2-2), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F2: Raw disassembly`.
+    - **Next stage:** F3 — Hardware names.
 3. **[Not started] F3 — Hardware names.** Replace raw addresses of the TIA and RIOT chips with their standard names (`WSYNC`, `GRP0`, `INTIM`…).
 4. **[Not started] F4 — Code versus data.** Mark graphics shapes, maze data, colour and sound tables as data.
 5. **[Not started] F5 — The frame loop.** Find the start-up code and the four parts of every frame: vertical sync, vertical blank (logic time), the visible picture ("kernel"), overscan (more logic time).

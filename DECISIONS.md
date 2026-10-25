@@ -134,6 +134,20 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F2-1 — The raw listing; why no second assembler was needed (2026-10-26, Stage F2)
+
+- **The listing:** 2,184 lines: 1,815 instructions (8 never run in the recorded games: two calls to `$FB36` and `$FB5C` and two `PLA PLA RTS` pieces, recognised because they decode exactly into official instructions), 544 data bytes, 279 labels (242 code, 37 data). Every branch, jump, call and absolute reference into the ROM is written with its label; no reference used the mirror `$1000-$1FFF`. No names or comments yet (F3 onwards). It stays in `reference\disasm\` (local only: it is the original program in readable form; Rule 7).
+- **Proof:** the assembled listing is byte-identical to the ROM (SHA-1 `0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1`, same SHA-256). Run through all 70 baseline entries as the ROM, every golden trace is reproduced (70 of 70 in a full run; one single unexplained mismatch, see T-F2-2).
+- **The owner's remark (a `dasm` second opinion "if you are uncertain"):** I am not uncertain, for three reasons: (1) the test is against the original bytes, which are fixed: an assembler that disagreed with the real one in a way that matters would produce different bytes and fail; a pair of mistakes that cancel out cannot give the exact original on 4,096 bytes with 1,815 instructions; (2) the opcode table is Stella's own and the CPU run (F1) found no executed instruction starting inside another, which checks every instruction length; (3) the rebuilt ROM replays all 70 recorded baseline games (hundreds of thousands of frames) exactly like the original. Nothing was downloaded. If the owner wants `dasm` anyway, it is a small approved download and one more run; I will ask then.
+- **Reversible:** Yes.
+
+### T-F2-2 — One unexplained mismatch in a repeat check (2026-10-26, Stage F2)
+
+- **What happened:** in the first full run of `baseline.py check` with the rebuilt ROM, one entry (BL-051, 30,000 frames) reported a different SHA-256 (`78c309e2...` instead of `9dc5da28...`). Nothing else differed.
+- **What I did:** repeated it. BL-051 six more times through `baseline.py` (with the rebuilt ROM and with the original), a second full check of all 70 entries (70 of 70), 12 further runs of BL-051 and 60 runs of BL-049 straight with the host: every one equal to the stored value (72 repeats of long entries and 70+ entries, 0 differences).
+- **What it means:** I could not reproduce it and found no cause. A one-off disturbance of the test run (an outside program touching the 9 MB trace file as it was written is the likeliest) is possible but not shown; a rare real nondeterminism in the host or the Stella core is not excluded. It is recorded here so that any future mismatch is taken seriously: **if a check ever says DIFFERS, run it again at once, keep the traces, and look for a pattern before going on.** Nothing in the project changed because of it.
+- **Reversible:** n/a.
+
 ### T-F1-1 — Our own assembler instead of downloading dasm; Stella's debugger not used (2026-10-26, Stage F1)
 
 - **Choice:** `tools\f1_6502.py` holds a 6502 disassembler and assembler written for this project; the opcode table (mnemonic, addressing mode, cycles, length of all 256 opcodes) is read at run time from Stella's own disassembler source `third_party\stella\src\debugger\DiStella.cxx`. Only the 151 official opcodes are assembled; the others are written `.byte`. No `dasm` was downloaded.

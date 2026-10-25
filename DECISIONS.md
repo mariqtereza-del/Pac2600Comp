@@ -113,6 +113,18 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-D15-1 — The release zip: what is in it, the ROM scan, the GPL duties (2026-10-26, Stage D15)
+
+- **Contents** (`tools\make_release.ps1`, output `out\PacMan2600-0.1.0-windows.zip`, ignored by Git): `pacman2600.exe`, `SDL3.dll`, the three Microsoft runtime files the program imports (`msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`; found with `dumpbin /dependents`; the rest are Windows' own `api-ms-win-crt-*` and system DLLs), `README.txt` (for the player), `BUILD-INFO.txt` (Git commit, date, SHA-256 of every file), `licences\` (Stella's GPL v2 text and copyright note, SDL's zlib licence), `roms\PUT_YOUR_ROM_HERE.txt`, and `source\` (the source zip and `BUILDING.txt`).
+- **Why the source is inside:** the program contains Stella (GPL v2), so it may be passed on only with its complete source (or a written offer). Putting the source in the zip needs no offer and no web page. It is `git archive HEAD` of `src`, `tests`, `third_party` and the two build scripts, so it holds no project notes (the notes name the owner's e-mail address and PC paths, which a download must not carry) and is exactly what Git holds. It makes the zip about 27 MB (25 MB of it is the libraries' source).
+- **The Microsoft runtime files:** copied (read only) from the Build Tools' `VC\Redist\MSVC\...\x64\Microsoft.VC145.CRT` folder, which Microsoft provides for shipping next to a program ("app-local"). So a PC without Visual Studio needs nothing installed.
+- **The scan** (run on the finished zip and the source zip inside it; a failure leaves only a `.partial` file): refuses file endings `.a26 .bin .rom .rar .7z .tar .gz`, any other zip, a file whose SHA-1 is the Pac-Man ROM's, and any file of exactly 4096 bytes that holds a zero byte (text and source files of that size have none; a ROM does). One exception, pinned by its SHA-256: Stella's `os/macos/template.dmg.gz`, which is part of its unchanged source. `-TestScan` proves the scan on invented files (never the ROM): a 4 KB binary, `.a26`, `.bin`, a stray zip and a file with the ROM's fingerprint are refused; a 4096-byte text file is accepted.
+- **Safety rules in the script:** it refuses to run with uncommitted changes (the zip must be exactly what Git holds) and when the program is older than its sources; `-AllowDirty` makes a `...-test.zip` that says so inside. It deletes nothing (output files are overwritten).
+- **Result of the first run** (test zip, 3,281 files scanned): nothing that could be a ROM; unzipped into a fresh folder under `out\` and run from there: `--self-check` OK, `--find-rom` with no ROM anywhere exit 5, with the ROM given by path (the ROM was never copied) exit 0, 4 s muted run 59.97 frames a second, default Framed picture, 13 files, no `.a26` or `.bin`.
+- **Not proved by me:** that it runs on a PC that never had Visual Studio (this PC has it; the DLL list says it should); the owner's try.
+- **Our own code's licence:** not chosen (J1). The README says only that the program as a whole is distributed under GPL v2 because of Stella, and does not choose for the owner.
+- **Reversible:** Yes.
+
 ### T-D14-3 — Power-on memory: random or zero makes no difference to this game (2026-10-25, Stage D14, owner's rule D-004)
 
 - **Facts:** a real console's RAM holds random bytes when it is switched on; Stella's app imitates that (`plr.ramrandom`), but its libretro core, which we use, overwrites the RAM with zeros before every frame, so ours starts with zeros (`docs\DISPLAY.md`).

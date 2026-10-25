@@ -161,3 +161,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Virtual gamepad | A pretend pad made by the program itself for testing; the rest of the program treats it like a real one. |
 | Latched switch | A key that flips something and leaves it there (the difficulty switches and Colour / B&W), unlike Select and Reset, which only count while the key is held. |
 | Input recording | A small text file (`.inputs`) saying what the joystick and switches were doing on every frame. Played back from power-on it gives the same game again, because the game itself does nothing random. |
+| GPL (GNU General Public License) | The licence of Stella. A program that contains Stella may be passed on only if its complete source code goes with it and the same licence applies. That is why the release zip holds the source. |
+| Runtime files (msvcp140.dll and friends) | Small Microsoft files every program built with this compiler needs. They are shipped next to the program so the PC does not need anything installed. |

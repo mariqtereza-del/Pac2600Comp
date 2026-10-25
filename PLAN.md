@@ -1325,7 +1325,27 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Git checkpoint:** `Stage D14: Side-by-side check`.
     - **Added during the stage (owner's rule D-004, authentic first):** speed and sound pitch changed to the real console's (T-D14-2); power-on memory examined (T-D14-3); `DISCREPANCIES.md` now holds an authenticity table; open: the picture shape.
     - **Next stage:** D15 — Release folder.
-15. **[Not started] D15 — Release folder.** `tools\make_release.ps1` builds `PacMan2600-0.1.0-windows.zip` (name changes after J2) with the `.exe`, needed DLLs, licences, README and *no ROM*. The script scans the zip and fails if any `.a26` or 4 KB file of unknown origin is inside.
+15. **[Done] D15 — Release folder.** *(expanded 2026-10-26)*
+    - **Objective:** `tools\make_release.ps1` builds `out\PacMan2600-0.1.0-windows.zip`: the program, the DLLs it needs, the licences, a README for the player, the source code the licences require, and **no ROM**. The script itself scans the finished zip, and fails (keeping nothing as the finished file) if a ROM or anything that could be one is inside.
+    - **Why it matters:** this is the first thing that can be handed to another person; Rule 7 says the ROM must never be in a public release, and the program contains Stella (GPL v2), which brings duties (licence text, source).
+    - **Prerequisites:** D14 Done and the D-006 picture mode committed (`73f946c`); a clean Git tree; the program built from it (`tools\build_host.cmd`).
+    - **What Claude Code will do:**
+      1. Find out what the program needs on a PC that has no Visual Studio (`dumpbin /dependents`): `SDL3.dll`, and three Microsoft runtime files (`msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`) that Microsoft allows to be shipped next to a program.
+      2. Write `tools\make_release.ps1`: refuses if the Git tree is not clean or the program is older than its sources; builds the zip with .NET's zip classes (nothing is deleted; the zip is written as `.partial`, scanned, then renamed); contents: `pacman2600.exe`, DLLs, `README.txt`, `BUILD-INFO.txt` (commit, date, SHA-256 of every file), `licences\`, `roms\PUT_YOUR_ROM_HERE.txt`, `source\...-source.zip` made by `git archive` from the tracked source folders only.
+      3. The scan: every file in the zip, and inside the nested source zip, is checked for: file endings `.a26 .bin .rom`; the SHA-1 of the known ROM; any 4,096-byte file that is not a known text or source file type. Also a test that the scan really fails (a bad zip made on purpose in `out\` with a fake 4 KB file, never the ROM).
+      4. Unzip the result into a fresh folder under `out\` and run the program from there (`--self-check`, `--find-rom` with no ROM = exit 5, and with the ROM given by path from `rom\` — the ROM is never copied).
+    - **What I must do:** unzip the release somewhere new (for example your desktop), start `pacman2600.exe`, pick your ROM when asked (or put it in `roms\`), and play for a minute; say if anything is missing or unclear in the README.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your try of the unzipped release.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** a zip of a few megabytes (the source adds more) that runs from any folder, asks for the ROM, and contains none.
+    - **Verification:** the script's own report (files, sizes, scan result); the failing-scan test; the unzipped program runs; `dumpbin` shows every needed DLL is in the zip or part of Windows; Git status clean afterwards; the zip is not in Git (`/out/` is ignored).
+    - **Completion criteria:** all of the above and the owner's try.
+    - **Potential problems:** the Microsoft runtime files come from the Visual Studio Build Tools' `Redist` folder on this PC (read only; their licence allows shipping them with a program); the owner chooses the licence of their own code before any public release (the program as a whole must be GPL v2 compatible because Stella is GPL v2); the README says so and does not choose for them.
+    - **Recovery:** new script and generated files in `out\` only (ignored by Git); undo by returning to `73f946c` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D15-n), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D15: Release folder`.
+    - **Next stage:** D16 — Gate D: Phase 1 done.
 16. **[Not started] D16 — Gate D: Phase 1 done.** You play a full game from the release zip, unzipped somewhere new. Checklist: correct shape, fullscreen and windowed, sound, keyboard, pad, ROM picker, replays identical, discrepancies list reviewed, version 0.1.0 tagged in Git.
 
 #### Getting the shape right (stage D6 in detail)

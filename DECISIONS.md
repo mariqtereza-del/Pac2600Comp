@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-27 — The whole game runs as native code; F21 is complete (2026-10-26, Stage F21.27)
+
+- **Piece:** `game::Game` holds the 128 bytes of state and runs one frame per call: the first frame is the start-up and the frame start, every later frame is the top logic, the bottom logic and the frame start. The drawing (between the two logics) belongs to the renderer of F23. The game gets the console and joystick state, the two collision flags and a chip interface; it reads cartridge data only by address through `game::Cartridge`.
+- **Result:** 70 of 70 recorded games, 439,680 frames, identical to the golden traces in every byte except the stack bytes `$F6-$FF` and the 11 scratch bytes of the drawing code; with nothing but the stack bytes left out, exactly those 11 scratch bytes differ and no other. All 439,680 frames take 11.2 seconds of work.
+- **What is still borrowed:** the collision flags (oracle of F20; the renderer of F23 will compute them from the sprites, F18), the cartridge bytes (the loader of F22 will read them from the player's ROM), the picture and the sound (F23, F24).
+- **Reversible:** Yes.
+
 ### T-F21-26 — The picture code writes only 11 scratch bytes (2026-10-26, Stage F21.26)
 
 - **Experiment:** every other piece native, the drawing code replaced by nothing (`picture-skip`). Bytes that differ from the recordings in some frame: `$87 CELL_INDEX`, `$C9 CELL_ROW` (counters of the maze rows), `$D2-$D6` (TEMP_D2..D6), `$D8 SPRITE0_Y`, `$DA TEMP_DA`, `$E1 TEMP_E1`, `$E2 TEMP_E2` (work bytes). The pictures' counters and pointers (`$DB-$E0`) do not differ, because the frame start sets them again before the frame ends.

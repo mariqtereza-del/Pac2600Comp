@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F6-1 — What actually runs: all 70 recordings, and a read is data only when it fetches data (2026-10-26, Stage F6)
+
+- **Method:** `stella_coverage` replays every baseline entry (each checked against its golden trace, 0 differences in all 70, 439,680 frames). BL-065/066 need their memory edits, so the tool got optional trailing arguments `<frame>:<hex address>:<hex value>` (test only, applied before that frame; same rule as the host's `--poke`).
+- **Result:** C 1,807, c 1,733, D 509, n 3, untouched 44. No instruction runs that the 29 recordings of F1 had not already run: the F1 map was complete for these games.
+- **Refinement:** the core logs the byte the processor looks at after an implied instruction; F1 counted it as data. F6 counts only fetches by instructions with data modes (3 bytes reclassified D to n; no executed byte is also data).
+- **Not claimed:** that untouched bytes (12 bytes of code in 4 pieces, 32 others) can never be used.
+- **Reversible:** Yes.
+
 ### T-F5-1 — The frame loop, found by tracing instructions with their scanlines (2026-10-26, Stage F5)
 
 - **Tool:** `stella_pctrace.exe` (same method and same private-member trick as `stella_coverage`, Stage F1; checked against the golden trace on every frame of the recording: 0 differences in all 8 runs).

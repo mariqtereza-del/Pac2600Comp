@@ -181,3 +181,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Scanline | One horizontal line of the TV picture. The 2600 draws 262 per frame, and the program counts its work in lines (one line = 76 processor cycles). |
 | Kernel | The part of the program that draws the picture line by line, timed to the cycle, because the console has no memory for a whole picture. |
 | Vertical blank / overscan | The scanlines before and after the visible picture in which the game logic runs. |
+| Look-ahead read | After many instructions the processor reads the next byte without using it. The measuring tool records it, so a byte touched only that way is not data. (Stage F6) |

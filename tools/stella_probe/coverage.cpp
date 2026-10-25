@@ -14,6 +14,7 @@
 //                                                              the bytes the instruction itself is made of: filtered by the reader)
 //   m,<offset>,<times>                                         (instruction starts that were not in the ROM: counted, not listed)
 
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -152,6 +153,13 @@ int main(int argc, char* argv[])
     }
   }
 
+  // TEST-ONLY memory edits (Stage F6, entries BL-065/066): <frame>:<hex address>:<hex value> from argument 6 on, applied before that frame runs.
+  std::vector<std::array<int, 3>> pokes;
+  for(int i = 5; i < argc; ++i) {
+    int pf = 0, pa = 0, pv = 0;
+    if(std::sscanf(argv[i], "%d:%x:%x", &pf, &pa, &pv) == 3) pokes.push_back({pf, pa, pv});
+  }
+
   stella.setROM(romPath.c_str(), rom.data(), rom.size());
   if(!stella.create(false)) { std::fprintf(stderr, "Stella could not create the console\n"); return 4; }
   Console& console = stella.osystem().console();
@@ -177,6 +185,8 @@ int main(int argc, char* argv[])
     stella.setInputEvent(Event::ConsoleRightDiffB, (bits & 256) ? 0 : 1);
     stella.setInputEvent(Event::ConsoleColor, (bits & 512) ? 0 : 1);
     stella.setInputEvent(Event::ConsoleBlackWhite, (bits & 512) ? 1 : 0);
+    for(const auto& pk : pokes)
+      if(pk[0] == f && pk[1] >= 0x80 && pk[1] <= 0xFF) stella.getRAM()[pk[1] - 0x80] = static_cast<uInt8>(pk[2]);
     stella.runFrameCounted();
 
     if(f < static_cast<int>(expect.size())) {

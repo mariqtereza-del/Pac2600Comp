@@ -1693,7 +1693,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F5_FRAME_LOOP.md`, `DECISIONS.md` (T-F5-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F5: The frame loop`.
     - **Next stage:** F6 — What actually runs.
-6. **[Not started] F6 — What actually runs.** Replay every golden trace with execution logging; every ROM byte is marked executed, read as data, or never touched.
+6. **[Done] F6 — What actually runs.** *(expanded and done 2026-10-26)*
+    - **Objective:** replay every one of the 70 golden recordings with execution logging, and mark every one of the 4096 ROM bytes as executed, read as data, or never touched.
+    - **Why it matters:** the rebuild must contain every instruction that can run and must know which bytes are tables; the bytes no recording ever touches are where the rebuilt game could differ unseen.
+    - **Prerequisites:** F5 Done (`ef2f2a2`); the coverage tool and map of F1 (29 recordings); the 70 baseline entries of Phase E.
+    - **What Claude Code will do:**
+      1. Give `stella_coverage` the memory edits of BL-065/066 (`<frame>:<hex addr>:<hex value>` arguments) so all 70 entries can be replayed; rebuild the measuring tool.
+      2. `tools\f6_coverage.py`: replay all 70 entries, each checked frame by frame against its golden trace; union the results; classify every byte (C/c executed, D data read, n only touched by the processor's look-ahead, . untouched); compare with F1; list the untouched pieces and the rarely run instructions; write `reference\f6\` (local only).
+      3. `docs\F6_COVERAGE.md`.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** a map of all 4096 bytes from 439,680 replayed frames, every run equal to its golden trace.
+    - **Verification:** `python -I tools\f6_coverage.py rom\pacman.a26` shows 70 lines "0 differences", "problems: none" and the counts.
+    - **Completion criteria:** all of the above; every byte has exactly one class.
+    - **Potential problems:** "never run" means never run by these 70 recordings, not "cannot run"; the 44 untouched bytes and the 4 unexecuted code pieces are listed so that F7-F19 can look at them.
+    - **Recovery:** one test-only option added to a measuring tool, a new script and local files; undo by returning to `ef2f2a2` (with your OK).
+    - **Documentation updates:** `docs\F6_COVERAGE.md`, `DECISIONS.md` (T-F6-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F6: What actually runs`.
+    - **Next stage:** F7 — Naming all 128 RAM bytes.
 7. **[Not started] F7 — Naming all 128 RAM bytes.** Each byte watched across the baseline traces and named (`pacman_x`, `ghost_mode`…), with uncertain names marked "?".
 8. **[Not started] F8 — Routine list and call map.** Every subroutine listed, with who calls it.
 9. **[Not started] F9 — Input reading.**

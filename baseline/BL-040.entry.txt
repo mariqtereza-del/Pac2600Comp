@@ -1,0 +1,26 @@
+id: BL-040
+title: The same start, Game Reset 60 frames later
+shows: As BL-038 but Game Reset is pressed on frame 300 (a different place in the attract-mode timer).
+inputs: BL-040.inputs
+frames: 800
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: a8719b78ad8a0b5595dbb90e60c4e63fad08e21efe257f454acadfb40911bbe6
+trace_bytes: 240016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 300 starts a game; play begins on frame 427 (the start tune takes 127 frames).
+  - Pac-Man starts at (76,60).
+  - Ghost start places at frame 427 (play begins): ghost 0 (76,30); ghost 1 (76,30); ghost 2 (76,30); ghost 3 (76,30).
+  - Ghost 0: first change of place on frame 428 (1 frames after play began); 73 changes in all, on frames whose number mod 4 is 0 (73 times); changes of 1: 51, 2: 22 pixels (count); frames between changes: 4: 72.
+  - Ghost 1: first change of place on frame 429 (2 frames after play began); 73 changes in all, on frames whose number mod 4 is 1 (73 times); changes of 1: 37, 2: 36 pixels (count); frames between changes: 4: 72.
+  - Ghost 2: first change of place on frame 430 (3 frames after play began); 73 changes in all, on frames whose number mod 4 is 2 (73 times); changes of 1: 51, 2: 22 pixels (count); frames between changes: 4: 72.
+  - Ghost 3: first change of place on frame 431 (4 frames after play began); 73 changes in all, on frames whose number mod 4 is 3 (73 times); changes of 1: 37, 2: 36 pixels (count); frames between changes: 4: 72.
+  - 60 frames after play began (frame 487): Pac-Man (76,60); ghosts 0:(88,37), 1:(88,40), 2:(88,37), 3:(88,40).
+  - 120 frames after play began (frame 547): Pac-Man (76,60); ghosts 0:(71,40), 1:(65,40), 2:(71,40), 3:(65,40).
+  - 180 frames after play began (frame 607): Pac-Man (76,60); ghosts 0:(67,50), 1:(75,50), 2:(67,50), 3:(75,50).
+  - 240 frames after play began (frame 667): Pac-Man (76,60); ghosts 0:(86,50), 1:(88,60), 2:(86,50), 3:(88,60).
+  - Frame 720 (293 frames after play began): the pause flag is set (Pac-Man is caught). Distance of each ghost from Pac-Man in pixels (x plus y): ghost 0: 5, ghost 1: 13, ghost 2: 7, ghost 3: 13.
+  - Compared with BL-038 frame by frame from the start of play: no ghost place differs in the 293 frames compared (up to the earlier catch).
+  - Ghost routes compared with BL-038 by the places each ghost visits, timing ignored (up to the earlier catch): ghost 0: the same 74 places in the same order; ghost 1: the same 74 places in the same order; ghost 2: the same 74 places in the same order; ghost 3: the same 74 places in the same order.
+  - How to check it against the real game: switch on, press Game Reset, then do what the list of joystick moves says; watch the ghosts leave the box and come at Pac-Man.

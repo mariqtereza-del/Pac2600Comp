@@ -167,3 +167,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Baseline entry | One recorded game (an input file) with a plain-words description and a trace of what the original did. |
 | Pause flag | Bit 6 of memory byte $D2. It is set while the game stops Pac-Man's own walking for a moment: the start tune, a death, a ghost eaten, and (found in Stage E3) the 84 frames after Pac-Man goes into the opening at the top or bottom of the maze. Its name is a working label. |
 | Turn request | The joystick direction held while Pac-Man walks along a corridor. If it is still held when he reaches a corner he turns there; a 2-frame tap is not remembered (Stage E3). |
+| Ghost place bytes | Memory bytes $B2-$B5 (x) and $B7-$BA (y) hold the four ghosts' places; found in Stage E4 by watching what moves. Working labels, not yet confirmed. |

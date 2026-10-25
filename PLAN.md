@@ -1456,7 +1456,26 @@ Build a library of recorded games, each paired with exactly what the original di
     - **Documentation updates:** `docs\BASELINE.md`, `docs\CONTROLS.md`, `DECISIONS.md` (T-E3-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage E3: Pac-Man's movement`.
     - **Next stage:** E4 — Ghosts.
-4. **[Not started] E4 — Ghosts.** Leaving the box, chasing, flicker order, speed, the blue/vulnerable state, eyes returning, and how they choose turns. Claude Code also records the same start position with different input timing to see whether ghost choices change (a clue to how randomness works).
+4. **[Done] E4 — Ghosts.** *(expanded and done 2026-10-26)*
+    - **Objective:** baseline entries for the four ghosts: where they start, when and how fast they move, how their path depends on Pac-Man and on input timing (the question of randomness), and what a power pill and an eaten ghost do to them.
+    - **Why it matters:** the ghosts' choices decide almost everything in a game; the rebuilt game must reproduce each ghost's place on every frame.
+    - **Prerequisites:** E3 Done (`cb6ea6b`); `tools\baseline.py`, `tools\e2_entries.py`, `tools\e3_entries.py`.
+    - **What Claude Code will do:**
+      1. Find the ghost bytes by watching which memory bytes move in an idle game, then check on the 9,800-frame bot route that they stay on corridors.
+      2. `tools\e4_entries.py`: BL-038 to BL-043 (the same start with Pac-Man idle, Reset one frame and 60 frames later, Pac-Man walking, the walk one frame later, a longer walk) and BL-044 (the first 4,000 frames of the bot route, with the first power pills), traced twice each, observations computed from the traces.
+      3. Cross-check the new inputs against the independent Phase C reference core.
+    - **What I must do:** nothing (D-008).
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 7 new entries (BL-038 to BL-044); 44 in all.
+    - **Verification:** every new entry's two traces identical; a fresh `baseline.py check` of all 44 equals the stored SHA-256 values; five new inputs (7,200 frames) give 0 fingerprint differences and 0 different pictures against Stella's own script runner.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the ghost bytes are working labels found by observation; the blue (scared) state of each ghost and the way eaten ghosts return were not identified from bytes (the entries say only what was measured); the flicker order of the drawing is not read from the picture here.
+    - **Recovery:** new files only; undo by returning to `cb6ea6b` (with your OK).
+    - **Documentation updates:** `docs\BASELINE.md`, `docs\GLOSSARY.md`, `DECISIONS.md` (T-E4-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage E4: Ghosts`.
+    - **Next stage:** E5 — Eating and scoring.
 5. **[Not started] E5 — Eating and scoring.** Wafers, power pills, ghosts eaten in a row, the bonus item, extra lives. Every score value is read from RAM and from the screen and must agree.
 6. **[Not started] E6 — Dying and game over.** Collision timing, the death animation and sound, respawn, losing the last life, the game-over screen, starting again.
 7. **[Not started] E7 — Long play.** Played by the computer, no human needed: `stella_bot` is extended to carry on into later levels (it stops after level 1 today) and plays at least three full games with different seeds, as many levels as it manages; seeded random-input games of tens of thousands of frames are added. Claude Code extracts level transitions, speed-ups and any changes between levels. If the bot cannot get past some level, that is written down as a limit of the bot (not worked around by asking for a human), and the random runs and scripts cover what they can.

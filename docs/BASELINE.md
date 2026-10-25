@@ -105,3 +105,14 @@ E2 start-up and variations (done); E3 Pac-Man's movement (done); E4 ghosts; E5 e
 ## Pac-Man's movement, in short (Stage E3)
 
 Measured in BL-026 to BL-037 (`DECISIONS.md` T-E3-1; all numbers come from the traces by `tools\e3_entries.py`): Pac-Man (bytes $B1 = x, $B6 = y) moves one pixel at a time, never diagonally, along corridors at y = 0, 10, ... 70 and 11 vertical corridors; about 0.57 pixels per frame (2 frames per step, 1 frame about every fourth step). He stops at a wall, goes on after the stick is released, remembers a turn that is held until the corner but not a 2-frame tap, and reverses 2 frames after the press. The openings are in the top and bottom walls in the column x = 76 (there is no side tunnel); using one sets the pause flag for 84 frames without losing a life. What the game does inside those 84 frames is not yet understood.
+| BL-038 | 800 | Ghosts from the start, Pac-Man stands still |
+| BL-039 | 800 | The same start, Game Reset one frame later |
+| BL-040 | 800 | The same start, Game Reset 60 frames later |
+| BL-041 | 800 | Pac-Man walks left 12 pixels and stands still |
+| BL-042 | 800 | The same walk left, one frame later |
+| BL-043 | 800 | Pac-Man walks left, down and right along the bottom corridor |
+| BL-044 | 4000 | Computer play: the first power pill and the first ghosts eaten |
+
+## The ghosts, in short (Stage E4)
+
+Measured in BL-038 to BL-044 (`DECISIONS.md` T-E4-1, computed by `tools\e4_entries.py`): ghost i has x in byte $B2+i and y in $B7+i; each changes place once every 4 frames (frame number mod 4 = i), by 1 or 2 pixels; all four start at (76,30). Their routes do not depend on Pac-Man for the first 126 frames of play, and do not change with the moment Game Reset is pressed or with the input being a frame late: nothing random was found. An idle Pac-Man is caught after 297 frames. Not yet identified: the scared state, the return of eaten ghosts, the drawing flicker order (Phase F).

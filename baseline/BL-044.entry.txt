@@ -1,0 +1,26 @@
+id: BL-044
+title: Computer play: the first power pill and the first ghosts eaten
+shows: The first 4,000 frames of the Stage C7 bot route: the first power pill (frames 2226-2673) and the first ghosts eaten.
+inputs: BL-044.inputs
+frames: 4000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: fd52a5560feb12c5cf2d424eb0d31690e033c7d7c8c87c82f4eddec98d94a012
+trace_bytes: 1203016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - The input is the first 4,000 frames of the Stage C7 bot route (tools\captures\c7_route.txt): a computer-played game.
+  - Power pill in effect (byte $F2 bit 1 set during play): frames 2226-2673 (448 frames); frames 3124-3985 (862 frames).
+  - During frames 2226-2673 Pac-Man is stopped (pause flag $D2 bit 6 set) 2 times, starting on frames 2289, 2323.
+  - During frames 3124-3985 Pac-Man is stopped (pause flag $D2 bit 6 set) 4 times, starting on frames 3162, 3244, 3419, 3497.
+  - Ghost 0, frames 1931-3999: changes of place by size outside the power pill: 1 px: 130, 2 px: 59; inside it: 1 px: 163, 2 px: 74; frame numbers mod 4 of all changes: 0: 426.
+  - Ghost 1, frames 1931-3999: changes of place by size outside the power pill: 1 px: 95, 2 px: 94; inside it: 1 px: 96, 2 px: 96; frame numbers mod 4 of all changes: 1: 381.
+  - Ghost 2, frames 1931-3999: changes of place by size outside the power pill: 1 px: 131, 2 px: 59; inside it: 1 px: 139, 2 px: 62; frame numbers mod 4 of all changes: 2: 391.
+  - Ghost 3, frames 1931-3999: changes of place by size outside the power pill: 1 px: 96, 2 px: 95; inside it: 1 px: 92, 2 px: 92; frame numbers mod 4 of all changes: 3: 375.
+  - Frame 2289: ghost 0 is 4 pixels from Pac-Man and Pac-Man stops (pause flag) until frame 2321 (32 frames). Ghost 0 is at (21,70) then and is next inside the start area (x 64-88, y 40 or less) on frame 2748 (459 frames later), at (88,40).
+  - Frame 2323: ghost 2 is 3 pixels from Pac-Man and Pac-Man stops (pause flag) until frame 2355 (32 frames). Ghost 2 is at (21,70) then and is next inside the start area (x 64-88, y 40 or less) on frame 2782 (459 frames later), at (88,40).
+  - Frame 3162: ghost 1 is 3 pixels from Pac-Man and Pac-Man stops (pause flag) until frame 3194 (32 frames). Ghost 1 is at (21,10) then and is next inside the start area (x 64-88, y 40 or less) on frame 3357 (195 frames later), at (64,31).
+  - Frame 3244: Pac-Man stops (pause flag) during a power pill but no ghost is within 6 pixels (the nearest, ghost 3, is 7 pixels away; this stop is not a ghost eaten by distance).
+  - Frame 3419: Pac-Man stops (pause flag) during a power pill but no ghost is within 6 pixels (the nearest, ghost 3, is 9 pixels away; this stop is not a ghost eaten by distance).
+  - Frame 3497: ghost 0 is 6 pixels from Pac-Man and Pac-Man stops (pause flag) until frame 3529 (32 frames). Ghost 0 is at (114,0) then and is next inside the start area (x 64-88, y 40 or less) on frame 3620 (123 frames later), at (88,11).
+  - How to check it against the real game: replay tools\captures\c7_captures.txt in Stella (Stage C7) and watch the first power pill: the ghosts turn lilac and Pac-Man can eat them.

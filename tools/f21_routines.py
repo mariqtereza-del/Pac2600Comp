@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.11', 'LIVES_MARKERS', 'lives-markers', 0xFC68, 'game::livesMarkers: the three playfield values of the life-marker row for one player (two cartridge tables through game::Cartridge)'),
     ('F21.10', 'ADD_SCORE', 'add-score', 0xFC45, 'game::addScore: decimal addition of a score amount to the player in turn; amounts read by address through the cartridge view (game::Cartridge)'),
     ('F21.9', 'SET_DIRECTION', 'set-direction', 0xF9E5, 'game::setDirection: direction bits and step-due bit set, then MOVE_OBJECT; the table TBL_FE63 is (d << 6) or $10 (checked equal to the cartridge bytes)'),
     ('F21.8', 'MOVE_OBJECT', 'move', 0xF9EE, 'game::moveObject: the speed accumulator (x17) and the one-pixel step with the border rules'),
@@ -43,7 +44,7 @@ NOTES = {
     'KERNEL_LINE_P0': 'picture only (F23)', 'CLEAR_GRAPHICS': 'picture only (F23)', 'SOUND_WRITE': 'sound chip only (F24)',
     'EXIT_F9E4': 'a lone RTS: nothing to write', 'EXIT_FB5B': 'a lone RTS: nothing to write', 'EXIT_FF93': 'a lone RTS: nothing to write',
     'WRAP_SET_Y': 'end of both WRAP routines: written with them',
-    'LIVES_MARKERS': 'needs ROM tables (F22)', 'SCORE_DIGITS': 'needs ROM tables (F22) and the picture',
+    'SCORE_DIGITS': 'needs ROM tables (F22) and the picture',
     'SOUND_START': 'needs ROM tables (F22)', 'SOUND_EFFECTS': 'needs ROM tables (F22); chip writes (F24)', 'SOUND_MUSIC': 'needs ROM tables (F22); chip writes (F24)',
     'SET_DIRECTION': 'table TBL_FE63 (F22); falls into MOVE_OBJECT', 'MOVE_OBJECT': 'ends in the border tests; leaf',
     'GHOST_DECIDE': 'large; after the TRY_ routines', 'GHOST_UPDATE': 'after GHOST_DECIDE',

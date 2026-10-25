@@ -170,4 +170,13 @@ Bcd addScore(Ram& ram, const Cartridge& cart, uint8_t amount, uint8_t callerX) {
   return c;
 }
 
+// LIVES_MARKERS ($FC68).
+uint8_t livesMarkers(Ram& ram, const Cartridge& cart, uint8_t lives, uint8_t offset) {
+  at(ram, static_cast<uint8_t>(ram::TEMP_D2 + offset)) = lives == 0 ? 0 : 0x40;
+  at(ram, static_cast<uint8_t>(ram::TEMP_D3 + offset)) = cart.at(0xFF1B + lives);
+  const uint8_t last = cart.at(0xFEEC + lives);
+  at(ram, static_cast<uint8_t>(ram::TEMP_D4 + offset)) = last;
+  return last;
+}
+
 }  // namespace game

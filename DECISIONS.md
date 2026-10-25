@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-11 — LIVES_MARKERS rewritten (2026-10-26, Stage F21.11)
+
+- **Routine:** `game::livesMarkers`; the two tables (`$FF1B`, `$FEEC`) are read by address through `game::Cartridge`.
+- **Result:** 70 of 70 games identical; 879,220 calls compared with the original (memory, registers, flags): 0 differences; identical together with F21.1-F21.10.
+- **Reversible:** Yes.
+
 ### T-F21-10 — ADD_SCORE rewritten; the cartridge data view (2026-10-26, Stage F21.10)
 
 - **Data rule:** game code never contains cartridge data. `game::Cartridge` gives a byte by its cartridge address; routines name the address (`cart.at(0xFF06 + amount)`). The lockstep tool builds the view from the ROM file; F22 builds it from the player's ROM at start-up after checking the fingerprint.

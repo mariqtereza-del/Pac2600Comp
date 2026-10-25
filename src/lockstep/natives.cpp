@@ -76,6 +76,18 @@ void moveNative(Machine& m) {
   finishMove(m, mv);
 }
 
+// F21.11 LIVES_MARKERS ($FC68): the number of lives is in X, the offset (0 or 3) in Y. The original leaves A = the last cartridge byte (zero/negative from it),
+// X and Y untouched, carry untouched.
+void livesMarkersNative(Machine& m) {
+  const game::Cartridge cart(m.romBytes());
+  uint8_t last = 0;
+  const uint8_t lives = m.x, offset = m.y;
+  withRam(m, [&](game::Ram& r) { last = game::livesMarkers(r, cart, lives, offset); });
+  m.a = last;
+  m.setZN(last);
+  m.rts();
+}
+
 // F21.10 ADD_SCORE ($FC45): the amount number is in Y, the caller's X is kept. The original leaves A = the new high byte, X as it was (reloaded from the
 // scratch byte, which sets zero/negative from X), Y untouched, decimal flag clear, carry and overflow from the last decimal ADC #0.
 void addScoreNative(Machine& m) {
@@ -200,6 +212,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "lives-markers") { m.registerNative(0xFC68, "LIVES_MARKERS (native)", [](Machine& mm) { livesMarkersNative(mm); }); return true; }
   if (name == "add-score") { m.registerNative(0xFC45, "ADD_SCORE (native)", [](Machine& mm) { addScoreNative(mm); }); return true; }
   if (name == "set-direction") { m.registerNative(0xF9E5, "SET_DIRECTION (native)", [](Machine& mm) { setDirectionNative(mm); }); return true; }
   if (name == "move") { m.registerNative(0xF9EE, "MOVE_OBJECT (native)", [](Machine& mm) { moveNative(mm); }); return true; }

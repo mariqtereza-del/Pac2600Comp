@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **LIVES_MARKERS**: identical in 70 of 70 games; 879220 calls compared with the original code, 0 different.
 - **ADD_SCORE**: identical in 70 of 70 games; 4607 calls compared with the original code, 0 different.
 - **SET_DIRECTION**: identical in 70 of 70 games; 73589 calls compared with the original code, 0 different.
 - **MOVE_OBJECT**: identical in 70 of 70 games; 1174804 calls compared with the original code, 0 different.
@@ -38,6 +39,7 @@
 | F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/routines.cpp: both scores and both lives to 0 |
 | F21.3 | `RNG_STEP` | $FBE0 | 20 | **done** | game::rngStep: the shift-register random number; its bit-mask table is 0x80 >> n (checked equal to the cartridge bytes) |
 | F21.5 | `NEW_MAZE` | $FC0C | 21 | **done** | game::newMaze: the wafer map filled (two places empty), pill flags $3C, then PLACE_OBJECTS |
+| F21.11 | `LIVES_MARKERS` | $FC68 | 21 | **done** | game::livesMarkers: the three playfield values of the life-marker row for one player (two cartridge tables through game::Cartridge) |
 | F21.6 | `NEW_GAME_SETUP` | $FBF4 | 24 | **done** | game::newGameSetup: score colours, three lives, start level from the game number, then NEW_MAZE |
 | F21.10 | `ADD_SCORE` | $FC45 | 35 | **done** | game::addScore: decimal addition of a score amount to the player in turn; amounts read by address through the cartridge view (game::Cartridge) |
 | F21.5 | `PLACE_OBJECTS` | $FC21 | 36 | **done** | game::placeObjects: freeze on, timer $3C, Pac-Man and the ghosts at their start places |
@@ -58,7 +60,6 @@
 | - | `TRY_PAIR_LR` | $FB22 | 20 | to do | drops the caller's return |
 | - | `TRY_DOWN` | $FB5C | 20 | to do |  |
 | - | `KERNEL_LINE_P0` | $F06A | 21 | to do | picture only (F23) |
-| - | `LIVES_MARKERS` | $FC68 | 21 | to do | needs ROM tables (F22) |
 | - | `TRY_COMMIT` | $FB44 | 23 | to do | drops the caller's return |
 | - | `TRY_LEFT` | $FB70 | 23 | to do |  |
 | - | `TRY_RIGHT` | $FB87 | 24 | to do |  |

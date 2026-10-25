@@ -1,0 +1,19 @@
+id: BL-020
+title: The fire button starts a game from the attract mode
+shows: The joystick fire button pressed once in the attract mode (no Game Reset): it starts a game, as Reset does.
+inputs: BL-020.inputs
+frames: 1400
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 54ba248b400df2b278c5df988f629796e08875d5f191580c53744dbc2e4a647f
+trace_bytes: 420416
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - The console switch register reads 3f on every frame: the console's Reset and Select are not touched; only the fire button is.
+  - Frame 120: the lives counter (byte $98) reads 3: the game starts on frame 120, the same frame the press began.
+  - Frames 120-238: the pause flag (byte $D2, bit 6) is set while the start tune plays (119 frames, 2.0 seconds). Frame 239: it clears and the game runs.
+  - At frame 239 (the first running frame) the two-player bit (byte $E6 bit 6) is clear: 1 player.
+  - Frame 180 (60 frames after the press): $81 = 00, $EC = 0c (they add up to 0c), $99 = 08, $C2 = 08. Byte $CC reads 00.
+  - No joystick is touched. Frame 536: the pause flag is set again: Pac-Man is caught and the death begins (297 frames after play began, 5.0 seconds).
+  - Frame 661: the lives counter changes from 3 to 2, 125 frames after the death began.
+  - How to check it against the real game: switch on and press the joystick fire button on the title screen; a game starts. Do not touch anything else.

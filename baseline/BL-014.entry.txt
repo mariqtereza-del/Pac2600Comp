@@ -1,0 +1,20 @@
+id: BL-014
+title: Game 6, 1 player: Select, then Reset starts it
+shows: Game Select pressed 10 times from power-on to choose game 6 for 1 player, then Game Reset; nobody plays.
+inputs: BL-014.inputs
+frames: 1400
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: c68bc845d8cd0314428c9209adb0340f5884447c2f34fed32acebe968f4801b4
+trace_bytes: 420516
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - After the 10 Select presses (frame 839) the selection is game 6, 1 player (byte $CC = game number, byte $E6 bit 6 = two players).
+  - Frame 840: the lives counter (byte $98) reads 3: the game starts on frame 840, the same frame the press began.
+  - Frames 840-967: the pause flag (byte $D2, bit 6) is set while the start tune plays (128 frames, 2.1 seconds). Frame 968: it clears and the game runs.
+  - At frame 968 (the first running frame) the two-player bit (byte $E6 bit 6) is clear: 1 player.
+  - Frame 900 (60 frames after the press): $81 = 00, $EC = 0c (they add up to 0c), $99 = 0a, $C2 = 0a. Byte $CC reads 00.
+  - No joystick is touched. Frame 1180: the pause flag is set again: Pac-Man is caught and the death begins (212 frames after play began, 3.5 seconds).
+  - Frame 1306: the lives counter changes from 3 to 2, 126 frames after the death began.
+  - $99 and $C2 (60 frames after the press) equal the value measured in Stage C6 for game 6 (0a).
+  - How to check it against the real game: switch on, press Game Select 10 times (the status bar shows the game number), press Game Reset and do not touch the joystick.

@@ -1,0 +1,16 @@
+id: BL-002
+title: Power-on and the attract mode, nothing touched
+shows: What the original does from power-on for 3,000 frames (50 seconds) with no input at all: the title screen and its slow changes.
+inputs: BL-002.inputs
+frames: 3000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 07b32e422c9549400729563095d5c4c12929ba9ca8f7059d2d4da89a57927b8c
+trace_bytes: 902006
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - The console switch register reads 3f on every frame (nothing pressed); the lives counter (byte $98) stays 0.
+  - Byte $F2 bit 1 (which means "power pill in effect" during play, and means nothing here) toggles on frames 1, 256, 512, 1024, 1536, 2048, 2560: the first two gaps are 255 and 256 frames, then always 512 frames apart.
+  - 2980 different pictures appear in the 3,000 frames (the title screen changes colours slowly and the ghost moves).
+  - Sound: frame 0 has no sound data at all (the first, partial frame); from frame 1 to the end every frame has the same sound fingerprint: the attract mode is silent.
+  - How to check it against the real game: switch the console on and watch the title screen for 50 seconds without touching anything.

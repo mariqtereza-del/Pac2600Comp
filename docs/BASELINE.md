@@ -65,3 +65,27 @@ E2 start-up and variations; E3 Pac-Man's movement; E4 ghosts; E5 eating and scor
 | ID | Frames | Title |
 | --- | --- | --- |
 | BL-001 | 700 | Game Reset starts a game; nobody plays; Pac-Man is caught |
+| BL-002 | 3000 | Power-on and the attract mode, nothing touched |
+| BL-003 | 1400 | Game Select steps through the 16 selections |
+| BL-004 | 1400 | Game 1, 1 player: Select, then Reset starts it |
+| BL-005 | 1400 | Game 1, 2 players: Select, then Reset starts it |
+| BL-006 | 1400 | Game 2, 1 player: Select, then Reset starts it |
+| BL-007 | 1400 | Game 2, 2 players: Select, then Reset starts it |
+| BL-008 | 1400 | Game 3, 1 player: Select, then Reset starts it |
+| BL-009 | 1400 | Game 3, 2 players: Select, then Reset starts it |
+| BL-010 | 1400 | Game 4, 1 player: Select, then Reset starts it |
+| BL-011 | 1400 | Game 4, 2 players: Select, then Reset starts it |
+| BL-012 | 1400 | Game 5, 1 player: Select, then Reset starts it |
+| BL-013 | 1400 | Game 5, 2 players: Select, then Reset starts it |
+| BL-014 | 1400 | Game 6, 1 player: Select, then Reset starts it |
+| BL-015 | 1400 | Game 6, 2 players: Select, then Reset starts it |
+| BL-016 | 1400 | Game 7, 1 player: Select, then Reset starts it |
+| BL-017 | 1400 | Game 7, 2 players: Select, then Reset starts it |
+| BL-018 | 1400 | Game 8, 1 player: Select, then Reset starts it |
+| BL-019 | 1400 | Game 8, 2 players: Select, then Reset starts it |
+| BL-020 | 1400 | The fire button starts a game from the attract mode |
+| BL-021 | 1500 | Game Reset pressed at frame 600 of the attract mode |
+| BL-022 | 1900 | Game Reset pressed at frame 1000 of the attract mode |
+| BL-023 | 2300 | Game Reset pressed at frame 1400 of the attract mode |
+| BL-024 | 2700 | Game Reset pressed at frame 1800 of the attract mode |
+| BL-025 | 3300 | Game Reset pressed at frame 2400 of the attract mode |

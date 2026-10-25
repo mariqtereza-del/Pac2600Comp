@@ -68,6 +68,12 @@ Notes on the evidence:
 - The players take turns. While player 2 is playing, the red bar is shown on top.
 - Evidence: `variations2\game1_2p_idle` (picture at 1860), `diffs\p2_left` (picture at 3627).
 
+## Correction (Stage E2, 2026-10-26)
+
+The table of "game variations" above lists memory bytes $81 and $EC as if the selection set them. **That was wrong.** $81 and $EC are an **attract-mode timer**: at the moment Game Reset is pressed, $81 equals the number of frames since power-on (or since the last Game Select press) divided by 256, rounded down, and $EC always equals 0c minus $81. Evidence: Reset pressed at frames 240, 600, 1000, 1400, 1800 and 2400 with no Select (entries BL-004, BL-021 to BL-025): $81 at 60 frames after the press reads 01, 02, 04, 05, 07, 09 and $EC reads 0b, 0a, 08, 07, 05, 03. The values in the C6 table differ between games only because the Select presses restarted the timer at different moments, not because of the selection. Of the table, only **$99 and $C2** depend on the selection: for games 1-8 (one player) they read 08, 0a, 04, 06, 08, 0a, 04, 06 sixty frames after the press, equal to the C6 table (entries BL-004, BL-006, ... BL-018, even numbers).
+
+Also measured in Stage E2 (entry BL-003): while Select is pressed, byte $CC holds the game number (1-8) and bit 6 of byte $E6 means two players; the 16 selections follow the order stated above and the 17th press is the same as the 1st. After a game starts $CC reads another value again, so it is not a game-number byte during play. The power-on state has $CC = cb, which is not a game number either.
+
 ## PS4 controller in the Stella app (your test, 2026-10-24)
 
 - **Set-up:** the pad was connected as "Wireless Controller" (DualShock 4), with DS4Windows **not** running, and started through `tools\run_stella.cmd`.

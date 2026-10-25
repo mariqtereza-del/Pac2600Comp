@@ -1,0 +1,32 @@
+id: BL-003
+title: Game Select steps through the 16 selections
+shows: Game Select pressed 17 times from power-on (held 10 frames, every 60 frames): game 1 to 8, each for one and two players, then back to the start.
+inputs: BL-003.inputs
+frames: 1400
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 9188804d5dd2a08789540dc66427ebb80b45774e99dfc66b489c5deaba60946f
+trace_bytes: 420576
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Before the first press (frame 119) byte $CC reads cb and holds no game number yet; the console is at its power-on selection, game 1 for one player (Stage C6). The console switch register reads 3d (Select low) while a press is held.
+  - The selection 40 frames after each press began (byte $CC = game number 1-8; byte $E6 bit 6 = two players):
+  -     press  1 (begins frame  120): game 1, 2 players
+  -     press  2 (begins frame  180): game 2, 1 player
+  -     press  3 (begins frame  240): game 2, 2 players
+  -     press  4 (begins frame  300): game 3, 1 player
+  -     press  5 (begins frame  360): game 3, 2 players
+  -     press  6 (begins frame  420): game 4, 1 player
+  -     press  7 (begins frame  480): game 4, 2 players
+  -     press  8 (begins frame  540): game 5, 1 player
+  -     press  9 (begins frame  600): game 5, 2 players
+  -     press 10 (begins frame  660): game 6, 1 player
+  -     press 11 (begins frame  720): game 6, 2 players
+  -     press 12 (begins frame  780): game 7, 1 player
+  -     press 13 (begins frame  840): game 7, 2 players
+  -     press 14 (begins frame  900): game 8, 1 player
+  -     press 15 (begins frame  960): game 8, 2 players
+  -     press 16 (begins frame 1020): game 1, 1 player
+  -     press 17 (begins frame 1080): game 1, 2 players
+  - The 16th press returns to game 1, one player; the 17th press moves on to game 1, two players: the cycle has 16 selections.
+  - How to check it against the real game: switch on and press Game Select again and again; the status bar shows the game number, two bars mean two players, and after 16 presses it is back at game 1.

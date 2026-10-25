@@ -1,0 +1,19 @@
+id: BL-024
+title: Game Reset pressed at frame 1800 of the attract mode
+shows: Game Reset pressed once at frame 1800 after power-on (game 1, one player, no Select); nobody plays. $81 and $EC read the attract timer at the moment of the press.
+inputs: BL-024.inputs
+frames: 2700
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 15c633e17894b8b6fb84041608be02fc649acdb2d7560926ff64e8008097683c
+trace_bytes: 811716
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Reset is pressed at frame 1800. At frame 1860: $81 = 07, which is 7 = (1860 / 256 rounded down), and $EC = 05 = 0c - $81.
+  - Frame 1800: the lives counter (byte $98) reads 3: the game starts on frame 1800, the same frame the press began.
+  - Frames 1800-1926: the pause flag (byte $D2, bit 6) is set while the start tune plays (127 frames, 2.1 seconds). Frame 1927: it clears and the game runs.
+  - At frame 1927 (the first running frame) the two-player bit (byte $E6 bit 6) is clear: 1 player.
+  - Frame 1860 (60 frames after the press): $81 = 07, $EC = 05 (they add up to 0c), $99 = 08, $C2 = 08. Byte $CC reads 00.
+  - No joystick is touched. Frame 2224: the pause flag is set again: Pac-Man is caught and the death begins (297 frames after play began, 5.0 seconds).
+  - Frame 2349: the lives counter changes from 3 to 2, 125 frames after the death began.
+  - How to check it against the real game: switch on, wait about 30 seconds on the title screen, press Game Reset and do not touch the joystick.

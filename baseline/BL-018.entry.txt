@@ -1,0 +1,19 @@
+id: BL-018
+title: Game 8, 1 player: Select, then Reset starts it
+shows: Game Select pressed 14 times from power-on to choose game 8 for 1 player, then Game Reset; nobody plays.
+inputs: BL-018.inputs
+frames: 1400
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 9dc42a024c746cdc1c9070fb9c282a2945ecbdd50f901d99bcf4a1aef06cf2ce
+trace_bytes: 420556
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - After the 14 Select presses (frame 1079) the selection is game 8, 1 player (byte $CC = game number, byte $E6 bit 6 = two players).
+  - Frame 1080: the lives counter (byte $98) reads 3: the game starts on frame 1080, the same frame the press began.
+  - Frames 1080-1207: the pause flag (byte $D2, bit 6) is set while the start tune plays (128 frames, 2.1 seconds). Frame 1208: it clears and the game runs.
+  - At frame 1208 (the first running frame) the two-player bit (byte $E6 bit 6) is clear: 1 player.
+  - Frame 1140 (60 frames after the press): $81 = 00, $EC = 0c (they add up to 0c), $99 = 06, $C2 = 06. Byte $CC reads 00.
+  - No joystick is touched; no ghost has caught Pac-Man by the end of the entry (frame 1399).
+  - $99 and $C2 (60 frames after the press) equal the value measured in Stage C6 for game 8 (06).
+  - How to check it against the real game: switch on, press Game Select 14 times (the status bar shows the game number), press Game Reset and do not touch the joystick.

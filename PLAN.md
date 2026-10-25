@@ -1416,7 +1416,26 @@ Build a library of recorded games, each paired with exactly what the original di
     - **Documentation updates:** `docs\BASELINE.md`, `DECISIONS.md` (T-E1-n), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage E1: Baseline format`.
     - **Next stage:** E2 — Starting up.
-2. **[Not started] E2 — Starting up.** Power-on, attract mode, each game variation chosen with Select, Reset to start. Scripted by Claude Code; no playing needed.
+2. **[Done] E2 — Starting up.** *(expanded and done 2026-10-26)*
+    - **Objective:** baseline entries for everything that happens before and as a game starts: power-on, the attract mode, Game Select through all 16 selections, Game Reset and the fire button starting a game.
+    - **Why it matters:** these are the first behaviours the rebuilt game must reproduce, and the cheapest to test (no playing needed); they also fix the attract-mode timer and the selection bytes that later entries depend on.
+    - **Prerequisites:** E1 Done (`59ba6e1`); `tools\baseline.py`.
+    - **What Claude Code will do:**
+      1. `tools\e2_entries.py`: writes the inputs for BL-002 to BL-025 (power-on and attract; the Select cycle with 17 presses; each of the 16 selections followed by Reset; the fire button from the attract mode; Reset at five different moments of the attract mode), makes each trace twice through `tools\baseline.py` (byte-identical required), and writes the plain-words observations **from the traces** (no number is typed by hand).
+      2. Cross-check against the independent Phase C reference run (`reference\c6\idle`).
+      3. Correct what Stage C6 recorded if the traces disagree.
+    - **What I must do:** nothing (D-008).
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 24 new entries (BL-002 to BL-025), every one repeating byte for byte.
+    - **Verification:** each entry's two traces identical and its SHA-256 stored; a fresh `baseline.py check` on all 25 entries; BL-002 (first 1,800 frames) and BL-024 (all 2,700) equal the Phase C reference run in memory and picture; the generator's own checks (the selection reached after each Select press; the start; the attract timer rule).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** a number written into an observation could be wrong or over-claimed; that is why they are computed, and why two over-claims were caught and removed while writing this stage (byte `$CC` is the game number only while Select is pressed; `$81`/`$EC` are an attract timer, not a variation setting).
+    - **Recovery:** new files only (`baseline\`, a tool, documents); undo by returning to `59ba6e1` (with your OK).
+    - **Documentation updates:** `docs\BASELINE.md`, `docs\CONTROLS.md` (a correction), `DECISIONS.md` (T-E2-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage E2: Starting up`.
+    - **Next stage:** E3 — Pac-Man's movement.
 3. **[Not started] E3 — Pac-Man's movement.** Speed in frames per maze step, turning at corners, pushing into walls, reversing, holding diagonals, wrapping through the side tunnel. All scripted, plus bot play for the situations a script cannot reach.
 4. **[Not started] E4 — Ghosts.** Leaving the box, chasing, flicker order, speed, the blue/vulnerable state, eyes returning, and how they choose turns. Claude Code also records the same start position with different input timing to see whether ghost choices change (a clue to how randomness works).
 5. **[Not started] E5 — Eating and scoring.** Wafers, power pills, ghosts eaten in a row, the bonus item, extra lives. Every score value is read from RAM and from the screen and must agree.

@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-E2-1 — Starting-up entries; what the traces corrected (2026-10-26, Stage E2)
+
+- **Entries:** BL-002 (power-on and attract, 3,000 frames), BL-003 (Select 17 times), BL-004 to BL-019 (each of the 16 selections, then Reset), BL-020 (fire starts a game), BL-021 to BL-025 (Reset at five moments of the attract mode). Made by `tools\e2_entries.py`; every number in the plain-words observations is computed from the trace.
+- **Findings** (written into `docs\CONTROLS.md`, "Correction"): (1) $81 and $EC are an attract-mode timer (frames since power-on or the last Select press / 256, and 0c minus that), not a variation setting as C6's table said; only $99/$C2 depend on the selection and they equal C6's table for all eight games; (2) $CC holds the game number only while Select is pressed and $E6 bit 6 means two players; (3) the attract mode is silent and its "power pill" bit toggles first at frames 1 and 256, then every 512; (4) Game Reset and the fire button each start a game on the frame they are first seen (lives byte $98 reads 3 at once), the start tune pauses play for 127-128 frames, and an untouched Pac-Man is caught about 5 seconds after play begins.
+- **Why it matters for Phase F:** the rebuilt game must reproduce the timer and the selection bytes exactly, including that the attract state depends on frames since the last Select.
+- **Proof:** 24 entries, each traced twice byte-identical; a fresh `baseline.py check` of all 25 entries equals the stored SHA-256 values; BL-002 (1,800 frames) and BL-024 (2,700 frames) equal the independent Phase C reference run in memory and picture on every frame (0 differences); the generator's own checks passed (selection after every press, start of every game, the timer rule on all six runs).
+- **Not covered:** a second player's turn (only that the two-player bit is set and a game starts; the player-switch behaviour is E6), what the variations change (Phase F), a Select press while a game runs (E8).
+- **Reversible:** Yes.
+
 ### T-E1-1 — Baseline entries and frame traces (2026-10-26, Stage E1)
 
 - **Choice:** an entry is a plain-words text, an `.inputs` file (both in Git, `baseline\`) and a golden trace (local, `reference\baseline\`; its SHA-256 is in the entry text). A trace is one text line per frame: frame, input, switch register, picture fingerprint, sound fingerprint, 128 bytes of memory (`docs\BASELINE.md`, `src\host\trace.*`). Text, not binary: it can be compared with ordinary tools and read by a person; about 300 bytes a frame, 11 MB for ten minutes of play.

@@ -1907,7 +1907,25 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F16_LEVELS.md`, `DECISIONS.md` (T-F16-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`; correction of the pause length in the F12 and F13 documents.
     - **Git checkpoint:** `Stage F16: Levels, speed-ups and timers`.
     - **Next stage:** F17 — Game states.
-17. **[Not started] F17 — Game states:** attract mode, start, death, level end, game over, variations, console switches.
+17. **[Done] F17 — Game states.** *(expanded and done 2026-10-26)*
+    - **Objective:** name every state of the game (title, game start, play, frozen start, ghost-eaten pause, death, game over, the game-number screen) and prove every change between them.
+    - **Why it matters:** the rebuilt game needs the same state machine; a missed change (for example Reset during a death) would show in the lockstep test far from its cause.
+    - **Prerequisites:** F16 Done (`5f3ed2d`); F9 input, F12 flags, F15, F16; the flag logs in `reference\f12`.
+    - **What Claude Code will do:**
+      1. `tools\f17_states.py`: classify every frame of the 70 games into a state from the memory alone; check each change of state against a table of causes (buttons, timers, collisions, cleared map, lives); check the memory on entry into game start, the Select step, a next try, a next map and game over.
+      2. Write `docs\F17_STATES.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** no unexplained change; every entry as listed.
+    - **Verification:** `python -I tools\f17_states.py rom\pacman.a26` says `result: OK` (438,212 frames; 121 game starts, 143 Select steps, 241 next tries (19 with a change of player), 52 game overs, 20 next maps).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** player 2 never had a joystick in a recording; the delay of the fire button after a game over (E6) is not explained.
+    - **Recovery:** one new script and a generated document; undo by returning to `5f3ed2d` (with your OK).
+    - **Documentation updates:** `docs\F17_STATES.md`, `DECISIONS.md` (T-F17-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F17: Game states`.
+    - **Next stage:** F18 — The drawing kernel and flicker schedule.
 18. **[Not started] F18 — The drawing kernel and flicker schedule.** Exactly which object is drawn on which line in which frame.
 19. **[Not started] F19 — Sound routines and their tables.**
 20. **[Not started] F20 — Lockstep harness.** A test tool that runs the emulator and the native code together on the same inputs, compares all 128 RAM bytes every frame, and on the first difference stops and reports the frame, the byte, both values and the routine responsible.

@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F17-1 — Six states and every change between them proved (2026-10-26, Stage F17)
+
+- **Method:** `tools\f17_states.py` derives the state of each frame from `ATTRACT_SHIFT`, `GAME_FLAGS` and `EAT_PAUSE` only and checks each change against a table of causes and the memory on entry.
+- **Result:** 438,212 frames in the states TITLE, FROZEN, PLAY, EAT-PAUSE, DYING (game start is a change into FROZEN); 12 kinds of change, all with a cause (Reset, fire on the title screen, Select, scared or unscared ghost touched, pause over, freeze over, last wafer, death over with lives left or none); entries checked: 121 game starts, 143 Select steps, 241 next tries (19 with a change of player), 52 game overs, 20 next maps.
+- **Found:** Select flips one/two players on every step, so the pairs of game-number values are one game each (eight games); a two-player start gives the second block 4 in its lives byte; at the end of a death in a two-player game with lives on the other side the 20-byte blocks are swapped before the lives byte is reduced.
+- **Not explained:** the delay of about 500 frames before the fire button worked after a game over (E6); the code reads fire in every title frame.
+- **Not claimed:** the play of player 2 (never moved in a recording); the animation and sound of a death (F18, F19).
+- **Reversible:** Yes.
+
 ### T-F16-1 — What the level changes, the speeds and the timers (2026-10-26, Stage F16)
 
 - **Method:** `tools\f16_levels.py` lists every use of `LEVEL_SPEED`, `GAME_SELECT` and `EVENT_TIMER`, computes speeds from the accumulator cycle, and checks the rules on every frame of the 70 games.

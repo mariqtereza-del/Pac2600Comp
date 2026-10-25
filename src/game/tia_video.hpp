@@ -36,6 +36,12 @@ class TiaVideo {
   void write(int line, int clock, uint8_t reg, uint8_t value);
   // Finishes the picture being made (also done by write when a new picture begins).
   void endPicture();
+  // Draws what the writes so far have drawn (the rows up to the latest write); the collision latches are then up to date. Later writes go on from there.
+  void renderDrawn();
+  // The collision latches since the last CXCLR: player 0 touched player 1, missile 1 touched player 1, the ball touched player 1.
+  bool player0TouchedPlayer1() const { return state_.cxP0P1; }
+  bool missile1TouchedPlayer1() const { return state_.cxM1P1; }
+  bool ballTouchedPlayer1() const { return state_.cxP1BL; }
   // The last finished picture: kHeight rows of kWidth colour values (the chip's colour numbers, as the emulator shows them).
   const std::array<uint8_t, kWidth * kHeight>& picture() const { return picture_; }
   uint64_t pictureCount() const { return count_; }
@@ -50,15 +56,18 @@ class TiaVideo {
     uint8_t enam[2] = {0, 0}, enabl = 0, enablOld = 0;
     int8_t hm[5] = {0, 0, 0, 0, 0};   // P0, P1, M0, M1, BL
     int pos[5] = {0, 0, 0, 0, 0};     // first pixel column
+    bool cxP0P1 = false, cxM1P1 = false, cxP1BL = false;   // collision latches, cleared by CXCLR
   };
   void apply(const Event& e, State& s, bool& hmoveBlank) const;
-  void render();
+  void renderThrough(int lastRow);
   int delayOf(uint8_t reg) const;
 
   TiaTiming timing_;
   State state_;
   std::vector<Event> events_;
   int lastLine_ = 0;
+  int row_ = 0;           // the next row of the picture to draw
+  size_t next_ = 0;       // the next event to apply
   int order_ = 0;
   uint64_t count_ = 0;
   std::array<uint8_t, kWidth * kHeight> picture_{};

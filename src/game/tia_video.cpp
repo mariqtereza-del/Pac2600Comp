@@ -107,35 +107,36 @@ void TiaVideo::apply(const Event& e, State& s, bool& hmoveBlank) const {
     case 0x2B:
       for (auto& h : s.hm) h = 0;
       break;
+    case 0x2C:
+      s.cxP0P1 = s.cxM1P1 = s.cxP1BL = false;
+      break;
     default: break;
   }
 }
 
-void TiaVideo::render() {
-  std::stable_sort(events_.begin(), events_.end(), [](const Event& a, const Event& b) { return a.when != b.when ? a.when < b.when : a.order < b.order; });
+void TiaVideo::renderThrough(int lastRow) {
+  std::stable_sort(events_.begin() + static_cast<std::ptrdiff_t>(next_), events_.end(),
+                   [](const Event& a, const Event& b) { return a.when != b.when ? a.when < b.when : a.order < b.order; });
   State& s = state_;
-  size_t next = 0;
   bool hmoveBlank = false;
-  for (int row = 0; row < kHeight; ++row) {
+  for (; row_ <= lastRow && row_ < kHeight; ++row_) {
+    const int row = row_;
     const int line = kFirstLine + row;
     hmoveBlank = false;
     // The events of the lines before this one (and of this line's horizontal blank) are applied first. An HMOVE blank belongs to its own line only.
     const long lineStart = static_cast<long>(line) * kClocks;
-    while (next < events_.size() && events_[next].when < lineStart) {
+    while (next_ < events_.size() && events_[next_].when < lineStart) {
       bool dummy = false;
-      apply(events_[next], s, dummy);
-      ++next;
+      apply(events_[next_], s, dummy);
+      ++next_;
     }
     uint8_t* out = &picture_[static_cast<size_t>(row) * kWidth];
     for (int x = 0; x < kWidth; ++x) {
       const long now = lineStart + 68 + x;
-      while (next < events_.size() && events_[next].when <= now) {
-        const bool before = hmoveBlank;
-        apply(events_[next], s, hmoveBlank);
-        (void)before;
-        ++next;
+      while (next_ < events_.size() && events_[next_].when <= now) {
+        apply(events_[next_], s, hmoveBlank);
+        ++next_;
       }
-      if ((s.vblank & 2) || (hmoveBlank && x < 8)) { out[x] = 0; continue; }
       const int idx = x / 4;
       const int bitIdx = idx < 20 ? idx : ((s.ctrlpf & 1) ? 39 - idx : idx - 20);
       bool pf;
@@ -151,6 +152,13 @@ void TiaVideo::render() {
       const bool p1 = playerOn(x, s.pos[kP1], s.nusiz[1], g1, (s.refp[1] & 8) != 0);
       const bool m0 = (s.enam[0] & 2) && missileOn(x, s.pos[kM0], s.nusiz[0]);
       const bool m1 = (s.enam[1] & 2) && missileOn(x, s.pos[kM1], s.nusiz[1]);
+      // The collision latches (the ones the game reads): player 0 with player 1, missile 1 with player 1, the ball with player 1.
+      if (p1) {
+        if (p0) s.cxP0P1 = true;
+        if (m1) s.cxM1P1 = true;
+        if (bl) s.cxP1BL = true;
+      }
+      if ((s.vblank & 2) || (hmoveBlank && x < 8)) { out[x] = 0; continue; }
       const uint8_t pfColour = (s.ctrlpf & 2) ? (x < 80 ? s.colup0 : s.colup1) : s.colupf;
       uint8_t c = s.colubk;
       if (s.ctrlpf & 4) {
@@ -167,16 +175,24 @@ void TiaVideo::render() {
       out[x] = c;
     }
   }
-  // The rest of the events (after the window) still change the state for the next picture.
-  for (; next < events_.size(); ++next) {
-    bool dummy = false;
-    apply(events_[next], s, dummy);
-  }
-  events_.clear();
+}
+
+void TiaVideo::renderDrawn() {
+  // Everything the picture shows is drawn by the writes that have come so far; the rows up to the one of the latest write are done.
+  const int lastRow = lastLine_ - kFirstLine;
+  if (lastRow >= 0) renderThrough(lastRow < kHeight ? lastRow : kHeight - 1);
 }
 
 void TiaVideo::endPicture() {
-  render();
+  renderThrough(kHeight - 1);
+  // The rest of the events (after the window) still change the state for the next picture.
+  for (; next_ < events_.size(); ++next_) {
+    bool dummy = false;
+    apply(events_[next_], state_, dummy);
+  }
+  events_.clear();
+  next_ = 0;
+  row_ = 0;
   ++count_;
   order_ = 0;
   lastLine_ = 0;

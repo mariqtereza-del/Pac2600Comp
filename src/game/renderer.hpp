@@ -15,6 +15,12 @@ class Renderer : public TiaChip, public TimedChip {
   void position(int line) override;
   // The drawing code's writes (TimedChip).
   void write(const ChipWrite& w) override;
+  bool collisions(bool& ghostTouched, bool& bonusTouched) override {
+    video_.renderDrawn();
+    ghostTouched = video_.player0TouchedPlayer1();
+    bonusTouched = video_.missile1TouchedPlayer1() && video_.ballTouchedPlayer1();
+    return true;
+  }
   bool trace = false;   // for looking at differences: prints every write to the standard output
 
   // Closes the picture of the frame just played and returns it (228 rows of 160 colour values).

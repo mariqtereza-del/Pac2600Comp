@@ -24,6 +24,9 @@ class TimedChip {
  public:
   virtual ~TimedChip() = default;
   virtual void write(const ChipWrite& w) = 0;
+  // After the drawing: the collisions the picture shows, if this sink can tell (the video-chip model can): the ghost of the frame touched Pac-Man
+  // (chip flag player 0 - player 1) and the bonus item touched Pac-Man (missile 1 and the ball both touched player 1). Returns false if it cannot.
+  virtual bool collisions(bool& /*ghostTouched*/, bool& /*bonusTouched*/) { return false; }
 };
 
 // Draws one picture. `startLine` is the scanline on which the original code starts (it follows the top logic, whose length varies a little; the

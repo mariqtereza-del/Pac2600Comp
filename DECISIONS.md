@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F23-4 — The collision latches live in the video-chip model; F23 is complete (2026-10-26, Stage F23.4)
+
+- **Choice:** the latches are set for every pixel the model draws, also in the blank (vertical blank and the left-edge blank after HMOVE); that variant matched everything, so no other was needed. The ghost flag is player 0 - player 1; the bonus flag is missile 1 - player 1 together with ball - player 1, as in F12.
+- **How the game gets them:** the model has to have drawn the picture before the bottom logic reads the flags, so rendering is resumable: `renderDrawn()` draws the rows up to the latest write, the rest follows at the end of the picture. The oracle files of F20 stay only for the 6502 lockstep tool.
+- **Result:** 70 of 70 games, 439,680 frames identical in memory and picture with no oracle; without flags 52 of 70 games fail (control).
+- **Coverage note:** the bonus flag is set in only 18 recorded frames (the ghost flag in 667); the random-input games of F25 will test more.
+- **Reversible:** Yes.
+
 ### T-F23-3 — The logic parts' video writes are placed on fixed scanlines; every picture of all 70 games is identical (2026-10-26, Stage F23.3)
 
 - **Choice:** the logic code has no exact timing, and none of its writes to the video chip (colours, `REFP1`, `VBLANK`, `VSYNC`, `CXCLR`) depends on it, so `TiaChip::position(line)` places them: top logic line 5, bottom logic line 240, frame start line 259; the power-on set-up (-1) feeds the six writes that place missile 1 and the ball at their exact clocks.

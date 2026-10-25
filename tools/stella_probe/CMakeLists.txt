@@ -37,3 +37,8 @@ target_link_options(stella_script PRIVATE /MAP)
 add_executable(stella_bot bot.cpp)
 target_link_libraries(stella_bot PRIVATE stella_core)
 target_link_options(stella_bot PRIVATE /MAP)
+
+# stella_coverage: which ROM addresses run and are read, instruction by instruction (Stage F1, DECISIONS.md T-F1-2).
+add_executable(stella_coverage coverage.cpp)
+target_link_libraries(stella_coverage PRIVATE stella_core)
+target_link_options(stella_coverage PRIVATE /MAP)

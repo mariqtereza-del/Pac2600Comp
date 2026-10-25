@@ -134,6 +134,21 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F1-1 — Our own assembler instead of downloading dasm; Stella's debugger not used (2026-10-26, Stage F1)
+
+- **Choice:** `tools\f1_6502.py` holds a 6502 disassembler and assembler written for this project; the opcode table (mnemonic, addressing mode, cycles, length of all 256 opcodes) is read at run time from Stella's own disassembler source `third_party\stella\src\debugger\DiStella.cxx`. Only the 151 official opcodes are assembled; the others are written `.byte`. No `dasm` was downloaded.
+- **Why:** Rule 5 (no dependency that is not needed) and the standing rule that downloads need the owner's approval: a 6502 assembler for one 4 KB program is a few hundred lines, and it can be proved right on this very program (disassemble, assemble, byte-identical) and on all 151 opcodes. The plan's table named `dasm` as "chosen at F1"; this is the safer choice and the owner can still ask for `dasm` as a second opinion at any time.
+- **Stella's debugger:** not used: it is a window that cannot be scripted, and its table is already used (above). The Phase C measuring tools (the Stella core without a window) do the job better.
+- **Tests (8, all pass):** the table has 256 entries and 151 official ones; eleven opcodes known from the 6502 data sheet agree; all 151 official opcodes survive disassemble-then-assemble; the written width of a number decides zero page or absolute; labels and branches; five wrong lines are refused; the whole ROM (2,190 lines, 127 bytes written `.byte`) assembles back byte-identical; the same listing with a label on every line too.
+- **Reversible:** Yes.
+
+### T-F1-2 — A tool that records which ROM bytes the CPU runs and reads (2026-10-26, Stage F1)
+
+- **Choice:** `tools\stella_probe\coverage.cpp` (`stella_coverage.exe`, built with `tools\build_stella_stella_probe.cmd`... see `tools\build_stella_probe.cmd`) runs the ROM on a baseline recording one instruction at a time (the same method as `stella_timing`, Stage C4), noting each instruction's start address and the last address it read. Stella's program counter is private; it is read by naming the private member in an explicit template instantiation (allowed by the C++ standard); no Stella file is changed.
+- **Proof that it plays exactly like the normal loop:** each run is compared with the recording's golden trace on every frame (picture fingerprint and all 128 memory bytes): 29 recordings, 365,780 frames, 0 differences.
+- **Result (`reference\f1\coverage_union.txt`, local):** of the 4,096 ROM bytes, 3,540 are part of instructions the CPU executed (1,807 first bytes, 1,733 others), 512 are read as data and never executed, 44 were neither: the last 7 bytes ($FFF9-$FFFF: the vectors are read by the CPU itself), four pieces of exactly 3 bytes in the code area ($FACF, $FAF9, $FB2A, $FB33: the size of one JMP or JSR, probably code that none of the 29 games reaches), two single bytes in the code area ($F5C3, $F908) and 23 bytes inside the data table. Every executed first byte is an official opcode, no instruction starts inside another, none was executed outside the ROM. The data lie in `$FD3F-$FF5F` (and a few bytes inside the code area); this is the first hard evidence for the "about 87 % code" estimate of Stage A4.
+- **Reversible:** Yes.
+
 ### T-E8-1 — A test-only memory edit, and what the edge cases showed (2026-10-26, Stage E8)
 
 - **The edit:** `pacman2600.exe --headless ... --poke <frame>:<hex address>:<hex value>` (repeatable) writes one byte of the console's memory before that frame; `tools\baseline.py` passes a `pokes:` line of an entry as `--poke`. Test only, headless only, never used in play (Rule 3). Why: a score near 9,999 cannot be reached by playing in reasonable time, and Stella's debugger is a window that cannot be scripted. Entries that use it (BL-065, BL-066) say ARTIFICIAL in their title and text and are not compared with Stella's script runner (which has no memory edit); all earlier traces still equal their stored SHA-256 after the change.

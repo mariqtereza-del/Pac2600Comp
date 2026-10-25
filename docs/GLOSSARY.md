@@ -173,3 +173,7 @@ Every project term in one line of plain English. New terms are added in the stag
 | Seed | A number that fixes a "random" sequence, so the same random input can be played again exactly. |
 | Memory edit (poke) | Writing one value into the console's memory from outside the game, used only in two labelled test entries to reach a score that cannot be played to. Marked ARTIFICIAL; never used in play. |
 | Gate E | The check at the end of Phase E that the baseline of recorded games is complete enough to be the target of the reverse-engineering phase (`docs\GATE_E.md`). |
+| Disassembler | A program that turns the machine-code bytes of the ROM back into readable instructions (`LDA #$10`). |
+| Assembler | The opposite: turns the readable instructions back into bytes. Disassemble then assemble must give the original bytes, or something was lost. |
+| Opcode | The first byte of a 6502 instruction; it says which instruction it is and how many bytes follow. |
+| Coverage map | A map of the ROM saying which bytes the processor actually ran as instructions and which it only read as data, made by running the recorded games (Stage F1). |

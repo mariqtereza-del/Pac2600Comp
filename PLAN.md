@@ -1591,8 +1591,28 @@ Findings are recorded the moment they are made, with the address, the evidence a
 
 #### The stages
 
-1. **[Not started] F1 — Analysis tools.** Stella's built-in debugger and disassembler (already installed) plus the portable `dasm` assembler (download approved by you). Python is installed only if A5 approved it; otherwise Claude Code's helper scripts are PowerShell or C++.
-2. **[Not started] F2 — Raw disassembly that rebuilds exactly.** Disassemble, reassemble with `dasm`, and compare fingerprints. Byte-identical rebuild = proof the listing is complete. Stored in `reference\disasm\` (local only).
+1. **[Done] F1 — Analysis tools.** *(expanded and done 2026-10-26; the tools differ from the first idea, see T-F1-1)*
+    - **Objective:** the tools that Phase F needs to read the 4 KB program: a disassembler and an assembler for the 6502 processor, a way to tell which bytes are code and which are data, and tests that prove the tools right.
+    - **Why it matters:** F2 to F26 rest on these: a listing that rebuilds the ROM byte for byte is the proof that nothing was lost, and the list of what the CPU really runs is the proof of what is code.
+    - **Prerequisites:** Gate E passed (`327a5ba`); `tools\stella_probe` (C-phase measuring tools), the baseline entries.
+    - **What Claude Code will do:**
+      1. `tools\f1_6502.py`: the opcode table read from Stella's own disassembler source (vendored, never edited), a disassembler and an assembler of our own (no download: T-F1-1), and 8 self-tests including "disassemble the whole ROM, assemble it, byte-identical".
+      2. `tools\stella_probe\coverage.cpp` (`stella_coverage.exe`): runs a recording one CPU instruction at a time and records every ROM address executed and every ROM address read as data; checked frame by frame against the golden trace (T-F1-2).
+      3. `tools\f1_coverage.py`: runs it on 29 baseline recordings (365,780 frames), unions them and writes the map `reference\f1\coverage_union.txt`.
+      4. `docs\F1_TOOLS.md`: what each tool is, how to run it, the results.
+    - **What I must do:** nothing. (Optional: if you want a second, independent assembler, `dasm` can still be downloaded later; I did not need it.)
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the three tools, the code/data map, and the document.
+    - **Verification:** `python -I tools\f1_6502.py selftest rom\pacman.a26` (8 checks, 0 failed); every coverage run equals its golden trace on all frames (0 differences in 365,780 frames); the map has no executed illegal opcode, no overlapping instructions, no instruction outside the ROM.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the map is only as complete as the games played: 44 ROM bytes were never executed or read in 29 recordings (listed in the map), and code that runs only in situations not yet recorded could be hiding among the "D" bytes (data) or the "." bytes; the vectors at the end are read by the CPU's reset, not by an instruction, so they show as "."; four 3-byte pieces of the code area ($FACF, $FAF9, $FB2A, $FB33) were never executed and are the first candidates for code that needs a situation not yet recorded.
+    - **Recovery:** new files only (tools, a document); undo by returning to `327a5ba` (with your OK).
+    - **Documentation updates:** `docs\F1_TOOLS.md`, `DECISIONS.md` (T-F1-1, T-F1-2), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F1: Analysis tools`.
+    - **Next stage:** F2 — Raw disassembly that rebuilds exactly.
+2. **[Not started] F2 — Raw disassembly that rebuilds exactly.** Disassemble, reassemble with `dasm`, and compare fingerprints. Byte-identical rebuild = proof the listing is complete. Stored in `reference\disasm\` (local only). **Changed in F1:** uses `tools\f1_6502.py` (our own assembler) and the code/data map `reference\f1\coverage_union.txt` instead of `dasm` (T-F1-1).
 3. **[Not started] F3 — Hardware names.** Replace raw addresses of the TIA and RIOT chips with their standard names (`WSYNC`, `GRP0`, `INTIM`…).
 4. **[Not started] F4 — Code versus data.** Mark graphics shapes, maze data, colour and sound tables as data.
 5. **[Not started] F5 — The frame loop.** Find the start-up code and the four parts of every frame: vertical sync, vertical blank (logic time), the visible picture ("kernel"), overscan (more logic time).

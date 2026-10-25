@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.14', 'ANIMATE_OBJECT', 'animate', 0xFC8B, 'game::animateObject: the opening animation of an object (waiting, down the outside, back into the maze, up) and the sprite scratch bytes; three small cartridge tables through game::Cartridge'),
     ('F21.13', 'TRY_PAIR_1', 'try-pair', 0xFAFC, "game::tryPair (vertical): after the random step try up and down in the order it picks; a taken turn drops the caller's return too"),
     ('F21.13', 'TRY_PAIR_UD', 'try-pair', 0xFB05, 'the vertical pair itself (inside the TRY_PAIR_1 rewrite; only reached from it)'),
     ('F21.13', 'TRY_PAIR_2', 'try-pair', 0xFB19, 'game::tryPair (horizontal): left and right'),

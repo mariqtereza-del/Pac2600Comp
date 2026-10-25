@@ -1986,7 +1986,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F20_LOCKSTEP.md`, `DECISIONS.md` (T-F20-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F20: Lockstep harness`.
     - **Next stage:** F21 — Rewrite one routine per session (F21.1 first).
-21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT. F21.8 done 2026-10-26: MOVE_OBJECT. F21.9 done 2026-10-26: SET_DIRECTION. F21.10 done 2026-10-26: ADD_SCORE. F21.11 done 2026-10-26: LIVES_MARKERS. F21.12 done 2026-10-26: the TRY routines. F21.13 done 2026-10-26: the TRY_PAIR routines.** *(expanded below)*
+21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT. F21.8 done 2026-10-26: MOVE_OBJECT. F21.9 done 2026-10-26: SET_DIRECTION. F21.10 done 2026-10-26: ADD_SCORE. F21.11 done 2026-10-26: LIVES_MARKERS. F21.12 done 2026-10-26: the TRY routines. F21.13 done 2026-10-26: the TRY_PAIR routines. F21.14 done 2026-10-26: ANIMATE_OBJECT.** *(expanded below)*
     - **Objective (F21.1):** set up the way a routine is rewritten and prove it with the first, smallest routine that changes memory: CLEAR_SCORES (`$FC7D`, 14 bytes: both scores and both lives to 0).
     - **Why it matters:** every later session follows the same protocol; the protocol must detect a wrong routine even when the recorded games do not show it (a wrong register).
     - **Prerequisites:** F20 Done (`bb3df0f`).
@@ -2185,7 +2185,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Recovery:** small additions; undo by returning to `3c34886` (with your OK).
       - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-13), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F21.13: Rewrite the TRY_PAIR routines`.
-      - **Next stage:** F21.14 — Rewrite ANIMATE_OBJECT (155 bytes: the opening animation of Pac-Man and the ghosts; reads three small cartridge tables).
+      - **Next stage:** F21.14 — Rewrite ANIMATE_OBJECT (done, below).
+    - **F21.14 — Rewrite ANIMATE_OBJECT** *(expanded and done 2026-10-26)*
+      - **Objective:** rewrite ANIMATE_OBJECT (`$FC8B`, 155 bytes) as C++: the animation of an object whose state has bit 5 set (a ghost leaving the pen or crossing an opening, Pac-Man crossing an opening), including the sprite scratch bytes it sets.
+      - **Why it matters:** it is the only code that moves an object along the opening path, and it also prepares the sprite for the picture (F18).
+      - **Prerequisites:** F21.13 Done (`053952f`); F21.10 (the cartridge view); F10/F13 (what the animation does).
+      - **What Claude Code will do:** `game::animateObject(ram, cart, object, sprite)` with the ten ways it can end (`AnimPath`); the three small cartridge tables (`$FF0D`, `$FF19`, `$FF25`) are read by address; the adapter reproduces A, X (the pointer index in the one path that changes X), the carry and overflow of the pointer addition and the carry of the last compare on every path; added to the DONE list.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** 70 of 70 games identical; every call equal to the original.
+      - **Verification:** `python -I tools\f21_routines.py rom\pacman.a26` says `result: OK` (ANIMATE_OBJECT: 70 of 70 games identical, 2,791 calls compared with the original, 0 different; all twenty-two routines together identical). Right at the first run. Every byte of the routine is executed in the recordings (code map of F6/F9), so each of its ways to end is checked at least once.
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** none.
+      - **Recovery:** small additions; undo by returning to `053952f` (with your OK).
+      - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-14), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F21.14: Rewrite ANIMATE_OBJECT`.
+      - **Next stage:** F21.15 — Rewrite GHOST_DECIDE (214 bytes: the ghost's decision; it uses the routines already rewritten).
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.

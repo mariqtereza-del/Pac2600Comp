@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-14 — ANIMATE_OBJECT rewritten (2026-10-26, Stage F21.14)
+
+- **Routine:** `game::animateObject`: waiting (y counts down to 0, then y = $5B or 0 and the step-due bit is set), then the opening path by direction code (0: down to $5B; 1 and 3: up the outside until y = $0B, then y = 0 and direction bits $80; 2: back to $51, then y = $46 and bits $C0; 3 below 0: bits $A0) with the cartridge tables $FF0D/$FF19/$FF25 for the picture pointer and the start y of the next phase.
+- **Result:** 70 of 70 games identical; 2,791 calls compared with the original (memory, registers, flags): 0 differences; identical together with F21.1-F21.13. The code map shows every instruction of the routine runs in the recordings.
+- **Reversible:** Yes.
+
 ### T-F21-13 — The TRY_PAIR routines rewritten; the stack bytes again (2026-10-26, Stage F21.13)
 
 - **Routine:** `game::tryPair(ram, cart, object, vertical, rngResultIsZero)`: vertical pair up then down when the random result is 0, else down then up; horizontal pair left then right when 0, else right then left; stops at the first turn taken. The random step itself is F21.3.

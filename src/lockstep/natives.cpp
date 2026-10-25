@@ -81,6 +81,39 @@ void moveNative(Machine& m) {
 //  turn back refused (ghosts): A = state bits, Y = direction, flags of the CMP with TBL_FE67, normal return;
 //  taken: Y = direction, A = the high byte of the return address that PLA PLA throws away, zero/negative from it, carry from the path, and the RTS
 //  that follows returns to the caller's caller.
+// F21.14 ANIMATE_OBJECT ($FC8B): the object is in X, the sprite number (0 ghost, 1 Pac-Man) in Y. Registers and flags by path (see the listing):
+// the paths that end by storing $70 leave A = $70 (zero/negative clear); the step paths leave A = the new y; the path that sets the picture pointer
+// leaves A = 8, X = the pointer index (0 or 2), carry and overflow of the pointer addition; carry is that of the last CMP, or unchanged while waiting.
+void animateNative(Machine& m) {
+  const uint8_t object = m.x, sprite = m.y;
+  const game::Cartridge cart(m.romBytes());
+  game::AnimResult r{};
+  withRam(m, [&](game::Ram& ram) { r = game::animateObject(ram, cart, object, sprite); });
+  auto carry = [&](bool c) { m.p = static_cast<uint8_t>((m.p & ~0x01) | (c ? 1 : 0)); };
+  auto finish = [&](uint8_t a) { m.a = a; m.setZN(a); };
+  switch (r.path) {
+    case game::AnimPath::Counting:
+    case game::AnimPath::CountDone: finish(0x70); break;
+    case game::AnimPath::RightStep: finish(r.newY); carry(0x5B >= r.newY); break;
+    case game::AnimPath::RightEnd: finish(0x70); carry(true); break;
+    case game::AnimPath::DownStep: finish(r.newY); carry(0x51 >= r.newY); break;
+    case game::AnimPath::DownEnd: finish(0x70); carry(true); break;
+    case game::AnimPath::UpEnd: finish(0x70); carry(true); break;
+    case game::AnimPath::Reached0B: finish(r.stateAfter); carry(true); break;
+    case game::AnimPath::SpriteY: finish(r.newY); carry(true); break;
+    case game::AnimPath::SpritePtr: {
+      const unsigned sum = static_cast<unsigned>(r.tableByte) + r.ptrOld;
+      const uint8_t res = static_cast<uint8_t>(sum);
+      finish(8);
+      m.x = r.ptrIndex;
+      carry(sum > 0xFF);
+      m.p = static_cast<uint8_t>((m.p & ~0x40) | ((((r.tableByte ^ res) & (r.ptrOld ^ res)) & 0x80) ? 0x40 : 0));
+      break;
+    }
+  }
+  m.rts();
+}
+
 // The registers and flags of one TRY routine up to the point where it returns or (taken) is about to throw its caller's return away. Returns true if
 // the turn is taken (then A, N and Z are still to be set by the two pops); false means a normal return is next.
 bool tryRegisters(Machine& m, uint8_t dir, const game::TryResult& r, uint8_t object, uint8_t stateBefore) {
@@ -332,6 +365,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "animate") { m.registerNative(0xFC8B, "ANIMATE_OBJECT (native)", [](Machine& mm) { animateNative(mm); }); return true; }
   if (name == "try-pair") {
     m.registerNative(0xFAFC, "TRY_PAIR_1 (native)", [](Machine& mm) { pairNative(mm, true); });
     m.registerNative(0xFB19, "TRY_PAIR_2 (native)", [](Machine& mm) { pairNative(mm, false); });

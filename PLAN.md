@@ -1869,7 +1869,25 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F14_RANDOM.md`, `DECISIONS.md` (T-F14-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`; the "Randomness" risk line in the plan is settled.
     - **Git checkpoint:** `Stage F14: Randomness`.
     - **Next stage:** F15 — Scoring, bonus item and lives.
-15. **[Not started] F15 — Scoring, bonus item and lives.**
+15. **[Done] F15 — Scoring, bonus item and lives.** *(expanded and done 2026-10-26)*
+    - **Objective:** state exactly how points, the bonus item and lives work, and prove it on every recorded frame.
+    - **Why it matters:** score and lives are what a player sees; the rebuilt game must add the same amounts at the same moments, and E5 left open whether a score gives an extra life.
+    - **Prerequisites:** F14 Done (`cfb5730`); F11 maze, F12 collisions (the flag logs in `reference\f12`, made by `tools\f12_collisions.py`), F7 RAM names.
+    - **What Claude Code will do:**
+      1. `tools\f15_scoring.py`: check every frame of the 70 games for (A) the score change = sum of the amounts added, (B) every change of the lives byte, (C) the bonus timer at the 256-frame tick, (D) the end of a death: one life less or game over.
+      2. Write `docs\F15_SCORING.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 0 wrong frames; no extra life by score.
+    - **Verification:** `python -I tools\f15_scoring.py rom\pacman.a26` says `result: OK` (290,818 score frames right; 1,637 bonus-tick frames right and 434,279 other frames right; 222 deaths with a life less and 52 game overs; lives changed only by new map +1 and death -1).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** two-player scoring and the 999,999 wrap were never seen; the difficulty effect on the bonus is from the code only.
+    - **Recovery:** one new script and a generated document; undo by returning to `cfb5730` (with your OK).
+    - **Documentation updates:** `docs\F15_SCORING.md`, `DECISIONS.md` (T-F15-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F15: Scoring, bonus item and lives`.
+    - **Next stage:** F16 — Levels, speed-ups and timers.
 16. **[Not started] F16 — Levels, speed-ups and timers.**
 17. **[Not started] F17 — Game states:** attract mode, start, death, level end, game over, variations, console switches.
 18. **[Not started] F18 — The drawing kernel and flicker schedule.** Exactly which object is drawn on which line in which frame.

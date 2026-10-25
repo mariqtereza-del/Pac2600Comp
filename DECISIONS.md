@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F15-1 — Scoring, bonus item and lives proved on every frame (2026-10-26, Stage F15)
+
+- **Method:** `tools\f15_scoring.py` compares, frame by frame in the 70 games, the score change with the sum of amounts the code adds (using F11 wafer and pill events and the F12 flag logs), every change of the lives byte, the bonus timer at the 256-frame tick and the end of a death.
+- **Result:** 290,818 of 290,818 score frames right (4,276 wafers, 102 pills, 193 ghosts, 18 bonus items, 20 new maps); lives change only by +1 at a new map and -1 at a death (222 and 20 times); 52 game overs; bonus timer right in 1,637 of 1,637 tick frames and unchanged in 434,279 others; the item turned on 86 times and off by the timer 49 times.
+- **Found:** four callers of `ADD_SCORE` (+1, +5, +20/40/80/160, +100); **no extra life for a score**; lives start at 3, max 9, +1 per map, -1 per death, game over at a death with none left (four tries); the bonus item is on for 3 ticks of 256 frames (2 with `GAME_FLAGS` bit 5) and off for 18 ticks, the timer starts at $0C; the score is 6 digits and would wrap at 1,000,000 (not reached).
+- **Not claimed:** two-player scoring and lives (no recording), the wrap, the difficulty effect on the bonus (code only).
+- **Reversible:** Yes.
+
 ### T-F14-1 — The game is deterministic: one shift-register byte, started at $FF (2026-10-26, Stage F14)
 
 - **Method:** `tools\f14_random.py` lists every access to `$CB` in the listing, the reads of the timer and input chips, and checks all 70 games.

@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F11-1 — The maze and the wafers (2026-10-26, Stage F11)
+
+- **Method:** `tools\f11_maze.py` reads the table `$FE13` and a model of the eating rules built on the F10 movement model, and compares with the recorded memory of every frame on the normal road.
+- **Result:** 202,502 of 202,502 predicted frames exactly right (4,123 wafers, 102 power pills, 20 new maps). The 80-byte table (even rows bytes 0-39, odd rows 40-79) holds walls (bit 7), up/down openings (bits 6/5) and the wafer place (bit 0, memory bit in bits 1-4): 128 places, one per cell, 126 set at the start (`$8E` bit 7 and `$8A` bit 0 start empty); wafers live in `$88-$97` (second copy `$9C-$AB`), pills in bits 2-5 of `$9A`.
+- **Found:** a vertical mover outside the middle column eats from either of two neighbouring cells (the two table bytes are OR-ed); eating a power pill skips that frame's joystick and step; a cleared map gives +1 life (max 9) and +1 level step (max $0E).
+- **Not claimed:** scared-time bits (7-6) and ghost-count bits (0-1) of the pill byte, bonus item, ghost scoring, deaths (F12/F15/F16); the kernel's drawing of the dots (F18). Frames with Reset pressed or with the test's memory edits (BL-065/066) are skipped.
+- **Reversible:** Yes.
+
 ### T-F10-1 — Pac-Man's movement written as a model and proved on 202,473 frames (2026-10-26, Stage F10)
 
 - **Method:** `tools\f10_pacman.py` is a model of the code (not an emulator): from the previous frame's memory, the frame's joystick and the ROM's wall table (`$FE13`) it predicts x, y, state, speed accumulator, JOY_DIRECTION and the idle counter, and compares with the recorded memory of every frame in which the normal road runs. Frames on other roads are counted by reason and skipped (title screen, frozen game, death, ghost-eaten pause, power pill eaten, change of turn, Select during play).

@@ -1791,7 +1791,25 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F10_PACMAN.md`, `DECISIONS.md` (T-F10-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F10: Pac-Man's movement and turning`.
     - **Next stage:** F11 — Maze and wafer storage.
-11. **[Not started] F11 — Maze and wafer storage.**
+11. **[Done] F11 — Maze and wafer storage.** *(expanded and done 2026-10-26)*
+    - **Objective:** find how the maze and its 126 wafers and 4 power pills are stored in the ROM and in memory, and prove the rules for eating them and for starting a new map.
+    - **Why it matters:** the maze is the second large block of game data (the walls and wafer places in the ROM, the 16 wafer bytes in memory); the rebuilt game must store and change them the same way for the lockstep test to hold.
+    - **Prerequisites:** F10 Done (`7f65405`): the movement model; F7 RAM names; the 70 baseline traces.
+    - **What Claude Code will do:**
+      1. `tools\f11_maze.py`: read the 80-byte wall/wafer table (`$FE13`), work out which memory bit belongs to which wafer, check that the 128 places map one-to-one to cells, and predict - using the F10 movement model for Pac-Man's place - the 16 wafer bytes, the pill bits, the score of the player in turn and the new map after the last wafer, for every frame on the normal road of all 70 games.
+      2. Write `docs\F11_MAZE.md` (generated): storage layout, eating rules, an ASCII map of the maze from the table, the wafer-place table.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 0 wrong frames; 128 places one-to-one, 126 set at the start.
+    - **Verification:** `python -I tools\f11_maze.py rom\pacman.a26` says `result: OK` (202,502 of 202,502 predicted frames right; 4,123 wafers, 102 power pills and 20 new maps among them).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the scared-time bits of the pill byte, ghosts eaten, the bonus item and the frames around deaths belong to F12/F15/F16 and are skipped or not compared (counts in the document); how the kernel draws the dots is F18.
+    - **Recovery:** one new script and a generated document; undo by returning to `7f65405` (with your OK).
+    - **Documentation updates:** `docs\F11_MAZE.md`, `DECISIONS.md` (T-F11-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F11: Maze and wafer storage`.
+    - **Next stage:** F12 — Collisions.
 12. **[Not started] F12 — Collisions** (the 2600 has hardware collision flags; find whether the game uses them or its own checks).
 13. **[Not started] F13 — Ghost movement and decisions.**
 14. **[Not started] F14 — Randomness: where it comes from.**

@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F14-1 — The game is deterministic: one shift-register byte, started at $FF (2026-10-26, Stage F14)
+
+- **Method:** `tools\f14_random.py` lists every access to `$CB` in the listing, the reads of the timer and input chips, and checks all 70 games.
+- **Result:** `$CB` is written at `$F016` (start-up, $FF), `$F892` (each game start, $FF) and by `RNG_STEP` (`$FBE0`, a shift register with period 127 from $FF); read at `$FA4F` and inside `RNG_STEP`. `INTIM` is read only in the two wait loops and kept nowhere; joystick and switches go to game rules only. In 438,212 frames of 70 games, 89,039 changes are 1 to 3 generator steps, 121 are the start value, 0 are unexplained.
+- **Consequence:** the original has no real randomness: a game is a function of the buttons. The rebuilt game needs no random source; lockstep (F20) needs only the same inputs. A random start would be a modernisation (separate, optional, Rule 3).
+- **Not claimed:** statistical quality of the numbers; the decision moments (F13).
+- **Reversible:** Yes.
+
 ### T-F13-1 — The ghosts written as a model and proved on 348,146 frames (2026-10-26, Stage F13)
 
 - **Method:** `tools\f13_ghosts.py` is a model of the code (not an emulator): from the previous frame memory and the ROM tables it predicts the handled ghost x, y, state, accumulator, timer and the random number `$CB`, and compares with the recorded memory. Frames on other roads are counted by reason and skipped (Select/Reset, title-screen fire or difficulty, frozen game, death or new map, change of turn, BL-065/066).

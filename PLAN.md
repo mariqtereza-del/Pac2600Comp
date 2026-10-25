@@ -1850,7 +1850,25 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F13_GHOSTS.md`, `DECISIONS.md` (T-F13-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F13: Ghost movement and decisions`.
     - **Next stage:** F14 — Randomness: where it comes from.
-14. **[Not started] F14 — Randomness: where it comes from.**
+14. **[Done] F14 — Randomness: where it comes from.** *(expanded and done 2026-10-26)*
+    - **Objective:** find every source of random numbers in the game and prove that nothing outside the game (clock, timer, buttons) feeds them.
+    - **Why it matters:** if the original were random in a way we cannot reproduce, the lockstep test could not work; if it is deterministic, one machine-made test replays everything.
+    - **Prerequisites:** F13 Done (`3526edc`); F7 RAM names; F8 routines; the 70 baseline traces.
+    - **What Claude Code will do:**
+      1. `tools\f14_random.py`: list every instruction that writes or reads `$CB` and every read of the timer and the input chips; analyse the generator (cycle); check in all 70 games that each change of `$CB` is the start value or a number of generator steps.
+      2. Write `docs\F14_RANDOM.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** one random byte, three writers, no outside source.
+    - **Verification:** `python -I tools\f14_random.py rom\pacman.a26` says `result: OK` (89,039 changes by generator steps, 121 starts at $FF, 0 unexplained, over 438,212 frames).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** none found; the long-run statistics of the numbers are not needed to copy the game.
+    - **Recovery:** one new script and a generated document; undo by returning to `3526edc` (with your OK).
+    - **Documentation updates:** `docs\F14_RANDOM.md`, `DECISIONS.md` (T-F14-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`; the "Randomness" risk line in the plan is settled.
+    - **Git checkpoint:** `Stage F14: Randomness`.
+    - **Next stage:** F15 — Scoring, bonus item and lives.
 15. **[Not started] F15 — Scoring, bonus item and lives.**
 16. **[Not started] F16 — Levels, speed-ups and timers.**
 17. **[Not started] F17 — Game states:** attract mode, start, death, level end, game over, variations, console switches.

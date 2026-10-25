@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **SET_DIRECTION**: identical in 70 of 70 games; 73589 calls compared with the original code, 0 different.
 - **MOVE_OBJECT**: identical in 70 of 70 games; 1174804 calls compared with the original code, 0 different.
 - **LOCATE_OBJECT**: identical in 70 of 70 games; 1329282 calls compared with the original code, 0 different.
 - **NEW_GAME_SETUP**: identical in 70 of 70 games; 1006 calls compared with the original code, 0 different.
@@ -29,6 +30,7 @@
 | Stage | Routine | Entry | Bytes | Status | Note |
 | --- | --- | --- | --- | --- | --- |
 | F21.4 | `WRAP_SET_Y` | $FD3C | 3 | **done** | the shared end of both (written inside wrapToTop/wrapToBottom; never entered on its own) |
+| F21.9 | `SET_DIRECTION` | $F9E5 | 9 | **done** | game::setDirection: direction bits and step-due bit set, then MOVE_OBJECT; the table TBL_FE63 is (d << 6) or $10 (checked equal to the cartridge bytes) |
 | F21.4 | `WRAP_TO_TOP` | $FD32 | 10 | **done** | game::wrapToTop: direction bits $F0 and y = $0B (the opening in the top wall) |
 | F21.4 | `WRAP_TO_BOTTOM` | $FD26 | 12 | **done** | game::wrapToBottom: direction bits $30 and y = $51 (the opening in the bottom wall); registered together with WRAP_TO_TOP and the shared end WRAP_SET_Y |
 | F21.2 | `SWAP_PLAYERS` | $FB9F | 14 | **done** | game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged |
@@ -44,7 +46,6 @@
 | - | `EXIT_FF93` | $FF93 | 1 | to do | a lone RTS: nothing to write |
 | - | `KERNEL_LINE_P1_P0` | $F067 | 3 | to do | picture only (F23) |
 | - | `SOUND_WRITE` | $FF8B | 8 | to do | sound chip only (F24) |
-| - | `SET_DIRECTION` | $F9E5 | 9 | to do | table TBL_FE63 (F22); falls into MOVE_OBJECT |
 | - | `TRY_PAIR_1` | $FAFC | 9 | to do | drops the caller's return (rts twice) |
 | - | `TRY_PAIR_2` | $FB19 | 9 | to do | drops the caller's return |
 | - | `CLEAR_GRAPHICS` | $F483 | 11 | to do | picture only (F23) |

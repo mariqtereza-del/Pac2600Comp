@@ -39,10 +39,8 @@ void cmpFlags(Machine& m, uint8_t a, uint8_t v) {
   m.setZN(static_cast<uint8_t>(a - v));
 }
 
-void moveNative(Machine& m) {
+void finishMove(Machine& m, const game::Move& mv) {
   const uint8_t object = m.x;
-  game::Move mv{};
-  withRam(m, [&](game::Ram& r) { mv = game::moveObject(r, object); });
   const uint8_t acc = m.read(static_cast<uint16_t>(0xC0 + object));
   if (!mv.stepped) {
     const uint8_t a0 = static_cast<uint8_t>(mv.oldAcc << 4);
@@ -69,6 +67,23 @@ void moveNative(Machine& m) {
     }
   }
   m.rts();
+}
+
+void moveNative(Machine& m) {
+  const uint8_t object = m.x;
+  game::Move mv{};
+  withRam(m, [&](game::Ram& r) { mv = game::moveObject(r, object); });
+  finishMove(m, mv);
+}
+
+// F21.9 SET_DIRECTION ($F9E5): the object is in X, the direction code in Y. The original sets the state and then runs the MOVE_OBJECT code, so the
+// registers and flags it leaves are MOVE_OBJECT's (shared adapter; the direction code must be 0-3, as at every call of the recordings).
+void setDirectionNative(Machine& m) {
+  const uint8_t object = m.x;
+  const uint8_t direction = m.y & 3;
+  game::Move mv{};
+  withRam(m, [&](game::Ram& r) { mv = game::setDirection(r, object, direction); });
+  finishMove(m, mv);
 }
 
 // F21.7 LOCATE_OBJECT ($FBAD): the object is in X. The original leaves A = POS_CODE, Y = the row, X untouched, carry = bit 6 of the cell index,
@@ -172,6 +187,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "set-direction") { m.registerNative(0xF9E5, "SET_DIRECTION (native)", [](Machine& mm) { setDirectionNative(mm); }); return true; }
   if (name == "move") { m.registerNative(0xF9EE, "MOVE_OBJECT (native)", [](Machine& mm) { moveNative(mm); }); return true; }
   if (name == "locate") { m.registerNative(0xFBAD, "LOCATE_OBJECT (native)", [](Machine& mm) { locateNative(mm); }); return true; }
   if (name == "new-maze") { m.registerNative(0xFC0C, "NEW_MAZE (native)", [](Machine& mm) { placeNative(mm, 1); }); return true; }

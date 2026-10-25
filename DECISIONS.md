@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-9 — SET_DIRECTION rewritten; what comes next needs cartridge data (2026-10-26, Stage F21.9)
+
+- **Routine:** `game::setDirection`; the four bytes of `TBL_FE63` are (d << 6) or $10, so the source holds a formula and the lockstep tool checks it against the cartridge.
+- **Result:** 70 of 70 games identical; 73,589 calls compared with the original: 0 differences; identical together with F21.1-F21.8.
+- **Plan for the next sessions:** all routines that remain read tables that are Atari's data (wall table `$FE13`, score amounts `$FF06`, sprite and sound tables). They will read them through a small data view that gives bytes by cartridge address (`rom.at(0xFE13 + i)`), so the source keeps addresses and logic, not the data. The view is filled from the player's ROM by the loader of F22; in the lockstep tool it is filled from the ROM file. F21.10 (ADD_SCORE) introduces the view.
+- **Reversible:** Yes.
+
 ### T-F21-8 — MOVE_OBJECT rewritten (2026-10-26, Stage F21.8)
 
 - **Routine:** `game::moveObject(ram, n)`: acc = ((acc << 4) + acc) and $FF; on a carry the state bit 4 is cleared and the coordinate (x for right/left, y for down/up; bit 6 = count down) changes by 1 unless the new x is 2 or $96, or the new y is negative or $47.

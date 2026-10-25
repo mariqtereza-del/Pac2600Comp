@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.9', 'SET_DIRECTION', 'set-direction', 0xF9E5, 'game::setDirection: direction bits and step-due bit set, then MOVE_OBJECT; the table TBL_FE63 is (d << 6) or $10 (checked equal to the cartridge bytes)'),
     ('F21.8', 'MOVE_OBJECT', 'move', 0xF9EE, 'game::moveObject: the speed accumulator (x17) and the one-pixel step with the border rules'),
     ('F21.7', 'LOCATE_OBJECT', 'locate', 0xFBAD, 'game::locateObject: row, offsets, cell index and position code of an object; the adapter also leaves the flags byte that the original PHP writes in the stack area'),
     ('F21.6', 'NEW_GAME_SETUP', 'new-game-setup', 0xFBF4, 'game::newGameSetup: score colours, three lives, start level from the game number, then NEW_MAZE'),
@@ -113,6 +114,10 @@ def main():
     print('bit-mask table at $FE6A equals 0x80 >> n:', table_ok)
     if not table_ok:
         problems.append('the RNG mask table is not 0x80 >> n')
+    dir_ok = list(rom[0xE63:0xE67]) == [(d << 6) | 0x10 for d in range(4)]
+    print('direction table at $FE63 equals (d << 6) or $10:', dir_ok)
+    if not dir_ok:
+        problems.append('the direction table is not (d << 6) or $10')
     ok = not problems
     print('problems:', problems)
     print('result: %s' % ('OK' if ok else 'MISMATCH'))

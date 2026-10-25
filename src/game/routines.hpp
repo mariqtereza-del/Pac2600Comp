@@ -72,4 +72,9 @@ struct Move {
 };
 Move moveObject(Ram& ram, uint8_t object);
 
+// F21.9  SET_DIRECTION ($F9E5): stores direction code d (0 right, 1 left, 2 down, 3 up) in bits 7-6 of the state of object n and sets the "step due"
+// bit 4 (the original takes both from the table TBL_FE63, whose four bytes are (d << 6) or $10), then falls into MOVE_OBJECT: the object moves at once.
+// Returns what moveObject returned.
+Move setDirection(Ram& ram, uint8_t object, uint8_t direction);
+
 }  // namespace game

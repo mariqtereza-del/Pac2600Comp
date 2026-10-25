@@ -1986,7 +1986,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F20_LOCKSTEP.md`, `DECISIONS.md` (T-F20-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F20: Lockstep harness`.
     - **Next stage:** F21 — Rewrite one routine per session (F21.1 first).
-21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT. F21.8 done 2026-10-26: MOVE_OBJECT.** *(expanded below)*
+21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT. F21.8 done 2026-10-26: MOVE_OBJECT. F21.9 done 2026-10-26: SET_DIRECTION.** *(expanded below)*
     - **Objective (F21.1):** set up the way a routine is rewritten and prove it with the first, smallest routine that changes memory: CLEAR_SCORES (`$FC7D`, 14 bytes: both scores and both lives to 0).
     - **Why it matters:** every later session follows the same protocol; the protocol must detect a wrong routine even when the recorded games do not show it (a wrong register).
     - **Prerequisites:** F20 Done (`bb3df0f`).
@@ -2110,7 +2110,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Recovery:** small additions; undo by returning to `3456f4c` (with your OK).
       - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-8), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F21.8: Rewrite MOVE_OBJECT`.
-      - **Next stage:** F21.9 — Rewrite SET_DIRECTION (9 bytes: stores a direction in the state bits, then moves).
+      - **Next stage:** F21.9 — Rewrite SET_DIRECTION (done, below).
+    - **F21.9 — Rewrite SET_DIRECTION** *(expanded and done 2026-10-26)*
+      - **Objective:** rewrite SET_DIRECTION (`$F9E5`, 9 bytes: store direction code Y in bits 7-6 of the state of object X and set the "step due" bit, then fall into MOVE_OBJECT) as C++.
+      - **Why it matters:** every turn of Pac-Man and of a ghost is set here, and it moves the object at once.
+      - **Prerequisites:** F21.8 Done (`2f8c763`).
+      - **What Claude Code will do:** `game::setDirection` (state = (state and $3F) or (d << 6) or $10, then `moveObject`); the table `TBL_FE63` is the pattern (d << 6) or $10, checked equal to the cartridge bytes by `tools\f21_routines.py`; the adapter shares its register/flag code with MOVE_OBJECT (refactored into `finishMove`); added to the DONE list.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** 70 of 70 games identical; every call equal to the original.
+      - **Verification:** `python -I tools\f21_routines.py rom\pacman.a26` says `result: OK` (SET_DIRECTION: 70 of 70 games identical, 73,589 calls compared with the original, 0 different; table equals (d << 6) or $10; all ten rewrites together identical).
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** a direction code above 3 would read other cartridge bytes in the original; it never happens in the recordings and the adapter masks it.
+      - **Recovery:** small additions; undo by returning to `2f8c763` (with your OK).
+      - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-9), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F21.9: Rewrite SET_DIRECTION`.
+      - **Next stage:** F21.10 — Rewrite ADD_SCORE (35 bytes: decimal addition of a score amount; the first routine to read cartridge tables, which come through a data view by address, F22).
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.

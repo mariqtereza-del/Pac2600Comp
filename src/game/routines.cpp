@@ -132,4 +132,11 @@ Move moveObject(Ram& ram, uint8_t object) {
   return mv;
 }
 
+// SET_DIRECTION ($F9E5).
+Move setDirection(Ram& ram, uint8_t object, uint8_t direction) {
+  uint8_t& state = at(ram, ram::PACMAN_STATE + object);
+  state = static_cast<uint8_t>((state & 0x3F) | (direction << 6) | 0x10);
+  return moveObject(ram, object);
+}
+
 }  // namespace game

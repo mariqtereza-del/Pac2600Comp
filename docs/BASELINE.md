@@ -116,3 +116,10 @@ Measured in BL-026 to BL-037 (`DECISIONS.md` T-E3-1; all numbers come from the t
 ## The ghosts, in short (Stage E4)
 
 Measured in BL-038 to BL-044 (`DECISIONS.md` T-E4-1, computed by `tools\e4_entries.py`): ghost i has x in byte $B2+i and y in $B7+i; each changes place once every 4 frames (frame number mod 4 = i), by 1 or 2 pixels; all four start at (76,30). Their routes do not depend on Pac-Man for the first 126 frames of play, and do not change with the moment Game Reset is pressed or with the input being a frame late: nothing random was found. An idle Pac-Man is caught after 297 frames. Not yet identified: the scared state, the return of eaten ghosts, the drawing flicker order (Phase F).
+| BL-045 | 600 | Eating wafers: left, down and right along the first corridors |
+| BL-046 | 9800 | Every score value in a whole computer-played level, and the status bar |
+| BL-047 | 7500 | The end of the first level: the last wafer, the extra life, the refilled maze |
+
+## Eating and scoring, in short (Stage E5)
+
+Measured in BL-045 to BL-047 (`DECISIONS.md` T-E5-1, computed by `tools\e5_entries.py`): score = bytes $CC (tens, ones) and $CE (hundreds); wafer +1 (one bit of $88-$97 cleared), power pill +5, ghosts eaten +20, +40, +80, +160 within one power pill; the last wafer of a level refills the map, adds a life and pauses 120 frames. The digits in the status bar equal the memory score (155 frames checked). Not yet covered: the bonus item eaten, an extra life by score (E7, E8).

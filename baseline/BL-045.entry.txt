@@ -1,0 +1,23 @@
+id: BL-045
+title: Eating wafers: left, down and right along the first corridors
+shows: LEFT, DOWN, RIGHT held in turn from the start place: what each wafer eaten does to the score, the wafer map and the sound.
+inputs: BL-045.inputs
+frames: 600
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 0c6624b45d9db8fc7828e28fd89ce417efc3f19c2cded4b49c21b3ff6d1d8a74
+trace_bytes: 180016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240; play begins on frame 367; the score (bytes $CC/$CE) is 1 and the wafer map ($88-$97) holds 125 wafers.
+  - The score first reads 1 on frame 367, the first frame of play: the wafer at the start place is counted at once.
+  - Frame 379: the score goes from 1 to 2; Pac-Man is at (71,60); wafer-map bits cleared: $91 bit 1.
+  - Frame 438: the score goes from 2 to 3; Pac-Man is at (64,70); wafer-map bits cleared: $88 bit 1.
+  - Frame 484: the score goes from 3 to 4; Pac-Man is at (72,70); wafer-map bits cleared: $88 bit 0.
+  - Frame 505: the score goes from 4 to 5; Pac-Man is at (84,70); wafer-map bits cleared: $8c bit 7.
+  - Frame 519: the score goes from 5 to 6; Pac-Man is at (92,70); wafer-map bits cleared: $8c bit 6.
+  - Frame 534: the score goes from 6 to 7; Pac-Man is at (101,70); wafer-map bits cleared: $8c bit 5.
+  - Frame 548: the score goes from 7 to 8; Pac-Man is at (108,70); wafer-map bits cleared: $8c bit 4.
+  - Frame 562: the score goes from 8 to 9; Pac-Man is at (116,70); wafer-map bits cleared: $8c bit 3.
+  - 8 more wafers eaten after play began, each worth 1 point; the wafer count goes from 125 to 117. Frames between one wafer and the next: 59, 46, 21, 14, 15, 14, 14.
+  - How to check it against the real game: start a game and walk left, down, right; the number at the right of the status bar goes up by one for every wafer eaten.

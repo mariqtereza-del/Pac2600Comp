@@ -1,0 +1,16 @@
+id: BL-047
+title: The end of the first level: the last wafer, the extra life, the refilled maze
+shows: The first 7,500 frames of the bot route: the last wafer of the level is eaten on frame 7311.
+inputs: BL-047.inputs
+frames: 7500
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 851e71936daacd85ae5e069638b1e2b7559a2b8d14bf4d8f2ae193edff32a7a4
+trace_bytes: 2256516
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - The input is the first 7,500 frames of the Stage C7 bot route.
+  - Frame 7311: the score goes from 505 to 506 (the last wafer, +1); the wafer map goes from 1 to 126 wafers (a full map again); the lives counter ($98) goes from 2 to 3.
+  - Pause flag ($D2 bit 6) set from frame 7311 to 7430.
+  - Wafers left in the map at frame 7310, 1 frame before: 1. Pac-Man is at (107,60) on frame 7310 and at (76,60) on frame 7312.
+  - How to check it against the real game: replay the route of tools\captures\c7_captures.txt up to the picture 07_level_end (frame 7310): one wafer is left; then the maze refills.

@@ -1476,9 +1476,28 @@ Build a library of recorded games, each paired with exactly what the original di
     - **Documentation updates:** `docs\BASELINE.md`, `docs\GLOSSARY.md`, `DECISIONS.md` (T-E4-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage E4: Ghosts`.
     - **Next stage:** E5 — Eating and scoring.
-5. **[Not started] E5 — Eating and scoring.** Wafers, power pills, ghosts eaten in a row, the bonus item, extra lives. Every score value is read from RAM and from the screen and must agree.
+5. **[Done] E5 — Eating and scoring.** *(expanded and done 2026-10-26; partly: see Potential problems)*
+    - **Objective:** baseline entries for what eating does: wafers, power pills, ghosts eaten in a row, the end of a level and its extra life, with every score read from memory and compared with the digits drawn in the status bar.
+    - **Why it matters:** the score and the wafer map are the game's bookkeeping; the rebuilt game must change them on exactly the same frames.
+    - **Prerequisites:** E4 Done (`9455ad3`); `tools\baseline.py`, `tools\e2_entries.py`, `tools\e3_entries.py`.
+    - **What Claude Code will do:**
+      1. Find the score bytes by matching the score shown in the status bar at known frames with memory (`$CC` tens and ones, `$CE` hundreds).
+      2. `tools\e5_entries.py`: BL-045 (wafers, scripted), BL-046 (every score value over the whole bot route, plus the status-bar check), BL-047 (the end of level 1), traced twice each, observations computed from the traces.
+      3. The status-bar check: save the picture on 155 frames with a steady score, read the digits at the right of the status bar and check they are the digits of the memory score, each digit shape standing for one digit only.
+    - **What I must do:** nothing (D-008).
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 3 new entries (BL-045 to BL-047); 47 in all.
+    - **Verification:** every new entry's two traces identical; a fresh `baseline.py check` of all 47 equals the stored SHA-256 values; BL-045's input equals Stella's own script runner (0 differences); BL-046/047 use the route already proved equal in Stage D14; status bar and memory agree on all 155 frames.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** NOT reached in this stage: the bonus item eaten (the bot never eats it; the item is only seen sitting in the box) and an extra life by score (the best score is 597). Both go to E7 (the bot is to be taught to take the bonus item) and E8 (a memory-edit test for a score near the limit); the Gate E list must contain them.
+    - **Recovery:** new files only; undo by returning to `9455ad3` (with your OK).
+    - **Documentation updates:** `docs\BASELINE.md`, `docs\GLOSSARY.md`, `DECISIONS.md` (T-E5-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage E5: Eating and scoring`.
+    - **Next stage:** E6 — Dying and game over.
 6. **[Not started] E6 — Dying and game over.** Collision timing, the death animation and sound, respawn, losing the last life, the game-over screen, starting again.
-7. **[Not started] E7 — Long play.** Played by the computer, no human needed: `stella_bot` is extended to carry on into later levels (it stops after level 1 today) and plays at least three full games with different seeds, as many levels as it manages; seeded random-input games of tens of thousands of frames are added. Claude Code extracts level transitions, speed-ups and any changes between levels. If the bot cannot get past some level, that is written down as a limit of the bot (not worked around by asking for a human), and the random runs and scripts cover what they can.
+7. **[Not started] E7 — Long play.** Played by the computer, no human needed: `stella_bot` is extended to carry on into later levels (it stops after level 1 today) and plays at least three full games with different seeds, as many levels as it manages; seeded random-input games of tens of thousands of frames are added. Claude Code extracts level transitions, speed-ups and any changes between levels. If the bot cannot get past some level, that is written down as a limit of the bot (not worked around by asking for a human), and the random runs and scripts cover what they can. **Added in E5:** the bot must also learn to eat the bonus item (not eaten in the C7 route), recorded as its own entry with the score it gives.
 8. **[Not started] E8 — Edge cases and Gate E.** Pressing Reset mid-game, switching variation mid-game, flipping difficulty switches during play, very long idle, score near its maximum (reached by a memory-edit test in Stella's debugger, clearly labelled as artificial). Also seeded random-input runs of several seeds (a net for situations nobody thought of). Gate: at least 30 baseline entries covering every topic in your brief's Phase E list, each with a golden trace (traces repeat byte for byte), a plain-words description that could be checked against the real game, and the lockstep-ready format of E1; the gate rests on those facts, not on anyone playing.
 
 ### Phase F — Reverse engineering and source reconstruction (26 stages)

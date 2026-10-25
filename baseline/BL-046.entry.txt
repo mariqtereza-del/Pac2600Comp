@@ -1,0 +1,24 @@
+id: BL-046
+title: Every score value in a whole computer-played level, and the status bar
+shows: The 9,800-frame route of the search bot (as BL-035), read for every change of the score: wafer, power pill, ghosts eaten in a row; and the digits in the status bar compared with the memory score.
+inputs: BL-046.inputs
+frames: 9800
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 3b5f64b32584414e6589b5864d91e9c095f497b1de4133b19a2f980f0d9141c4
+trace_bytes: 2948816
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - The input is the whole Stage C7 bot route (as BL-035). The score is read from bytes $CC and $CE as decimal digits; it is 0 at frame 1930 and 597 at frame 9799.
+  - Score goes up by 1 with 125 bits set (the map refills) and lives up by 1: 1 times (first on frame 7311, last on frame 7311).
+  - Score goes up by 1 with 1 wafer-map bit cleared and lives unchanged: 150 times (first on frame 1936, last on frame 7954).
+  - Score goes up by 5 with no wafer-map bit cleared and lives unchanged: 5 times (first on frame 2225, last on frame 7649).
+  - Score goes up by 20 with no wafer-map bit cleared and lives unchanged: 3 times (first on frame 2288, last on frame 7760).
+  - Score goes up by 40 with no wafer-map bit cleared and lives unchanged: 3 times (first on frame 2322, last on frame 7819).
+  - Score goes up by 80 with no wafer-map bit cleared and lives unchanged: 1 times (first on frame 3418, last on frame 3418).
+  - Score goes up by 160 with no wafer-map bit cleared and lives unchanged: 1 times (first on frame 3496, last on frame 3496).
+  - The 5 rises of 5 (no wafer bit cleared) happen at Pac-Man places (4,66) on frame 2225, (4,6) on frame 3123, (148,6) on frame 3602, (148,65) on frame 6199, (148,65) on frame 7649: four places near the corners of the maze, the one at (148,65) twice (before and after the refill of the map).
+  - Ghosts eaten (rises of 20, 40, 80, 160), in order: frame 2288: +20, frame 2322: +40, frame 3161: +20, frame 3243: +40, frame 3418: +80, frame 3496: +160, frame 7760: +20, frame 7819: +40. Each run starts again at 20 after a new power pill: yes.
+  - Wafers: a full map holds 126 wafers (frame 7311, after the refill). The score first reads 1 on frame 1927 (the wafer at the start place, counted when play begins); 124 single-wafer rises follow before the map refills on frame 7311, and the refill itself is the last wafer (+1): 124 + 1 + 1 = 126, the whole map. After the refill 26 more single-wafer rises happen (the next level).
+  - Status bar: the picture was saved on 155 frames at which the score is steady (the 3rd frame after each change, and frame 1900). In every one the digits drawn at the right of the status bar are the digits of the memory score: no disagreement (10 different digit shapes seen; each stands for one digit only).
+  - How to check it against the real game: replay tools\captures\c7_captures.txt in Stella (Stage C7) and watch the number at the right of the status bar: +1 for a wafer, +5 for a power pill, +20, +40, +80, +160 for ghosts eaten in a row.

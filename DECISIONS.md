@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-E5-1 — Eating and scoring entries; what was measured (2026-10-26, Stage E5)
+
+- **Score bytes (working labels):** `$CC` = tens and ones and `$CE` = hundreds, both as decimal digits in each half-byte (found by matching the score shown in the status bar at 7 known frames). Earlier notes said `$CC` was the game number: that holds only while Select is pressed (T-E2-1). A third byte for larger scores was never non-zero and is not used.
+- **Findings:** (1) A wafer is +1 and clears one bit of the wafer map `$88-$97` (126 wafers in a full map; the wafer at the start place is counted when play begins). (2) A power pill is +5 with no wafer bit cleared; five were eaten in the route, at places near the four corners. (3) Ghosts eaten during one power pill give +20, +40, +80, +160 in turn (eight eaten in the route: two chains of 20 and 40 and one chain of all four values); Pac-Man stopped for 32 frames at each of the four checked in Stage E4. (4) The last wafer of a level is +1, refills the map (126 wafers), adds one life (`$98` 2 to 3) and starts a pause of 120 frames. (5) The digits drawn at the right of the status bar equal the memory score on all 155 sampled frames; ten digit shapes, each for one digit.
+- **Not covered (must be added before Gate E):** the bonus item eaten, and an extra life by score. The bot never ate the item; the score never passed 597.
+- **Proof:** 3 new entries, each traced twice byte-identical; a fresh `baseline.py check` of all 47 equals the stored SHA-256 values; BL-045 equals Stella's script runner (600 frames, 0 differences, 10 pictures).
+- **Reversible:** Yes.
+
 ### T-E4-1 — Ghost entries; what was measured (2026-10-26, Stage E4)
 
 - **Ghost bytes (working labels, found by observation):** ghost i (0 to 3) has x in `$B2+i` and y in `$B7+i`; all four stand at (76,30) when play begins. On the 9,800-frame bot route every ghost position is on a corridor row or one of the 11 vertical corridors.

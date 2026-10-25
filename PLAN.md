@@ -1346,7 +1346,7 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D15-n), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D15: Release folder`.
     - **Next stage:** D16 — Gate D: Phase 1 done.
-16. **[In progress] D16 — Gate D: Phase 1 done.** *(expanded 2026-10-26)*
+16. **[Done] D16 — Gate D: Phase 1 done.** *(expanded 2026-10-26)*
     - **Objective:** decide, with evidence, whether Phase D is complete: the release zip, unzipped in a new place, plays Pac-Man correctly. Items: correct shape, fullscreen and windowed, sound, keyboard, pad, ROM picker, replays identical, discrepancies list reviewed, version `0.1.0` tagged in Git.
     - **Why it matters:** Rule 10: no new major phase (E: play recordings, F: the native rebuild) until the previous one meets its completion criteria. This is also the first version that is a finished thing.
     - **Prerequisites:** D15 Done (commit `72d8ca7`); the release zip `out\PacMan2600-0.1.0-windows.zip`.

@@ -1,0 +1,36 @@
+id: BL-049
+title: Deaths in a computer-played game and the game over
+shows: The 9,800-frame bot route (as BL-035): the four deaths of that game, the lives dropping, the respawn, the sound and the game over.
+inputs: BL-049.inputs
+frames: 9800
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 3b5f64b32584414e6589b5864d91e9c095f497b1de4133b19a2f980f0d9141c4
+trace_bytes: 2948816
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - The input is the whole Stage C7 bot route (as BL-035). Deaths found (pause flag on, lives counter drops later): 4.
+  - Death 1: the pause flag comes on at frame 5779 with the lives counter at 3; ghost distances from Pac-Man (x plus y): ghost 0: 11, ghost 1: 17, ghost 2: 14, ghost 3: 8.
+  - Death 1: the lives counter goes from 3 to 2 on frame 5905 (126 frames after the flag came on); the flag clears on frame 6025 (246 frames after it came on).
+  - Death 1: Pac-Man was at (148,29) when caught and is at (76,60) when the flag clears; the ghosts are at (76,30), (76,30), (76,30), (76,30) then; score 474 before and 474 after; wafers in the map 27 before and 27 after.
+  - Death 1: sound is on 185 of the 246 frames from the flag coming on to its clearing: first on frame 5780 (1 after), last on frame 6024 (245 after).
+  - Death 1: 123 different pictures are drawn during the pause (the death animation).
+  - Death 2: the pause flag comes on at frame 8352 with the lives counter at 3; ghost distances from Pac-Man (x plus y): ghost 0: 6, ghost 1: 61, ghost 2: 77, ghost 3: 26.
+  - Death 2: the lives counter goes from 3 to 2 on frame 8477 (125 frames after the flag came on); the flag clears on frame 8597 (245 frames after it came on).
+  - Death 2: Pac-Man was at (148,40) when caught and is at (76,60) when the flag clears; the ghosts are at (76,30), (76,30), (76,30), (76,30) then; score 597 before and 597 after; wafers in the map 100 before and 100 after.
+  - Death 2: sound is on 183 of the 245 frames from the flag coming on to its clearing: first on frame 8353 (1 after), last on frame 8596 (244 after).
+  - Death 2: 103 different pictures are drawn during the pause (the death animation).
+  - Death 3: the pause flag comes on at frame 8827 with the lives counter at 2; ghost distances from Pac-Man (x plus y): ghost 0: 69, ghost 1: 58, ghost 2: 15, ghost 3: 5.
+  - Death 3: the lives counter goes from 2 to 1 on frame 8953 (126 frames after the flag came on); the flag clears on frame 9073 (246 frames after it came on).
+  - Death 3: Pac-Man was at (76,60) when caught and is at (76,60) when the flag clears; the ghosts are at (76,30), (76,30), (76,30), (76,30) then; score 597 before and 597 after; wafers in the map 100 before and 100 after.
+  - Death 3: sound is on 185 of the 246 frames from the flag coming on to its clearing: first on frame 8828 (1 after), last on frame 9072 (245 after).
+  - Death 3: 131 different pictures are drawn during the pause (the death animation).
+  - Death 4: the pause flag comes on at frame 9266 with the lives counter at 1; ghost distances from Pac-Man (x plus y): ghost 0: 14, ghost 1: 47, ghost 2: 5, ghost 3: 21.
+  - Death 4: the lives counter goes from 1 to 0 on frame 9391 (125 frames after the flag came on); the flag clears on frame 9392 (126 frames after it came on).
+  - Death 4: Pac-Man was at (76,60) when caught and is at (76,60) when the flag clears; the ghosts are at (76,30), (76,30), (76,30), (76,30) then; score 597 before and 597 after; wafers in the map 100 before and 100 after.
+  - Death 4: sound is on 121 of the 126 frames from the flag coming on to its clearing: first on frame 9267 (1 after), last on frame 9391 (125 after).
+  - Death 4: 75 different pictures are drawn during the pause (the death animation).
+  - Over all 4 deaths the pause lasts 126, 245, 246 frames and the lives counter drops 125, 126 frames after the flag came on.
+  - Game over: the lives counter reads 0 from frame 9391; Pac-Man at (76,60); the ghosts at (76,30), (76,30), (76,30), (76,30); score 597.
+  - From game over to the end of the entry (frame 9799) Pac-Man does not move.
+  - How to check it against the real game: replay the route of tools\captures\c7_captures.txt in Stella: Pac-Man is caught four times (frames given above) and loses a life 125 frames after each catch.

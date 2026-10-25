@@ -1,0 +1,33 @@
+id: BL-048
+title: An idle game: three lives lost, game over, the fire button starts a new game
+shows: Game Reset on frame 240, then nobody plays and the fire button is pressed on frames 1900 and 2400: three deaths, the game over, the ghosts after it, and the new game.
+inputs: BL-048.inputs
+frames: 3000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: d736732574a78ee1773b97a1a870c9b5099423f8204074e12d16a7db1ebffc95
+trace_bytes: 902036
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game; play begins on frame 367. Nobody touches the joystick.
+  - Death 1: the pause flag comes on at frame 664 (297 frames after the last play began) with the lives counter at 3; ghost distances from Pac-Man (x plus y): ghost 0: 4, ghost 1: 11, ghost 2: 5, ghost 3: 11.
+  - Death 1: the lives counter goes from 3 to 2 on frame 789 (125 frames after the flag came on); the flag clears on frame 909 (245 frames after it came on).
+  - Death 1: Pac-Man was at (76,60) when caught and is at (76,60) when the flag clears; the ghosts are at (76,30), (76,30), (76,30), (76,30) then; score 1 before and 1 after; wafers in the map 125 before and 125 after.
+  - Death 1: sound is on 183 of the 245 frames from the flag coming on to its clearing: first on frame 665 (1 after), last on frame 908 (244 after).
+  - Death 1: 104 different pictures are drawn during the pause (the death animation).
+  - Death 2: the pause flag comes on at frame 1163 (254 frames after the last play began) with the lives counter at 2; ghost distances from Pac-Man (x plus y): ghost 0: 20, ghost 1: 8, ghost 2: 46, ghost 3: 6.
+  - Death 2: the lives counter goes from 2 to 1 on frame 1289 (126 frames after the flag came on); the flag clears on frame 1409 (246 frames after it came on).
+  - Death 2: Pac-Man was at (76,60) when caught and is at (76,60) when the flag clears; the ghosts are at (76,30), (76,30), (76,30), (76,30) then; score 1 before and 1 after; wafers in the map 125 before and 125 after.
+  - Death 2: sound is on 185 of the 246 frames from the flag coming on to its clearing: first on frame 1164 (1 after), last on frame 1408 (245 after).
+  - Death 2: 131 different pictures are drawn during the pause (the death animation).
+  - Death 3: the pause flag comes on at frame 1665 (256 frames after the last play began) with the lives counter at 1; ghost distances from Pac-Man (x plus y): ghost 0: 18, ghost 1: 6, ghost 2: 70, ghost 3: 6.
+  - Death 3: the lives counter goes from 1 to 0 on frame 1791 (126 frames after the flag came on); the flag clears on frame 1792 (127 frames after it came on).
+  - Death 3: Pac-Man was at (76,60) when caught and is at (76,60) when the flag clears; the ghosts are at (76,30), (76,30), (76,30), (76,30) then; score 1 before and 1 after; wafers in the map 125 before and 125 after.
+  - Death 3: sound is on 123 of the 127 frames from the flag coming on to its clearing: first on frame 1666 (1 after), last on frame 1791 (126 after).
+  - Death 3: 74 different pictures are drawn during the pause (the death animation).
+  - Game over: the lives counter reads 0 from frame 1791; the pause flag clears on frame 1792 (the third death took 127 frames from the flag coming on to the clearing).
+  - At game over the ghosts stand at (76,30), (76,30), (76,30), (76,30) and Pac-Man at (76,60). The ghosts start to move again on frame 1912 (120 frames after the flag cleared) and keep moving; the score stays 1.
+  - The fire button pressed on frames 1900-1909 (109 frames after game over) does nothing: the lives counter stays 0 and no game starts. On frame 2295 Pac-Man moves from (76,60) to (76,95) (the place he keeps from then on).
+  - The fire button pressed on frames 2400-2409 starts a new game: the lives counter reads 3 from frame 2400 (0 frame after the press began); the pause flag (start tune) is set until frame 2518 (119 frames); the score is 1 and the map holds 125 wafers when play begins.
+  - In the new game (play began on frame 2519) the first death begins on frame 2816, 297 frames after play began, with the lives counter at 3; the lives counter drops 125 frames later, as in the first game.
+  - How to check it against the real game: start a game and do nothing: Pac-Man is caught three times; after the last one the board freezes, the ghosts go back to the box and walk again; the fire button starts a new game.

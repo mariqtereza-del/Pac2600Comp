@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-E6-1 — Dying and game over entries; what was measured (2026-10-26, Stage E6)
+
+- **A death:** the pause flag ($D2 bit 6) comes on; the lives counter drops 125 or 126 frames later; the flag clears 245 or 246 frames after it came on (126 frames for the last life, so the game over is reached at once). Sound is on from 1 frame after the flag comes on to about the last frame (about 183 to 185 of 245 frames; 121 to 123 of 126 for the last life); 74 to 131 different pictures are drawn. At the clearing Pac-Man is back at (76,60) and all four ghosts at (76,30); score and wafer map are unchanged by a death.
+- **Catch timing:** an idle Pac-Man is caught 297, 254, 256 frames after play began (lives 3, 2, 1); in the bot route ghosts were 4 to 17 pixels away in the position bytes at the moment (the game most likely uses the chip's collision flags; not read here).
+- **Game over:** the lives counter reads 0 and the pause flag clears a frame later (the third death's pause is 127 frames). Ghosts stand at (76,30), start walking again 120 frames after the flag cleared, and keep walking. The fire button does nothing for the first hundreds of frames (pressed 109 frames after game over: ignored); Pac-Man moves to (76,95) on frame 2295 (504 frames after the game over) in the idle game; a fire press after that starts a new game on the same frame (lives 3, start tune 119 frames, score and map as at the first start); in the bot route Stage C7 saw the same at frame 9864.
+- **Not covered:** the Reset button during a game and the two-player change of player at a death (E8); the first life taken after a level clear in a later level (E7).
+- **Proof:** 2 new entries, each traced twice byte-identical; a fresh `baseline.py check` of all 49 equals the stored SHA-256 values; BL-048 equals Stella's script runner (3,000 frames, 0 differences).
+- **Reversible:** Yes.
+
 ### T-E5-1 — Eating and scoring entries; what was measured (2026-10-26, Stage E5)
 
 - **Score bytes (working labels):** `$CC` = tens and ones and `$CE` = hundreds, both as decimal digits in each half-byte (found by matching the score shown in the status bar at 7 known frames). Earlier notes said `$CC` was the game number: that holds only while Select is pressed (T-E2-1). A third byte for larger scores was never non-zero and is not used.

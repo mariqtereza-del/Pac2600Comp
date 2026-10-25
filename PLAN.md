@@ -1496,7 +1496,26 @@ Build a library of recorded games, each paired with exactly what the original di
     - **Documentation updates:** `docs\BASELINE.md`, `docs\GLOSSARY.md`, `DECISIONS.md` (T-E5-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage E5: Eating and scoring`.
     - **Next stage:** E6 — Dying and game over.
-6. **[Not started] E6 — Dying and game over.** Collision timing, the death animation and sound, respawn, losing the last life, the game-over screen, starting again.
+6. **[Done] E6 — Dying and game over.** *(expanded and done 2026-10-26)*
+    - **Objective:** baseline entries for a death and what follows: when the pause flag comes on, when the life is taken, how long the pause lasts, the sound and picture during it, the respawn, the loss of the last life, the game over, the ghosts after it, and starting again with the fire button.
+    - **Why it matters:** the rebuilt game must match every one of these frames, including the 125-frame delay before the life counter drops.
+    - **Prerequisites:** E5 Done (`2aa5595`); `tools\baseline.py`, `tools\e2_entries.py` to `tools\e5_entries.py`.
+    - **What Claude Code will do:**
+      1. Run an idle game to find the timeline (three deaths, game over, what the fire button does and when).
+      2. `tools\e6_entries.py`: BL-048 (an idle game to game over, a fire press during the game over and one later that starts a new game) and BL-049 (the four deaths of the bot route and its game over), traced twice each, observations computed from the traces.
+      3. Cross-check BL-048 against the independent Phase C reference core.
+    - **What I must do:** nothing (D-008).
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 2 new entries (BL-048, BL-049); 49 in all.
+    - **Verification:** every new entry's two traces identical; a fresh `baseline.py check` of all 49 equals the stored SHA-256 values; BL-048 equals Stella's script runner (3,000 frames, 0 fingerprint differences, 10 pictures, 0 different); BL-049 uses the route already proved in Stage D14.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the distance between a ghost and Pac-Man at the catch ranges from 4 to 17 pixels in these coordinates, so the catch is not "same place": the game most likely uses the chip's own collision flags, which are not read here (Phase F). Two-player turn change at a death is left to E8.
+    - **Recovery:** new files only; undo by returning to `2aa5595` (with your OK).
+    - **Documentation updates:** `docs\BASELINE.md`, `docs\CONTROLS.md`, `DECISIONS.md` (T-E6-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage E6: Dying and game over`.
+    - **Next stage:** E7 — Long play.
 7. **[Not started] E7 — Long play.** Played by the computer, no human needed: `stella_bot` is extended to carry on into later levels (it stops after level 1 today) and plays at least three full games with different seeds, as many levels as it manages; seeded random-input games of tens of thousands of frames are added. Claude Code extracts level transitions, speed-ups and any changes between levels. If the bot cannot get past some level, that is written down as a limit of the bot (not worked around by asking for a human), and the random runs and scripts cover what they can. **Added in E5:** the bot must also learn to eat the bonus item (not eaten in the C7 route), recorded as its own entry with the score it gives.
 8. **[Not started] E8 — Edge cases and Gate E.** Pressing Reset mid-game, switching variation mid-game, flipping difficulty switches during play, very long idle, score near its maximum (reached by a memory-edit test in Stella's debugger, clearly labelled as artificial). Also seeded random-input runs of several seeds (a net for situations nobody thought of). Gate: at least 30 baseline entries covering every topic in your brief's Phase E list, each with a golden trace (traces repeat byte for byte), a plain-words description that could be checked against the real game, and the lockstep-ready format of E1; the gate rests on those facts, not on anyone playing.
 

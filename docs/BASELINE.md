@@ -123,3 +123,9 @@ Measured in BL-038 to BL-044 (`DECISIONS.md` T-E4-1, computed by `tools\e4_entri
 ## Eating and scoring, in short (Stage E5)
 
 Measured in BL-045 to BL-047 (`DECISIONS.md` T-E5-1, computed by `tools\e5_entries.py`): score = bytes $CC (tens, ones) and $CE (hundreds); wafer +1 (one bit of $88-$97 cleared), power pill +5, ghosts eaten +20, +40, +80, +160 within one power pill; the last wafer of a level refills the map, adds a life and pauses 120 frames. The digits in the status bar equal the memory score (155 frames checked). Not yet covered: the bonus item eaten, an extra life by score (E7, E8).
+| BL-048 | 3000 | An idle game: three lives lost, game over, the fire button starts a new game |
+| BL-049 | 9800 | Deaths in a computer-played game and the game over |
+
+## Dying and game over, in short (Stage E6)
+
+Measured in BL-048 and BL-049 (`DECISIONS.md` T-E6-1, computed by `tools\e6_entries.py`): the pause flag comes on at the catch, the life is taken 125 or 126 frames later, the pause ends 245 or 246 frames after it began (126 for the last life), Pac-Man returns to (76,60) and the ghosts to (76,30). After game over the ghosts walk again from 120 frames later; the fire button starts a new game only after a delay (about 500 frames in the idle game).

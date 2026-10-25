@@ -1,5 +1,7 @@
 #include "natives.hpp"
 
+#include "../game/routines.hpp"
+
 namespace lockstep {
 namespace {
 
@@ -18,11 +20,38 @@ void rngStep(Machine& m, bool broken) {
   m.rts();
 }
 
+// Hands the memory of the machine to a game routine and writes back what changed (so the writer of each byte is the native routine).
+template <typename F>
+void withRam(Machine& m, F&& fn) {
+  game::Ram before = m.ram();
+  game::Ram after = before;
+  fn(after);
+  for (int i = 0; i < 128; ++i)
+    if (after[i] != before[i]) m.write(static_cast<uint16_t>(0x80 + i), after[i]);
+}
+
+// F21.1 CLEAR_SCORES ($FC7D). The original ends with A = 0 (LDA #0), X = $FF (the loop leaves X after DEX of 0), Y untouched, carry untouched,
+// the flags of the last DEX: negative set, zero clear.
+// `variant` 1 = test fixture that forgets LIVES_P2 (found by the memory comparison), 2 = test fixture that leaves X = 0 (found only by the routine check).
+void clearScores(Machine& m, int variant = 0) {
+  withRam(m, [variant](game::Ram& r) {
+    game::clearScores(r);
+    if (variant == 1) r[game::ram::LIVES_P2 - 0x80] = 1;
+  });
+  m.a = 0;
+  m.x = (variant == 2) ? 0 : 0xFF;
+  m.setZN(m.x);
+  m.rts();
+}
+
 }  // namespace
 
 bool registerNativeByName(Machine& m, const std::string& name) {
   if (name == "rng") { m.registerNative(0xFBE0, "RNG_STEP (native)", [](Machine& mm) { rngStep(mm, false); }); return true; }
   if (name == "rng-broken") { m.registerNative(0xFBE0, "RNG_STEP (native, broken on purpose)", [](Machine& mm) { rngStep(mm, true); }); return true; }
+  if (name == "clear-scores") { m.registerNative(0xFC7D, "CLEAR_SCORES (native)", [](Machine& mm) { clearScores(mm); }); return true; }
+  if (name == "clear-scores-wrong") { m.registerNative(0xFC7D, "CLEAR_SCORES (native, wrong on purpose)", [](Machine& mm) { clearScores(mm, 1); }); return true; }
+  if (name == "clear-scores-badreg") { m.registerNative(0xFC7D, "CLEAR_SCORES (native, register wrong on purpose)", [](Machine& mm) { clearScores(mm, 2); }); return true; }
   return false;
 }
 

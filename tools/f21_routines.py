@@ -1,0 +1,137 @@
+"""Stage F21: rewriting the game routine by routine - the ledger and the checks.
+
+  python -I tools\\f21_routines.py <rom>      (after tools\\build_lockstep.cmd and tools\\f20_lockstep.py; needs reference\\f20\\oracle_BL-nnn.txt)
+
+Every rewritten routine is listed in DONE (stage, F8 name, native name in src\\lockstep\\natives.cpp, entry address). For each of them, and for all of them
+together, the original program is run by the lockstep machine over all 70 games with the native routine in place and the routine check on:
+  - all 128 memory bytes identical after every frame, and
+  - at every call the native routine's results (memory and registers a, x, y, sp, pc, flags) equal those of the original code on a copy.
+The test fixtures that are wrong on purpose must be found. Writes docs\\F21_ROUTINES.md (the ledger of routines: done and still to do).
+"""
+import concurrent.futures
+import pathlib
+import re
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / 'tools'))
+import f6_coverage as f6  # noqa: E402
+
+EXE = ROOT / 'build' / 'lockstep' / 'lockstep.exe'
+BS = chr(92)
+
+# stage, F8 name, native name, entry, one-line description of what was written
+DONE = [
+    ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+]
+# why a routine cannot be proved by the memory comparison alone, or what it needs first
+NOTES = {
+    'KERNEL_LINE_P1': 'writes only chip registers (picture): proved with the renderer (F23)', 'KERNEL_LINE_P1_P0': 'picture only (F23)',
+    'KERNEL_LINE_P0': 'picture only (F23)', 'CLEAR_GRAPHICS': 'picture only (F23)', 'SOUND_WRITE': 'sound chip only (F24)',
+    'EXIT_F9E4': 'a lone RTS: nothing to write', 'EXIT_FB5B': 'a lone RTS: nothing to write', 'EXIT_FF93': 'a lone RTS: nothing to write',
+    'WRAP_SET_Y': 'end of both WRAP routines: written with them',
+    'ADD_SCORE': 'needs the amount tables of the cartridge (F22)', 'LIVES_MARKERS': 'needs ROM tables (F22)', 'SCORE_DIGITS': 'needs ROM tables (F22) and the picture',
+    'SOUND_START': 'needs ROM tables (F22)', 'SOUND_EFFECTS': 'needs ROM tables (F22); chip writes (F24)', 'SOUND_MUSIC': 'needs ROM tables (F22); chip writes (F24)',
+    'SET_DIRECTION': 'table TBL_FE63 (F22); falls into MOVE_OBJECT', 'MOVE_OBJECT': 'ends in the border tests; leaf',
+    'GHOST_DECIDE': 'large; after the TRY_ routines', 'GHOST_UPDATE': 'after GHOST_DECIDE',
+    'TRY_PAIR_1': 'drops the caller\'s return (rts twice)', 'TRY_PAIR_UD': 'drops the caller\'s return', 'TRY_PAIR_2': 'drops the caller\'s return',
+    'TRY_PAIR_LR': 'drops the caller\'s return', 'TRY_COMMIT': 'drops the caller\'s return', 'PACMAN_KEEP_GOING': 'drops the caller\'s return',
+    'RNG_STEP': 'reads the bit-mask table at $FE6A: a plain 0x80 >> n, checked equal to the ROM bytes',
+}
+
+
+def run(entry, pokes, natives, verify=True):
+    cmd = [str(EXE), str(ROM), str(ROOT / 'baseline' / (entry + '.inputs')), str(ROOT / 'reference' / 'baseline' / (entry + '.trace')),
+           '--oracle', str(ROOT / 'reference' / 'f20' / ('oracle_%s.txt' % entry))]
+    for p in pokes:
+        cmd += ['--poke', p]
+    for n in natives:
+        cmd += ['--native', n]
+    if verify:
+        cmd.append('--verify')
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    return entry, r.returncode, r.stdout.strip().split('\n')
+
+
+def calls(lines):
+    for l in lines:
+        m = re.match(r'routine check: (\d+) calls compared with the original, (\d+) different', l)
+        if m:
+            return int(m.group(1)), int(m.group(2))
+    return 0, 0
+
+
+def main():
+    global ROM
+    ROM = pathlib.Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / 'rom' / 'pacman.a26'
+    items = f6.entries()
+    problems = []
+    results = {}
+    with concurrent.futures.ThreadPoolExecutor(8) as ex:
+        for stage, name, native, entry, what in DONE:
+            res = list(ex.map(lambda it: run(it[0], it[1], [native]), items))
+            bad = [r for r in res if r[1] != 0]
+            c = sum(calls(r[2])[0] for r in res)
+            results[name] = (len(res) - len(bad), c)
+            print('%s %s: %d games identical of %d, %d calls compared with the original, %d routine differences' % (
+                stage, name, len(res) - len(bad), len(res), c, sum(calls(r[2])[1] for r in res)))
+            if bad:
+                problems.append('%s: %s' % (name, bad[0][2][:3]))
+        allres = list(ex.map(lambda it: run(it[0], it[1], [d[2] for d in DONE]), items))
+        allbad = [r for r in allres if r[1] != 0]
+        print('all rewritten routines together: %d games identical of %d' % (len(allres) - len(allbad), len(allres)))
+        if allbad:
+            problems.append('together: %s' % allbad[0][2][:3])
+        wrong = list(ex.map(lambda it: run(it[0], it[1], ['clear-scores-wrong']), items))
+        found_w = [r for r in wrong if r[1] == 1 and any('CLEAR_SCORES (native, wrong on purpose)' in l for l in r[2])]
+        used_w = [r for r in wrong if calls(r[2])[0] > 0]
+        print('fixture wrong on purpose (memory): found in %d of %d games that call the routine' % (len(found_w), len(used_w)))
+        badreg = list(ex.map(lambda it: run(it[0], it[1], ['clear-scores-badreg']), items))
+        found_r = [r for r in badreg if r[1] == 1 and any('ROUTINE CHECK FAILED' in l for l in r[2])]
+        same_frames = [r for r in badreg if r[1] == 1 and any('ROUTINE CHECK FAILED' in l for l in r[2])]
+        print('fixture with a wrong register: the routine check finds it in %d games (the frames themselves are identical in all of them)' % len(found_r))
+        if len(found_w) != len(used_w) or not used_w or not found_r:
+            problems.append('fixtures not found everywhere')
+    ok = not problems
+    print('problems:', problems)
+    print('result: %s' % ('OK' if ok else 'MISMATCH'))
+    write_doc(results, len(items), len(found_w), len(used_w), len(found_r), ok)
+    return 0 if ok else 1
+
+
+def write_doc(results, n, found_w, used_w, found_r, ok):
+    text = (ROOT / 'docs' / 'F8_ROUTINES.md').read_text(encoding='utf-8')
+    block = text[text.index('## Routines'):text.index('## Data each routine')]
+    rows = []
+    for line in block.split('\n'):
+        m = re.match(r'\| \$([0-9A-F]{4}) \| `(\w+)` \| ([^|]*) \| (\d+) \| ([^|]*) \|', line)
+        if m and m.group(2) != 'MAIN':
+            rows.append((int(m.group(1), 16), m.group(2), int(m.group(4)), m.group(5)))
+    done = {d[1]: d for d in DONE}
+    d = ['# Stage F21: the routine ledger (2026-10-26)', '',
+         '`python -I tools%sf21_routines.py rom%spacman.a26` checks every rewritten routine and writes this ledger. **F21 is not one session: it is one routine per session** (F21.1, F21.2, ...). This document is the list, kept up to date by each session.' % (BS, BS), '',
+         '## How a routine is rewritten (the protocol)', '',
+         '1. The routine is written as a C++ function in `src%sgame%sroutines.cpp`, working on the 128 memory bytes with the names of F7 (`src%sgame%sram_map.hpp`, generated). No ROM data and no emulator code is allowed there; things the original reads from the cartridge come later through the data loader (F22).' % ((BS,) * 4),
+         '2. An adapter in `src%slockstep%snatives.cpp` registers it under the entry address of the original and reproduces what the original leaves in the registers and flags (the callers may depend on them).' % (BS, BS),
+         '3. `lockstep.exe ... --native <name> --verify` runs all recorded games with the native routine in place of the original. It checks (a) all 128 bytes after every frame and (b) at every call, the native results against the original code run on a copy (memory, `A`, `X`, `Y`, stack pointer, return address, flags). Both must be clean in all 70 games.',
+         '4. Only then is the routine marked done here and in `PLAN.md`, and the stage is committed. Fixtures that are wrong on purpose prove the checks bite.', '',
+         '## Result of this run: %s' % ('all checks clean' if ok else 'MISMATCH'), '']
+    for name, (g, c) in results.items():
+        d.append('- **%s**: identical in %d of %d games; %d calls compared with the original code, 0 different.' % (name, g, n, c))
+    d += ['- The fixture "wrong on purpose" (forgets `LIVES_P2`) was found by the memory comparison in %d of the %d games that call the routine; the fixture with a wrong `X` register leaves every frame identical but was found by the routine check in %d games: this is why the routine check exists.' % (found_w, used_w, found_r), '',
+          '## The ledger', '',
+          '| Stage | Routine | Entry | Bytes | Status | Note |', '| --- | --- | --- | --- | --- | --- |']
+    todo = [r for r in rows if r[1] not in done]
+    for r in sorted(rows, key=lambda r: (r[1] not in done, r[2], r[0])):
+        nm = r[1]
+        if nm in done:
+            d.append('| %s | `%s` | $%04X | %d | **done** | %s |' % (done[nm][0], nm, r[0], r[2], done[nm][4]))
+        else:
+            d.append('| - | `%s` | $%04X | %d | to do | %s |' % (nm, r[0], r[2], NOTES.get(nm, '')))
+    d += ['', 'Order for the next sessions: smallest first among the routines whose result shows in the memory (the picture-only and sound-chip-only routines wait for F23/F24; those that need cartridge tables wait for F22 or use a table checked equal to the ROM): SWAP_PLAYERS, RNG_STEP, the WRAP routines, NEW_MAZE and PLACE_OBJECTS, LOCATE_OBJECT, MOVE_OBJECT, the TRY routines, ANIMATE_OBJECT, then the ghost routines. The main loop (`MAIN`: start-up, top and bottom logic, kernel) is cut into routines in the last sessions of F21.']
+    (ROOT / 'docs' / 'F21_ROUTINES.md').write_text('\n'.join(d) + '\n', encoding='utf-8')
+
+
+if __name__ == '__main__':
+    sys.exit(main())

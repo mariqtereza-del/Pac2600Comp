@@ -3,7 +3,8 @@
 //
 // Usage: lockstep <rom> <inputs_file> <trace_file> [--oracle <file>] [--poke <frame>:<hex addr>:<hex value>]... [--native <name>]... [--all]
 //   --oracle  per frame the collision flags the chip would give: lines "frame bonus ghost" (0/1), made by tools\f20_lockstep.py
-//   --native  use a natively written routine instead of the original: rng, rng-broken (test fixtures of Stage F20)
+//   --native  use a natively written routine instead of the original: rng, rng-broken (test fixtures of Stage F20), clear-scores (F21.1)
+//   --verify  also run every call of a native routine through the original code on a copy and compare memory and registers
 //   --all     do not stop at the first different frame; count them
 // Output: "result: IDENTICAL (n frames)" or the first difference: frame, byte, name, golden value, our value, the routine that wrote it last.
 // Exit code 0 = identical, 1 = different, 2 = bad arguments or files.
@@ -63,7 +64,7 @@ int main(int argc, char** argv) {
   std::map<int, std::pair<bool, bool>> oracle;
   std::vector<std::array<int, 3>> pokes;
   std::vector<std::string> natives;
-  bool all = false;
+  bool all = false, verify = false;
   for (int i = 4; i < argc; ++i) {
     const std::string a = argv[i];
     if (a == "--oracle" && i + 1 < argc) {
@@ -78,6 +79,8 @@ int main(int argc, char** argv) {
       natives.push_back(argv[++i]);
     } else if (a == "--all") {
       all = true;
+    } else if (a == "--verify") {
+      verify = true;
     }
   }
 
@@ -85,6 +88,7 @@ int main(int argc, char** argv) {
   for (const auto& n : natives)
     if (!lockstep::registerNativeByName(m, n)) { std::fprintf(stderr, "unknown native routine '%s'\n", n.c_str()); return 2; }
 
+  m.setVerify(verify);
   const int total = std::min<int>(frames > 0 ? frames : static_cast<int>(golden.size()), static_cast<int>(golden.size()));
   unsigned bits = 0;
   size_t next = 0;
@@ -124,9 +128,17 @@ int main(int argc, char** argv) {
       if (!all) break;
     }
   }
-  if (different == 0) {
+  if (verify) {
+    std::printf("routine check: %llu calls compared with the original, %llu different\n", static_cast<unsigned long long>(m.verifyCalls()), static_cast<unsigned long long>(m.verifyFailures()));
+    if (m.verifyFailures()) std::printf("  first: %s\n", m.verifyReport().c_str());
+  }
+  if (different == 0 && !(verify && m.verifyFailures())) {
     std::printf("result: IDENTICAL (%d frames)\n", total);
     return 0;
+  }
+  if (different == 0) {
+    std::printf("result: ROUTINE CHECK FAILED (the frames are identical but a native routine differs from the original)\n");
+    return 1;
   }
   std::printf("result: DIFFERENT (%d of %d frames differ%s; first at frame %d)\n", different, total, all ? "" : ", stopped at the first", firstFrame);
   return 1;

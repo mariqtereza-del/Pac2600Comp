@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-1 — How a routine is rewritten, and the first one (2026-10-26, Stage F21.1)
+
+- **Protocol:** (1) the routine becomes a C++ function in `src\game\routines.cpp` on the 128 memory bytes with the F7 names (generated `ram_map.hpp`); (2) an adapter in `src\lockstep\natives.cpp` registers it at the entry address and reproduces the registers and flags the original leaves; (3) `lockstep.exe --native <name> --verify` runs all recorded games and, at every call, compares the native results (memory, A, X, Y, SP, return address, flags except B/U) with the original code run on a copy; (4) done only when both are clean in all 70 games.
+- **Why the second check:** the wrong-register fixture (X = 0 instead of $FF after CLEAR_SCORES) leaves every recorded frame identical, because no caller looks at X; only the call-by-call comparison finds it. A later change of a caller could expose such a difference, so registers and flags are part of the contract.
+- **Choice of the first routine:** CLEAR_SCORES (14 bytes, no cartridge table, no stack tricks, 959 calls in the recordings, memory-only effect). Pure exits (a lone RTS), routines that write only chip registers (picture, sound) and routines that read cartridge tables are put later in the ledger (F22, F23, F24).
+- **Result:** CLEAR_SCORES: 70 of 70 games identical, 959 calls equal to the original, 0 differences; together with the other checks the lockstep run stays identical. The wrong-memory fixture was found in 68 of 68 games that call it; the wrong-register fixture in 68.
+- **Layout:** `src\game` holds only game logic (no ROM bytes, no emulator); `src\lockstep` holds the machine, adapters and fixtures; the generated tables contain names and addresses only.
+- **Reversible:** Yes.
+
 ### T-F20-1 — The lockstep harness is a hybrid machine, not a second emulator (2026-10-26, Stage F20)
 
 - **Decision:** the harness runs the original bytes in a small 6502 core written for this project (`src\lockstep`), with hooks that replace one routine at a time by a native one. It models inputs, collision flags and the frame boundary only; it has no timing, picture or sound. Reasons: a routine can then be rewritten and tested alone (the rest stays original), the golden traces are the only reference (Stella is not needed to run it), and it is fast (all 70 games, 439,680 frames, in 26 s).

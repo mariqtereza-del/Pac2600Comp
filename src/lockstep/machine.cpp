@@ -1,5 +1,6 @@
 #include "machine.hpp"
 
+#include <cstdio>
 #include <cstring>
 
 namespace lockstep {
@@ -170,7 +171,8 @@ void Machine::step() {
   auto nat = natives_.find(pc);
   if (nat != natives_.end()) {
     currentNative_ = nat->second.name.c_str();
-    nat->second.fn(*this);
+    if (verify_) verifyNative(nat->second);
+    else nat->second.fn(*this);
     currentNative_ = nullptr;
     ++instructions_;
     return;
@@ -253,7 +255,7 @@ void Machine::step() {
       next = addr;
       break;
     }
-    case MN_RTS: { rts(); return; }
+    case MN_RTS: { rts(); lastWasRts_ = true; return; }
     case MN_BCC: case MN_BCS: case MN_BEQ: case MN_BMI: case MN_BNE: case MN_BPL: case MN_BVC: case MN_BVS: {
       bool take = false;
       switch (info.mn) {
@@ -276,6 +278,53 @@ void Machine::step() {
       return;
   }
   pc = next;
+}
+
+// Runs the original code from here until the routine has returned (the return address is popped by an RTS).
+bool Machine::runToReturn() {
+  const uint8_t sp0 = sp;
+  for (int guard = 0; guard < 100000; ++guard) {
+    lastWasRts_ = false;
+    step();
+    if (failed_) return false;
+    if (lastWasRts_ && static_cast<int>(sp) >= static_cast<int>(sp0) + 2) return true;
+  }
+  return false;
+}
+
+void Machine::verifyNative(const Native& n) {
+  Machine ref(*this);
+  ref.natives_.clear();
+  ref.verify_ = false;
+  ref.currentNative_ = nullptr;
+  const bool refOk = ref.runToReturn();
+  n.fn(*this);
+  ++verifyCalls_;
+  std::string why;
+  if (!refOk) why = "the original routine did not return";
+  for (int i = 0; i < 128 && why.empty(); ++i)
+    if (ref.ram_[i] != ram_[i]) {
+      char b[160];
+      std::snprintf(b, sizeof b, "byte $%02X (%s): original $%02X, native $%02X", 0x80 + i, ramName(static_cast<uint8_t>(0x80 + i)), ref.ram_[i], ram_[i]);
+      why = b;
+    }
+  auto reg = [&](const char* nm, unsigned o, unsigned g) {
+    if (why.empty() && o != g) {
+      char b[96];
+      std::snprintf(b, sizeof b, "register %s: original $%02X, native $%02X", nm, o, g);
+      why = b;
+    }
+  };
+  reg("A", ref.a, a); reg("X", ref.x, x); reg("Y", ref.y, y); reg("SP", ref.sp, sp);
+  reg("PC", ref.pc, pc); reg("P (flags)", ref.p & 0xCF, p & 0xCF);
+  if (!why.empty()) {
+    ++verifyFailures_;
+    if (verifyReport_.empty()) {
+      char b[160];
+      std::snprintf(b, sizeof b, "%s, call %llu, pc $%04X: ", n.name.c_str(), static_cast<unsigned long long>(verifyCalls_), currentPc_);
+      verifyReport_ = b + why;
+    }
+  }
 }
 
 bool Machine::runFrame() {

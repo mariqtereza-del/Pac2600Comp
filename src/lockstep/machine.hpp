@@ -43,6 +43,14 @@ class Machine {
   void rts();
   void setZN(uint8_t v);
 
+  // ---- routine check (Stage F21) ----
+  // With the check on, every call of a native routine is also run through the original code on a copy of the machine, and the results (the 128
+  // bytes, the registers a, x, y, sp, pc and the flags except B/U) are compared. The first difference is kept in verifyReport().
+  void setVerify(bool on) { verify_ = on; }
+  uint64_t verifyCalls() const { return verifyCalls_; }
+  uint64_t verifyFailures() const { return verifyFailures_; }
+  const std::string& verifyReport() const { return verifyReport_; }
+
   // ---- state ----
   const std::array<uint8_t, 128>& ram() const { return ram_; }
   std::array<uint8_t, 128>& ramMutable() { return ram_; }
@@ -54,7 +62,10 @@ class Machine {
   static const char* ramName(uint8_t addr);
 
  private:
+  struct Native { std::string name; NativeFn fn; };
   void step();
+  bool runToReturn();
+  void verifyNative(const Native& n);
   uint16_t ea(Mode m, bool& pageCross);
   void push(uint8_t v);
   uint8_t pull();
@@ -69,7 +80,6 @@ class Machine {
   std::array<uint8_t, 128> ram_{};
   std::array<uint16_t, 128> writerPc_{};
   std::array<const char*, 128> writerNative_{};
-  struct Native { std::string name; NativeFn fn; };
   std::map<uint16_t, Native> natives_;
   const char* currentNative_ = nullptr;
   uint16_t currentPc_ = 0;
@@ -78,6 +88,10 @@ class Machine {
   bool frameDone_ = false;
   bool vsyncOn_ = false;
   bool failed_ = false;
+  bool lastWasRts_ = false;
+  bool verify_ = false;
+  uint64_t verifyCalls_ = 0, verifyFailures_ = 0;
+  std::string verifyReport_;
   uint64_t instructions_ = 0;
 };
 

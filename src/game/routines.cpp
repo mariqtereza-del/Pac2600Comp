@@ -485,4 +485,11 @@ void soundMusic(Ram& ram, const Cartridge& cart, SoundChip& out) {
   out.write(chip::AUDF1, pitch);
 }
 
+// PACMAN_KEEP_GOING ($F793).
+KeepGoing pacmanKeepGoing(Ram& ram, const Cartridge& cart) {
+  if ((at(ram, ram::Y_OFFSET) | at(ram, ram::X_OFFSET)) != 0) return KeepGoing::NotOnCell;
+  const uint8_t direction = at(ram, ram::PACMAN_STATE) >> 6;      // 0 right, 1 left, 2 down, 3 up: the same code the TRY routines use
+  return tryDirection(ram, cart, 0, direction).exit == TryExit::Taken ? KeepGoing::Moved : KeepGoing::Stands;
+}
+
 }  // namespace game

@@ -101,6 +101,22 @@ void soundEffectsNative(Machine& m, bool wrong = false) {
   m.rts();
 }
 
+// F21.20 PACMAN_KEEP_GOING ($F793): Pac-Man is object 0. Not on a cell, or the turn allowed: a normal return (the main loop then calls MOVE_OBJECT). A wall
+// in the way: the original pops its caller's return and continues at $F7BA (no move), which the adapter does by raising the stack pointer by two and
+// setting the program counter. Contract: X (kept), stack pointer, return address / arrival address; the registers A, Y and the flags are loaded afresh
+// by both continuations; free stack bytes are not compared.
+void keepGoingNative(Machine& m) {
+  const game::Cartridge cart(m.romBytes());
+  game::KeepGoing r = game::KeepGoing::NotOnCell;
+  withRam(m, [&](game::Ram& ram) { r = game::pacmanKeepGoing(ram, cart); });
+  if (r == game::KeepGoing::Stands) {
+    m.sp = static_cast<uint8_t>(m.sp + 2);
+    m.pc = 0xF7BA;
+    return;
+  }
+  m.rts();
+}
+
 // F21.19 SOUND_MUSIC ($FF94). The caller has X = 1; the sweep writes channel 1 through it. Contract: the one caller (the main loop, which then waits for the
 // timer) uses none of A, X, Y or the flags afterwards; the routine makes no calls. The stack pointer and the return address are compared.
 void soundMusicNative(Machine& m) {
@@ -435,6 +451,14 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "keep-going") {
+    Machine::Contract c;
+    c.deadStack = true;
+    c.regs = 2 | 16 | 32;
+    c.stopAt = 0xF7BA;
+    m.registerNative(0xF793, "PACMAN_KEEP_GOING (native)", [](Machine& mm) { keepGoingNative(mm); }, c);
+    return true;
+  }
   if (name == "sound-music") {
     Machine::Contract c;
     c.regs = 16 | 32;

@@ -285,12 +285,13 @@ void Machine::step() {
 }
 
 // Runs the original code from here until the routine has returned (the return address is popped by an RTS).
-bool Machine::runToReturn() {
+bool Machine::runToReturn(uint16_t stopAt) {
   const uint8_t sp0 = sp;
   for (int guard = 0; guard < 100000; ++guard) {
     lastWasRts_ = false;
     step();
     if (failed_) return false;
+    if (stopAt != 0 && pc == stopAt) return true;
     if (lastWasRts_ && static_cast<int>(sp) >= static_cast<int>(sp0) + 2) return true;
   }
   return false;
@@ -303,7 +304,7 @@ void Machine::verifyNative(const Native& n) {
   ref.currentNative_ = nullptr;
   ref.recordChip_ = true;
   ref.chipWrites_.clear();
-  const bool refOk = ref.runToReturn();
+  const bool refOk = ref.runToReturn(n.contract.stopAt);
   recordChip_ = true;
   chipWrites_.clear();
   n.fn(*this);

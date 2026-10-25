@@ -41,6 +41,7 @@ class Machine {
   struct Contract {
     bool deadStack = false;
     unsigned regs = 0x3F;   // compared registers: 1 A, 2 X, 4 Y, 8 flags, 16 stack pointer, 32 return address (pc)
+    uint16_t stopAt = 0;    // a routine that may end by continuing in the main loop instead of returning: the address where it then arrives
   };
   void registerNative(uint16_t entry, const std::string& name, NativeFn fn, Contract contract = Contract{});
   bool liveStackMode() const { return liveStack_; }
@@ -81,7 +82,7 @@ class Machine {
  private:
   struct Native { std::string name; NativeFn fn; Contract contract; };
   void step();
-  bool runToReturn();
+  bool runToReturn(uint16_t stopAt);
   void verifyNative(const Native& n);
   uint16_t ea(Mode m, bool& pageCross);
   void push(uint8_t v);

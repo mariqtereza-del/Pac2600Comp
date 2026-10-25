@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-20 — PACMAN_KEEP_GOING rewritten; routines that continue instead of returning (2026-10-26, Stage F21.20)
+
+- **Routine:** `game::pacmanKeepGoing`: not exactly on a cell -> nothing (the main loop moves him); on a cell -> try his own direction with the TRY routines: allowed -> the direction is set again and the routine returns (the main loop moves him); refused -> the routine pops its caller's return and the main loop continues at `$F7BA` with no move.
+- **Harness:** a native routine may declare `Contract::stopAt`, the address where it continues instead of returning; the call check then runs the original until that address or its RTS. The native sets the stack pointer and program counter itself.
+- **Result:** 70 of 70 games identical; 127,587 calls compared; identical together with F21.1-F21.19.
+- **Reversible:** Yes.
+
 ### T-F21-19 — SOUND_MUSIC rewritten (2026-10-26, Stage F21.19)
 
 - **Routine:** `game::soundMusic`: dying (GAME_FLAGS bit 6): AUDV0 = EVENT_TIMER, AUDF0 = timer / 2, AUDC0 = 4; start tune (bit 3): note = (timer >> 3) and 7, or, when the timer is 0, the same from the flags after clearing the tune bit; for notes 0-3 both channels get pitches from `$FFF1` / `$FFF5`, control 4, volume 8; scared sweep (PILL_FLAGS bit 6): channel 1, TEMP_D3 = 4, pitch = (FRAME_COUNTER / 2) and $0F, volume = (pitch xor $0F) / 2.

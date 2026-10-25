@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **PACMAN_KEEP_GOING**: identical in 70 of 70 games; 127587 calls compared with the original code, 0 different.
 - **SOUND_MUSIC**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
 - **SOUND_EFFECTS**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
 - **SOUND_WRITE**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
@@ -70,6 +71,7 @@
 | F21.6 | `NEW_GAME_SETUP` | $FBF4 | 24 | **done** | game::newGameSetup: score colours, three lives, start level from the game number, then NEW_MAZE |
 | F21.10 | `ADD_SCORE` | $FC45 | 35 | **done** | game::addScore: decimal addition of a score amount to the player in turn; amounts read by address through the cartridge view (game::Cartridge) |
 | F21.5 | `PLACE_OBJECTS` | $FC21 | 36 | **done** | game::placeObjects: freeze on, timer $3C, Pac-Man and the ghosts at their start places |
+| F21.20 | `PACMAN_KEEP_GOING` | $F793 | 39 | **done** | game::pacmanKeepGoing: stick neutral, exactly on a cell: try to go on, else stand still; ends the caller when he stands still (no move); contract: X, stack pointer, arrival address, live memory |
 | F21.7 | `LOCATE_OBJECT` | $FBAD | 51 | **done** | game::locateObject: row, offsets, cell index and position code of an object; the adapter also leaves the flags byte that the original PHP writes in the stack area |
 | F21.18 | `SOUND_EFFECTS` | $FF55 | 54 | **done** | game::soundEffects: the sound effect of the frame on channel 0, written to a game::SoundChip; the call check now compares the writes to the sound chip |
 | F21.8 | `MOVE_OBJECT` | $F9EE | 56 | **done** | game::moveObject: the speed accumulator (x17) and the one-pixel step with the border rules |
@@ -84,7 +86,6 @@
 | - | `CLEAR_GRAPHICS` | $F483 | 11 | to do | picture only (F23) |
 | - | `KERNEL_LINE_P1` | $F053 | 20 | to do | writes only chip registers (picture): proved with the renderer (F23) |
 | - | `KERNEL_LINE_P0` | $F06A | 21 | to do | picture only (F23) |
-| - | `PACMAN_KEEP_GOING` | $F793 | 39 | to do | drops the caller's return |
 | - | `SCORE_DIGITS` | $F3EE | 149 | to do | needs ROM tables (F22) and the picture |
 
 Order for the next sessions: smallest first among the routines whose result shows in the memory (the picture-only and sound-chip-only routines wait for F23/F24; those that need cartridge tables wait for F22 or use a table checked equal to the ROM): SWAP_PLAYERS, RNG_STEP, the WRAP routines, NEW_MAZE and PLACE_OBJECTS, LOCATE_OBJECT, MOVE_OBJECT, the TRY routines, ANIMATE_OBJECT, then the ghost routines. The main loop (`MAIN`: start-up, top and bottom logic, kernel) is cut into routines in the last sessions of F21.

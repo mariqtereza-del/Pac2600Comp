@@ -2396,7 +2396,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Documentation updates:** `docs\F21_NATIVE.md`, `DECISIONS.md` (T-F21-27), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F21.27: The whole game as native code`.
       - **Next stage:** F22 — Data loader (reads the maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint).
-22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
+22. **[Done] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data. *(expanded and done 2026-10-26 below)*
+    - **F22 — Data loader** *(expanded and done 2026-10-26)*
+      - **Objective:** a loader that takes the player's own ROM, refuses anything but the exact cartridge, and gives the native game its cartridge bytes by address.
+      - **Why it matters:** the finished game must contain no Atari data (Rule 7); this is the one door through which the data comes in, and it checks the key.
+      - **Prerequisites:** F21 Done (`a8f04df`).
+      - **What Claude Code will do:** `game::CartridgeData` (`src\game\cartridge_data.hpp/.cpp`): `load` / `loadFile` check size 4096 and SHA-1 `0940fea7...`, keep a private copy, give `view()` as the `game::Cartridge`; after a refusal nothing is held. Own SHA-1 (no dependency on the window program). `lockstep_native` now gets its data only through it. Tests `tests\game\test_cartridge_data.cpp`; `tools\f22_loader.py` runs them, the native game, a foreign-file refusal and a scan of `src` for copied cartridge bytes (with a positive control); writes `docs\F22_LOADER.md`.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** right ROM loads; every wrong file refused; native game still 70 of 70 identical; no Atari data in `src`.
+      - **Verification:** `python -I tools\f22_loader.py rom\pacman.a26` says `result: OK` (16 loader tests ok; 70 games, 439,680 frames identical through the loader; foreign file refused with exit 2; scan control found, source scan finds none).
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** the window program still has its own ROM finder (D3) and the emulator; joining them happens at F26.
+      - **Recovery:** new files and two small edits; undo by returning to `a8f04df` (with your OK).
+      - **Documentation updates:** `docs\F22_LOADER.md`, `docs\GLOSSARY.md`, `DECISIONS.md` (T-F22-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F22: Data loader`.
+      - **Next stage:** F23 — Native renderer.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.
 25. **[Not started] F25 — Whole-game lockstep.** All golden traces identical in RAM, picture and sound. Anything not identical is either fixed or entered in `DISCREPANCIES.md` with cause and impact, for your review.

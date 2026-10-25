@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F22-1 — The data loader checks size and fingerprint and owns a private copy (2026-10-26, Stage F22)
+
+- **Choice:** `game::CartridgeData` in `src\game` (not in the window program): it has its own small SHA-1, so the game code and its tests depend on nothing else. Size must be exactly 4096 and SHA-1 `0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1`; a refused file leaves the object empty (all zero) so a wrong ROM can never be played by accident. The loader makes a private copy so the game never points into a caller's buffer.
+- **Why not reuse `rom::sha1Hex` of the window program:** that code sits with the settings and window parts; the game must stay buildable and testable alone (Rule 9). The duplicate is 30 lines, tested against three standard SHA-1 values.
+- **Proof the source holds no Atari data:** `tools/f22_loader.py` scans `src` for runs of 6 numbers equal to 6 cartridge bytes; found none, after first showing the scan finds a control copy in three number styles. This catches copied tables, not every possible disguise.
+- **Not changed:** the window program and its ROM finder (D3); they join the loader at F26.
+- **Reversible:** Yes.
+
 ### T-F21-27 — The whole game runs as native code; F21 is complete (2026-10-26, Stage F21.27)
 
 - **Piece:** `game::Game` holds the 128 bytes of state and runs one frame per call: the first frame is the start-up and the frame start, every later frame is the top logic, the bottom logic and the frame start. The drawing (between the two logics) belongs to the renderer of F23. The game gets the console and joystick state, the two collision flags and a chip interface; it reads cartridge data only by address through `game::Cartridge`.

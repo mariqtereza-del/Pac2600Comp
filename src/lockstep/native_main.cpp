@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "../game/cartridge_data.hpp"
 #include "../game/game.hpp"
 
 class NullChip : public game::TiaChip {
@@ -27,9 +28,9 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "usage: lockstep_native <rom> <inputs> <trace> [--oracle f] [--poke f:a:v]... [--ignore hex,hex] [--all]\n");
     return 2;
   }
-  std::ifstream romFile(argv[1], std::ios::binary);
-  std::vector<char> rom((std::istreambuf_iterator<char>(romFile)), std::istreambuf_iterator<char>());
-  if (rom.size() != 4096) { std::fprintf(stderr, "the ROM must be 4096 bytes\n"); return 2; }
+  game::CartridgeData data;  // the data loader (F22): size and fingerprint are checked, the game gets a private copy
+  const game::LoadStatus loaded = data.loadFile(argv[1]);
+  if (loaded != game::LoadStatus::Ok) { std::fprintf(stderr, "%s\n", game::describe(loaded)); return 2; }
   int frames = 0;
   std::vector<std::pair<int, unsigned>> changes;
   {
@@ -79,7 +80,7 @@ int main(int argc, char** argv) {
   }
   for (int a = 0xF6; a <= 0xFF; ++a) ignore.push_back(a - 0x80);
 
-  const game::Cartridge cart(reinterpret_cast<const uint8_t*>(rom.data()));
+  const game::Cartridge cart = data.view();
   game::Game g(cart);
   NullChip chip;
   const int total = std::min<int>(frames > 0 ? frames : static_cast<int>(golden.size()), static_cast<int>(golden.size()));

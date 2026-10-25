@@ -187,3 +187,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Shift register (random number) | A byte whose bits are shifted along with a new bit made from two old ones; repeating this gives a long, repeatable series that looks random. (Stage F7) |
 | Subroutine / routine | A piece of the program that other parts call (JSR) and that gives control back (RTS) when done. (Stage F8) |
 | Shared tail | The last part of a routine that two or more routines jump into instead of each having a copy. (Stage F8) |
+| Speed accumulator | A byte that is multiplied by 17 (mod 256) every frame; each time the result overflows the object moves one step. The start value fixes the speed (about 0.56 or 0.69 pixels per frame for Pac-Man). (Stage F10) |
+| Cell / row | The maze is a grid: cells 4 pixels wide, rows 10 pixels high. A table in the ROM says which sides of each cell are open. (Stage F10) |

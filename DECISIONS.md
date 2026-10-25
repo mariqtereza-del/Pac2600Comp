@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F10-1 — Pac-Man's movement written as a model and proved on 202,473 frames (2026-10-26, Stage F10)
+
+- **Method:** `tools\f10_pacman.py` is a model of the code (not an emulator): from the previous frame's memory, the frame's joystick and the ROM's wall table (`$FE13`) it predicts x, y, state, speed accumulator, JOY_DIRECTION and the idle counter, and compares with the recorded memory of every frame in which the normal road runs. Frames on other roads are counted by reason and skipped (title screen, frozen game, death, ghost-eaten pause, power pill eaten, change of turn, Select during play).
+- **Result:** 202,473 of 202,473 predicted frames exactly right in all 70 games; every road of the rules was taken (turns, reversals, standing still against a wall, both openings, the turn-round inside an opening) except the x border (x onto 2 or $96), which Pac-Man cannot reach.
+- **Found:** the maze is a grid of 4-pixel cells and 10-pixel rows; the wall table byte has bit 7 side wall, bit 6 up, bit 5 down; speed comes only from the accumulator (x17 mod 256, carry = a step): seed $09 for GAME_SELECT 2-7 (games 7, 8, 1) and $0B for 8-$11 (games 2-6), so Pac-Man is slower in games 1, 7 and 8 and never speeds up; with the stick neutral he stands still against a wall; the two openings are an animated path (`ANIMATE_OBJECT`) of about 85 frames (2,313 animation steps for 27 entries).
+- **Correction:** the first draft of this stage said games 1-3 / 4-8 for the two speeds; reading `$84` (power-on value 6 = game 1) and the table of the 70 games gave the real split above.
+- **Not claimed:** wafers, scoring, collisions, power pill, bonus item (F11, F12, F15); player 2's stick (never in the recordings; the model gives a neutral stick there, as the recordings did).
+- **Reversible:** Yes.
+
 ### T-F9-1 — Input reading, and code that was listed as data (2026-10-26, Stage F9)
 
 - **Reads:** exactly five instructions read inputs: `$F61E` SWCHA (joysticks), `$F857` SWCHB bit 3 (TV type), `$F886` INPT4 (left fire), `$F88A` SWCHB bits 0-1 (Reset, Select), `$F91C` SWCHB bit 6/7 (difficulty). Details and scanlines in `docs\F9_INPUT.md`.

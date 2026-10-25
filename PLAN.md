@@ -1771,7 +1771,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F9_INPUT.md`, corrections in `docs\F4_DATA_TABLES.md` and `docs\F6_COVERAGE.md`, `DECISIONS.md` (T-F9-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F9: Input reading`.
     - **Next stage:** F10 — Pac-Man's movement and turning.
-10. **[Not started] F10 — Pac-Man's movement and turning.**
+10. **[Done] F10 — Pac-Man's movement and turning.** *(expanded and done 2026-10-26)*
+    - **Objective:** state exactly how Pac-Man moves and turns (the grid, the wall table, the stick rules, the speed, the two openings) and prove the statement with a model that reproduces the recorded games frame by frame.
+    - **Why it matters:** this is the core of the game feel; the C++ version of Pac-Man's movement is a direct translation of the model, and the lockstep test of F20 starts from it.
+    - **Prerequisites:** F9 Done (`4eca153`): input; F7 RAM names; F8 routines; the 70 baseline traces.
+    - **What Claude Code will do:**
+      1. Read the routines `$F61E-$F7BA`, `MOVE_OBJECT`, `TRY_*`, `LOCATE_OBJECT`, `ANIMATE_OBJECT`, `WRAP_*` and write the rules as a model in `tools\f10_pacman.py`, using only the ROM's wall table, the joystick and Pac-Man's bytes of the frame before.
+      2. Predict, for every frame in which Pac-Man's code runs normally, x, y, state bits, speed accumulator, JOY_DIRECTION and the idle counter, and compare with the recorded memory of all 70 games; count the frames not predicted by reason; count which roads of the code were taken.
+      3. Write `docs\F10_PACMAN.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 0 wrong frames out of the predicted ones; every road of the rules taken in the games.
+    - **Verification:** `python -I tools\f10_pacman.py rom\pacman.a26` says `result: OK` (202,473 of 202,473 predicted frames right).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** wafer eating, scoring, ghost collisions, the power pill and the bonus item are not predicted (F11, F12, F15); player 2 never had a joystick in the recordings; the x-border road was never taken.
+    - **Recovery:** one new script and generated documents; undo by returning to `4eca153` (with your OK).
+    - **Documentation updates:** `docs\F10_PACMAN.md`, `DECISIONS.md` (T-F10-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F10: Pac-Man's movement and turning`.
+    - **Next stage:** F11 — Maze and wafer storage.
 11. **[Not started] F11 — Maze and wafer storage.**
 12. **[Not started] F12 — Collisions** (the 2600 has hardware collision flags; find whether the game uses them or its own checks).
 13. **[Not started] F13 — Ghost movement and decisions.**

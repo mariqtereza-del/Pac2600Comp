@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.8', 'MOVE_OBJECT', 'move', 0xF9EE, 'game::moveObject: the speed accumulator (x17) and the one-pixel step with the border rules'),
     ('F21.7', 'LOCATE_OBJECT', 'locate', 0xFBAD, 'game::locateObject: row, offsets, cell index and position code of an object; the adapter also leaves the flags byte that the original PHP writes in the stack area'),
     ('F21.6', 'NEW_GAME_SETUP', 'new-game-setup', 0xFBF4, 'game::newGameSetup: score colours, three lives, start level from the game number, then NEW_MAZE'),
     ('F21.5', 'NEW_MAZE', 'new-maze', 0xFC0C, 'game::newMaze: the wafer map filled (two places empty), pill flags $3C, then PLACE_OBJECTS'),

@@ -103,4 +103,33 @@ Location locateObject(Ram& ram, uint8_t object) {
   return loc;
 }
 
+// MOVE_OBJECT ($F9EE).
+Move moveObject(Ram& ram, uint8_t object) {
+  Move mv{};
+  uint8_t& acc = at(ram, ram::SPEED_ACC0 + object);
+  mv.oldAcc = acc;
+  const unsigned sum = static_cast<uint8_t>(acc << 4) + acc;
+  acc = static_cast<uint8_t>(sum);
+  if (sum <= 0xFF) return mv;
+  mv.stepped = true;
+  uint8_t& state = at(ram, ram::PACMAN_STATE + object);
+  state &= 0xEF;
+  mv.vertical = (state & 0x80) != 0;
+  mv.stepValue = (state & 0x40) ? 0xFF : 0x01;      // left and up count down, right and down count up
+  if (!mv.vertical) {
+    uint8_t& x = at(ram, ram::PACMAN_X + object);
+    mv.oldCoord = x;
+    mv.newCoord = static_cast<uint8_t>(x + mv.stepValue);
+    mv.stored = mv.newCoord != 0x02 && mv.newCoord != 0x96;
+    if (mv.stored) x = mv.newCoord;
+  } else {
+    uint8_t& y = at(ram, ram::PACMAN_Y + object);
+    mv.oldCoord = y;
+    mv.newCoord = static_cast<uint8_t>(y + mv.stepValue);
+    mv.stored = !(mv.newCoord & 0x80) && mv.newCoord != 0x47;
+    if (mv.stored) y = mv.newCoord;
+  }
+  return mv;
+}
+
 }  // namespace game

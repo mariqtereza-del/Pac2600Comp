@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **MOVE_OBJECT**: identical in 70 of 70 games; 1174804 calls compared with the original code, 0 different.
 - **LOCATE_OBJECT**: identical in 70 of 70 games; 1329282 calls compared with the original code, 0 different.
 - **NEW_GAME_SETUP**: identical in 70 of 70 games; 1006 calls compared with the original code, 0 different.
 - **NEW_MAZE**: identical in 70 of 70 games; 1026 calls compared with the original code, 0 different.
@@ -37,6 +38,7 @@
 | F21.6 | `NEW_GAME_SETUP` | $FBF4 | 24 | **done** | game::newGameSetup: score colours, three lives, start level from the game number, then NEW_MAZE |
 | F21.5 | `PLACE_OBJECTS` | $FC21 | 36 | **done** | game::placeObjects: freeze on, timer $3C, Pac-Man and the ghosts at their start places |
 | F21.7 | `LOCATE_OBJECT` | $FBAD | 51 | **done** | game::locateObject: row, offsets, cell index and position code of an object; the adapter also leaves the flags byte that the original PHP writes in the stack area |
+| F21.8 | `MOVE_OBJECT` | $F9EE | 56 | **done** | game::moveObject: the speed accumulator (x17) and the one-pixel step with the border rules |
 | - | `EXIT_F9E4` | $F9E4 | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FB5B` | $FB5B | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FF93` | $FF93 | 1 | to do | a lone RTS: nothing to write |
@@ -60,7 +62,6 @@
 | - | `ADD_SCORE` | $FC45 | 35 | to do | needs the amount tables of the cartridge (F22) |
 | - | `PACMAN_KEEP_GOING` | $F793 | 39 | to do | drops the caller's return |
 | - | `SOUND_EFFECTS` | $FF55 | 54 | to do | needs ROM tables (F22); chip writes (F24) |
-| - | `MOVE_OBJECT` | $F9EE | 56 | to do | ends in the border tests; leaf |
 | - | `GHOST_UPDATE` | $F9AA | 58 | to do | after GHOST_DECIDE |
 | - | `SOUND_MUSIC` | $FF94 | 85 | to do | needs ROM tables (F22); chip writes (F24) |
 | - | `SCORE_DIGITS` | $F3EE | 149 | to do | needs ROM tables (F22) and the picture |

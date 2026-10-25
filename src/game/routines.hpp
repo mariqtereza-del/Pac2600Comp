@@ -58,4 +58,18 @@ struct Location {
 };
 Location locateObject(Ram& ram, uint8_t object);
 
+// F21.8  MOVE_OBJECT ($F9EE): the speed accumulator of object n (0 = Pac-Man, 1-4 = ghosts). It becomes (acc << 4) + acc (8 bits); a carry out is one
+// step of one pixel in the direction in bits 7-6 of the state (0 right, 1 left, 2 down, 3 up), after clearing the "step due" bit 4 of the state.
+// A step to x = 2 or x = $96, to a negative y or to y = $47 is not made (F10). The result describes what happened for the adapter.
+struct Move {
+  bool stepped;       // the accumulator carried
+  bool vertical;      // the direction is down or up
+  uint8_t oldAcc;     // the accumulator before
+  uint8_t stepValue;  // 1 or $FF
+  uint8_t oldCoord;   // x or y before the step
+  uint8_t newCoord;   // x or y the step would give
+  bool stored;        // the new coordinate was stored (not stopped by a border)
+};
+Move moveObject(Ram& ram, uint8_t object);
+
 }  // namespace game

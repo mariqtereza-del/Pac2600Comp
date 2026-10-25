@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-8 — MOVE_OBJECT rewritten (2026-10-26, Stage F21.8)
+
+- **Routine:** `game::moveObject(ram, n)`: acc = ((acc << 4) + acc) and $FF; on a carry the state bit 4 is cleared and the coordinate (x for right/left, y for down/up; bit 6 = count down) changes by 1 unless the new x is 2 or $96, or the new y is negative or $47.
+- **Result:** 70 of 70 games identical; 1,174,804 calls compared with the original (memory, registers, flags): 0 differences; identical together with F21.1-F21.7. The registers and flags of each path (the original ends in ADC, CMP #2, CMP #$96 or CMP #$47) are reproduced by the adapter.
+- **Reversible:** Yes.
+
 ### T-F21-7 — LOCATE_OBJECT rewritten; stack bytes are part of the contract (2026-10-26, Stage F21.7)
 
 - **Routine:** `game::locateObject(ram, n)`: row = passes of "subtract 10 until 0 or bit 7 set" (0 for y = 0), Y_OFFSET = y - 10 row (8-bit), X_OFFSET = x and 3, CELL_INDEX = x / 4 (+40 on odd rows), POS_CODE = (cell << 2) or (cell bit 6 << 7) or (row >> 1).

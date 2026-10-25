@@ -30,6 +30,47 @@ void withRam(Machine& m, F&& fn) {
     if (after[i] != before[i]) m.write(static_cast<uint16_t>(0x80 + i), after[i]);
 }
 
+// F21.8 MOVE_OBJECT ($F9EE): the object is in X. Registers and flags the original leaves, by path:
+//  - no carry: A = the new accumulator; carry clear; zero/negative from A; overflow from the ADC; X, Y untouched;
+//  - a step: Y = +1 or $FF, A = the new coordinate (the ADC result); overflow from that ADC; zero/negative/carry from the last compare that ran
+//    (CMP #2, then CMP #$96 for x; for y: the ADC itself when negative, else CMP #$47).
+void cmpFlags(Machine& m, uint8_t a, uint8_t v) {
+  m.p = static_cast<uint8_t>((m.p & ~0x01) | (a >= v ? 0x01 : 0));
+  m.setZN(static_cast<uint8_t>(a - v));
+}
+
+void moveNative(Machine& m) {
+  const uint8_t object = m.x;
+  game::Move mv{};
+  withRam(m, [&](game::Ram& r) { mv = game::moveObject(r, object); });
+  const uint8_t acc = m.read(static_cast<uint16_t>(0xC0 + object));
+  if (!mv.stepped) {
+    const uint8_t a0 = static_cast<uint8_t>(mv.oldAcc << 4);
+    m.a = acc;
+    m.p = static_cast<uint8_t>((m.p & ~0x41) | ((((a0 ^ acc) & (mv.oldAcc ^ acc)) & 0x80) ? 0x40 : 0));
+    m.setZN(acc);
+    m.rts();
+    return;
+  }
+  const uint8_t r = mv.newCoord;
+  m.y = mv.stepValue;
+  m.a = r;
+  m.p = static_cast<uint8_t>((m.p & ~0x40) | (((mv.stepValue ^ r) & (mv.oldCoord ^ r) & 0x80) ? 0x40 : 0));
+  if (!mv.vertical) {
+    cmpFlags(m, r, 0x02);
+    if (r != 0x02) cmpFlags(m, r, 0x96);
+  } else {
+    const bool carry = (static_cast<unsigned>(mv.stepValue) + mv.oldCoord) > 0xFF;
+    if (r & 0x80) {
+      m.p = static_cast<uint8_t>((m.p & ~0x01) | (carry ? 0x01 : 0));
+      m.setZN(r);
+    } else {
+      cmpFlags(m, r, 0x47);
+    }
+  }
+  m.rts();
+}
+
 // F21.7 LOCATE_OBJECT ($FBAD): the object is in X. The original leaves A = POS_CODE, Y = the row, X untouched, carry = bit 6 of the cell index,
 // zero and negative from the row (its last instruction is ROL CELL_ROW). It also leaves, in the stack byte where its PHP wrote, the flags it saved:
 // the flags after LSR of the row (carry = row bit 0, zero = row < 2, negative clear) with the B and U bits set; that byte is part of the memory
@@ -131,6 +172,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "move") { m.registerNative(0xF9EE, "MOVE_OBJECT (native)", [](Machine& mm) { moveNative(mm); }); return true; }
   if (name == "locate") { m.registerNative(0xFBAD, "LOCATE_OBJECT (native)", [](Machine& mm) { locateNative(mm); }); return true; }
   if (name == "new-maze") { m.registerNative(0xFC0C, "NEW_MAZE (native)", [](Machine& mm) { placeNative(mm, 1); }); return true; }
   if (name == "place-objects") { m.registerNative(0xFC21, "PLACE_OBJECTS (native)", [](Machine& mm) { placeNative(mm, 0); }); return true; }

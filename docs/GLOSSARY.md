@@ -189,3 +189,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Shared tail | The last part of a routine that two or more routines jump into instead of each having a copy. (Stage F8) |
 | Speed accumulator | A byte that is multiplied by 17 (mod 256) every frame; each time the result overflows the object moves one step. The start value fixes the speed (about 0.56 or 0.69 pixels per frame for Pac-Man). (Stage F10) |
 | Cell / row | The maze is a grid: cells 4 pixels wide, rows 10 pixels high. A table in the ROM says which sides of each cell are open. (Stage F10) |
+| Collision flag | A note the TIA chip keeps by itself while drawing the picture: it records which pairs of objects (sprites, missiles, ball, playfield) overlapped. The game reads it after the picture to know that a ghost touched Pac-Man. It is cleared once per frame. (Stage F12) |

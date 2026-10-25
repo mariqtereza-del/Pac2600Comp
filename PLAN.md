@@ -1810,7 +1810,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F11_MAZE.md`, `DECISIONS.md` (T-F11-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F11: Maze and wafer storage`.
     - **Next stage:** F12 — Collisions.
-12. **[Not started] F12 — Collisions** (the 2600 has hardware collision flags; find whether the game uses them or its own checks).
+12. **[Done] F12 — Collisions.** *(expanded and done 2026-10-26)*
+    - **Objective:** find out how the game detects that Pac-Man touches a ghost or the bonus item (the chip's collision flags or its own position checks), and prove the game's reaction to those flags.
+    - **Why it matters:** this decides when Pac-Man dies, when a ghost is eaten and how many points it gives; the rebuilt game must react in the same frames, and it must produce the same flags from its own picture.
+    - **Prerequisites:** F11 Done (`52a7832`): maze; F10 movement; F7 RAM names; F8 routines; the 70 baseline traces.
+    - **What Claude Code will do:**
+      1. Add an optional `watch=<file>:<pc>,<pc>` argument to the measuring tool `stella_coverage` (`tools\stella_probe\coverage.cpp`): it logs the accumulator after chosen instructions, i.e. the flag value the game really read. Rebuild it; all 70 replays must still equal their golden traces.
+      2. `tools\f12_collisions.py`: list every collision register in the listing; replay all 70 games with the log; check the reaction rules (bonus item, ghost eaten, death trigger, no reaction when the flag is clear, which ghost is tested and when) on every logged frame; tabulate flag against the positions of ghost and Pac-Man.
+      3. Write `docs\F12_COLLISIONS.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 0 wrong frames; the flags are the chip's own.
+    - **Verification:** `python -I tools\f12_collisions.py rom\pacman.a26` says `result: OK` (70 replays equal to their golden traces; 665 ghost flags, 193 ghosts eaten, 303 deaths started, 18 bonus items, all reactions right; 0 reactions without a flag).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the flag is true pixel overlap of the two pictures; it is not predicted from positions here (it needs the sprite shapes and the pixel columns: F18 / F23). The death sequence, scared timers and the ghosts' journey home are F13, F16, F17.
+    - **Recovery:** one new script, a small option in the measuring tool and a generated document; undo by returning to `52a7832` (with your OK).
+    - **Documentation updates:** `docs\F12_COLLISIONS.md`, `DECISIONS.md` (T-F12-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F12: Collisions`.
+    - **Next stage:** F13 — Ghost movement and decisions.
 13. **[Not started] F13 — Ghost movement and decisions.**
 14. **[Not started] F14 — Randomness: where it comes from.**
 15. **[Not started] F15 — Scoring, bonus item and lives.**

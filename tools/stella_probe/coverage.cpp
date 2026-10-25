@@ -41,6 +41,8 @@ namespace {
 template<typename Tag, typename Tag::type Member> struct Rob { friend typename Tag::type steal(Tag) { return Member; } };
 struct PcTag { using type = uInt16 M6502::*; friend type steal(PcTag); };
 template struct Rob<PcTag, &M6502::PC>;
+struct ATag { using type = uInt8 M6502::*; friend type steal(ATag); };
+template struct Rob<ATag, &M6502::A>;
 
 constexpr int kWidth = 160;
 
@@ -59,6 +61,8 @@ class CoverageStella : public StellaLIBRETRO {
     std::map<std::pair<int, int>, uint64_t> dataReads;    // (instruction offset, read offset) -> times
     std::map<int, uint64_t> outside;                      // instruction starts outside the ROM
     int frame = 0;
+    std::vector<uint16_t> watch;                          // Stage F12: ROM addresses whose instruction result (A) is logged
+    std::vector<std::array<int, 3>> watched;              // frame, address, A after the instruction
 
     // Same steps as StellaLIBRETRO::runFrame(), with updateVideo() unrolled to single instructions (see timing.cpp).
     void runFrameCounted()
@@ -78,6 +82,8 @@ class CoverageStella : public StellaLIBRETRO {
           const uInt16 pc = cpu.*steal(PcTag{});
           const bool ok = cpu.execute(1);
           if(pc & 0x1000) {
+            for(uint16_t w : watch)
+              if(w == pc) watched.push_back({frame, pc, cpu.*steal(ATag{})});
             const int off = pc & 0x0FFF;
             Seen& s = executed[off];
             if(s.count++ == 0) s.first = frame;
@@ -159,6 +165,16 @@ int main(int argc, char* argv[])
     int pf = 0, pa = 0, pv = 0;
     if(std::sscanf(argv[i], "%d:%x:%x", &pf, &pa, &pv) == 3) pokes.push_back({pf, pa, pv});
   }
+  // Stage F12: `watch=<file>:<hex pc>,<hex pc>..` writes `frame,pc,A` after each run of those instructions.
+  std::string watchFile;
+  for(int i = 5; i < argc; ++i)
+    if(std::strncmp(argv[i], "watch=", 6) == 0) {
+      std::string a = argv[i] + 6;
+      const size_t c = a.rfind(':');
+      watchFile = a.substr(0, c);
+      std::istringstream in(a.substr(c + 1));
+      for(std::string t; std::getline(in, t, ','); ) stella.watch.push_back(static_cast<uint16_t>(std::stoul(t, nullptr, 16)));
+    }
 
   stella.setROM(romPath.c_str(), rom.data(), rom.size());
   if(!stella.create(false)) { std::fprintf(stderr, "Stella could not create the console\n"); return 4; }
@@ -206,6 +222,10 @@ int main(int argc, char* argv[])
   for(const auto& [k, n] : stella.dataReads) out << "r," << k.first << ',' << k.second << ',' << n << '\n';
   for(const auto& [pc, n] : stella.outside) out << "m," << pc << ',' << n << '\n';
   out.close();
+  if(!watchFile.empty()) {
+    std::ofstream w(watchFile);
+    for(const auto& e : stella.watched) w << e[0] << ',' << std::hex << e[1] << std::dec << ',' << e[2] << '\n';
+  }
   if(argc > 4)
     std::printf("done: %d frames, %zu instruction starts, checked %d frames against the trace: %d differences\n", frames, stella.executed.size(), checked, mismatches);
   else

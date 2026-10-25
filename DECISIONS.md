@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F12-1 — Collisions are the chip's own flags (2026-10-26, Stage F12)
+
+- **Method:** a new option of `stella_coverage` (`watch=<file>:<pc>,<pc>`, T-F12-1; it only reads) logs the value the game gets at `$F575` (CXM1P AND CXP1FB) and `$F5D9` (CXPPMM) for every frame of the 70 games; `tools\f12_collisions.py` checks the reaction rules against the recorded memory of each frame. All 70 replays still equal their golden traces with the changed tool.
+- **Found:** the game has no position checks of its own for touching. It reads three flags: ghost against Pac-Man (CXPPMM bit 7, tested for ghost `FRAME_COUNTER & 3` on the 4 frames of every 8 where `FRAME_COUNTER` bit 2 is clear, i.e. each ghost once every 8 frames), and bonus item against Pac-Man (bit 6 of CXM1P AND CXP1FB: missile 1 and the ball, drawn only in maze row 3). `STA CXCLR` at `FRAME_START` clears the flags. Scared and not yet eaten: ghost eaten, `EAT_PAUSE` = $9F, +20/40/80/160, count + 1. Not scared and not eaten: death starts (`GAME_FLAGS` |= $C0, `EVENT_TIMER` = $3F). Eaten (eyes): nothing. Bonus: +100, item off, `BONUS_TIMER` = $12. Power pills and wafers are not collisions (Pac-Man's cell, F11).
+- **Result:** 665 ghost flags: 193 eaten, 303 deaths started, 169 harmless (eyes), all reactions exactly right; 100,752 clear flags with no reaction; 18 bonus items, all right; the flag was never read when it should not be and always read when it should. Flags appear only with |dx| <= 7 and |dy| <= 7 between ghost and Pac-Man (0 of 99,213 frames outside).
+- **Not claimed:** the pixel-exact overlap (needs sprite shapes and pixel columns: F18 / F23); the death sequence, scared timers and the journey home of the eyes (F13, F16, F17); sound effects (F19). Frames of BL-065/066 (test-only edits) are skipped. A native game must test exactly one ghost per frame on the same frames, or the original's misses and its timing change.
+- **Reversible:** Yes.
+
 ### T-F11-1 — The maze and the wafers (2026-10-26, Stage F11)
 
 - **Method:** `tools\f11_maze.py` reads the table `$FE13` and a model of the eating rules built on the F10 movement model, and compares with the recorded memory of every frame on the normal road.

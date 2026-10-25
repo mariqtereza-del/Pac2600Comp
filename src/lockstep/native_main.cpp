@@ -17,6 +17,7 @@
 
 #include "../game/cartridge_data.hpp"
 #include "../game/game.hpp"
+#include "../game/renderer.hpp"
 
 class NullChip : public game::TiaChip {
  public:
@@ -45,7 +46,7 @@ int main(int argc, char** argv) {
       if (ls >> f >> b) changes.emplace_back(f, b);
     }
   }
-  std::vector<std::string> golden;
+  std::vector<std::string> golden, goldenPicture;
   {
     std::ifstream in(argv[3]);
     if (!in) { std::fprintf(stderr, "cannot read %s\n", argv[3]); return 2; }
@@ -55,13 +56,15 @@ int main(int argc, char** argv) {
       std::vector<std::string> cells;
       std::istringstream ls(line);
       for (std::string c; std::getline(ls, c, ',');) cells.push_back(c);
-      if (cells.size() >= 6) golden.push_back(cells[5]);
+      if (cells.size() >= 6) { golden.push_back(cells[5]); goldenPicture.push_back(cells[3]); }
     }
   }
   std::map<int, std::pair<bool, bool>> oracle;
   std::vector<std::array<int, 3>> pokes;
   std::vector<int> ignore;
-  bool all = false;
+  bool all = false, pictures = false;
+  int saveFrame = -1, traceFrame = -1;
+  std::string saveFile;
   for (int i = 4; i < argc; ++i) {
     const std::string a = argv[i];
     if (a == "--oracle" && i + 1 < argc) {
@@ -76,13 +79,26 @@ int main(int argc, char** argv) {
       for (std::string t; std::getline(ls, t, ',');) ignore.push_back(static_cast<int>(std::stoul(t, nullptr, 16)) - 0x80);
     } else if (a == "--all") {
       all = true;
+    } else if (a == "--trace-frame" && i + 1 < argc) {
+      traceFrame = std::atoi(argv[++i]);
+    } else if (a == "--pictures") {
+      pictures = true;
+    } else if (a == "--save-picture" && i + 1 < argc) {   // <frame>:<file>: saves that frame's picture (228 x 160 colour bytes) for looking at
+      const std::string v = argv[++i];
+      saveFrame = std::atoi(v.c_str());
+      saveFile = v.substr(v.find(':') + 1);
+
     }
   }
   for (int a = 0xF6; a <= 0xFF; ++a) ignore.push_back(a - 0x80);
 
   const game::Cartridge cart = data.view();
   game::Game g(cart);
-  NullChip chip;
+  NullChip nullChip;
+  game::Renderer renderer;   // with --pictures: the drawing code and the video-chip model make every frame's picture, compared by fingerprint
+  game::TiaChip& chip = pictures ? static_cast<game::TiaChip&>(renderer) : static_cast<game::TiaChip&>(nullChip);
+  if (pictures) g.setPicture(&renderer);
+  int picturesDifferent = 0, firstPicture = -1;
   const int total = std::min<int>(frames > 0 ? frames : static_cast<int>(golden.size()), static_cast<int>(golden.size()));
   unsigned bits = 0;
   size_t next = 0;
@@ -108,7 +124,19 @@ int main(int argc, char** argv) {
     in.frame.ghostTouched = o != oracle.end() && o->second.second;
     for (const auto& pk : pokes)
       if (pk[0] == f && pk[1] >= 0x80 && pk[1] <= 0xFF) g.state()[pk[1] - 0x80] = static_cast<uint8_t>(pk[2]);
+    renderer.trace = (f == traceFrame);
     if (!g.runFrame(in, chip)) { std::printf("frame %d: the game met the one path of the original that no recording runs\n", f); return 1; }
+    if (pictures) {
+      const auto& px = renderer.finishPicture();
+      uint64_t h = 1469598103934665603ULL;   // the fingerprint of the whole project
+      for (uint8_t v : px) { h ^= v; h *= 1099511628211ULL; }
+      char hex[20];
+      std::snprintf(hex, sizeof hex, "%016llx", static_cast<unsigned long long>(h));
+      if (f == saveFrame) { std::ofstream sf(saveFile, std::ios::binary); sf.write(reinterpret_cast<const char*>(px.data()), static_cast<std::streamsize>(px.size())); }
+      if (f > 0 && goldenPicture[f] != hex) {   // frame 0 is the partial first picture after power-on
+        if (picturesDifferent++ == 0) { firstPicture = f; std::printf("first picture difference: frame %d, golden %s, ours %s\n", f, goldenPicture[f].c_str(), hex); }
+      }
+    }
     std::string ours;
     char buf[3];
     for (int i = 0; i < 128; ++i) { std::snprintf(buf, sizeof buf, "%02x", g.state()[i]); ours += buf; }
@@ -132,10 +160,16 @@ int main(int argc, char** argv) {
       if (diffCount[i]) std::printf(" $%02X x%ld", 0x80 + i, diffCount[i]);
     std::printf("\n");
   }
-  if (different == 0) {
+  if (pictures) {
+    std::printf("pictures: %s (%d of %d frames differ", picturesDifferent ? "DIFFERENT" : "IDENTICAL", picturesDifferent, total - 1);
+    if (picturesDifferent) std::printf(", first at frame %d", firstPicture);
+    std::printf(")\n");
+  }
+  if (different == 0 && picturesDifferent == 0) {
     std::printf("result: IDENTICAL (%d frames)\n", total);
     return 0;
   }
+  if (different == 0) return 1;
   std::printf("result: DIFFERENT (%d of %d frames differ; first at frame %d)\n", different, total, firstFrame);
   return 1;
 }

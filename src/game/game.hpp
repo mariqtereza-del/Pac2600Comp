@@ -8,6 +8,10 @@
 
 namespace game {
 
+// The scanlines at which the writes of the logic parts are placed for the picture (the logic code has no exact timing, and none of these writes depends
+// on it: the top logic ends before the drawing code starts, the bottom logic follows its last line, the frame start comes last).
+inline constexpr int kPowerOn = -1, kTopLogicLine = 5, kBottomLogicLine = 240, kFrameStartLine = 259;
+
 struct FrameInputs {
   ConsoleInput console;   // fire, Reset, Select, difficulty switches, colour switch
   FrameInput frame;       // joystick port and collision flags

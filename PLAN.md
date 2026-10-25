@@ -2412,7 +2412,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Documentation updates:** `docs\F22_LOADER.md`, `docs\GLOSSARY.md`, `DECISIONS.md` (T-F22-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F22: Data loader`.
       - **Next stage:** F23 — Native renderer.
-23. **[In progress] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included. Split into four sessions (Rule 12, T-F23-1): **F23.1 done 2026-10-26: the video-chip model. F23.2 done 2026-10-26: the drawing code as native code.**  **F23.3 whole games: drawing code + model give the golden pictures in every frame.** F23.4 the collision flags from the model replace the oracle. *(expanded below)*
+23. **[In progress] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included. Split into four sessions (Rule 12, T-F23-1): **F23.1 done 2026-10-26: the video-chip model. F23.2 done 2026-10-26: the drawing code as native code. F23.3 done 2026-10-26: whole games, every picture identical. F23.4 the collision flags from the model replace the oracle.** *(expanded below)*
     - **F23.1 — The video-chip model** *(expanded and done 2026-10-26)*
       - **Objective:** a small model of the video chip that turns timed chip writes into the 160 x 228 picture, proved against the emulator's pictures.
       - **Why it matters:** the renderer has two halves: what the game writes (the drawing code) and how the chip turns writes into pixels. Proving the second half alone, with the emulator's own writes, means any later difference is the first half's fault.
@@ -2442,7 +2442,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Recovery:** new files and small edits; undo by returning to `f06e174` (with your OK).
       - **Documentation updates:** `docs\F23_KERNEL.md`, `docs\GLOSSARY.md`, `DECISIONS.md` (T-F23-2), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F23.2: The drawing code as native code`.
-      - **Next stage:** F23.3 — Whole games: drawing code and chip model together against every golden picture.
+      - **Next stage:** F23.3 — Whole games (done, below).
+    - **F23.3 — Whole games: drawing code and chip model against every golden picture** *(expanded and done 2026-10-26)*
+      - **Objective:** the native game (logic + drawing code + video-chip model; no 6502, no emulator) plays every recorded game and makes a picture in every frame whose fingerprint equals the golden trace's.
+      - **Why it matters:** this is the pixel-for-pixel proof of the renderer, flicker included, over 439,680 frames.
+      - **Prerequisites:** F23.2 Done (`58fd59d`).
+      - **What Claude Code will do:** `game::Renderer` (`src\game\renderer.*`): the chip as the logic parts see it (their few writes placed on fixed scanlines 5, 240, 259 through the new `TiaChip::position`) and the sink of the drawing code, feeding `TiaVideo`; the power-on places of missile 1 and the ball; `lockstep_native --pictures` (fingerprint of each frame's picture against the golden trace; `--save-picture`, `--trace-frame` for looking at differences); `tools\f23_pictures.py` (all 70 games + a control); `docs\F23_PICTURES.md`.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** memory and picture identical in every frame of all 70 games.
+      - **Verification:** `python -I tools\f23_pictures.py rom\pacman.a26` says `result: OK` (70 of 70 games, 439,680 frames; control found).
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** collision flags still from the oracle (F23.4); frame 0 not compared.
+      - **Recovery:** new files and small edits; undo by returning to `58fd59d` (with your OK).
+      - **Documentation updates:** `docs\F23_PICTURES.md`, `DECISIONS.md` (T-F23-3), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F23.3: Whole games, every picture`.
+      - **Next stage:** F23.4 — The collision flags from the model.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.
 25. **[Not started] F25 — Whole-game lockstep.** All golden traces identical in RAM, picture and sound. Anything not identical is either fixed or entered in `DISCREPANCIES.md` with cause and impact, for your review.
 26. **[Not started] F26 — Gate F: emulator out.** The game build no longer contains Stella; it lives on only in the test tool. The gate rests on lockstep: every golden trace and every random-input run identical in memory, picture and sound; you may also play a full game, but nothing waits for it. Tag `0.5.0-native`.

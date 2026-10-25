@@ -174,6 +174,9 @@ class TiaChip {
  public:
   virtual ~TiaChip() = default;
   virtual void write(uint8_t reg, uint8_t value) = 0;
+  // Where in the picture the following writes happen: a scanline number (the logic code has no exact timing), or -1 for the power-on set-up. Only a
+  // video renderer cares; the default does nothing.
+  virtual void position(int /*line*/) {}
 };
 using SoundChip = TiaChip;   // the sound routines see the same chip
 namespace chip {

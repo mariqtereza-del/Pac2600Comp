@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F23-3 — The logic parts' video writes are placed on fixed scanlines; every picture of all 70 games is identical (2026-10-26, Stage F23.3)
+
+- **Choice:** the logic code has no exact timing, and none of its writes to the video chip (colours, `REFP1`, `VBLANK`, `VSYNC`, `CXCLR`) depends on it, so `TiaChip::position(line)` places them: top logic line 5, bottom logic line 240, frame start line 259; the power-on set-up (-1) feeds the six writes that place missile 1 and the ball at their exact clocks.
+- **Found while testing:** the first choice for the bottom logic (line 230) broke two-player games: their score line makes the drawing run to about line 236, so a write at line 230 looked like the start of a new picture and cut the picture short (20 games went black). Line 240 is after the longest drawing.
+- **Result:** 70 of 70 games, 439,680 frames: memory (all but the stack bytes) and the fingerprint of the picture identical in every frame but frame 0 (the partial first picture). The control (five life markers poked into one frame) is found at exactly that frame.
+- **Still borrowed:** the two collision flags (oracle) until F23.4.
+- **Reversible:** Yes.
+
 ### T-F23-2 — The drawing code is counted in processor cycles; the whole game now matches with nothing left out (2026-10-26, Stage F23.2)
 
 - **Choice:** the colour clock of every write is worked out from the cycles of the original instructions (3 colour clocks a cycle; +1 cycle where an indexed read or a taken branch crosses a page; `WSYNC` ends the line). Only the stretches of code that make writes are counted; a line that starts with `WSYNC` resets the count. I preferred this to copying clocks measured in the emulator into a table: it is the same knowledge the original programmer used, and the test (the emulator's own list) then checks it.

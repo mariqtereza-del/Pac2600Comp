@@ -30,6 +30,29 @@ void withRam(Machine& m, F&& fn) {
     if (after[i] != before[i]) m.write(static_cast<uint16_t>(0x80 + i), after[i]);
 }
 
+// F21.7 LOCATE_OBJECT ($FBAD): the object is in X. The original leaves A = POS_CODE, Y = the row, X untouched, carry = bit 6 of the cell index,
+// zero and negative from the row (its last instruction is ROL CELL_ROW). It also leaves, in the stack byte where its PHP wrote, the flags it saved:
+// the flags after LSR of the row (carry = row bit 0, zero = row < 2, negative clear) with the B and U bits set; that byte is part of the memory
+// the lockstep tool compares, so the adapter writes it too.
+void locateNative(Machine& m) {
+  const uint8_t object = m.x;
+  game::Location loc{};
+  withRam(m, [&](game::Ram& r) { loc = game::locateObject(r, object); });
+  // The row loop ends with an SBC #10: it leaves the overflow flag as that subtraction sets it (the flag is kept by the PHP and stays to the end).
+  uint8_t flags = m.p;
+  if (loc.row != 0) {
+    const uint8_t before = static_cast<uint8_t>(loc.yOffset + 10);
+    flags = static_cast<uint8_t>((flags & ~0x40) | ((((before ^ 10) & (before ^ loc.yOffset)) & 0x80) ? 0x40 : 0));
+  }
+  const uint8_t saved = static_cast<uint8_t>(((flags & ~0x83) | (loc.row & 1) | ((loc.row >> 1) == 0 ? 0x02 : 0)) | 0x30);
+  m.write(static_cast<uint16_t>(0x100 + m.sp), saved);
+  m.a = loc.posCode;
+  m.y = loc.row;
+  m.p = static_cast<uint8_t>((flags & ~0x01) | loc.cellBit6);
+  m.setZN(loc.row);
+  m.rts();
+}
+
 // F21.5/F21.6 NEW_GAME_SETUP ($FBF4), NEW_MAZE ($FC0C) and PLACE_OBJECTS ($FC21): all three end with LDA #$80 (A = $80, negative set, zero clear), X = $FF (the loop leaves it after
 // DEX of 0), Y = 0 (LDY #0 in the loop), carry untouched.
 void placeNative(Machine& m, int which) {
@@ -108,6 +131,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "locate") { m.registerNative(0xFBAD, "LOCATE_OBJECT (native)", [](Machine& mm) { locateNative(mm); }); return true; }
   if (name == "new-maze") { m.registerNative(0xFC0C, "NEW_MAZE (native)", [](Machine& mm) { placeNative(mm, 1); }); return true; }
   if (name == "place-objects") { m.registerNative(0xFC21, "PLACE_OBJECTS (native)", [](Machine& mm) { placeNative(mm, 0); }); return true; }
   return false;

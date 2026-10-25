@@ -1986,7 +1986,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F20_LOCKSTEP.md`, `DECISIONS.md` (T-F20-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F20: Lockstep harness`.
     - **Next stage:** F21 — Rewrite one routine per session (F21.1 first).
-21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP.** *(expanded below)*
+21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT.** *(expanded below)*
     - **Objective (F21.1):** set up the way a routine is rewritten and prove it with the first, smallest routine that changes memory: CLEAR_SCORES (`$FC7D`, 14 bytes: both scores and both lives to 0).
     - **Why it matters:** every later session follows the same protocol; the protocol must detect a wrong routine even when the recorded games do not show it (a wrong register).
     - **Prerequisites:** F20 Done (`bb3df0f`).
@@ -2080,7 +2080,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Recovery:** small additions; undo by returning to `2cbeebb` (with your OK).
       - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-6), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F21.6: Rewrite NEW_GAME_SETUP`.
-      - **Next stage:** F21.7 — Rewrite LOCATE_OBJECT (51 bytes: row, offsets and cell index of an object).
+      - **Next stage:** F21.7 — Rewrite LOCATE_OBJECT (done, below).
+    - **F21.7 — Rewrite LOCATE_OBJECT** *(expanded and done 2026-10-26)*
+      - **Objective:** rewrite LOCATE_OBJECT (`$FBAD`, 51 bytes: row, offsets in the cell, cell index and position code of object X) as C++.
+      - **Why it matters:** Pac-Man and every ghost use it every frame (F10, F13); it is the busiest routine of the logic.
+      - **Prerequisites:** F21.6 Done (`a1794f6`).
+      - **What Claude Code will do:** `game::locateObject` (the row loop copied with its exit rule, then offset, cell index, position code; returns the five values); the adapter reproduces A = position code, Y = row, carry = bit 6 of the cell index, zero/negative from the row, the overflow flag left by the last SBC, and the flags byte that the original PHP leaves in the stack area (that byte is part of the 128 compared bytes); added to the DONE list.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** 70 of 70 games identical; every call equal to the original.
+      - **Verification:** `python -I tools\f21_routines.py rom\pacman.a26` says `result: OK` (LOCATE_OBJECT: 70 of 70 games identical, 1,329,282 calls compared with the original, 0 different; all eight rewrites together identical). On the first tries the checks found two things: the flags byte in the stack (an effect of PHP) and the overflow flag of the last SBC; both fixed in the adapter.
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** y of 128 or more never occurs (the largest is $5B); the loop is copied as it is but that path was never run.
+      - **Recovery:** small additions; undo by returning to `a1794f6` (with your OK).
+      - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-7), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F21.7: Rewrite LOCATE_OBJECT`.
+      - **Next stage:** F21.8 — Rewrite MOVE_OBJECT (56 bytes: the speed accumulator and the step).
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.

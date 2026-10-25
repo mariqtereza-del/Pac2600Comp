@@ -45,4 +45,17 @@ void newMaze(Ram& ram);
 // number ((GAME_SELECT - 2) and 6) + 4 (F16), then NEW_MAZE (the original falls into it).
 void newGameSetup(Ram& ram);
 
+// F21.7  LOCATE_OBJECT ($FBAD): works out where object n (0 = Pac-Man, 1-4 = ghosts) stands in the maze grid (F10): the row, the distance from the
+// row and cell column, and the cell index. Writes CELL_ROW, Y_OFFSET, X_OFFSET, CELL_INDEX and POS_CODE and returns them (the adapter needs them
+// for the registers the original leaves).
+struct Location {
+  uint8_t row;        // CELL_ROW: y / 10 rounded up (0 when y = 0)
+  uint8_t yOffset;    // Y_OFFSET: y - 10 * row (0 or negative, 8-bit)
+  uint8_t xOffset;    // X_OFFSET: x and 3
+  uint8_t cellIndex;  // CELL_INDEX: x / 4, plus 40 on odd rows
+  uint8_t posCode;    // POS_CODE: (cell index << 2) or (bit 6 of the cell index << 7) or (row >> 1)
+  uint8_t cellBit6;   // bit 6 of the cell index (the carry the original leaves)
+};
+Location locateObject(Ram& ram, uint8_t object);
+
 }  // namespace game

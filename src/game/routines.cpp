@@ -73,4 +73,34 @@ void newGameSetup(Ram& ram) {
   newMaze(ram);
 }
 
+// LOCATE_OBJECT ($FBAD). The row loop of the original subtracts 10 from y until the result is 0 or has bit 7 set, counting the passes in Y; so for
+// y = 0 the row is 0 and for 0 < y < 128 the row is y / 10 rounded up and y_offset = y - 10 * row (zero or negative). (y of 128 and above never
+// occurs: the largest y of an object is $5B; the loop is copied as it is.)
+Location locateObject(Ram& ram, uint8_t object) {
+  uint8_t y = at(ram, ram::PACMAN_Y + object);
+  const uint8_t x = at(ram, ram::PACMAN_X + object);
+  uint8_t row = 0;
+  if (y != 0) {
+    do {
+      ++row;
+      y = static_cast<uint8_t>(y - 10);
+    } while (y != 0 && !(y & 0x80));
+  }
+  Location loc{};
+  loc.row = row;
+  loc.yOffset = y;
+  loc.xOffset = x & 3;
+  uint8_t cell = x >> 2;
+  if (row & 1) cell = static_cast<uint8_t>(cell + 0x28);
+  loc.cellIndex = cell;
+  loc.cellBit6 = (cell >> 6) & 1;
+  loc.posCode = static_cast<uint8_t>((cell << 2) | (loc.cellBit6 << 7) | (row >> 1));
+  at(ram, ram::CELL_ROW) = loc.row;
+  at(ram, ram::Y_OFFSET) = loc.yOffset;
+  at(ram, ram::X_OFFSET) = loc.xOffset;
+  at(ram, ram::CELL_INDEX) = loc.cellIndex;
+  at(ram, ram::POS_CODE) = loc.posCode;
+  return loc;
+}
+
 }  // namespace game

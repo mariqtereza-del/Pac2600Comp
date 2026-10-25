@@ -29,7 +29,7 @@ int main()
   // The table: every key is used once, none is one of the keys the window itself uses.
   std::set<SDL_Scancode> seen;
   bool duplicate = false, reserved = false;
-  const std::set<SDL_Scancode> windowKeys = {SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4, SDL_SCANCODE_5, SDL_SCANCODE_F1, SDL_SCANCODE_ESCAPE,
+  const std::set<SDL_Scancode> windowKeys = {SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4, SDL_SCANCODE_5, SDL_SCANCODE_F7, SDL_SCANCODE_F1, SDL_SCANCODE_ESCAPE,
                                              SDL_SCANCODE_RETURN, SDL_SCANCODE_KP_ENTER, SDL_SCANCODE_LALT, SDL_SCANCODE_RALT};
   for(const auto& b : controls::bindings())
     for(SDL_Scancode k : b.keys) {
@@ -186,7 +186,11 @@ int main()
     for(const auto& l : lines) all += l.keys + " | " + l.meaning + "\n";
     for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "1 / 2 / 3 / 4 / 5", "[now A]", "[now B]", "Controller", "Test Pad", "D-pad / left stick", "Options", "Share", "Cross / Square"})
       expect(all.find(needle) != std::string::npos, std::string("the F1 list contains: ") + needle);
-    expect(lines.size() == controls::bindings().size() + 9, "the F1 list has one line per binding, five pad lines and four window keys");
+    expect(lines.size() == controls::bindings().size() + 10, "the F1 list has one line per binding, five pad lines and five window keys");
+    // The soft glow (F7) is named with its position
+    auto glowLine = [](const std::vector<controls::HelpLine>& l) { for(const auto& x : l) if(x.keys == "F7") return x.meaning; return std::string(); };
+    expect(glowLine(lines).find("[now off]") != std::string::npos, "F7 line says the glow is off by default");
+    expect(glowLine(controls::helpLines(now, "Test Pad", true)).find("[now on]") != std::string::npos, "F7 line says the glow is on when it is");
   }
 
   // ---- Gamepad (Stage D11) ----

@@ -55,7 +55,7 @@ private:
 struct HelpLine {
   std::string keys, meaning;
 };
-std::vector<HelpLine> helpLines(const Input& current, const std::string& controller = "none");
+std::vector<HelpLine> helpLines(const Input& current, const std::string& controller = "none", bool softBlend = false);
 
 // ---- Gamepad (Stage D11, DECISIONS.md T-D11-1) ----
 

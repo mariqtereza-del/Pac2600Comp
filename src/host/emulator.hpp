@@ -40,6 +40,10 @@ public:
   void setBlackWhite(bool blackWhite);  // the Colour / B&W switch
   std::uint8_t consoleSwitches() const;  // the console switch register (SWCHB) as the game reads it
 
+  // Stella's "phosphor" glow: each picture is blended 60 % with the one before (softer ghost flicker, trails behind movers).
+  // Off from the start (D-007: authentic, as on a real TV); only the colours() picture changes, never indexed() or the fingerprint.
+  void setSoftBlend(bool on);
+
   void setConsoleReset(bool pressed);  // the console's Reset switch (starts a game); held until set again
 
   int height() const;                       // picture rows (228 for this ROM)

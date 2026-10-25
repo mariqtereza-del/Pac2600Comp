@@ -196,6 +196,7 @@ KEYS                                              PS4 PAD
   F3 (hold)               Game Reset: new game      Options               Game Reset
   F2 (hold)               Game Select: variation    Share                 Game Select
   F4                      TV type: Colour / B&W
+  F7                      soft glow on / off (off = the picture as on a real TV; on = Stella's smoothing of the flicker)
   F5 / F6                 left / right difficulty switch A / B
   1 2 3 4 5               picture: Sharp, Fill, TV frame, Game area, Framed (5 is the standard)
   Alt + Enter             fullscreen on / off

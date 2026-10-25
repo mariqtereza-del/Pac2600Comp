@@ -40,6 +40,7 @@ std::string Emulator::load(const std::string& romName, const std::vector<std::ui
   activeCore = &impl_->core;
   impl_->core.setROM(romName.c_str(), romBytes.data(), romBytes.size());
   if(!impl_->core.create(false)) return "Stella could not start the console for this ROM.";
+  impl_->core.setVideoPhosphor(1, 60);  // Stella's game list switches the glow on for this ROM; the port starts without it (D-007)
   return {};
 }
 
@@ -88,6 +89,8 @@ void Emulator::setBlackWhite(bool blackWhite)
 }
 
 std::uint8_t Emulator::consoleSwitches() const { return impl_->core.osystem().console().switches().read(); }
+
+void Emulator::setSoftBlend(bool on) { impl_->core.setVideoPhosphor(on ? 2 : 1, 60); }
 
 void Emulator::setConsoleReset(bool pressed) { impl_->core.setInputEvent(Event::ConsoleReset, pressed ? 1 : 0); }
 

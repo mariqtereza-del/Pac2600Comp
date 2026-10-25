@@ -149,6 +149,7 @@ struct Options {
   std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
   std::string recordFile, replayFile;  // input recording (--record) and playback (--replay), Stage D13
   long long ramSeed = -1;              // --ram-seed N: power-on memory filled from seed N (-1 = zeros)
+  bool softGlow = false;               // --soft-glow: Stella's phosphor glow on (headless tests of F7)
   bool stellaSpeed = false;            // --stella-speed: 60.000 frames a second like Stella, instead of the console's own 59.92 (comparison only)
   double audioCheckSeconds = 0;
   int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
@@ -179,6 +180,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--help-check") o.helpCheckPng = next();
     else if(a == "--pad-check") o.padCheckFile = next();
     else if(a == "--stella-speed") o.stellaSpeed = true;
+    else if(a == "--soft-glow") o.softGlow = true;
     else if(a == "--ram-seed") o.ramSeed = std::atoll(next().c_str());
     else if(a == "--record") o.recordFile = next();
     else if(a == "--replay") o.replayFile = next();
@@ -365,9 +367,9 @@ void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset)
 }
 
 // The F1 list, drawn over the picture with SDL's built-in text.
-void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std::string& controller)
+void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std::string& controller, bool softBlend = false)
 {
-  const std::vector<controls::HelpLine> lines = controls::helpLines(current, controller);
+  const std::vector<controls::HelpLine> lines = controls::helpLines(current, controller, softBlend);
   std::size_t keyWidth = 0, meaningWidth = 0;
   for(const auto& l : lines) { keyWidth = std::max(keyWidth, l.keys.size()); meaningWidth = std::max(meaningWidth, l.meaning.size()); }
   const float charSize = static_cast<float>(SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE);
@@ -1138,6 +1140,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   Pads pads;
   if(!pads.start()) std::fprintf(stderr, "Gamepads could not start; the keyboard still works.\n");
   bool helpOn = false;
+  // Stella's soft glow (F7): off unless the owner turned it on; remembered in settings.ini as soft_glow=on|off
+  std::atomic<bool> softBlend{settings::get(options.settingsFile, "soft_glow") == "on"};
   std::mutex lock;  // guards the shared picture below
   std::vector<std::uint32_t> sharedPixels;
   int sharedHeight = 0;
@@ -1156,6 +1160,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     usedSoundClock = pacer.usesSoundClock();
     Uint64 lastLoop = SDL_GetTicksNS();
     long long frames = 0;
+    bool glowApplied = false;  // the emulator starts without the glow
     while(!stop.load()) {
       const Uint64 now = SDL_GetTicksNS();
       const double gap = static_cast<double>(now - lastLoop) / 1e6;  // how long this thread went without running
@@ -1168,6 +1173,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
 
       int steps = 0;
       while(steps < 5 && pacer.due(now)) {
+        if(softBlend.load() != glowApplied) { glowApplied = softBlend.load(); emulator.setSoftBlend(glowApplied); }
         // A replay gives the console what was recorded; when it has run out, the keyboard and pads take over again.
         controls::Input in = controls::Input::unpack(replaying && frames < replay.frames ? replay.bitsAt(frames) : inputBits.load());
         if(options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10) in.reset = true;
@@ -1219,7 +1225,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
           {7.0, SDL_SCANCODE_S, true}, {7.6, SDL_SCANCODE_S, false},            // down, with the letter key
           {8.0, SDL_SCANCODE_F5, true}, {8.1, SDL_SCANCODE_F5, false},          // left difficulty to A
           {8.5, SDL_SCANCODE_F6, true}, {8.6, SDL_SCANCODE_F6, false},          // right difficulty to A
-          {9.0, SDL_SCANCODE_F4, true}, {9.1, SDL_SCANCODE_F4, false}};         // Colour to B&W
+          {9.0, SDL_SCANCODE_F4, true}, {9.1, SDL_SCANCODE_F4, false},          // Colour to B&W
+          {9.5, SDL_SCANCODE_F7, true}, {9.6, SDL_SCANCODE_F7, false}};         // soft glow on
       const Uint64 t0 = SDL_GetTicksNS();
       for(const auto& step : plan) {
         while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) SDL_Delay(5);
@@ -1247,6 +1254,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         if(e.key.key == SDLK_3) { screen.view.mode = layout::Mode::TvFrame; retitle(); }
         if(e.key.key == SDLK_4) { screen.view.mode = layout::Mode::GameArea; retitle(); }
         if(e.key.key == SDLK_5) { screen.view.mode = layout::Mode::Framed; retitle(); }
+        if(e.key.scancode == SDL_SCANCODE_F7) { softBlend = !softBlend.load(); settings::set(options.settingsFile, "soft_glow", softBlend.load() ? "on" : "off"); }
       }
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode == SDL_SCANCODE_F1) helpOn = !helpOn;
       if(e.type == SDL_EVENT_KEY_DOWN) keyboard.keyDown(e.key.scancode, e.key.repeat);
@@ -1278,7 +1286,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       shownCount = 0;
     }
     if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
-    if(helpOn) drawHelp(renderer, input, pads.names());
+    if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load());
     const Uint64 beforePresent = SDL_GetTicksNS();
     SDL_RenderPresent(renderer);
     ++presents;
@@ -1336,6 +1344,7 @@ int headlessRun(const Options& o)
   if(!o.fingerprintFile.empty()) { fingerprints.open(o.fingerprintFile); fingerprints << "frame,hash\n"; }
 
   if(o.ramSeed >= 0) emulator.randomisePowerOnRam(static_cast<std::uint32_t>(o.ramSeed));
+  if(o.softGlow) emulator.setSoftBlend(true);
 
   // --replay: the console is given the recorded input of each frame; without --frames the whole recording is run.
   inputlog::Recording replay;

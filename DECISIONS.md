@@ -91,6 +91,17 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Replaces:** the default in T-D6-1 (19:10), and records the authenticity question left open in `DISCREPANCIES.md`.
 - **Reversible:** Yes.
 
+### D-007 — No phosphor glow by default; F7 turns it on (2026-10-26, Gate D)
+
+**You noticed:** in black and white mode "Pac-Man has a ghosting effect when moving. Is that intended?" **Your choice:** option 1, "off by default (authentic), with a key to turn the soft blend on".
+
+- **What it was:** Stella's game list switches its "phosphor" effect on for this ROM: each picture is blended 60 % with the one before, to soften the ghosts' flicker. It leaves a faint trail behind everything that moves, more visible in the greys of B&W mode. It is not in the game and not in the console's picture. Measured on your B&W recording: 74 to 249 pixels of a frame were blends of two pictures; with the glow off, 0.
+- **Why off:** the real game draws each ghost on one frame in four, so on a real TV the flicker was there; the glow of a real picture tube faded much faster than Stella's 60 % per frame (my reasoning, not a measurement), and the eye does the smoothing on any screen. Authentic first (D-004).
+- **Now:** off from the start. **F7** turns Stella's soft glow on and off (60 % blend, as before), remembered in `settings.ini` as `soft_glow=on|off`, shown in the F1 list as `[now off]` / `[now on]`. `--soft-glow` (tests) starts the no-window run with it on.
+- **What does not change:** the game, the indexed picture, the fingerprints and the recordings (0 differences from C3 over 2,500 frames; audio identical to C5); the glow only touches the colours of the picture shown.
+- **Proof:** `test_controls` 119 checks (the F7 line says off / on); the real window with an injected F7 wrote `soft_glow=on` to `settings.ini`, and a second F7 on the next start wrote `soft_glow=off`; raw against shown picture: 0 blended pixels by default at 3 moments of your recording, 74-249 with the glow on.
+- **Reversible:** Yes.
+
 ### D-006 — Default picture: "Framed" (key 5), a border on every side, nothing stretched (2026-10-25, after Stage D14)
 
 **Your words:** "I need the horizontal and vertical black margins to match the 12:7 aspect ratio. This is to ensure that any drawn graphics are not stretched in any way. This should be the default graphic setting, please ensure this is implemented and set to whatever key best fits this model."

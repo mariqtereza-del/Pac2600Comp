@@ -95,7 +95,7 @@ Input Keyboard::input() const
   return i;
 }
 
-std::vector<HelpLine> helpLines(const Input& current, const std::string& controller)
+std::vector<HelpLine> helpLines(const Input& current, const std::string& controller, bool softBlend)
 {
   std::vector<HelpLine> lines;
   for(const Binding& b : bindings()) {
@@ -111,6 +111,7 @@ std::vector<HelpLine> helpLines(const Input& current, const std::string& control
   lines.push_back({"  Options", "Game Reset: start a new game"});
   lines.push_back({"  Share", "Game Select: next game variation"});
   lines.push_back({"1 / 2 / 3 / 4 / 5", "Picture: Sharp / Fill / TV frame / Game area / Framed"});
+  lines.push_back({"F7", std::string("Soft glow: smooths the flicker  [now ") + (softBlend ? "on" : "off") + "]"});
   lines.push_back({"Alt + Enter", "Fullscreen on / off"});
   lines.push_back({"F1", "Show / hide this list"});
   lines.push_back({"Esc", "Quit"});

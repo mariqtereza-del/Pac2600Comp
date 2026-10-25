@@ -28,3 +28,6 @@ CMakeUserPresets.json
 # Python caches.
 __pycache__/
 *.pyc
+
+# Your own input recordings (tools\record_inputs.cmd).
+/recordings/

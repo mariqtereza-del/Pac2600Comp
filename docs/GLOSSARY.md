@@ -160,3 +160,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Dead zone | The small area around the middle of a stick where a push is ignored, because a stick that is let go never rests exactly in the centre. |
 | Virtual gamepad | A pretend pad made by the program itself for testing; the rest of the program treats it like a real one. |
 | Latched switch | A key that flips something and leaves it there (the difficulty switches and Colour / B&W), unlike Select and Reset, which only count while the key is held. |
+| Input recording | A small text file (`.inputs`) saying what the joystick and switches were doing on every frame. Played back from power-on it gives the same game again, because the game itself does nothing random. |

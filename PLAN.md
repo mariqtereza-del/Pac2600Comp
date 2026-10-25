@@ -1283,7 +1283,26 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D12-1), `docs\CONTROLS.md`, `docs\GLOSSARY.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D12: Console switches`.
     - **Next stage:** D13 — Input recording and replay.
-13. **[Not started] D13 — Input recording and replay.** The host can record every frame's input to a small `.inputs` file and play it back. Replaying must produce identical frames, proved by comparing picture fingerprints of every frame across two runs. This is the foundation of all later testing.
+13. **[Done] D13 — Input recording and replay.** *(expanded 2026-10-25)*
+    - **Objective:** the program can record what the console was given on every frame to a small `.inputs` text file and play it back, in the window and with no window. Replaying gives identical pictures, proved by the picture fingerprint of every frame.
+    - **Why it matters:** this is the foundation of all later testing (D14 side-by-side check, Phase E rule-finding, Phase H regression tests): a played game becomes a repeatable test.
+    - **Prerequisites:** D12 Done (commit `7e4e560`).
+    - **What Claude Code will do:**
+      1. `src\host\inputlog.*` (no window code): the file format (header with the ROM's SHA-1 and the number of frames, then one line per change of input), a recorder, a reader that refuses bad files in plain words; `tests\host\test_inputlog.cpp`.
+      2. `main.cpp`: `--record <file>` (window; written when the window closes), `--replay <file>` (window and `--headless`; refuses a recording made with another ROM; when it runs out the keyboard takes over), `--fingerprints <csv>` also in the window (tests).
+      3. `tools\record_inputs.cmd` (plays and records into `recordings\`, which Git ignores) and `tools\replay_inputs.cmd` (drop a file on it).
+    - **What I must do:** run `tools\record_inputs.cmd`, play for a minute (steer, eat, die, change a switch), close the window with Esc; then drop the new file from `recordings\` on `tools\replay_inputs.cmd` and watch: it must play out the same game.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your report.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the replay is the same game, move for move, ghosts included.
+    - **Verification:** `test_inputlog` passes; a window recording made with injected keys, replayed in the window and headless, gives identical fingerprints on every frame (720 frames, and a longer 2,399-frame one); the replayed window writes a recording equal to the one it played; bad, foreign-ROM and missing files are refused; earlier checks still pass.
+    - **Completion criteria:** all of the above plus the owner's try.
+    - **Potential problems:** the game starts from power-on with empty memory, so a recording always starts there (the real Atari's memory at power-on is random, Stella's app too; ours is not). Replaying a recording in a different version of the program only works while the game logic stays the same. A bad file in the window is shown as a message box (not checked automatically).
+    - **Recovery:** new files plus edits to `main.cpp`, `CMakeLists.txt`, `build_host.cmd` and `.gitignore`; undo by returning to `7e4e560` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D13-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D13: Input recording and replay`.
+    - **Next stage:** D14 — Side-by-side check.
 14. **[Not started] D14 — Side-by-side check.** Same input recording into our build and Stella; frames compared at 10 moments. Differences go to `DISCREPANCIES.md`.
 15. **[Not started] D15 — Release folder.** `tools\make_release.ps1` builds `PacMan2600-0.1.0-windows.zip` (name changes after J2) with the `.exe`, needed DLLs, licences, README and *no ROM*. The script scans the zip and fails if any `.a26` or 4 KB file of unknown origin is inside.
 16. **[Not started] D16 — Gate D: Phase 1 done.** You play a full game from the release zip, unzipped somewhere new. Checklist: correct shape, fullscreen and windowed, sound, keyboard, pad, ROM picker, replays identical, discrepancies list reviewed, version 0.1.0 tagged in Git.

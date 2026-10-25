@@ -74,6 +74,17 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 ## Technical choices made by Claude Code
 
+### T-D13-1 — Input recordings: a small text file of input changes, starting from power-on (2026-10-25, Stage D13)
+
+- **Format** (`src\host\inputlog.hpp`): line 1 `PacMan2600-inputs 1`; `rom_sha1=<hex>`; `frames=<n>`; then `<frame> <bits>` each time the input changes (frame 0 always; bits = `controls::Input::pack`, which includes the three console switches). Plain text, because it can be read, diffed and fixed by hand, and a 40-second game is about 30 lines. The reader refuses anything else with a plain-words error (wrong first line, no ROM line, bad numbers, frames out of order, a change after the last frame).
+- **What is recorded:** the input the console was really given on each frame (after the keyboard/pad merge, after `--reset-at`), taken inside the game thread, so the recording is exactly what was applied, whatever the window thread did meanwhile.
+- **Start state:** power-on, empty memory (our emulator, proven equal to the Phase C tool in D4). A recording therefore always replays from the start. The three switches in the recording override the remembered ones.
+- **Replay:** `--replay` in the window feeds the recorded input instead of keyboard and pads; when the recording ends the keyboard and pads take over again (the title shows REPLAY / RECORDING). Headless `--replay` runs the whole recording unless `--frames` is given. A recording made with another ROM (SHA-1) is refused.
+- **Pacing does not matter:** the input is tied to the frame number, not to time, so a slow or fast window gives the same game (checked: window record, window replay and headless replay agree).
+- **Proof:** `test_inputlog` 25 checks. Window recording of 720 frames (injected keys: Reset, four directions, F5/F6/F4) vs headless replay vs window replay (481 frames, a shorter run): **0 differences** in every pair, headless twice identical, 526 different pictures in the run; the replayed window's own recording equals the first one's changes; a 2,399-frame recording (window vs headless) 0 differences. Earlier checks unchanged: key replay 350,460 frames 0 differences, 2,500 frames = C3 fingerprints and = C5 audio, controls 117, layout 173, window state 29, pad-check 31, ROM finder, self-check.
+- **Not proved:** a bad file given to the **window** shows a message box (it cannot be answered automatically); headless refusals were checked (wrong ROM, garbage, missing file: exit 6 with the reason).
+- **Reversible:** Yes.
+
 ### T-D12-1 — The Colour / B&W switch on F4; all three switches remembered (2026-10-25, Stage D12)
 
 - **Choice:** F4 flips the TV type switch (latched like F5/F6, Colour at the very first start). The three switches are saved in `settings.ini` (`left_difficulty=a|b`, `right_difficulty=a|b`, `tv_type=colour|bw`) the moment one changes and restored at start, so a game is played the way it was left. Pads cannot change them. Stella's own events are used (`ConsoleColor` / `ConsoleBlackWhite`, sent every frame like the difficulty events).

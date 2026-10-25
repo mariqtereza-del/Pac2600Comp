@@ -1,6 +1,6 @@
-Current stage: D13 — Input recording and replay (Phase D) — not started
+Current stage: D14 — Side-by-side check (Phase D) — not started
 
-Last updated: 2026-10-25, Stage D12 done (owner: F4, the F1 list and the remembered switches work, no issues). Stage D11 done (owner: the PS4 pad works without issue, including hotplugging; also fixed: mode 4 now leaves 4 black rows under the life markers). Stage D10 done (owner: the keys feel right). Stage D9 done (owner: it feels right). Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-25, Stage D13 done (owner: the replay of their own recording is identical; at the end of a recording the keyboard takes over, as designed). Stage D12 done (owner: F4, the F1 list and the remembered switches work, no issues). Stage D11 done (owner: the PS4 pad works without issue, including hotplugging; also fixed: mode 4 now leaves 4 black rows under the life markers). Stage D10 done (owner: the keys feel right). Stage D9 done (owner: it feels right). Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -41,6 +41,7 @@ Last updated: 2026-10-25, Stage D12 done (owner: F4, the F1 list and the remembe
 | D10 — Keyboard | `src\host\controls.*`, F1 list, applied to the console each frame (T-D10-1). Keys: arrows/WASD, Space/Z fire, F2 Select, F3 Reset, F5/F6 difficulty, 1-4 picture, Alt+Enter fullscreen, Esc quit. `test_controls` 70 checks; replay of recorded Phase C inputs through the real key code: 55 experiments + 6,000 frames of random play = 344,460 frames, **0 differences** (`tools\d10_replay_compare.py`); injected keys in the real window reached the game's joystick memory and the switches; F1 list screenshot looked at. Earlier checks still pass. Owner: the keys feel right; wafer blip, power-pellet sound and ghost-eating sound heard (the last two were not in C5). Owner could not report on game variations or the difficulty switches (their effects are not yet determined, `docs\CONTROLS.md`). |
 | D11 — PS4 controller | SDL gamepad layer (`Pads` in `main.cpp`, rules in `controls.*`, T-D11-1): D-pad/left stick = joystick (50 % press, 30 % release, one direction), Cross/Square = fire, Options = Reset, Share = Select; pad read each loop so unplugging cannot stick a direction. `test_controls` 108 checks; `--pad-check` with a virtual gamepad 31 of 31 OK (all buttons, stick, dead zone, unplug and replug); earlier checks still pass (key replay 344,460 frames 0 differences, audio = C5, fingerprints = C3). Owner: the real PS4 pad works without issue, including hotplugging. Also T-D11-2: mode 4 (Game area) shows rows 11-203 so the life markers no longer touch the screen edge. |
 | D12 — Console switches | F4 = Colour / B&W (latched like F5/F6); all three switches saved in `settings.ini` and restored at start (T-D12-1). `test_controls` 117 checks; replay of all recorded Phase C inputs now incl. `switches\bw`: 350,460 frames, 0 differences; injected F4/F5/F6 in the real window gave switch values 3f 7f ff f7 and the ini lines; a second run started from them (f7). Earlier checks still pass (pad-check 31, audio = C5, fingerprints = C3). Owner: no issues. |
+| D13 — Input recording and replay | `src\host\inputlog.*`, `--record` / `--replay` (window and `--headless`), `tools\record_inputs.cmd`, `tools\replay_inputs.cmd` (T-D13-1). `test_inputlog` 25 checks; a 720-frame window recording replayed in the window and headless: 0 differences in every pair; 2,399-frame recording window vs headless 0 differences; wrong-ROM, garbage and missing files refused. Earlier checks still pass (key replay 350,460 frames 0 differences, audio = C5, fingerprints = C3). Owner: their own recording replayed identically. |
 
 ## Key facts so far
 
@@ -79,14 +80,12 @@ Last updated: 2026-10-25, Stage D12 done (owner: F4, the F1 list and the remembe
 
 ## Next stage
 
-D13 - Input recording and replay: the program records every frame's input to a small `.inputs` file and plays it back; replaying must give identical frames, proved by picture fingerprints of every frame across two runs.
+D14 - Side-by-side check: the same input recording is run in our build and in Stella; frames are compared at 10 moments; differences go to `DISCREPANCIES.md`. Starting Stella needs your OK (via `tools\run_stella.cmd`).
 
 ## Handoff from the last session
 
-Stage D12 done: **F4 flips Colour / B&W, and the three console switches are remembered between runs.** You confirmed it works. Proof: the replay of all recorded inputs (now including B&W) matches in 350,460 frames with 0 differences.
+Stage D13 done: **the program records and replays games** (`tools\record_inputs.cmd`, `tools\replay_inputs.cmd`). You confirmed your own recording replayed identically. When a recording ends, the keyboard takes over (intended). Proof: window record, window replay and headless replay agree on every frame's fingerprint.
 
-What the difficulty switches change is still not fully known (Phase E/F).
+Updated: `src\host\inputlog.*`, `src\host\main.cpp`, `src\host\CMakeLists.txt`, `tests\host\test_inputlog.cpp`, `tools\build_host.cmd`, `tools\record_inputs.cmd`, `tools\replay_inputs.cmd`, `.gitignore` (`/recordings/`), `DECISIONS.md` (T-D13-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d13\`, `recordings\` (your recordings). The ROM was only read; nothing installed, deleted or pushed.
 
-Updated: `src\host\controls.*`, `src\host\emulator.*`, `src\host\main.cpp`, `tests\host\test_controls.cpp`, `tools\d10_replay_compare.py`, `DECISIONS.md` (T-D12-1), `CLAUDE.md`, `docs\CONTROLS.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d11\`. The ROM was only read; nothing installed, deleted or pushed.
-
-Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and the `d7_`-`d11_` ini files. Delete only with your OK.
+Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and the `d7_`-`d13_` ini files. Delete only with your OK.

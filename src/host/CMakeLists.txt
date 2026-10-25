@@ -34,6 +34,10 @@ add_library(controls STATIC controls.cpp)
 target_compile_options(controls PRIVATE /W4 /permissive-)
 target_link_libraries(controls PUBLIC SDL3::SDL3)
 
+# Input recordings (Stage D13): the file format, no window code.
+add_library(inputlog STATIC inputlog.cpp)
+target_compile_options(inputlog PRIVATE /W4 /permissive-)
+
 # Sound output through SDL (Stage D8).
 add_library(audio STATIC audio.cpp)
 target_compile_options(audio PRIVATE /W4 /permissive-)
@@ -46,7 +50,7 @@ target_link_libraries(emulator PUBLIC stella_core)
 # WIN32 = a normal windowed program (no console window when double-clicked).
 add_executable(pacman2600 WIN32 main.cpp)
 target_compile_options(pacman2600 PRIVATE /W4 /permissive-)
-target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator layout windowstate audio controls)
+target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator layout windowstate audio controls inputlog)
 
 # Tests for the ROM finder (Stage D3): build/host/test_rom_finder.exe <scratch folder> <rom copy>
 add_executable(test_rom_finder ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_rom_finder.cpp)
@@ -67,6 +71,11 @@ target_link_libraries(test_windowstate PRIVATE windowstate rom_finder)
 add_executable(test_controls ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_controls.cpp)
 target_compile_options(test_controls PRIVATE /W4 /permissive-)
 target_link_libraries(test_controls PRIVATE controls)
+
+# Tests for the input recordings (Stage D13): build/host/test_inputlog.exe <scratch folder>
+add_executable(test_inputlog ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_inputlog.cpp)
+target_compile_options(test_inputlog PRIVATE /W4 /permissive-)
+target_link_libraries(test_inputlog PRIVATE inputlog)
 
 # Put SDL3.dll next to the program so a double-click finds it.
 add_custom_command(TARGET pacman2600 POST_BUILD

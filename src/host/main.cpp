@@ -24,6 +24,9 @@
 //        pacman2600 --help-check <png> [rom_file]   the F1 key list in the real window, as a screenshot
 //        pacman2600 --pad-check <report> [rom_file] a virtual gamepad plays the real game: every button, the stick,
 //                                               unplugging and plugging in again (no window)
+//        pacman2600 --record <file> | --replay <file> [--fingerprints <csv>]   (window, or --headless for --replay)
+//                                               write every frame's input to <file> when the window closes / play such a
+//                                               file back instead of the keyboard (Stage D13)
 //        (window mode: F1 = list of keys; arrows/WASD, Space, F2, F3, F5, F6 play the game (controls.cpp);
 //         keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off;
 //         the window can be resized; its size, place and fullscreen are remembered in settings.ini)
@@ -53,6 +56,7 @@
 #include "audio.hpp"
 #include "controls.hpp"
 #include "emulator.hpp"
+#include "inputlog.hpp"
 #include "layout.hpp"
 #include "rom_finder.hpp"
 #include "settings.hpp"
@@ -141,6 +145,7 @@ struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
   std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
+  std::string recordFile, replayFile;  // input recording (--record) and playback (--replay), Stage D13
   double audioCheckSeconds = 0;
   int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
   bool mute = false;  // play the sound stream with the volume at zero (tests)
@@ -169,6 +174,8 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--keys-replay") { o.keysReplayScript = next(); o.keysReplayCsv = next(); }
     else if(a == "--help-check") o.helpCheckPng = next();
     else if(a == "--pad-check") o.padCheckFile = next();
+    else if(a == "--record") o.recordFile = next();
+    else if(a == "--replay") o.replayFile = next();
     else if(a == "--audio-check") { o.audioCheckSeconds = std::atof(next().c_str()); o.audioCheckFile = next(); }
     else if(a == "--audio-wav") o.audioWav = next();
     else if(a == "--reset-at") o.resetAt = std::atoi(next().c_str());
@@ -1070,6 +1077,18 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, error.c_str(), window);
     return 0;
   }
+  const std::string romSha1 = rom::sha1Hex(bytes.data(), bytes.size());
+  const bool replaying = !options.replayFile.empty();
+  inputlog::Recording replay;  // --replay: what the console is given on each frame, instead of the keyboard and pads
+  if(replaying) {
+    std::string error;
+    if(!inputlog::load(options.replayFile, replay, error)) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, error.c_str(), window); return 0; }
+    if(replay.romSha1 != romSha1) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, "This recording was made with a different ROM than the one that is loaded.", window); return 0; }
+  }
+  inputlog::Recorder recorder;  // --record: written when the window closes
+  std::ofstream fingerprints;   // --fingerprints: the picture's fingerprint of every frame (tests)
+  if(!options.fingerprintFile.empty()) { fingerprints.open(options.fingerprintFile); fingerprints << "frame,hash\n"; }
+
   AudioOutput audio;
   if(!audio.open(emulator.audioRate(), options.mute)) std::fprintf(stderr, "%s\nThe game goes on without sound.\n", audio.problem().c_str());
 
@@ -1077,7 +1096,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   screen.renderer = renderer;
   screen.view = view;
   auto retitle = [&]() {
-    const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath) + " - " + modeName(screen.view.mode) + " - F1 = keys";
+    const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath) + " - " + modeName(screen.view.mode) + (replaying ? " - REPLAY" : "") + (options.recordFile.empty() ? "" : " - RECORDING") + " - F1 = keys";
     SDL_SetWindowTitle(window, title.c_str());
   };
   retitle();
@@ -1124,8 +1143,17 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
 
       int steps = 0;
       while(steps < 5 && pacer.due(now)) {
-        applyInput(emulator, controls::Input::unpack(inputBits.load()), options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10);
+        // A replay gives the console what was recorded; when it has run out, the keyboard and pads take over again.
+        controls::Input in = controls::Input::unpack(replaying && frames < replay.frames ? replay.bitsAt(frames) : inputBits.load());
+        if(options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10) in.reset = true;
+        recorder.add(in.pack());
+        applyInput(emulator, in, false);
         emulator.runFrame();
+        if(fingerprints) {
+          char hash[17];
+          std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
+          fingerprints << frames << ',' << hash << '\n';
+        }
         audio.push(emulator.audio(), emulator.audioFrames());
         if(options.pushKeys) {
           const int joystick = emulator.ram()[0xED - 0x80];  // C6: up 1, down 2, left 4, right 8
@@ -1235,6 +1263,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   stop = true;
   game.join();
   if(pusher.joinable()) pusher.join();
+  if(!options.recordFile.empty() && !inputlog::save(options.recordFile, recorder.finish(romSha1))) std::fprintf(stderr, "The recording could not be written: %s\n", options.recordFile.c_str());
   if(failed) return 0;
 
   const double elapsed = static_cast<double>(SDL_GetTicksNS() - started) / 1e9;
@@ -1280,6 +1309,17 @@ int headlessRun(const Options& o)
   std::ofstream fingerprints;
   if(!o.fingerprintFile.empty()) { fingerprints.open(o.fingerprintFile); fingerprints << "frame,hash\n"; }
 
+  // --replay: the console is given the recorded input of each frame; without --frames the whole recording is run.
+  inputlog::Recording replay;
+  const bool replaying = !o.replayFile.empty();
+  if(replaying) {
+    std::string error;
+    if(!inputlog::load(o.replayFile, replay, error)) { report << "result=" << error << '\n'; return 6; }
+    if(replay.romSha1 != found->check.sha1) { report << "result=the recording was made with a different ROM\n"; return 6; }
+  }
+  const int frames = replaying && o.frames == 600 ? static_cast<int>(replay.frames) : o.frames;
+  const int saveFrame = replaying && o.saveFrame >= frames ? std::max(0, frames - 1) : o.saveFrame;
+
   // Optional audio file: a standard WAV, 16-bit stereo at the emulator's rate, like the one the Phase C tool wrote.
   std::ofstream wav;
   std::uint32_t wavBytes = 0;
@@ -1295,8 +1335,14 @@ int headlessRun(const Options& o)
 
   bool saved = false;
   char hash[17];
-  for(int f = 0; f < o.frames; ++f) {
-    emulator.setConsoleReset(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10);
+  for(int f = 0; f < frames; ++f) {
+    if(replaying) {
+      controls::Input in = controls::Input::unpack(replay.bitsAt(f));
+      if(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10) in.reset = true;
+      applyInput(emulator, in, false);
+    } else {
+      emulator.setConsoleReset(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10);
+    }
     emulator.runFrame();
     if(wav) {
       wav.write(reinterpret_cast<const char*>(emulator.audio()), static_cast<std::streamsize>(emulator.audioFrames()) * 4);
@@ -1304,7 +1350,7 @@ int headlessRun(const Options& o)
     }
     std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
     if(fingerprints) fingerprints << f << ',' << hash << '\n';
-    if(f != o.saveFrame) continue;
+    if(f != saveFrame) continue;
 
     const int h = emulator.height();
     std::vector<std::uint32_t> pixels = emulator.colours();
@@ -1324,7 +1370,7 @@ int headlessRun(const Options& o)
     wav.close();
     report << "audio_wav=" << o.audioWav << "\naudio_rate=" << rate << "\naudio_bytes=" << wavBytes << '\n';
   }
-  report << "rom=" << found->check.path << "\nrom_sha1=" << found->check.sha1 << "\nframes_run=" << o.frames
+  report << "rom=" << found->check.path << "\nrom_sha1=" << found->check.sha1 << "\nframes_run=" << frames
          << "\nlast_frame_fingerprint=" << hash << "\npng_saved=" << (saved ? "yes" : "no") << "\nresult=" << (saved ? "OK" : "FAIL") << '\n';
   return saved ? 0 : 6;
 }

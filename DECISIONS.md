@@ -138,7 +138,7 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 - **Method:** `tools\f8_routines.py` takes the start-up and every JSR target (33 targets, two of them only from JSRs that never ran) as entries, follows branches, jumps and fall-through, and makes a shared tail of any code that two routines reach by a jump. The pieces of the frame loop (cut by its jumps) are folded back into `MAIN`: an unnamed piece reached only from the main loop belongs to it.
 - **Result:** 40 routines: `MAIN` and 39 subroutines, all named from reading the code (sure / likely / "?" in `docs/F8_ROUTINES.md`). Every instruction that ran belongs to exactly one; each routine entered only by JSR ran exactly as often as its JSR instructions (70 games); no recursion; deepest nesting 10 bytes of stack, as F7 found.
-- **Found:** eight routines drop the caller's return address as well (PLA PLA): the four direction tries end the decision of the caller at once; `PACMAN_KEEP_GOING` ends by continuing in the main loop. The C++ version needs an early exit at these points.
+- **Found:** six routines drop the caller's return address as well (PLA PLA): the four TRY_PAIR helpers and `TRY_COMMIT` (the end of the four direction tries) end the decision of the caller at once; `PACMAN_KEEP_GOING` ends by continuing in the main loop. The C++ version needs an early exit at these points.
 - **Not claimed:** names marked "?" (the pair-trying helpers, `PACMAN_KEEP_GOING`) are guesses from the shape of the code; F10-F13 settle them.
 - **Reversible:** Yes.
 

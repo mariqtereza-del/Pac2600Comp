@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-16 — GHOST_UPDATE rewritten (2026-10-26, Stage F21.16)
+
+- **Routine:** `game::ghostUpdate`: eyes on the pen row at x $58 turn left and move (SET_DIRECTION), at x $4C wait while the ghosts are scared or become a ghost again and turn right; an animating ghost (state bit 5) is left alone; otherwise `locateObject`, `ghostDecide`, and `moveObject` unless the decision set the animating bit.
+- **Contract:** X, stack pointer, return address and live memory (the callers are three consecutive calls in the top logic, followed by code that loads A and Y itself and does not use the flags); free stack bytes ignored, as for GHOST_DECIDE (T-F21-15).
+- **Result:** 70 of 70 games identical; 1,058,724 calls compared with the original; identical together with F21.1-F21.15.
+- **Reversible:** Yes.
+
 ### T-F21-15 — GHOST_DECIDE rewritten; contracts for routines with calls inside (2026-10-26, Stage F21.15)
 
 - **Routine:** `game::ghostDecide` is the F13 model in C++, built from `rngStep`, `tryDirection`, `tryPair`, `wrapToTop/Bottom`; scratch bytes TEMP_D2/D3 and the ghost timer are written as in the original.

@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.16', 'GHOST_UPDATE', 'ghost-update', 0xF9AA, 'game::ghostUpdate: everything for one ghost in one frame (eyes at the pen, locate, decide, move); contract: X, stack pointer, return address and live memory'),
     ('F21.15', 'GHOST_DECIDE', 'ghost-decide', 0xFA26, 'game::ghostDecide: the ghost decision (aim, chase, scared, eyes, opening, random wandering) built from the rewritten TRY, TRY_PAIR, RNG and WRAP routines; contract: X, stack pointer, return address and live memory'),
     ('F21.14', 'ANIMATE_OBJECT', 'animate', 0xFC8B, 'game::animateObject: the opening animation of an object (waiting, down the outside, back into the maze, up) and the sprite scratch bytes; three small cartridge tables through game::Cartridge'),
     ('F21.13', 'TRY_PAIR_1', 'try-pair', 0xFAFC, "game::tryPair (vertical): after the random step try up and down in the order it picks; a taken turn drops the caller's return too"),

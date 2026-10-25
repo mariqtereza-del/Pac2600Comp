@@ -81,6 +81,17 @@ void moveNative(Machine& m) {
 //  turn back refused (ghosts): A = state bits, Y = direction, flags of the CMP with TBL_FE67, normal return;
 //  taken: Y = direction, A = the high byte of the return address that PLA PLA throws away, zero/negative from it, carry from the path, and the RTS
 //  that follows returns to the caller's caller.
+// F21.16 GHOST_UPDATE ($F9AA): the object is in X. Contract: the callers (the top logic, three calls in a row) load A and Y afresh and use neither the
+// flags nor the stack bytes below the pointer; X is kept. X, the stack pointer and the return address are compared, with all live memory.
+void ghostUpdateNative(Machine& m) {
+  const uint8_t object = m.x;
+  const game::Cartridge cart(m.romBytes());
+  bool ok = true;
+  withRam(m, [&](game::Ram& r) { ok = game::ghostUpdate(r, cart, object); });
+  if (!ok) { m.fail(); return; }
+  m.rts();
+}
+
 // F21.15 GHOST_DECIDE ($FA26): the object is in X. Contract (see Machine::Contract): the only caller is GHOST_UPDATE, which next loads A from memory and
 // does not use Y, the carry or the overflow flag; the routine keeps X. So X, the stack pointer and the return address are compared, the other registers
 // are not. The routine calls other routines whose old return addresses stay below the stack pointer in the original; those free stack bytes are not
@@ -381,6 +392,13 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "ghost-update") {
+    Machine::Contract c;
+    c.deadStack = true;
+    c.regs = 2 | 16 | 32;
+    m.registerNative(0xF9AA, "GHOST_UPDATE (native)", [](Machine& mm) { ghostUpdateNative(mm); }, c);
+    return true;
+  }
   if (name == "ghost-decide") {
     Machine::Contract c;
     c.deadStack = true;

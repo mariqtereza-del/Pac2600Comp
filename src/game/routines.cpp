@@ -398,4 +398,24 @@ bool ghostDecide(Ram& ram, const Cartridge& cart, uint8_t object) {
   return !g.unsupported;
 }
 
+// GHOST_UPDATE ($F9AA).
+bool ghostUpdate(Ram& ram, const Cartridge& cart, uint8_t object) {
+  uint8_t& state = at(ram, ram::PACMAN_STATE + object);
+  if ((state & 0x08) && at(ram, ram::PACMAN_Y + object) == 0x1E) {
+    const uint8_t x = at(ram, ram::PACMAN_X + object);
+    if (x == 0x58) { setDirection(ram, object, 1); return true; }                 // at the pen door: left, and move
+    if (x == 0x4C) {                                                              // above the pen
+      if (at(ram, ram::PILL_FLAGS) & 0x80) return true;                           // scared: wait
+      state &= 0xF7;                                                              // a ghost again
+      setDirection(ram, object, 0);
+      return true;
+    }
+  }
+  if (state & 0x20) return true;                                                  // in an opening animation
+  locateObject(ram, object);
+  if (!ghostDecide(ram, cart, object)) return false;
+  if (!(state & 0x20)) moveObject(ram, object);
+  return true;
+}
+
 }  // namespace game

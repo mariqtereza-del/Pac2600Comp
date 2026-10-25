@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F19-1 — The sound routines proved write for write (2026-10-26, Stage F19)
+
+- **Method:** `tools\f19_sound.py` models the four sound routines from the memory of the previous frame and the game events (bonus, pill, ghost, wafer in the order of the code) and compares with the emulator's writes to the six sound registers (`stella_coverage ... tiaw=... tiaregs=15,16,17,18,19,1A`).
+- **Result:** 435,986 of 435,986 frames exactly right (123,763 with sound). Four effects (wafer 8 frames, power pill 15, bonus item 23, ghost eaten 47) with a rank (ghost > pill > bonus > wafer); music chosen death > start tune > scared sweep (channel 1); the volumes are zeroed at `$F7C5` every frame.
+- **Found:** a quirk in the start tune (with the timer at 0 the pitch index comes from `GAME_FLAGS`); at a change of turn the maze blocks are swapped, so a "wafer gone" test must skip those frames (also true for F11/F15, which skip them).
+- **Not claimed:** sound samples (F24); frames with Select/Reset and where the title screen starts or ends are skipped.
+- **Reversible:** Yes.
+
 ### T-F18-1 — An exact executor for the drawing code, checked against the emulator (2026-10-26, Stage F18)
 
 - **Decision:** the drawing code is cycle-counted and rewrites playfield registers in the middle of scanlines, so reading it line by line is not a safe way to know it. Instead `tools\f18_cpu.py` (a 6502 interpreter of the original bytes, 128 bytes of memory in, TIA writes out) was written and proved against the emulator: 8,240 sampled frames from all 70 games, every write equal in scanline, colour clock, instruction address, register and value. It is a measuring tool, not part of the game; the native renderer (F23) is compared against its output and against the emulator pictures.

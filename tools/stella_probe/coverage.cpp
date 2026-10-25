@@ -70,6 +70,7 @@ class CoverageStella : public StellaLIBRETRO {
     std::vector<uint16_t> watch;                          // Stage F12: ROM addresses whose instruction result (A) is logged
     std::vector<std::array<int, 3>> watched;              // frame, address, A after the instruction
     int tiaFrom = -1, tiaTo = -2, tiaStride = 1;
+    uint64_t tiaRegMask = ~0ULL;                          // tiaregs= : only these TIA registers (bit n = register n) are logged
     bool tiaOn = false;                                   // log TIA writes (tiaw=) ; ramdump= alone does not
     std::set<int> onlyFrames;                             // frames= : if not empty, only these frames are logged
     bool logFrame() const { return frame >= tiaFrom && frame <= tiaTo && frame % tiaStride == 0 && (onlyFrames.empty() || onlyFrames.count(frame)); }                         // Stage F18: frames whose writes to the TIA are logged
@@ -111,7 +112,7 @@ class CoverageStella : public StellaLIBRETRO {
           if(tiaOn && logFrame()) {
             const uInt16 w = cpu.lastWriteAddress();
             const int sv = (pc & 0x1000) ? storedValue(static_cast<const uint8_t*>(getROM())[pc & 0x0FFF], cpu) : -1;
-            if(sv >= 0 && !(w & 0x1080) && (w & 0x3F) < 0x2D && (w & 0x3F) != 0x02)
+            if(sv >= 0 && !(w & 0x1080) && (w & 0x3F) < 0x2D && (w & 0x3F) != 0x02 && ((tiaRegMask >> (w & 0x3F)) & 1))
               tiaWrites.push_back({frame, static_cast<int>(tia.scanlines()), static_cast<int>(tia.clocksThisLine()), pc & 0x0FFF, w & 0x3F, sv});
           }
           if(pc & 0x1000) {
@@ -201,6 +202,11 @@ int main(int argc, char* argv[])
   // Stage F12: `watch=<file>:<hex pc>,<hex pc>..` writes `frame,pc,A` after each run of those instructions.
   std::string watchFile, tiaFile, dumpFile;
   for(int i = 5; i < argc; ++i) {
+    if(std::strncmp(argv[i], "tiaregs=", 8) == 0) {
+      stella.tiaRegMask = 0;
+      std::istringstream in(argv[i] + 8);
+      for(std::string t; std::getline(in, t, ','); ) stella.tiaRegMask |= 1ULL << (std::stoul(t, nullptr, 16) & 0x3F);
+    }
     if(std::strncmp(argv[i], "tiastride=", 10) == 0) stella.tiaStride = std::max(1, std::atoi(argv[i] + 10));
     if(std::strncmp(argv[i], "frames=", 7) == 0) {
       std::ifstream fl(argv[i] + 7);

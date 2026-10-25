@@ -1946,7 +1946,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F18_KERNEL.md`, `DECISIONS.md` (T-F18-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F18: The drawing kernel and flicker schedule`.
     - **Next stage:** F19 — Sound routines and their tables.
-19. **[Not started] F19 — Sound routines and their tables.**
+19. **[Done] F19 — Sound routines and their tables.** *(expanded and done 2026-10-26)*
+    - **Objective:** state exactly what the game writes to the sound chip in every frame and prove it.
+    - **Why it matters:** the native sound generator (F24) and the lockstep test need the exact register writes, not only the sound of the emulator.
+    - **Prerequisites:** F18 Done (`16b3260`); F11/F12/F15 events; the flag logs in `reference\f12`.
+    - **What Claude Code will do:**
+      1. Add the option `tiaregs=` (log only chosen chip registers) to `stella_coverage`; replay all 70 games logging every write to the six sound registers.
+      2. `tools\f19_sound.py`: a model of `SOUND_START`, `SOUND_EFFECTS`, `SOUND_WRITE`, `SOUND_MUSIC` fed by the game events; compare the predicted writes (value and order) and the bytes `$E8`/`$E9` with the emulator in every frame.
+      3. Write `docs\F19_SOUND.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 0 wrong frames.
+    - **Verification:** `python -I tools\f19_sound.py rom\pacman.a26` says `result: OK` (435,986 of 435,986 predicted frames exactly right, 123,763 of them with a sound; `--cached` rewrites the document from saved logs).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** Select/Reset frames and the frames where the title screen starts or ends are skipped; sound samples themselves are F24.
+    - **Recovery:** one new script, a logging option and a generated document; undo by returning to `16b3260` (with your OK).
+    - **Documentation updates:** `docs\F19_SOUND.md`, `DECISIONS.md` (T-F19-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F19: Sound routines and their tables`.
+    - **Next stage:** F20 — Lockstep harness.
 20. **[Not started] F20 — Lockstep harness.** A test tool that runs the emulator and the native code together on the same inputs, compares all 128 RAM bytes every frame, and on the first difference stops and reports the frame, the byte, both values and the routine responsible.
 21. **[Not started] F21 — Rewrite one routine per session** (F21.1, F21.2…, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts.
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.

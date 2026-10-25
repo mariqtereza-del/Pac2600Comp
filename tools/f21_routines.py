@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.3', 'RNG_STEP', 'rng', 0xFBE0, 'game::rngStep: the shift-register random number; its bit-mask table is 0x80 >> n (checked equal to the cartridge bytes)'),
     ('F21.2', 'SWAP_PLAYERS', 'swap-players', 0xFB9F, 'game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged'),
 ]
 # why a routine cannot be proved by the memory comparison alone, or what it needs first
@@ -94,6 +95,11 @@ def main():
         print('fixture with a wrong register: the routine check finds it in %d games (the frames themselves are identical in all of them)' % len(found_r))
         if len(found_w) != len(used_w) or not used_w or not found_r:
             problems.append('fixtures not found everywhere')
+    rom = ROM.read_bytes()
+    table_ok = list(rom[0xE6A:0xE72]) == [0x80 >> i for i in range(8)]
+    print('bit-mask table at $FE6A equals 0x80 >> n:', table_ok)
+    if not table_ok:
+        problems.append('the RNG mask table is not 0x80 >> n')
     ok = not problems
     print('problems:', problems)
     print('result: %s' % ('OK' if ok else 'MISMATCH'))

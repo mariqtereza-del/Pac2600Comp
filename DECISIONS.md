@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-3 — RNG_STEP rewritten (2026-10-26, Stage F21.3)
+
+- **Routine:** `game::rngStep`: r = RNG_STATE; x = (r << 1) xor r; r = (r << 1) | bit 6 of x; returns (0x80 >> (r and 7)) and r. The adapter leaves A = result, Y = r and 7, carry = old bit 7, zero/negative from A, like the original.
+- **Data:** the table at `$FE6A` (`80 40 20 10 08 04 02 01`) is the pattern 0x80 >> n, so the source holds a formula, not a copy of cartridge data; `tools\f21_routines.py` verifies that the cartridge bytes agree.
+- **Result:** 70 of 70 games identical; 155,820 calls compared with the original (memory, registers, flags): 0 differences; identical together with F21.1 and F21.2. The F20 fixtures still work (the "broken" one is found in 70 of 70 games).
+- **Reversible:** Yes.
+
 ### T-F21-2 — SWAP_PLAYERS rewritten (2026-10-26, Stage F21.2)
 
 - **Routine:** `game::swapPlayers` exchanges the 20 bytes `MAZE_00..SCORE_COLOUR` ($88-$9B) with `MAZE_P2_00..SCORE_COLOUR_P2` ($9C-$AF). The adapter reproduces the registers the original leaves (A = old $88, Y = old $9C, X = $FF, N set, Z clear).

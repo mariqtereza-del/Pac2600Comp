@@ -24,4 +24,8 @@ void clearScores(Ram& ram);
 // with the block of the other player ($9C-$AF).
 void swapPlayers(Ram& ram);
 
+// F21.3  RNG_STEP ($FBE0): steps the shift register RNG_STATE (the game's only random number, F14) and returns the value the original leaves in A:
+// one bit of the new state, picked by its low three bits (zero or not is all the callers ask).
+uint8_t rngStep(Ram& ram);
+
 }  // namespace game

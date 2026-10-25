@@ -30,6 +30,19 @@ void withRam(Machine& m, F&& fn) {
     if (after[i] != before[i]) m.write(static_cast<uint16_t>(0x80 + i), after[i]);
 }
 
+// F21.3 RNG_STEP ($FBE0). Registers the original leaves: A = the returned value, Y = new state and 7, carry = the old bit 7 (the carry out of ROL RNG_STATE),
+// zero and negative from A (the last instruction is AND).
+void rngStepNative(Machine& m) {
+  const uint8_t old = m.read(0xCB);
+  uint8_t result = 0;
+  withRam(m, [&result](game::Ram& r) { result = game::rngStep(r); });
+  m.y = m.read(0xCB) & 7;
+  m.a = result;
+  m.p = static_cast<uint8_t>((m.p & ~0x01) | (old >> 7));
+  m.setZN(m.a);
+  m.rts();
+}
+
 // F21.1 CLEAR_SCORES ($FC7D). The original ends with A = 0 (LDA #0), X = $FF (the loop leaves X after DEX of 0), Y untouched, carry untouched,
 // the flags of the last DEX: negative set, zero clear.
 // `variant` 1 = test fixture that forgets LIVES_P2 (found by the memory comparison), 2 = test fixture that leaves X = 0 (found only by the routine check).
@@ -60,7 +73,7 @@ void swapPlayers(Machine& m) {
 }  // namespace
 
 bool registerNativeByName(Machine& m, const std::string& name) {
-  if (name == "rng") { m.registerNative(0xFBE0, "RNG_STEP (native)", [](Machine& mm) { rngStep(mm, false); }); return true; }
+  if (name == "rng") { m.registerNative(0xFBE0, "RNG_STEP (native)", [](Machine& mm) { rngStepNative(mm); }); return true; }
   if (name == "rng-broken") { m.registerNative(0xFBE0, "RNG_STEP (native, broken on purpose)", [](Machine& mm) { rngStep(mm, true); }); return true; }
   if (name == "clear-scores") { m.registerNative(0xFC7D, "CLEAR_SCORES (native)", [](Machine& mm) { clearScores(mm); }); return true; }
   if (name == "clear-scores-wrong") { m.registerNative(0xFC7D, "CLEAR_SCORES (native, wrong on purpose)", [](Machine& mm) { clearScores(mm, 1); }); return true; }

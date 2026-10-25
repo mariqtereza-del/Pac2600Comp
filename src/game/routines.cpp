@@ -19,4 +19,15 @@ void swapPlayers(Ram& ram) {
   }
 }
 
+// RNG_STEP ($FBE0). With r = RNG_STATE the original forms x = (r << 1) xor r (8 bits), shifts it left twice and rotates the last bit shifted out,
+// which is bit 6 of x, into the low end of r: r = (r << 1) | bit 6 of x. The value returned is TBL_FE6A[r & 7] & r, where the table of the
+// original holds the bit masks $80, $40, ... $01, i.e. 0x80 >> (r & 7) (the lockstep tool checks this against the cartridge bytes).
+uint8_t rngStep(Ram& ram) {
+  const uint8_t r = at(ram, ram::RNG_STATE);
+  const uint8_t x = static_cast<uint8_t>((r << 1) ^ r);
+  const uint8_t next = static_cast<uint8_t>((r << 1) | ((x >> 6) & 1));
+  at(ram, ram::RNG_STATE) = next;
+  return static_cast<uint8_t>((0x80 >> (next & 7)) & next);
+}
+
 }  // namespace game

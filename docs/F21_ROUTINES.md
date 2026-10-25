@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **RNG_STEP**: identical in 70 of 70 games; 155820 calls compared with the original code, 0 different.
 - **SWAP_PLAYERS**: identical in 70 of 70 games; 139 calls compared with the original code, 0 different.
 - The fixture "wrong on purpose" (forgets `LIVES_P2`) was found by the memory comparison in 68 of the 68 games that call the routine; the fixture with a wrong `X` register leaves every frame identical but was found by the routine check in 68 games: this is why the routine check exists.
 
@@ -21,6 +22,7 @@
 | --- | --- | --- | --- | --- | --- |
 | F21.2 | `SWAP_PLAYERS` | $FB9F | 14 | **done** | game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged |
 | F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/routines.cpp: both scores and both lives to 0 |
+| F21.3 | `RNG_STEP` | $FBE0 | 20 | **done** | game::rngStep: the shift-register random number; its bit-mask table is 0x80 >> n (checked equal to the cartridge bytes) |
 | - | `EXIT_F9E4` | $F9E4 | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FB5B` | $FB5B | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FF93` | $FF93 | 1 | to do | a lone RTS: nothing to write |
@@ -39,7 +41,6 @@
 | - | `TRY_PAIR_UD` | $FB05 | 20 | to do | drops the caller's return |
 | - | `TRY_PAIR_LR` | $FB22 | 20 | to do | drops the caller's return |
 | - | `TRY_DOWN` | $FB5C | 20 | to do |  |
-| - | `RNG_STEP` | $FBE0 | 20 | to do | reads the bit-mask table at $FE6A: a plain 0x80 >> n, checked equal to the ROM bytes |
 | - | `KERNEL_LINE_P0` | $F06A | 21 | to do | picture only (F23) |
 | - | `NEW_MAZE` | $FC0C | 21 | to do |  |
 | - | `LIVES_MARKERS` | $FC68 | 21 | to do | needs ROM tables (F22) |

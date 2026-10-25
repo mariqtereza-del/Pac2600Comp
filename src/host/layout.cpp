@@ -16,11 +16,13 @@ Rect pictureRect(int windowW, int windowH, int pictureW, int pictureH, PixelShap
 
   const double pixelRatio = static_cast<double>(shape.num) / shape.den;  // width of a game pixel / its height
   double availW = windowW, availH = windowH;
+  // Framed: the border is part of what has to fit, counted in game pixels like the picture itself.
+  const double border = mode == Mode::Framed ? 2.0 * kFrameMargin : 0.0;
   if(mode == Mode::TvFrame) { availW *= 0.9; availH *= 0.9; }
 
   // s = screen pixels per picture row; a picture column is s * pixelRatio wide.
-  double s = std::min(availH / pictureH, availW / (pictureW * pixelRatio));
-  if(mode != Mode::Fill && mode != Mode::GameArea && s >= 1.0) s = std::floor(s);  // whole-number vertical scale
+  double s = std::min(availH / (pictureH + border), availW / ((pictureW + border) * pixelRatio));
+  if(mode != Mode::Fill && mode != Mode::GameArea && mode != Mode::Framed && s >= 1.0) s = std::floor(s);  // whole-number vertical scale
 
   Rect r;
   r.w = std::max(1, static_cast<int>(std::lround(pictureW * s * pixelRatio)));

@@ -21,7 +21,7 @@ A deliberate change (one key press removed from your recording) was seen by the 
 | Frame rate | 60.000 Hz | **59.9227 Hz** (3.579545 MHz / (228 x 262)) | **59.92 Hz** (measured 59.9235 over 9 minutes) | **Fixed** (T-D14-2) |
 | Sound pitch / sample rate | 31,440 Hz | **31,399.5 Hz** | 31,400 Hz | **Fixed** (T-D14-2) |
 | Memory at power-on | zeros in Stella's core (random in the Stella app) | random | zeros | **Examined, no visible effect** on this game (6 random seeds, 3,000 frames, 0 differences); kept (T-D14-3) |
-| Picture shape (a game pixel's width : height) | 19:10, from stretching all 228 picture rows to a 4:3 box | depends on how many lines the TV showed; the standard NTSC arithmetic gives about 12:7 (1.71) | **12:7**, Game area, fitted and centred (default; `--pixel-aspect stella` = 19:10) | **Fixed** by your decision D-005 |
+| Picture shape (a game pixel's width : height) | 19:10, from stretching all 228 picture rows to a 4:3 box | depends on how many lines the TV showed; the standard NTSC arithmetic gives about 12:7 (1.71) | **12:7**, Framed (key 5): game area with an 8-game-pixel border on every side, fitted and centred (default; `--pixel-aspect stella` = 19:10) | **Fixed** by your decisions D-005 and D-006 |
 | Colours | Stella's "standard" NTSC palette | varied from TV to TV (hue and brightness knobs) | Stella's standard palette | Not a fault: there is no single authentic palette |
 | Flicker | phosphor blending of the previous picture (Stella app setting) | the CRT's glow smoothed the ghosts' alternating flicker | a light blend with the previous picture | Close; not measured |
 | Console switches | physical | physical, left where the owner put them | same, remembered | Authentic |

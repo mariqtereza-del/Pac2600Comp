@@ -110,7 +110,7 @@ std::vector<HelpLine> helpLines(const Input& current, const std::string& control
   lines.push_back({"  Cross / Square", "Fire button"});
   lines.push_back({"  Options", "Game Reset: start a new game"});
   lines.push_back({"  Share", "Game Select: next game variation"});
-  lines.push_back({"1 / 2 / 3 / 4", "Picture: Sharp / Fill / TV frame / Game area"});
+  lines.push_back({"1 / 2 / 3 / 4 / 5", "Picture: Sharp / Fill / TV frame / Game area / Framed"});
   lines.push_back({"Alt + Enter", "Fullscreen on / off"});
   lines.push_back({"F1", "Show / hide this list"});
   lines.push_back({"Esc", "Quit"});

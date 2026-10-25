@@ -91,6 +91,18 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Replaces:** the default in T-D6-1 (19:10), and records the authenticity question left open in `DISCREPANCIES.md`.
 - **Reversible:** Yes.
 
+### D-006 — Default picture: "Framed" (key 5), a border on every side, nothing stretched (2026-10-25, after Stage D14)
+
+**Your words:** "I need the horizontal and vertical black margins to match the 12:7 aspect ratio. This is to ensure that any drawn graphics are not stretched in any way. This should be the default graphic setting, please ensure this is implemented and set to whatever key best fits this model."
+
+- **How I read it:** the picture keeps the exact 12:7 pixel shape, and it has a black border on all four sides; the border is made of **game pixels**, the same number of them on each side (**8 columns left and right, 8 rows above and below**), so the margins have the same 12:7 shape as the picture itself. Everything (picture plus border) is scaled together to the largest size that fits the window, and centred. If you meant a different border size or rule, tell me and it is one number (`kFrameMargin`).
+- **Key:** **5**, a new mode named **Framed**. Keys 1-4 keep what they did (Sharp, Fill, TV frame, Game area), so nothing you approved earlier moved. It is now the default (replaces Game area as the default of D-005).
+- **What is shown:** the game area (rows 11-203, the lines the game draws plus the 4 black rows under the life markers), in 12:7 pixels, any scale (no whole-number steps), so it scales to whatever display it meets.
+- **Measured in the real window, a game running:** 2560x1440: picture 1890x1330, border 335 left/right and 55 above/below (8 game columns and 8 game rows); 1920x1080: 1417x997 at 251/41; 1366x768: 1008x709 at 179/29; 1280x1024: 1164x819 at 58/102; fullscreen check OK; pixel shape 1.714 (12:7 = 1.714) everywhere; nothing outside the picture is lit.
+- **Tests:** `test_layout` 231 checks (new: 12:7 within 0.5 %, inside, centred, border at least 8 game pixels on every side and exactly 8 on the limiting axis, in all five test windows), `test_controls` 117.
+- **Not covered:** the pixel edges are still blended a little when the scale is not a whole number (SDL's pixel-art scaling); a perfectly crisp grid would need whole-number steps (key 1).
+- **Reversible:** Yes.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)

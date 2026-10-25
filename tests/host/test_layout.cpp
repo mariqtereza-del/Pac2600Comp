@@ -24,7 +24,7 @@ int main()
   const struct { layout::PixelShape shape; const char* name; } shapes[] = {
       {layout::stellaShape(pw, ph), "Stella 19:10"}, {{12, 7}, "12:7"}};
   const struct { layout::Mode mode; const char* name; } modes[] = {
-      {layout::Mode::Sharp, "Sharp"}, {layout::Mode::Fill, "Fill"}, {layout::Mode::TvFrame, "TV frame"}};
+      {layout::Mode::Sharp, "Sharp"}, {layout::Mode::Fill, "Fill"}, {layout::Mode::TvFrame, "TV frame"}, {layout::Mode::Framed, "Framed"}};
 
   // The shape derived from Stella's source: 4:3 box over 160 x 228 pixels.
   const auto stella = layout::stellaShape(pw, ph);
@@ -76,6 +76,29 @@ int main()
       // on a screen as wide as 16:9 or wider the game area runs from the top edge to the bottom edge
       if(win.w * 9 >= win.h * 16) expect(r.h >= win.h - 1, tag + ": fills the window top to bottom");
     }
+  }
+
+  // Framed (D-006): 12:7 pixels, the game area, and a border of kFrameMargin game pixels on every side
+  {
+    constexpr int shownRows = layout::kGameBottom - layout::kGameTop;
+    const layout::PixelShape twelveSeven{12, 7};
+    for(const auto& win : windows) {
+      const auto r = layout::pictureRect(win.w, win.h, pw, shownRows, twelveSeven, layout::Mode::Framed);
+      const double got = (static_cast<double>(r.w) / pw) / (static_cast<double>(r.h) / shownRows);
+      const std::string tag = std::string(win.name) + " / Framed";
+      std::printf("%-10s %-13s %-9s %5d %5d %5d %5d  %.4f (wanted 1.7143)\n", win.name, "12:7", "Framed", r.x, r.y, r.w, r.h, got);
+      expect(std::fabs(got - 12.0 / 7.0) / (12.0 / 7.0) <= 0.005, tag + ": pixel shape 12:7 within 0.5 %");
+      expect(r.x >= 0 && r.y >= 0 && r.x + r.w <= win.w && r.y + r.h <= win.h, tag + ": inside the window");
+      expect(std::abs(r.x - (win.w - r.x - r.w)) <= 1 && std::abs(r.y - (win.h - r.y - r.h)) <= 1, tag + ": centred");
+      // the border, measured in game pixels, is at least kFrameMargin on every side and exactly that on the tight axis
+      const double rowPx = static_cast<double>(r.h) / shownRows, colPx = static_cast<double>(r.w) / pw;
+      const double top = r.y / rowPx, left = r.x / colPx;
+      expect(top >= layout::kFrameMargin - 0.6 && left >= layout::kFrameMargin - 0.6, tag + ": border at least " + std::to_string(layout::kFrameMargin) + " game pixels");
+      expect(top <= layout::kFrameMargin + 0.6 || left <= layout::kFrameMargin + 0.6, tag + ": border exactly that on the axis that limits the size");
+    }
+    // 16:9: the border above and below is as many game rows as the border left and right is game columns
+    const auto r = layout::pictureRect(2560, 1440, pw, shownRows, twelveSeven, layout::Mode::Framed);
+    expect(std::fabs(r.y / (static_cast<double>(r.h) / shownRows) - layout::kFrameMargin) <= 0.6, "2560x1440: border above is 8 game rows");
   }
 
   // Odd and tiny windows must not crash or distort

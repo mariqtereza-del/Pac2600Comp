@@ -28,7 +28,7 @@
 //                                               write every frame's input to <file> when the window closes / play such a
 //                                               file back instead of the keyboard (Stage D13)
 //        (window mode: F1 = list of keys; arrows/WASD, Space, F2, F3, F5, F6 play the game (controls.cpp);
-//         keys 1, 2, 3, 4 = Sharp, Fill, TV frame, Game area; Alt+Enter = fullscreen on/off;
+//         keys 1, 2, 3, 4, 5 = Sharp, Fill, TV frame, Game area, Framed; Alt+Enter = fullscreen on/off;
 //         the window can be resized; its size, place and fullscreen are remembered in settings.ini)
 //        pacman2600 --headless <png> [rom_file] [--frames N] [--save-frame N] [--raw <file>] [--fingerprints <csv>]
 //                   [--settings <ini>] [--roms-dir <dir>] [--reset-at N] [--audio-wav <file>]
@@ -113,6 +113,7 @@ const char* modeName(layout::Mode m)
     case layout::Mode::Fill: return "Fill";
     case layout::Mode::TvFrame: return "TV frame";
     case layout::Mode::GameArea: return "Game area";
+    case layout::Mode::Framed: return "Framed";
   }
   return "?";
 }
@@ -123,6 +124,7 @@ bool parseMode(const std::string& text, layout::Mode& mode)
   else if(text == "fill") mode = layout::Mode::Fill;
   else if(text == "tv") mode = layout::Mode::TvFrame;
   else if(text == "game") mode = layout::Mode::GameArea;
+  else if(text == "framed") mode = layout::Mode::Framed;
   else return false;
   return true;
 }
@@ -155,7 +157,7 @@ struct Options {
   bool timerClock = false;  // pace the game from the PC clock instead of the sound card (comparison only)
   int stallMs = 0;    // tests: freeze the loop once, 5 seconds in (--audio-check: the game loop; the game window: the window thread)
   bool windowGiven = false;  // --window on the command line: do not use the remembered window
-  layout::Mode mode = layout::Mode::GameArea;  // fits the display (D-005); keys 1-4 switch it while playing
+  layout::Mode mode = layout::Mode::Framed;  // 12:7 pixels, game area, black border on every side (D-006); keys 1-5 switch it while playing
   layout::PixelShape pixelShape{12, 7};        // the standard NTSC shape of a 2600 pixel (D-005); {0, 0} = Stella's 19:10 (--pixel-aspect stella)
   int windowW = kWindowW, windowH = kWindowH;
   double timedSeconds = 0;
@@ -172,7 +174,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--find-rom") o.findRomFile = next();
     else if(a == "--headless") o.headlessPng = next();
     else if(a == "--layout-check") o.layoutCheckPng = next();
-    else if(a == "--mode") { if(!parseMode(next(), o.mode)) std::fprintf(stderr, "--mode must be sharp, fill, tv or game\n"); }
+    else if(a == "--mode") { if(!parseMode(next(), o.mode)) std::fprintf(stderr, "--mode must be sharp, fill, tv, game or framed\n"); }
     else if(a == "--keys-replay") { o.keysReplayScript = next(); o.keysReplayCsv = next(); }
     else if(a == "--help-check") o.helpCheckPng = next();
     else if(a == "--pad-check") o.padCheckFile = next();
@@ -262,7 +264,7 @@ struct Screen {
     SDL_GetRenderOutputSize(renderer, &windowW, &windowH);
     // The pixel shape always comes from the whole picture (Stella's); Game area only leaves out the always-black rows.
     const layout::PixelShape shape = view.shape.num > 0 ? view.shape : layout::stellaShape(Emulator::kWidth, height);
-    const bool crop = view.mode == layout::Mode::GameArea && layout::kGameBottom <= height;
+    const bool crop = (view.mode == layout::Mode::GameArea || view.mode == layout::Mode::Framed) && layout::kGameBottom <= height;
     const int top = crop ? layout::kGameTop : 0, shownRows = crop ? layout::kGameBottom - layout::kGameTop : height;
     where = layout::pictureRect(windowW, windowH, Emulator::kWidth, shownRows, shape, view.mode);
     const SDL_FRect dst{static_cast<float>(where.x), static_cast<float>(where.y), static_cast<float>(where.w), static_cast<float>(where.h)};
@@ -1244,6 +1246,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         if(e.key.key == SDLK_2) { screen.view.mode = layout::Mode::Fill; retitle(); }
         if(e.key.key == SDLK_3) { screen.view.mode = layout::Mode::TvFrame; retitle(); }
         if(e.key.key == SDLK_4) { screen.view.mode = layout::Mode::GameArea; retitle(); }
+        if(e.key.key == SDLK_5) { screen.view.mode = layout::Mode::Framed; retitle(); }
       }
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode == SDL_SCANCODE_F1) helpOn = !helpOn;
       if(e.type == SDL_EVENT_KEY_DOWN) keyboard.keyDown(e.key.scancode, e.key.repeat);

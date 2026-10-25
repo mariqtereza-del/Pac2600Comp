@@ -29,7 +29,7 @@ int main()
   // The table: every key is used once, none is one of the keys the window itself uses.
   std::set<SDL_Scancode> seen;
   bool duplicate = false, reserved = false;
-  const std::set<SDL_Scancode> windowKeys = {SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4, SDL_SCANCODE_F1, SDL_SCANCODE_ESCAPE,
+  const std::set<SDL_Scancode> windowKeys = {SDL_SCANCODE_1, SDL_SCANCODE_2, SDL_SCANCODE_3, SDL_SCANCODE_4, SDL_SCANCODE_5, SDL_SCANCODE_F1, SDL_SCANCODE_ESCAPE,
                                              SDL_SCANCODE_RETURN, SDL_SCANCODE_KP_ENTER, SDL_SCANCODE_LALT, SDL_SCANCODE_RALT};
   for(const auto& b : controls::bindings())
     for(SDL_Scancode k : b.keys) {
@@ -38,7 +38,7 @@ int main()
       expect(k != SDL_SCANCODE_UNKNOWN, std::string("a real key for ") + b.keysText);
     }
   expect(!duplicate, "no key is used for two things");
-  expect(!reserved, "no game key is one the window uses (1-4, F1, Esc, Enter, Alt)");
+  expect(!reserved, "no game key is one the window uses (1-5, F1, Esc, Enter, Alt)");
   expect(controls::bindings().size() == 10, "ten actions are bound");
 
   // Nothing pressed
@@ -184,7 +184,7 @@ int main()
     const auto lines = controls::helpLines(now, "Test Pad");
     std::string all;
     for(const auto& l : lines) all += l.keys + " | " + l.meaning + "\n";
-    for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "1 / 2 / 3 / 4", "[now A]", "[now B]", "Controller", "Test Pad", "D-pad / left stick", "Options", "Share", "Cross / Square"})
+    for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "1 / 2 / 3 / 4 / 5", "[now A]", "[now B]", "Controller", "Test Pad", "D-pad / left stick", "Options", "Share", "Cross / Square"})
       expect(all.find(needle) != std::string::npos, std::string("the F1 list contains: ") + needle);
     expect(lines.size() == controls::bindings().size() + 9, "the F1 list has one line per binding, five pad lines and four window keys");
   }

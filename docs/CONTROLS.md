@@ -89,7 +89,7 @@ Notes on the evidence:
 
 ## The port's keys (Stage D10)
 
-Arrows or W A S D = joystick; Space or Z = fire; F2 = Game Select (held); F3 = Game Reset (held); F5 / F6 = left / right difficulty A or B; F4 = Colour / B&W; 1-4 = picture mode; Alt+Enter = fullscreen; F1 = list of keys on the screen; Esc = quit. Chosen in `DECISIONS.md` T-D10-1. Proof: replaying the recorded inputs of this stage's experiments through the keys gives the same picture in all 344,460 frames compared (`tools\d10_replay_compare.py`). The PS4 controller is D11; Colour/B&W is D12.
+Arrows or W A S D = joystick; Space or Z = fire; F2 = Game Select (held); F3 = Game Reset (held); F5 / F6 = left / right difficulty A or B; F4 = Colour / B&W; 1-5 = picture mode (5 = Framed, the default); Alt+Enter = fullscreen; F1 = list of keys on the screen; Esc = quit. Chosen in `DECISIONS.md` T-D10-1. Proof: replaying the recorded inputs of this stage's experiments through the keys gives the same picture in all 344,460 frames compared (`tools\d10_replay_compare.py`). The PS4 controller is D11; Colour/B&W is D12.
 
 ## The PS4 pad in the port (Stage D11)
 

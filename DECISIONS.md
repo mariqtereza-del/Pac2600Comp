@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-12 — The TRY routines rewritten; dropping the caller (2026-10-26, Stage F21.12)
+
+- **Routine:** `game::tryDirection`. Up needs bit 6 and down bit 5 of the wall-table byte of the cell (`$FE13 + cell`), not in the first / last row; left and right need bit 7 of the byte of the neighbour cell (cell - 1 / cell + 2) clear, with the tunnel ends of row 3 (cells $3E and $38) closed; a ghost may not turn straight back; a turn that is taken sets the state (direction bits and the step-due bit).
+- **Dropping the caller:** a taken turn makes the original pop its own return address and return to the caller's caller. The adapter does the same with two stack pops and the final return; A then holds the high byte of the address that was thrown away (a visible register effect). The call check covers it.
+- **Result:** 70 of 70 games identical; 326,604 calls compared with the original (memory, registers, flags, stack pointer, return address): 0 differences; identical together with F21.1-F21.11. One first-run difference (the carry into TRY_DOWN's first ROL) was found by the call check and fixed.
+- **Reversible:** Yes.
+
 ### T-F21-11 — LIVES_MARKERS rewritten (2026-10-26, Stage F21.11)
 
 - **Routine:** `game::livesMarkers`; the two tables (`$FF1B`, `$FEEC`) are read by address through `game::Cartridge`.

@@ -104,4 +104,18 @@ Bcd addScore(Ram& ram, const Cartridge& cart, uint8_t amount, uint8_t callerX);
 // and $FEEC+lives. Returns the last value stored (the original leaves it in A).
 uint8_t livesMarkers(Ram& ram, const Cartridge& cart, uint8_t lives, uint8_t offset);
 
+// F21.12  TRY_UP ($FB36), TRY_DOWN ($FB5C), TRY_LEFT ($FB70), TRY_RIGHT ($FB87) and their shared end TRY_COMMIT ($FB44): can object n turn into direction d
+// (0 right, 1 left, 2 down, 3 up) from the cell it was located in (CELL_ROW, CELL_INDEX, F21.7)? The maze wall table of the cartridge (at $FE13, one
+// byte per cell: bit 7 wall, bit 6 up allowed, bit 5 down allowed, F10) decides; the first and last row, and two cells of row 3 (the tunnel ends),
+// are closed. A ghost (n > 0) may not turn straight back. If the turn is allowed the state is set (direction bits and the "step due" bit) and the
+// ORIGINAL ROUTINE DROPS ITS CALLER'S RETURN (the caller is left, too: the caller's caller continues); otherwise it returns normally.
+enum class TryExit { AtEdge, Wall, TurnBack, Taken };
+struct TryResult {
+  TryExit exit;
+  uint8_t row, cell;
+  uint8_t tableByte;     // the wall table byte that was read (not for AtEdge)
+  uint8_t stateBits;     // bits 7-6 of the state before (for the turn-back test of ghosts)
+};
+TryResult tryDirection(Ram& ram, const Cartridge& cart, uint8_t object, uint8_t direction);
+
 }  // namespace game

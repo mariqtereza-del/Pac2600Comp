@@ -24,6 +24,11 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.12', 'TRY_UP', 'try', 0xFB36, "game::tryDirection (direction 3): may the object turn up here? Reads the maze wall table through game::Cartridge; if yes it sets the state and DROPS THE CALLER'S RETURN"),
+    ('F21.12', 'TRY_DOWN', 'try', 0xFB5C, 'game::tryDirection (direction 2)'),
+    ('F21.12', 'TRY_LEFT', 'try', 0xFB70, 'game::tryDirection (direction 1)'),
+    ('F21.12', 'TRY_RIGHT', 'try', 0xFB87, 'game::tryDirection (direction 0)'),
+    ('F21.12', 'TRY_COMMIT', 'try', 0xFB44, 'the shared end of the four (inside tryDirection: no turning straight back for ghosts, set the state)'),
     ('F21.11', 'LIVES_MARKERS', 'lives-markers', 0xFC68, 'game::livesMarkers: the three playfield values of the life-marker row for one player (two cartridge tables through game::Cartridge)'),
     ('F21.10', 'ADD_SCORE', 'add-score', 0xFC45, 'game::addScore: decimal addition of a score amount to the player in turn; amounts read by address through the cartridge view (game::Cartridge)'),
     ('F21.9', 'SET_DIRECTION', 'set-direction', 0xF9E5, 'game::setDirection: direction bits and step-due bit set, then MOVE_OBJECT; the table TBL_FE63 is (d << 6) or $10 (checked equal to the cartridge bytes)'),
@@ -120,6 +125,10 @@ def main():
     print('direction table at $FE63 equals (d << 6) or $10:', dir_ok)
     if not dir_ok:
         problems.append('the direction table is not (d << 6) or $10')
+    rev_ok = list(rom[0xE67:0xE6B]) == [((d ^ 1) << 6) for d in range(4)]
+    print('turn-back table at $FE67 equals ((d xor 1) << 6):', rev_ok)
+    if not rev_ok:
+        problems.append('the turn-back table is not ((d xor 1) << 6)')
     ok = not problems
     print('problems:', problems)
     print('result: %s' % ('OK' if ok else 'MISMATCH'))

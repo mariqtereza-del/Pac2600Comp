@@ -1986,7 +1986,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F20_LOCKSTEP.md`, `DECISIONS.md` (T-F20-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F20: Lockstep harness`.
     - **Next stage:** F21 — Rewrite one routine per session (F21.1 first).
-21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT. F21.8 done 2026-10-26: MOVE_OBJECT. F21.9 done 2026-10-26: SET_DIRECTION. F21.10 done 2026-10-26: ADD_SCORE. F21.11 done 2026-10-26: LIVES_MARKERS.** *(expanded below)*
+21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT. F21.8 done 2026-10-26: MOVE_OBJECT. F21.9 done 2026-10-26: SET_DIRECTION. F21.10 done 2026-10-26: ADD_SCORE. F21.11 done 2026-10-26: LIVES_MARKERS. F21.12 done 2026-10-26: the TRY routines.** *(expanded below)*
     - **Objective (F21.1):** set up the way a routine is rewritten and prove it with the first, smallest routine that changes memory: CLEAR_SCORES (`$FC7D`, 14 bytes: both scores and both lives to 0).
     - **Why it matters:** every later session follows the same protocol; the protocol must detect a wrong routine even when the recorded games do not show it (a wrong register).
     - **Prerequisites:** F20 Done (`bb3df0f`).
@@ -2155,7 +2155,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Recovery:** small additions; undo by returning to `4c6d060` (with your OK).
       - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-11), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F21.11: Rewrite LIVES_MARKERS`.
-      - **Next stage:** F21.12 — Rewrite the TRY routines (TRY_UP, TRY_DOWN, TRY_LEFT, TRY_RIGHT and their shared end TRY_COMMIT; they read the maze wall table through the cartridge view and drop the caller's return).
+      - **Next stage:** F21.12 — Rewrite the TRY routines (done, below).
+    - **F21.12 — Rewrite the TRY routines** *(expanded and done 2026-10-26)*
+      - **Objective:** rewrite TRY_UP (`$FB36`), TRY_DOWN (`$FB5C`), TRY_LEFT (`$FB70`), TRY_RIGHT (`$FB87`) and their shared end TRY_COMMIT (`$FB44`) as C++: may object X turn into this direction from the cell it stands in, and if so set the direction.
+      - **Why it matters:** every turn of Pac-Man and every ghost decision (F10, F13) is made here, and the routines have the odd property that, when the turn is taken, they drop their caller's return address, so the decision routine above them ends at once.
+      - **Prerequisites:** F21.11 Done (`7d39c61`); F21.10 (the cartridge data view); F21.7 (LOCATE_OBJECT).
+      - **What Claude Code will do:** `game::tryDirection(ram, cart, object, direction)` returns how it ended (at the edge, blocked by a wall, a ghost may not turn back, taken); the wall table at `$FE13` is read through the cartridge view; the table `TBL_FE67` is ((d xor 1) << 6), `TBL_FE63` is (d << 6) or $10 (both checked against the cartridge); one adapter for the four entry points reproduces the registers and flags of every path and, when the turn is taken, throws away the caller's return (two pops) before the final return; added to the DONE list.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** 70 of 70 games identical; every call equal to the original, including the stack behaviour.
+      - **Verification:** `python -I tools\f21_routines.py rom\pacman.a26` says `result: OK` (the TRY group: 70 of 70 games identical, 326,604 calls compared with the original, 0 different; all seventeen routines together identical). The first run found one difference in 303 calls: the carry that goes into the first ROL of TRY_DOWN is the one left by its CMP #7, not the caller's; fixed in the adapter.
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** none left.
+      - **Recovery:** small additions; undo by returning to `7d39c61` (with your OK).
+      - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-12), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F21.12: Rewrite the TRY routines`.
+      - **Next stage:** F21.13 — Rewrite the TRY_PAIR routines (TRY_PAIR_1, TRY_PAIR_UD, TRY_PAIR_2, TRY_PAIR_LR: try two directions in an order chosen by the random number; they also drop the caller's return when a turn is taken).
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.

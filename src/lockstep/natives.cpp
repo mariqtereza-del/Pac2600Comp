@@ -76,6 +76,78 @@ void moveNative(Machine& m) {
   finishMove(m, mv);
 }
 
+// F21.12 TRY_UP / TRY_DOWN / TRY_LEFT / TRY_RIGHT (+ TRY_COMMIT). The object is in X. Registers and flags by path (see the listing):
+//  at the edge / blocked: A, Y and the flags as the instructions before the branch leave them (CMP/CPY, or LDA + ROL for the table byte);
+//  turn back refused (ghosts): A = state bits, Y = direction, flags of the CMP with TBL_FE67, normal return;
+//  taken: Y = direction, A = the high byte of the return address that PLA PLA throws away, zero/negative from it, carry from the path, and the RTS
+//  that follows returns to the caller's caller.
+void tryNative(Machine& m, uint8_t dir) {
+  const uint8_t object = m.x;
+  const uint8_t cin = m.p & 1;
+  const uint8_t stateBefore = m.read(static_cast<uint16_t>(0xBB + object));
+  const game::Cartridge cart(m.romBytes());
+  game::TryResult r{};
+  withRam(m, [&](game::Ram& ram) { r = game::tryDirection(ram, cart, object, dir); });
+  uint8_t carry = cin;
+  const uint8_t t = r.tableByte;
+  auto setFlags = [&](uint8_t av, bool c) {
+    m.a = av;
+    m.p = static_cast<uint8_t>((m.p & ~0x01) | (c ? 1 : 0));
+    m.setZN(av);
+  };
+  auto cmpState = [&](uint8_t reg, uint8_t v) {  // CMP / CPY: carry, zero, negative from reg - v
+    m.p = static_cast<uint8_t>((m.p & ~0x01) | (reg >= v ? 1 : 0));
+    m.setZN(static_cast<uint8_t>(reg - v));
+  };
+  switch (dir) {
+    case 3: {
+      if (r.exit == game::TryExit::AtEdge) { setFlags(r.row, cin); m.rts(); return; }
+      const uint8_t a1 = static_cast<uint8_t>((t << 1) | cin);
+      carry = t >> 7;
+      if (r.exit == game::TryExit::Wall) { setFlags(a1, carry); m.y = r.cell; m.rts(); return; }
+      break;
+    }
+    case 2: {
+      if (r.exit == game::TryExit::AtEdge) { m.a = r.row; cmpState(r.row, 7); m.rts(); return; }
+      const uint8_t a1 = static_cast<uint8_t>(t << 1);   // the carry into the first ROL is the one left by CMP #7: clear for rows below 7
+      const uint8_t c1 = t >> 7;
+      const uint8_t a2 = static_cast<uint8_t>((a1 << 1) | c1);
+      carry = a1 >> 7;
+      if (r.exit == game::TryExit::Wall) { setFlags(a2, carry); m.y = r.cell; m.rts(); return; }
+      break;
+    }
+    default: {
+      const uint8_t edgeCell = (dir == 1) ? 0x3E : 0x38;
+      const bool cr = (r.row == 3) ? (r.cell >= edgeCell) : (r.row >= 3);
+      if (r.exit == game::TryExit::AtEdge) { m.a = 3; m.y = r.cell; cmpState(r.cell, edgeCell); m.rts(); return; }
+      carry = cr;
+      if (r.exit == game::TryExit::Wall) {
+        setFlags(t, cr);
+        m.y = static_cast<uint8_t>(dir == 1 ? r.cell - 1 : r.cell + 2);
+        m.rts();
+        return;
+      }
+      break;
+    }
+  }
+  // TRY_COMMIT
+  m.y = dir;
+  m.p = static_cast<uint8_t>((m.p & ~0x01) | carry);
+  if (object != 0) {
+    const uint8_t rev = static_cast<uint8_t>((dir ^ 1) << 6);
+    m.a = stateBefore & 0xC0;
+    cmpState(stateBefore & 0xC0, rev);
+    if (r.exit == game::TryExit::TurnBack) { m.rts(); return; }
+  }
+  // taken: PLA PLA (the caller's return is thrown away), then RTS
+  ++m.sp;
+  ++m.sp;
+  const uint8_t high = m.read(static_cast<uint16_t>(0x100 + m.sp));
+  m.a = high;
+  m.setZN(high);
+  m.rts();
+}
+
 // F21.11 LIVES_MARKERS ($FC68): the number of lives is in X, the offset (0 or 3) in Y. The original leaves A = the last cartridge byte (zero/negative from it),
 // X and Y untouched, carry untouched.
 void livesMarkersNative(Machine& m) {
@@ -212,6 +284,13 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "try") {
+    m.registerNative(0xFB36, "TRY_UP (native)", [](Machine& mm) { tryNative(mm, 3); });
+    m.registerNative(0xFB5C, "TRY_DOWN (native)", [](Machine& mm) { tryNative(mm, 2); });
+    m.registerNative(0xFB70, "TRY_LEFT (native)", [](Machine& mm) { tryNative(mm, 1); });
+    m.registerNative(0xFB87, "TRY_RIGHT (native)", [](Machine& mm) { tryNative(mm, 0); });
+    return true;
+  }
   if (name == "lives-markers") { m.registerNative(0xFC68, "LIVES_MARKERS (native)", [](Machine& mm) { livesMarkersNative(mm); }); return true; }
   if (name == "add-score") { m.registerNative(0xFC45, "ADD_SCORE (native)", [](Machine& mm) { addScoreNative(mm); }); return true; }
   if (name == "set-direction") { m.registerNative(0xF9E5, "SET_DIRECTION (native)", [](Machine& mm) { setDirectionNative(mm); }); return true; }

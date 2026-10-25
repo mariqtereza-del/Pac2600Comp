@@ -179,4 +179,40 @@ uint8_t livesMarkers(Ram& ram, const Cartridge& cart, uint8_t lives, uint8_t off
   return last;
 }
 
+// TRY_UP / TRY_DOWN / TRY_LEFT / TRY_RIGHT and TRY_COMMIT.
+TryResult tryDirection(Ram& ram, const Cartridge& cart, uint8_t object, uint8_t direction) {
+  TryResult r{};
+  r.row = at(ram, ram::CELL_ROW);
+  r.cell = at(ram, ram::CELL_INDEX);
+  switch (direction) {
+    case 3:  // up: not from the first row; the cell must allow it (bit 6)
+      if (r.row == 0) { r.exit = TryExit::AtEdge; return r; }
+      r.tableByte = cart.at(0xFE13 + r.cell);
+      if (!(r.tableByte & 0x40)) { r.exit = TryExit::Wall; return r; }
+      break;
+    case 2:  // down: not from the last row; bit 5
+      if (r.row == 7) { r.exit = TryExit::AtEdge; return r; }
+      r.tableByte = cart.at(0xFE13 + r.cell);
+      if (!(r.tableByte & 0x20)) { r.exit = TryExit::Wall; return r; }
+      break;
+    case 1:  // left: the neighbour cell must have no wall (bit 7); the tunnel end of row 3 is closed
+      if (r.row == 3 && r.cell == 0x3E) { r.exit = TryExit::AtEdge; return r; }
+      r.tableByte = cart.at(0xFE13 + static_cast<uint8_t>(r.cell - 1));
+      if (r.tableByte & 0x80) { r.exit = TryExit::Wall; return r; }
+      break;
+    default:  // right: the cell two further on (a cell is 4 pixels, an object 8 wide)
+      if (r.row == 3 && r.cell == 0x38) { r.exit = TryExit::AtEdge; return r; }
+      r.tableByte = cart.at(0xFE13 + static_cast<uint8_t>(r.cell + 2));
+      if (r.tableByte & 0x80) { r.exit = TryExit::Wall; return r; }
+      break;
+  }
+  uint8_t& state = at(ram, ram::PACMAN_STATE + object);
+  r.stateBits = state & 0xC0;
+  // TRY_COMMIT: a ghost does not turn straight back (the table TBL_FE67 is ((d xor 1) << 6)); Pac-Man (object 0) may
+  if (object != 0 && r.stateBits == static_cast<uint8_t>((direction ^ 1) << 6)) { r.exit = TryExit::TurnBack; return r; }
+  state = static_cast<uint8_t>((state & 0x3F) | (direction << 6) | 0x10);
+  r.exit = TryExit::Taken;
+  return r;
+}
+
 }  // namespace game

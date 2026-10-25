@@ -139,4 +139,35 @@ Move setDirection(Ram& ram, uint8_t object, uint8_t direction) {
   return moveObject(ram, object);
 }
 
+namespace {
+// The decimal-mode ADC of the 6502 (NMOS): two digits at a time.
+Bcd bcdAdd(uint8_t a, uint8_t b, bool carryIn) {
+  unsigned lo = (a & 0x0F) + (b & 0x0F) + (carryIn ? 1 : 0);
+  if (lo > 9) lo += 6;
+  unsigned hi = (a >> 4) + (b >> 4) + (lo > 0x0F ? 1 : 0);
+  Bcd r{};
+  r.overflow = ((~(a ^ b) & (a ^ (hi << 4)) & 0x80) != 0);
+  if (hi > 9) hi += 6;
+  r.carry = hi > 0x0F;
+  r.value = static_cast<uint8_t>(((hi << 4) | (lo & 0x0F)) & 0xFF);
+  return r;
+}
+}  // namespace
+
+// ADD_SCORE ($FC45).
+Bcd addScore(Ram& ram, const Cartridge& cart, uint8_t amount, uint8_t callerX) {
+  at(ram, ram::TEMP_E1) = callerX;
+  const uint8_t player = (at(ram, ram::PLAYER_MODE) & 0x80) ? 1 : 0;
+  uint8_t& lo = at(ram, ram::SCORE_P1_LO + player);
+  uint8_t& mid = at(ram, ram::SCORE_P1_MID + player);
+  uint8_t& hi = at(ram, ram::SCORE_P1_HI + player);
+  const Bcd a = bcdAdd(lo, cart.at(0xFF06 + amount), false);
+  lo = a.value;
+  const Bcd b = bcdAdd(mid, cart.at(0xFF0C + amount), a.carry);
+  mid = b.value;
+  const Bcd c = bcdAdd(hi, 0, b.carry);
+  hi = c.value;
+  return c;
+}
+
 }  // namespace game

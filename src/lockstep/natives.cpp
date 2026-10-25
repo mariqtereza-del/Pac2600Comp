@@ -76,6 +76,19 @@ void moveNative(Machine& m) {
   finishMove(m, mv);
 }
 
+// F21.10 ADD_SCORE ($FC45): the amount number is in Y, the caller's X is kept. The original leaves A = the new high byte, X as it was (reloaded from the
+// scratch byte, which sets zero/negative from X), Y untouched, decimal flag clear, carry and overflow from the last decimal ADC #0.
+void addScoreNative(Machine& m) {
+  const uint8_t callerX = m.x;
+  const game::Cartridge cart(m.romBytes());
+  game::Bcd last{};
+  withRam(m, [&](game::Ram& r) { last = game::addScore(r, cart, m.y, callerX); });
+  m.a = last.value;
+  m.p = static_cast<uint8_t>((m.p & ~(0x08 | 0x41)) | (last.carry ? 0x01 : 0) | (last.overflow ? 0x40 : 0));
+  m.setZN(callerX);
+  m.rts();
+}
+
 // F21.9 SET_DIRECTION ($F9E5): the object is in X, the direction code in Y. The original sets the state and then runs the MOVE_OBJECT code, so the
 // registers and flags it leaves are MOVE_OBJECT's (shared adapter; the direction code must be 0-3, as at every call of the recordings).
 void setDirectionNative(Machine& m) {
@@ -187,6 +200,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "add-score") { m.registerNative(0xFC45, "ADD_SCORE (native)", [](Machine& mm) { addScoreNative(mm); }); return true; }
   if (name == "set-direction") { m.registerNative(0xF9E5, "SET_DIRECTION (native)", [](Machine& mm) { setDirectionNative(mm); }); return true; }
   if (name == "move") { m.registerNative(0xF9EE, "MOVE_OBJECT (native)", [](Machine& mm) { moveNative(mm); }); return true; }
   if (name == "locate") { m.registerNative(0xFBAD, "LOCATE_OBJECT (native)", [](Machine& mm) { locateNative(mm); }); return true; }

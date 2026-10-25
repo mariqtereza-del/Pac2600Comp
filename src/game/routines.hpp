@@ -14,6 +14,17 @@ namespace game {
 
 using Ram = std::array<uint8_t, 128>;
 
+// The data of the cartridge (maze, amounts, shapes, sounds) is never part of this source: the routines read it by its address in the original
+// program ($F000-$FFFF) through this view, which the data loader (F22) fills from the player's own ROM after checking its fingerprint.
+class Cartridge {
+ public:
+  explicit Cartridge(const uint8_t* bytes4k) : bytes_(bytes4k) {}
+  uint8_t at(uint16_t address) const { return bytes_[address & 0x0FFF]; }
+
+ private:
+  const uint8_t* bytes_;
+};
+
 inline uint8_t& at(Ram& ram, uint8_t addr) { return ram[addr - 0x80]; }
 inline const uint8_t& at(const Ram& ram, uint8_t addr) { return ram[addr - 0x80]; }
 
@@ -76,5 +87,16 @@ Move moveObject(Ram& ram, uint8_t object);
 // bit 4 (the original takes both from the table TBL_FE63, whose four bytes are (d << 6) or $10), then falls into MOVE_OBJECT: the object moves at once.
 // Returns what moveObject returned.
 Move setDirection(Ram& ram, uint8_t object, uint8_t direction);
+
+// F21.10  ADD_SCORE ($FC45): adds the score amount number y (0-3: ghosts 20/40/80/160, 4: wafer 1, 5: power pill 5, 6: bonus item 100) to the score of the
+// player in turn (PLAYER_MODE bit 7), in decimal: low byte + TBL_FF06[y], middle byte + TBL_FF0C[y] (cartridge tables), high byte + carry.
+// The original keeps the caller's X in the scratch byte TEMP_E1 and gives it back; callerX is that X (the byte stays in the memory).
+// Returns the last decimal addition (the high byte) for the adapter's flags.
+struct Bcd {
+  uint8_t value;
+  bool carry;
+  bool overflow;
+};
+Bcd addScore(Ram& ram, const Cartridge& cart, uint8_t amount, uint8_t callerX);
 
 }  // namespace game

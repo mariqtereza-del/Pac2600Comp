@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **ADD_SCORE**: identical in 70 of 70 games; 4607 calls compared with the original code, 0 different.
 - **SET_DIRECTION**: identical in 70 of 70 games; 73589 calls compared with the original code, 0 different.
 - **MOVE_OBJECT**: identical in 70 of 70 games; 1174804 calls compared with the original code, 0 different.
 - **LOCATE_OBJECT**: identical in 70 of 70 games; 1329282 calls compared with the original code, 0 different.
@@ -38,6 +39,7 @@
 | F21.3 | `RNG_STEP` | $FBE0 | 20 | **done** | game::rngStep: the shift-register random number; its bit-mask table is 0x80 >> n (checked equal to the cartridge bytes) |
 | F21.5 | `NEW_MAZE` | $FC0C | 21 | **done** | game::newMaze: the wafer map filled (two places empty), pill flags $3C, then PLACE_OBJECTS |
 | F21.6 | `NEW_GAME_SETUP` | $FBF4 | 24 | **done** | game::newGameSetup: score colours, three lives, start level from the game number, then NEW_MAZE |
+| F21.10 | `ADD_SCORE` | $FC45 | 35 | **done** | game::addScore: decimal addition of a score amount to the player in turn; amounts read by address through the cartridge view (game::Cartridge) |
 | F21.5 | `PLACE_OBJECTS` | $FC21 | 36 | **done** | game::placeObjects: freeze on, timer $3C, Pac-Man and the ghosts at their start places |
 | F21.7 | `LOCATE_OBJECT` | $FBAD | 51 | **done** | game::locateObject: row, offsets, cell index and position code of an object; the adapter also leaves the flags byte that the original PHP writes in the stack area |
 | F21.8 | `MOVE_OBJECT` | $F9EE | 56 | **done** | game::moveObject: the speed accumulator (x17) and the one-pixel step with the border rules |
@@ -60,7 +62,6 @@
 | - | `TRY_COMMIT` | $FB44 | 23 | to do | drops the caller's return |
 | - | `TRY_LEFT` | $FB70 | 23 | to do |  |
 | - | `TRY_RIGHT` | $FB87 | 24 | to do |  |
-| - | `ADD_SCORE` | $FC45 | 35 | to do | needs the amount tables of the cartridge (F22) |
 | - | `PACMAN_KEEP_GOING` | $F793 | 39 | to do | drops the caller's return |
 | - | `SOUND_EFFECTS` | $FF55 | 54 | to do | needs ROM tables (F22); chip writes (F24) |
 | - | `GHOST_UPDATE` | $F9AA | 58 | to do | after GHOST_DECIDE |

@@ -51,6 +51,8 @@ class Machine {
   uint64_t verifyFailures() const { return verifyFailures_; }
   const std::string& verifyReport() const { return verifyReport_; }
 
+  const uint8_t* romBytes() const { return rom_; }
+
   // ---- state ----
   const std::array<uint8_t, 128>& ram() const { return ram_; }
   std::array<uint8_t, 128>& ramMutable() { return ram_; }

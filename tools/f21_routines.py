@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.19', 'SOUND_MUSIC', 'sound-music', 0xFF94, 'game::soundMusic: the death sound, the start tune and the scared-ghost sweep, written to a game::SoundChip; two cartridge tables'),
     ('F21.18', 'SOUND_EFFECTS', 'sound-effects', 0xFF55, 'game::soundEffects: the sound effect of the frame on channel 0, written to a game::SoundChip; the call check now compares the writes to the sound chip'),
     ('F21.18', 'SOUND_WRITE', 'sound-effects', 0xFF8B, 'the shared writer of the sound routines (inside soundEffects)'),
     ('F21.17', 'SOUND_START', 'sound-start', 0xFF43, 'game::soundStart: start a sound effect unless a higher-ranking one plays; three cartridge tables through game::Cartridge'),
@@ -60,7 +61,7 @@ NOTES = {
     'EXIT_F9E4': 'a lone RTS: nothing to write', 'EXIT_FB5B': 'a lone RTS: nothing to write', 'EXIT_FF93': 'a lone RTS: nothing to write',
     'WRAP_SET_Y': 'end of both WRAP routines: written with them',
     'SCORE_DIGITS': 'needs ROM tables (F22) and the picture',
-    'SOUND_MUSIC': 'needs ROM tables (F22); chip writes (F24)',
+    'SOUND_MUSIC': '',
     'SET_DIRECTION': 'table TBL_FE63 (F22); falls into MOVE_OBJECT', 'MOVE_OBJECT': 'ends in the border tests; leaf',
     'GHOST_DECIDE': 'large; after the TRY_ routines', 'GHOST_UPDATE': 'after GHOST_DECIDE',
     'TRY_PAIR_1': 'drops the caller\'s return (rts twice)', 'TRY_PAIR_UD': 'drops the caller\'s return', 'TRY_PAIR_2': 'drops the caller\'s return',

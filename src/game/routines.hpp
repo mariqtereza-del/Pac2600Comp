@@ -185,4 +185,11 @@ inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18,
 // scratch byte that holds the control value.
 void soundEffects(Ram& ram, SoundChip& chip);
 
+// F21.19  SOUND_MUSIC ($FF94): each frame, the long sounds, in this order: Pac-Man dying (GAME_FLAGS bit 6): channel 0, volume = pitch x 2 = EVENT_TIMER,
+// control 4; the start tune (GAME_FLAGS bit 3): from bits 3-5 of EVENT_TIMER (or, when the timer is 0, of the flags with the tune bit cleared) a note 0-3
+// for both channels from the cartridge tables $FFF1 / $FFF5, control 4, volume 8, silent for 4-7; the scared-ghost sweep (PILL_FLAGS bit 6): channel 1,
+// control 4, pitch = (FRAME_COUNTER / 2) and $0F, volume = (pitch xor $0F) / 2. The caller has X = 1 (channel 1) for the sweep. TEMP_D3 holds the sweep's
+// control value.
+void soundMusic(Ram& ram, const Cartridge& cart, SoundChip& chip);
+
 }  // namespace game

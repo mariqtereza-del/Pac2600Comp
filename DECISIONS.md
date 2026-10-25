@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-19 — SOUND_MUSIC rewritten (2026-10-26, Stage F21.19)
+
+- **Routine:** `game::soundMusic`: dying (GAME_FLAGS bit 6): AUDV0 = EVENT_TIMER, AUDF0 = timer / 2, AUDC0 = 4; start tune (bit 3): note = (timer >> 3) and 7, or, when the timer is 0, the same from the flags after clearing the tune bit; for notes 0-3 both channels get pitches from `$FFF1` / `$FFF5`, control 4, volume 8; scared sweep (PILL_FLAGS bit 6): channel 1, TEMP_D3 = 4, pitch = (FRAME_COUNTER / 2) and $0F, volume = (pitch xor $0F) / 2.
+- **Result:** 70 of 70 games identical; 439,610 calls compared with the original (memory, chip writes, stack pointer, return address): 0 differences; identical together with F21.1-F21.18.
+- **Reversible:** Yes.
+
 ### T-F21-18 — SOUND_EFFECTS rewritten; chip writes become part of the call check (2026-10-26, Stage F21.18)
 
 - **Harness:** while a call is checked, `Machine` records the writes to chip registers (not WSYNC) of the original and of the native routine and compares the two lists in order. Routines without chip writes are unaffected (both lists are empty).

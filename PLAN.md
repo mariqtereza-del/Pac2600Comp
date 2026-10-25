@@ -1986,7 +1986,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F20_LOCKSTEP.md`, `DECISIONS.md` (T-F20-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F20: Lockstep harness`.
     - **Next stage:** F21 — Rewrite one routine per session (F21.1 first).
-21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT. F21.8 done 2026-10-26: MOVE_OBJECT. F21.9 done 2026-10-26: SET_DIRECTION. F21.10 done 2026-10-26: ADD_SCORE. F21.11 done 2026-10-26: LIVES_MARKERS. F21.12 done 2026-10-26: the TRY routines. F21.13 done 2026-10-26: the TRY_PAIR routines. F21.14 done 2026-10-26: ANIMATE_OBJECT. F21.15 done 2026-10-26: GHOST_DECIDE. F21.16 done 2026-10-26: GHOST_UPDATE. F21.17 done 2026-10-26: SOUND_START. F21.18 done 2026-10-26: SOUND_EFFECTS.** *(expanded below)*
+21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines. F21.5 done 2026-10-26: NEW_MAZE and PLACE_OBJECTS. F21.6 done 2026-10-26: NEW_GAME_SETUP. F21.7 done 2026-10-26: LOCATE_OBJECT. F21.8 done 2026-10-26: MOVE_OBJECT. F21.9 done 2026-10-26: SET_DIRECTION. F21.10 done 2026-10-26: ADD_SCORE. F21.11 done 2026-10-26: LIVES_MARKERS. F21.12 done 2026-10-26: the TRY routines. F21.13 done 2026-10-26: the TRY_PAIR routines. F21.14 done 2026-10-26: ANIMATE_OBJECT. F21.15 done 2026-10-26: GHOST_DECIDE. F21.16 done 2026-10-26: GHOST_UPDATE. F21.17 done 2026-10-26: SOUND_START. F21.18 done 2026-10-26: SOUND_EFFECTS. F21.19 done 2026-10-26: SOUND_MUSIC.** *(expanded below)*
     - **Objective (F21.1):** set up the way a routine is rewritten and prove it with the first, smallest routine that changes memory: CLEAR_SCORES (`$FC7D`, 14 bytes: both scores and both lives to 0).
     - **Why it matters:** every later session follows the same protocol; the protocol must detect a wrong routine even when the recorded games do not show it (a wrong register).
     - **Prerequisites:** F20 Done (`bb3df0f`).
@@ -2260,7 +2260,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Recovery:** harness and game additions; undo by returning to `7d233ce` (with your OK).
       - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-18), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F21.18: Rewrite SOUND_EFFECTS`.
-      - **Next stage:** F21.19 — Rewrite SOUND_MUSIC (85 bytes: death sound, start tune and the scared-ghost sweep; two cartridge tables; writes both sound channels).
+      - **Next stage:** F21.19 — Rewrite SOUND_MUSIC (done, below).
+    - **F21.19 — Rewrite SOUND_MUSIC** *(expanded and done 2026-10-26)*
+      - **Objective:** rewrite SOUND_MUSIC (`$FF94`, 85 bytes) as C++: the death sound, the start tune and the scared-ghost sweep, written to the sound chip.
+      - **Why it matters:** the long sounds of the game (F19); the tune has a quirk (with the timer at 0 the note number comes from the flags) that must be kept.
+      - **Prerequisites:** F21.18 Done (`11be83b`) for the chip interface and the chip-write check; F19.
+      - **What Claude Code will do:** `game::soundMusic(ram, cart, chip)` (death: volume = timer, pitch = timer / 2, control 4; tune: note from the timer's bits 3-5, or from the flags when the timer is 0, two cartridge tables `$FFF1` / `$FFF5`; sweep on channel 1; TEMP_D3 = 4 and the tune bit cleared as in the original); the adapter (X = 1 is a precondition of the sweep; contract: stack pointer and return address, since the one caller uses no register afterwards); added to the DONE list.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** 70 of 70 games identical; every call equal to the original in memory and chip writes.
+      - **Verification:** `python -I tools\f21_routines.py rom\pacman.a26` says `result: OK` (SOUND_MUSIC: 70 of 70 games identical, 439,610 calls compared with the original including the chip writes, 0 different; all twenty-seven routines together identical). Right at the first run.
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** none.
+      - **Recovery:** small additions; undo by returning to `11be83b` (with your OK).
+      - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-19), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F21.19: Rewrite SOUND_MUSIC`.
+      - **Next stage:** F21.20 — Rewrite PACMAN_KEEP_GOING (39 bytes: Pac-Man with the stick neutral keeps going when he is exactly on a cell; it drops the caller's return and continues in the main loop).
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.

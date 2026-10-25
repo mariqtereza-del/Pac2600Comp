@@ -101,6 +101,17 @@ void soundEffectsNative(Machine& m, bool wrong = false) {
   m.rts();
 }
 
+// F21.19 SOUND_MUSIC ($FF94). The caller has X = 1; the sweep writes channel 1 through it. Contract: the one caller (the main loop, which then waits for the
+// timer) uses none of A, X, Y or the flags afterwards; the routine makes no calls. The stack pointer and the return address are compared.
+void soundMusicNative(Machine& m) {
+  const bool sweep = !(m.read(0xE7) & 0x48) && ((m.read(0x9A) << 1) & 0x80);
+  if (sweep && m.x != 1) { m.fail(); return; }
+  MachineChip chip(m, false);
+  const game::Cartridge cart(m.romBytes());
+  withRam(m, [&](game::Ram& r) { game::soundMusic(r, cart, chip); });
+  m.rts();
+}
+
 // F21.17 SOUND_START ($FF43): the sound number is in Y. The original leaves A = the blocking bits (refused) or the length, zero/negative from it; X, Y,
 // carry and overflow untouched.
 void soundStartNative(Machine& m) {
@@ -424,6 +435,12 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "sound-music") {
+    Machine::Contract c;
+    c.regs = 16 | 32;
+    m.registerNative(0xFF94, "SOUND_MUSIC (native)", [](Machine& mm) { soundMusicNative(mm); }, c);
+    return true;
+  }
   if (name == "sound-effects" || name == "sound-effects-wrong") {
     Machine::Contract c;
     c.regs = 2 | 16 | 32;

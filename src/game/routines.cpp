@@ -454,4 +454,35 @@ void soundEffects(Ram& ram, SoundChip& out) {
   out.write(chip::AUDF0, pitch);
 }
 
+// SOUND_MUSIC ($FF94).
+void soundMusic(Ram& ram, const Cartridge& cart, SoundChip& out) {
+  uint8_t& flags = at(ram, ram::GAME_FLAGS);
+  const uint8_t timer = at(ram, ram::EVENT_TIMER);
+  if (flags & 0x40) {                                   // dying: a falling tone
+    out.write(chip::AUDV0, timer);
+    out.write(chip::AUDF0, timer >> 1);
+    out.write(chip::AUDC0, 4);
+    return;
+  }
+  if (flags & 0x08) {                                   // the start tune
+    uint8_t a = timer;
+    if (timer == 0) { flags &= 0xF7; a = flags; }       // the tune ends; the note number is then taken from the flags themselves (as the original does)
+    const uint8_t note = (a >> 3) & 7;
+    if (note >= 4) return;
+    out.write(chip::AUDF0, cart.at(0xFFF1 + note));
+    out.write(chip::AUDF1, cart.at(0xFFF5 + note));
+    out.write(chip::AUDC0, 4);
+    out.write(chip::AUDC1, 4);
+    out.write(chip::AUDV0, 8);
+    out.write(chip::AUDV1, 8);
+    return;
+  }
+  if (!((at(ram, ram::PILL_FLAGS) << 1) & 0x80)) return;   // scared (first part): the sweep on channel 1
+  at(ram, ram::TEMP_D3) = 4;
+  const uint8_t pitch = (at(ram, ram::FRAME_COUNTER) >> 1) & 0x0F;
+  out.write(chip::AUDV1, (pitch ^ 0x0F) >> 1);
+  out.write(chip::AUDC1, 4);
+  out.write(chip::AUDF1, pitch);
+}
+
 }  // namespace game

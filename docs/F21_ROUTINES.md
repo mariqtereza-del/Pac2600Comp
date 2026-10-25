@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **GHOST_DECIDE**: identical in 70 of 70 games; 1036677 calls compared with the original code, 0 different.
 - **ANIMATE_OBJECT**: identical in 70 of 70 games; 2791 calls compared with the original code, 0 different.
 - **TRY_PAIR_1**: identical in 70 of 70 games; 66441 calls compared with the original code, 0 different.
 - **TRY_PAIR_UD**: identical in 70 of 70 games; 66441 calls compared with the original code, 0 different.
@@ -65,6 +66,7 @@
 | F21.7 | `LOCATE_OBJECT` | $FBAD | 51 | **done** | game::locateObject: row, offsets, cell index and position code of an object; the adapter also leaves the flags byte that the original PHP writes in the stack area |
 | F21.8 | `MOVE_OBJECT` | $F9EE | 56 | **done** | game::moveObject: the speed accumulator (x17) and the one-pixel step with the border rules |
 | F21.14 | `ANIMATE_OBJECT` | $FC8B | 155 | **done** | game::animateObject: the opening animation of an object (waiting, down the outside, back into the maze, up) and the sprite scratch bytes; three small cartridge tables through game::Cartridge |
+| F21.15 | `GHOST_DECIDE` | $FA26 | 214 | **done** | game::ghostDecide: the ghost decision (aim, chase, scared, eyes, opening, random wandering) built from the rewritten TRY, TRY_PAIR, RNG and WRAP routines; contract: X, stack pointer, return address and live memory |
 | - | `EXIT_F9E4` | $F9E4 | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FB5B` | $FB5B | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FF93` | $FF93 | 1 | to do | a lone RTS: nothing to write |
@@ -79,6 +81,5 @@
 | - | `GHOST_UPDATE` | $F9AA | 58 | to do | after GHOST_DECIDE |
 | - | `SOUND_MUSIC` | $FF94 | 85 | to do | needs ROM tables (F22); chip writes (F24) |
 | - | `SCORE_DIGITS` | $F3EE | 149 | to do | needs ROM tables (F22) and the picture |
-| - | `GHOST_DECIDE` | $FA26 | 214 | to do | large; after the TRY_ routines |
 
 Order for the next sessions: smallest first among the routines whose result shows in the memory (the picture-only and sound-chip-only routines wait for F23/F24; those that need cartridge tables wait for F22 or use a table checked equal to the ROM): SWAP_PLAYERS, RNG_STEP, the WRAP routines, NEW_MAZE and PLACE_OBJECTS, LOCATE_OBJECT, MOVE_OBJECT, the TRY routines, ANIMATE_OBJECT, then the ghost routines. The main loop (`MAIN`: start-up, top and bottom logic, kernel) is cut into routines in the last sessions of F21.

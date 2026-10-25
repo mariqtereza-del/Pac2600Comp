@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.15', 'GHOST_DECIDE', 'ghost-decide', 0xFA26, 'game::ghostDecide: the ghost decision (aim, chase, scared, eyes, opening, random wandering) built from the rewritten TRY, TRY_PAIR, RNG and WRAP routines; contract: X, stack pointer, return address and live memory'),
     ('F21.14', 'ANIMATE_OBJECT', 'animate', 0xFC8B, 'game::animateObject: the opening animation of an object (waiting, down the outside, back into the maze, up) and the sprite scratch bytes; three small cartridge tables through game::Cartridge'),
     ('F21.13', 'TRY_PAIR_1', 'try-pair', 0xFAFC, "game::tryPair (vertical): after the random step try up and down in the order it picks; a taken turn drops the caller's return too"),
     ('F21.13', 'TRY_PAIR_UD', 'try-pair', 0xFB05, 'the vertical pair itself (inside the TRY_PAIR_1 rewrite; only reached from it)'),
@@ -119,6 +120,12 @@ def main():
         found_r = [r for r in badreg if r[1] == 1 and any('ROUTINE CHECK FAILED' in l for l in r[2])]
         same_frames = [r for r in badreg if r[1] == 1 and any('ROUTINE CHECK FAILED' in l for l in r[2])]
         print('fixture with a wrong register: the routine check finds it in %d games (the frames themselves are identical in all of them)' % len(found_r))
+        gw = list(ex.map(lambda it: run(it[0], it[1], ['ghost-decide-wrong']), items))
+        found_g = [r for r in gw if r[1] == 1 and any('GHOST_DECIDE (native, wrong on purpose)' in l for l in r[2])]
+        used_g = [r for r in gw if calls(r[2])[0] > 0 or r[1] == 1]
+        print('fixture GHOST_DECIDE wrong on purpose (a scratch byte): found in %d of %d games' % (len(found_g), len(used_g)))
+        if len(found_g) != len(used_g) or not used_g:
+            problems.append('GHOST_DECIDE fixture not found everywhere')
         if len(found_w) != len(used_w) or not used_w or not found_r:
             problems.append('fixtures not found everywhere')
     rom = ROM.read_bytes()

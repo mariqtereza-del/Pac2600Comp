@@ -81,6 +81,22 @@ void moveNative(Machine& m) {
 //  turn back refused (ghosts): A = state bits, Y = direction, flags of the CMP with TBL_FE67, normal return;
 //  taken: Y = direction, A = the high byte of the return address that PLA PLA throws away, zero/negative from it, carry from the path, and the RTS
 //  that follows returns to the caller's caller.
+// F21.15 GHOST_DECIDE ($FA26): the object is in X. Contract (see Machine::Contract): the only caller is GHOST_UPDATE, which next loads A from memory and
+// does not use Y, the carry or the overflow flag; the routine keeps X. So X, the stack pointer and the return address are compared, the other registers
+// are not. The routine calls other routines whose old return addresses stay below the stack pointer in the original; those free stack bytes are not
+// compared. Everything else (memory above the stack pointer, the live stack) must be identical.
+void ghostDecideNative(Machine& m, bool wrong = false) {
+  const uint8_t object = m.x;
+  const game::Cartridge cart(m.romBytes());
+  bool ok = true;
+  withRam(m, [&](game::Ram& r) {
+    ok = game::ghostDecide(r, cart, object);
+    if (wrong) r[game::ram::TEMP_D2 - 0x80] += 1;   // test fixture: a small mistake in a scratch byte
+  });
+  if (!ok) { m.fail(); return; }
+  m.rts();
+}
+
 // F21.14 ANIMATE_OBJECT ($FC8B): the object is in X, the sprite number (0 ghost, 1 Pac-Man) in Y. Registers and flags by path (see the listing):
 // the paths that end by storing $70 leave A = $70 (zero/negative clear); the step paths leave A = the new y; the path that sets the picture pointer
 // leaves A = 8, X = the pointer index (0 or 2), carry and overflow of the pointer addition; carry is that of the last CMP, or unchanged while waiting.
@@ -365,6 +381,20 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "ghost-decide") {
+    Machine::Contract c;
+    c.deadStack = true;
+    c.regs = 2 | 16 | 32;
+    m.registerNative(0xFA26, "GHOST_DECIDE (native)", [](Machine& mm) { ghostDecideNative(mm); }, c);
+    return true;
+  }
+  if (name == "ghost-decide-wrong") {
+    Machine::Contract c;
+    c.deadStack = true;
+    c.regs = 2 | 16 | 32;
+    m.registerNative(0xFA26, "GHOST_DECIDE (native, wrong on purpose)", [](Machine& mm) { ghostDecideNative(mm, true); }, c);
+    return true;
+  }
   if (name == "animate") { m.registerNative(0xFC8B, "ANIMATE_OBJECT (native)", [](Machine& mm) { animateNative(mm); }); return true; }
   if (name == "try-pair") {
     m.registerNative(0xFAFC, "TRY_PAIR_1 (native)", [](Machine& mm) { pairNative(mm, true); });

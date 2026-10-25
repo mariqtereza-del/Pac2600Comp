@@ -147,4 +147,14 @@ struct AnimResult {
 };
 AnimResult animateObject(Ram& ram, const Cartridge& cart, uint8_t object, uint8_t sprite);
 
+// F21.15  GHOST_DECIDE ($FA26): the decision of the ghost (object n, 1-4) that has just been located (LOCATE_OBJECT, F21.7). Only on a cell exactly (both
+// offsets 0) and with no step due. On the title screen the ghost wanders. Eyes (state bit 3) aim at the pen door (x $58, y $1F). Otherwise: on the
+// middle column on the top or bottom row, once in 16 times (the low four bits of the random number are 0) it enters the opening (WRAP_TO_TOP /
+// WRAP_TO_BOTTOM); scared ghosts (PILL_FLAGS bit 7) aim at a mirrored x ($ not x + $60 inverted) and at Pac-Man's own y (an error of the original, F13);
+// others count their timer down and aim at Pac-Man until it reaches 0, then reload it from the cartridge table at $FE6F (level / 2, +1 for objects 2
+// and 3) and wander. Aiming: x first (right if the target x is bigger, left if smaller), then y (down if smaller, else up); the first allowed turn
+// ends the decision. Wandering: a chain of random steps, see the code. Writes TEMP_D2 / TEMP_D3 (target y / x) as the original does.
+// Returns false only for the path the listing marks as never run (a ghost that falls out of the last wander chain into TRY_PAIR_1's code).
+bool ghostDecide(Ram& ram, const Cartridge& cart, uint8_t object);
+
 }  // namespace game

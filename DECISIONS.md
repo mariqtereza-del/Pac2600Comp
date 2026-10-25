@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-15 — GHOST_DECIDE rewritten; contracts for routines with calls inside (2026-10-26, Stage F21.15)
+
+- **Routine:** `game::ghostDecide` is the F13 model in C++, built from `rngStep`, `tryDirection`, `tryPair`, `wrapToTop/Bottom`; scratch bytes TEMP_D2/D3 and the ghost timer are written as in the original.
+- **Why a contract:** a native routine that replaces code containing JSRs cannot leave the old return addresses that those JSRs left below the stack pointer (F21.7 and F21.13 reproduced them by hand), and reproducing the exact flags and registers of every one of GHOST_DECIDE's many exits would copy the processor's bookkeeping instead of the game's rules. The bytes below the stack pointer are free memory, and the registers A, Y and the flags are provably dead at the only caller (GHOST_UPDATE loads A at once and uses neither Y, carry nor overflow). `Machine::Contract` states exactly this per routine; the default stays "compare everything".
+- **What is still compared:** all memory above the stack pointer, X, the stack pointer and the return address, in every call, plus all 128 bytes (free stack bytes excepted) after every frame.
+- **Result:** 70 of 70 games identical; 1,036,677 calls compared; identical together with F21.1-F21.14; a deliberately wrong version is found in 70 of 70 games.
+- **Reversible:** Yes.
+
 ### T-F21-14 — ANIMATE_OBJECT rewritten (2026-10-26, Stage F21.14)
 
 - **Routine:** `game::animateObject`: waiting (y counts down to 0, then y = $5B or 0 and the step-due bit is set), then the opening path by direction code (0: down to $5B; 1 and 3: up the outside until y = $0B, then y = 0 and direction bits $80; 2: back to $51, then y = $46 and bits $C0; 3 below 0: bits $A0) with the cartridge tables $FF0D/$FF19/$FF25 for the picture pointer and the start y of the next phase.

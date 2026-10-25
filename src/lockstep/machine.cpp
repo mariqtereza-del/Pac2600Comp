@@ -15,7 +15,10 @@ Machine::Machine(const uint8_t* rom4k) : rom_(rom4k) {
   pc = static_cast<uint16_t>(rom_[0xFFC] | (rom_[0xFFD] << 8));
 }
 
-void Machine::registerNative(uint16_t entry, const std::string& name, NativeFn fn) { natives_[entry] = Native{name, std::move(fn)}; }
+void Machine::registerNative(uint16_t entry, const std::string& name, NativeFn fn, Contract contract) {
+  natives_[entry] = Native{name, std::move(fn), contract};
+  if (contract.deadStack) liveStack_ = true;
+}
 
 const char* Machine::regionName(uint16_t pc) {
   for (const auto& r : kRegions)
@@ -303,20 +306,20 @@ void Machine::verifyNative(const Native& n) {
   std::string why;
   if (!refOk) why = "the original routine did not return";
   for (int i = 0; i < 128 && why.empty(); ++i)
-    if (ref.ram_[i] != ram_[i]) {
+    if (ref.ram_[i] != ram_[i] && !(n.contract.deadStack && deadStackByte(i))) {
       char b[160];
       std::snprintf(b, sizeof b, "byte $%02X (%s): original $%02X, native $%02X", 0x80 + i, ramName(static_cast<uint8_t>(0x80 + i)), ref.ram_[i], ram_[i]);
       why = b;
     }
-  auto reg = [&](const char* nm, unsigned o, unsigned g) {
-    if (why.empty() && o != g) {
+  auto reg = [&](unsigned bit, const char* nm, unsigned o, unsigned g) {
+    if (why.empty() && (n.contract.regs & bit) && o != g) {
       char b[96];
       std::snprintf(b, sizeof b, "register %s: original $%02X, native $%02X", nm, o, g);
       why = b;
     }
   };
-  reg("A", ref.a, a); reg("X", ref.x, x); reg("Y", ref.y, y); reg("SP", ref.sp, sp);
-  reg("PC", ref.pc, pc); reg("P (flags)", ref.p & 0xCF, p & 0xCF);
+  reg(1, "A", ref.a, a); reg(2, "X", ref.x, x); reg(4, "Y", ref.y, y); reg(16, "SP", ref.sp, sp);
+  reg(32, "PC", ref.pc, pc); reg(8, "P (flags)", ref.p & 0xCF, p & 0xCF);
   if (!why.empty()) {
     ++verifyFailures_;
     if (verifyReport_.empty()) {

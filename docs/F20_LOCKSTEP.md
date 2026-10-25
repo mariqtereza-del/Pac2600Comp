@@ -6,7 +6,7 @@
 
 | Check | Result |
 | --- | --- |
-| The original program run by the harness's own 6502 core, compared with the golden memory after every frame | **70 games, 439680 frames, all 128 bytes identical in every frame** (26.7 s of work in all) |
+| The original program run by the harness's own 6502 core, compared with the golden memory after every frame | **70 games, 439680 frames, all 128 bytes identical in every frame** (26.1 s of work in all) |
 | The same with a natively written `RNG_STEP` in place of the original routine | identical in all 70 games |
 | The same with a deliberately broken `RNG_STEP` | stopped at the first difference in 70 games; byte and routine named correctly in 70. Example: `BL-001: first difference: frame 4, byte $CB (RNG_STATE): golden $81, ours $00; last written by RNG_STEP (native, broken on purpose)` |
 | The same without the collision-flag oracle (BL-035) | found a difference: `first difference: frame 2288, byte $9A (PILL_FLAGS): golden $ED, ours $EC; last written by MAIN/bottom logic (pc $F5B8)` |

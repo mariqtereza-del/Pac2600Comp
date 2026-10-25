@@ -108,6 +108,10 @@ int main(int argc, char** argv) {
     std::string ours;
     char buf[3];
     for (int i = 0; i < 128; ++i) { std::snprintf(buf, sizeof buf, "%02x", m.ram()[i]); ours += buf; }
+    if (m.liveStackMode()) {   // free stack bytes (below the stack pointer) are not game state: take the golden value for them
+      for (int i = 0; i < 128; ++i)
+        if (m.deadStackByte(i)) ours.replace(2 * i, 2, golden[f].substr(2 * i, 2));
+    }
     if (ours != golden[f]) {
       ++different;
       if (firstFrame < 0) {

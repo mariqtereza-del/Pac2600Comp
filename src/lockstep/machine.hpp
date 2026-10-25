@@ -34,7 +34,19 @@ class Machine {
   bool runFrame();
 
   // ---- natives ----
-  void registerNative(uint16_t entry, const std::string& name, NativeFn fn);
+  // What a native routine promises (Stage F21.15). By default everything the original leaves is compared: the memory, all registers, the flags.
+  // A routine whose callers provably do not use some registers (they overwrite them at once) may leave them out of the call check, and a routine that
+  // replaces original code containing calls leaves different old return addresses BELOW the stack pointer: that part of the stack memory is free
+  // (dead) and is then left out of both comparisons. The live stack (above the pointer) is always compared.
+  struct Contract {
+    bool deadStack = false;
+    unsigned regs = 0x3F;   // compared registers: 1 A, 2 X, 4 Y, 8 flags, 16 stack pointer, 32 return address (pc)
+  };
+  void registerNative(uint16_t entry, const std::string& name, NativeFn fn, Contract contract = Contract{});
+  bool liveStackMode() const { return liveStack_; }
+  // true for a memory byte $80+i that is a free stack byte (below the stack pointer) and may be ignored when a native routine has promised so
+  bool deadStackByte(int i) const { return liveStack_ && (0x80 + i) >= 0xF6 && (0x80 + i) <= sp; }
+  void fail() { failed_ = true; frameDone_ = true; }
   // For natives: the registers, the memory with the writer recorded as the native routine, and RTS.
   uint8_t a = 0, x = 0, y = 0, sp = 0xFF, p = 0x24;
   uint16_t pc = 0;
@@ -64,7 +76,7 @@ class Machine {
   static const char* ramName(uint8_t addr);
 
  private:
-  struct Native { std::string name; NativeFn fn; };
+  struct Native { std::string name; NativeFn fn; Contract contract; };
   void step();
   bool runToReturn();
   void verifyNative(const Native& n);
@@ -90,6 +102,7 @@ class Machine {
   bool frameDone_ = false;
   bool vsyncOn_ = false;
   bool failed_ = false;
+  bool liveStack_ = false;
   bool lastWasRts_ = false;
   bool verify_ = false;
   uint64_t verifyCalls_ = 0, verifyFailures_ = 0;

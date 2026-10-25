@@ -42,6 +42,13 @@ def dump(item, rom, stride):
             str(ROOT / 'reference' / 'baseline' / (entry + '.trace'))] + list(pokes) + [
         'frames=%s' % fl, 'tiaw=%s:0:999999' % t, 'pic=%s:%s' % (p, ','.join(str(f) for f in sample[:6]))]
     r = subprocess.run(args, capture_output=True, text=True)
+    # Stage F23.2: the 128 memory bytes when the drawing code starts ($F07F) and when it ends ($F4E7)
+    for tag, pc in (('r', '07F'), ('e', '4E7')):
+        a2 = [str(EXE), str(rom), str(ROOT / 'baseline' / (entry + '.inputs')), str(OUT / ('c_%s.csv' % entry)),
+              str(ROOT / 'reference' / 'baseline' / (entry + '.trace'))] + list(pokes) + ['frames=%s' % fl, 'ramdump=%s:%s' % (OUT / ('%s_%s.csv' % (tag, entry)), pc)]
+        r2 = subprocess.run(a2, capture_output=True, text=True)
+        if r2.returncode != 0:
+            return entry, r2.returncode, (r2.stdout.strip().splitlines() or [r2.stderr.strip()])[-1], len(sample)
     (OUT / ('c_%s.csv' % entry)).unlink()
     return entry, r.returncode, (r.stdout.strip().splitlines() or [r.stderr.strip()])[-1], len(sample)
 

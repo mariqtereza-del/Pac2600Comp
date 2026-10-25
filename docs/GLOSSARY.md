@@ -195,3 +195,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Scanline | One horizontal line of the television picture. The game has about 262 per frame; the maze is drawn on lines 35 to 198. (Stage F18) |
 | Lockstep | Running the original program and our own version side by side on the same button presses and comparing the memory after every frame; the first difference shows which byte, which frame and which routine. (Stage F20) |
 | Oracle | A file of answers the harness reads where the real console would have to draw the picture first: here, whether the chip reported that two objects touched. (Stage F20) |
+| Colour clock | The tick of the video chip: 228 of them make one line of the picture, the first 68 are the blank at the left. The processor takes 3 colour clocks for each of its steps (cycles), so the exact moment of every write to the chip is known by counting. (Stage F23) |
+| WSYNC | A write that makes the processor wait until the start of the next picture line. The original uses it to start each line of the picture at a known moment. (Stage F23) |

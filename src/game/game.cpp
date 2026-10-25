@@ -2,6 +2,14 @@
 
 namespace game {
 
+namespace {
+class NullSink : public TimedChip {
+ public:
+  void write(const ChipWrite&) override {}
+};
+NullSink nullSink;
+}  // namespace
+
 bool Game::runFrame(const FrameInputs& in, TiaChip& chip) {
   if (!started_) {
     startUp(ram_, chip);
@@ -10,7 +18,7 @@ bool Game::runFrame(const FrameInputs& in, TiaChip& chip) {
     return true;
   }
   if (!topLogic(ram_, cart_, in.console, chip)) return false;
-  // (the picture is drawn here: lines 0-33 are blank, the maze from line 35, the score and the life markers below it: F18; the renderer of F23)
+  drawPicture(ram_, cart_, 16, picture_ ? *picture_ : nullSink);   // lines 0-33 are blank, the maze from line 35, the score and the life markers below it (F18)
   if (!bottomLogic(ram_, cart_, in.frame, chip)) return false;
   frameStart(ram_, cart_, in.console, chip);
   return true;

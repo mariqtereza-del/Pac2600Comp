@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F23-2 — The drawing code is counted in processor cycles; the whole game now matches with nothing left out (2026-10-26, Stage F23.2)
+
+- **Choice:** the colour clock of every write is worked out from the cycles of the original instructions (3 colour clocks a cycle; +1 cycle where an indexed read or a taken branch crosses a page; `WSYNC` ends the line). Only the stretches of code that make writes are counted; a line that starts with `WSYNC` resets the count. I preferred this to copying clocks measured in the emulator into a table: it is the same knowledge the original programmer used, and the test (the emulator's own list) then checks it.
+- **Found while testing:** the digit shapes from number 10 on (blank, and the odd digits of the title screen) are on the next memory page, one cycle more; `WSYNC` is the third cycle of its instruction, so an instruction that ends exactly at the end of the line still waits only for the next line.
+- **The game's start line** for the drawing code (after the top logic) varies by a few lines; the game uses 16. Nothing visible depends on it (the maze starts on line 34).
+- **Result:** 8,266 of 8,266 write lists equal (4,528,964 writes) and memory equal; the whole native game identical in 70 games with only the stack bytes left out (the 11 scratch bytes of F21.26 are now made by our code).
+- **Reversible:** Yes.
+
 ### T-F23-1 — F23 is split into four sessions; the video-chip model is proved on its own first (2026-10-26, Stage F23.1)
 
 - **Plan change (Rule 12):** F23 as one stage is too large. Split: F23.1 the video-chip model (writes to pixels); F23.2 the drawing code as native code (128 bytes to timed writes, `$F07F-$F4E6`); F23.3 whole games with both; F23.4 collision flags from the model instead of the oracle.

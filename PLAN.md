@@ -1966,7 +1966,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F19_SOUND.md`, `DECISIONS.md` (T-F19-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F19: Sound routines and their tables`.
     - **Next stage:** F20 — Lockstep harness.
-20. **[Not started] F20 — Lockstep harness.** A test tool that runs the emulator and the native code together on the same inputs, compares all 128 RAM bytes every frame, and on the first difference stops and reports the frame, the byte, both values and the routine responsible.
+20. **[Done] F20 — Lockstep harness.** *(expanded and done 2026-10-26)*
+    - **Objective:** a test tool that runs the original program and (later) our native routines together on the same inputs, compares all 128 memory bytes after every frame, and on the first difference stops and reports the frame, the byte, both values and the routine responsible.
+    - **Why it matters:** it is the safety net for F21-F25: each routine we rewrite is accepted only when all 70 recorded games stay identical, and a mistake points at its cause at once.
+    - **Prerequisites:** F19 Done (`91f2e45`); the F7/F8 names; the 70 golden traces; the flag logs of F12.
+    - **What Claude Code will do:**
+      1. `tools\f20_gen_tables.py`: writes `src\lockstep\generated_tables.hpp` (opcode table, routine list, RAM names; no ROM bytes).
+      2. `src\lockstep`: a small 6502 core (`machine.*`) with inputs, collision-flag oracle, frame boundary and hooks for native routines; `lockstep_main.cpp` (the command-line tool); `natives.*` with two test fixtures (RNG_STEP right and deliberately wrong); `tools\build_lockstep.cmd`.
+      3. `tools\f20_lockstep.py`: makes the flag oracles from the F12 logs, runs all 70 games in four ways (original; correct native; broken native; no oracle) and writes `docs\F20_LOCKSTEP.md`.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the original program in the harness reproduces all golden memory; a wrong native routine is found and named.
+    - **Verification:** `python -I tools\f20_lockstep.py rom\pacman.a26` says `result: OK` (70 of 70 games, 439,680 frames identical, 26 s of work; correct native identical; broken native found and named in 70 of 70; missing oracle found).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** timing is not modelled (the cycle-exact picture reference is `tools\f18_cpu.py`); collision flags come from an oracle until the renderer exists (F23); picture and sound are not compared here.
+    - **Recovery:** new files only (plus the build script); undo by returning to `91f2e45` (with your OK).
+    - **Documentation updates:** `docs\F20_LOCKSTEP.md`, `DECISIONS.md` (T-F20-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F20: Lockstep harness`.
+    - **Next stage:** F21 — Rewrite one routine per session (F21.1 first).
 21. **[Not started] F21 — Rewrite one routine per session** (F21.1, F21.2…, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts.
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.

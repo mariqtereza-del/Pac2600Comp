@@ -193,3 +193,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Wander | A ghost decision made with the random number instead of aiming at a target: try to go straight, otherwise a sideways direction chosen at random. Used when the ghost's timer runs out, when it cannot chase, and on the title screen. (Stage F13) |
 | Kernel (drawing kernel) | The part of the program that draws the picture while the television beam moves down the screen. It must write to the chip line by line, to the cycle. (Stage F18) |
 | Scanline | One horizontal line of the television picture. The game has about 262 per frame; the maze is drawn on lines 35 to 198. (Stage F18) |
+| Lockstep | Running the original program and our own version side by side on the same button presses and comparing the memory after every frame; the first difference shows which byte, which frame and which routine. (Stage F20) |
+| Oracle | A file of answers the harness reads where the real console would have to draw the picture first: here, whether the chip reported that two objects touched. (Stage F20) |

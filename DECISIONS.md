@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F20-1 — The lockstep harness is a hybrid machine, not a second emulator (2026-10-26, Stage F20)
+
+- **Decision:** the harness runs the original bytes in a small 6502 core written for this project (`src\lockstep`), with hooks that replace one routine at a time by a native one. It models inputs, collision flags and the frame boundary only; it has no timing, picture or sound. Reasons: a routine can then be rewritten and tested alone (the rest stays original), the golden traces are the only reference (Stella is not needed to run it), and it is fast (all 70 games, 439,680 frames, in 26 s).
+- **Frame boundary:** the write that switches the vertical sync off (`$F87C`); the inputs of a frame are in place from its start.
+- **Collision flags:** an oracle file made from the F12 logs until the renderer of F23 exists (F18 showed the flags equal the sprite overlap). Without it the harness finds a difference at once (BL-035 frame 2288), so it is not blind.
+- **Result:** the original program, run by the harness, gives identical memory in every frame of all 70 games (including the two memory-edit games BL-065/066 with their pokes); a correct native `RNG_STEP` stays identical; a deliberately broken one is found in 70 of 70 games with the byte (`RNG_STATE`) and the routine named.
+- **Note:** the two `RNG_STEP` natives are test fixtures, not the F21 rewrite of that routine.
+- **Reversible:** Yes.
+
 ### T-F19-1 — The sound routines proved write for write (2026-10-26, Stage F19)
 
 - **Method:** `tools\f19_sound.py` models the four sound routines from the memory of the previous frame and the game events (bonus, pill, ghost, wafer in the order of the code) and compares with the emulator's writes to the six sound registers (`stella_coverage ... tiaw=... tiaregs=15,16,17,18,19,1A`).

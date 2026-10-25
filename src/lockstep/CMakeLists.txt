@@ -8,3 +8,4 @@ add_executable(lockstep_native native_main.cpp ../game/routines.cpp ../game/game
 add_executable(test_cartridge_data ../../tests/game/test_cartridge_data.cpp ../game/cartridge_data.cpp)
 add_executable(test_tia_video ../../tests/game/test_tia_video.cpp ../game/tia_video.cpp)
 add_executable(test_kernel ../../tests/game/test_kernel.cpp ../game/kernel.cpp ../game/routines.cpp ../game/cartridge_data.cpp)
+add_executable(test_tia_audio ../../tests/game/test_tia_audio.cpp ../game/tia_audio.cpp)

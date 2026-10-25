@@ -2473,7 +2473,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Documentation updates:** `docs\F23_COLLISIONS.md`, `DECISIONS.md` (T-F23-4), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F23.4: The collision flags from the model`.
       - **Next stage:** F24 — Native sound generator.
-24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.
+24. **[In progress] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's. Split in two sessions (Rule 12, T-F24-1): **F24.1 done 2026-10-26: the sound-chip model, exact on all 439,680 frames given the emulator's writes.** F24.2 the timing of the sound writes in the native game (the line of the writes depends on how long the bottom logic runs). *(expanded below)*
+    - **F24.1 — The sound-chip model** *(expanded and done 2026-10-26)*
+      - **Objective:** a model of the two sound channels that turns timed writes to the sound registers into the emulator's sound, proved on every frame of every recorded game.
+      - **Why it matters:** as for the picture (F23.1), proving the chip half alone with the emulator's own writes means any later difference is the game half's.
+      - **Prerequisites:** F23 Done (`30e532a`); F19 (the sound routines).
+      - **What Claude Code will do:** `tools\f24_dump.py` saves the emulator's writes to the six sound registers for every frame of the 70 games (`reference\f24`); `game::TiaAudio` (`src\game\tia_audio.*`); `tests\game\test_tia_audio.cpp`; `tools\f24_audio.py` runs it with controls and writes `docs\F24_AUDIO.md`.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** every frame's sound fingerprint equals the golden trace's.
+      - **Verification:** `python -I tools\f24_audio.py rom\pacman.a26` says `result: OK` (439,680 of 439,680 frames equal; 124,570 not silent; moving the write time by one clock fails in 16,548 and 49,844 frames).
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** the native game's own sound writes have no exact timing yet (F24.2).
+      - **Recovery:** new files and small edits; undo by returning to `30e532a` (with your OK).
+      - **Documentation updates:** `docs\F24_AUDIO.md`, `DECISIONS.md` (T-F24-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F24.1: The sound-chip model`.
+      - **Next stage:** F24.2 — The timing of the sound writes in the native game.
 25. **[Not started] F25 — Whole-game lockstep.** All golden traces identical in RAM, picture and sound. Anything not identical is either fixed or entered in `DISCREPANCIES.md` with cause and impact, for your review.
 26. **[Not started] F26 — Gate F: emulator out.** The game build no longer contains Stella; it lives on only in the test tool. The gate rests on lockstep: every golden trace and every random-input run identical in memory, picture and sound; you may also play a full game, but nothing waits for it. Tag `0.5.0-native`.
 

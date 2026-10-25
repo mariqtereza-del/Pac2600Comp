@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F24-1 — F24 is split in two; the sound-chip model is proved on its own first (2026-10-26, Stage F24.1)
+
+- **Plan change (Rule 12):** F24.1 the sound-chip model (timed writes to samples); F24.2 the timing of the game's sound writes. The game writes the sound registers in the bottom logic, whose length varies by several lines (zeroing of the volumes at line 223 to 245 in the recorded games); a sample is made twice a line, so the line of those writes decides which samples change. Getting it exactly right means counting the processor cycles of the bottom logic, as was done for the drawing code.
+- **Model:** a port of the chip's documented behaviour (dividers, 4-bit pulse and 5-bit noise generators, volume sum over the clocks between two samples, resistor-network mixing table, samples at colour clocks 37 and 149), written from reading Stella's sound code as a description of the chip.
+- **Found by comparison:** (a) the emulator hands over whole fragments of 524 samples: the first frame (43 lines) gives nothing and every later frame gives the 524 samples that finished in it (the last 86 of the frame before, the first 438 of its own); (b) a write has its effect 60 colour clocks after the clock the picture side logs for it (59 and 61 fail). The game is mono (left = right, mixing table of the sum).
+- **Result:** 439,680 of 439,680 frames equal with the emulator's writes; 124,570 of them are not silent.
+- **Reversible:** Yes.
+
 ### T-F23-4 — The collision latches live in the video-chip model; F23 is complete (2026-10-26, Stage F23.4)
 
 - **Choice:** the latches are set for every pixel the model draws, also in the blank (vertical blank and the left-edge blank after HMOVE); that variant matched everything, so no other was needed. The ghost flag is player 0 - player 1; the bonus flag is missile 1 - player 1 together with ball - player 1, as in F12.

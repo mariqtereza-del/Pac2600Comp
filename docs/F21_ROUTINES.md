@@ -12,6 +12,10 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **TRY_PAIR_1**: identical in 70 of 70 games; 66441 calls compared with the original code, 0 different.
+- **TRY_PAIR_UD**: identical in 70 of 70 games; 66441 calls compared with the original code, 0 different.
+- **TRY_PAIR_2**: identical in 70 of 70 games; 66441 calls compared with the original code, 0 different.
+- **TRY_PAIR_LR**: identical in 70 of 70 games; 66441 calls compared with the original code, 0 different.
 - **TRY_UP**: identical in 70 of 70 games; 326604 calls compared with the original code, 0 different.
 - **TRY_DOWN**: identical in 70 of 70 games; 326604 calls compared with the original code, 0 different.
 - **TRY_LEFT**: identical in 70 of 70 games; 326604 calls compared with the original code, 0 different.
@@ -38,11 +42,15 @@
 | --- | --- | --- | --- | --- | --- |
 | F21.4 | `WRAP_SET_Y` | $FD3C | 3 | **done** | the shared end of both (written inside wrapToTop/wrapToBottom; never entered on its own) |
 | F21.9 | `SET_DIRECTION` | $F9E5 | 9 | **done** | game::setDirection: direction bits and step-due bit set, then MOVE_OBJECT; the table TBL_FE63 is (d << 6) or $10 (checked equal to the cartridge bytes) |
+| F21.13 | `TRY_PAIR_1` | $FAFC | 9 | **done** | game::tryPair (vertical): after the random step try up and down in the order it picks; a taken turn drops the caller's return too |
+| F21.13 | `TRY_PAIR_2` | $FB19 | 9 | **done** | game::tryPair (horizontal): left and right |
 | F21.4 | `WRAP_TO_TOP` | $FD32 | 10 | **done** | game::wrapToTop: direction bits $F0 and y = $0B (the opening in the top wall) |
 | F21.4 | `WRAP_TO_BOTTOM` | $FD26 | 12 | **done** | game::wrapToBottom: direction bits $30 and y = $51 (the opening in the bottom wall); registered together with WRAP_TO_TOP and the shared end WRAP_SET_Y |
 | F21.12 | `TRY_UP` | $FB36 | 14 | **done** | game::tryDirection (direction 3): may the object turn up here? Reads the maze wall table through game::Cartridge; if yes it sets the state and DROPS THE CALLER'S RETURN |
 | F21.2 | `SWAP_PLAYERS` | $FB9F | 14 | **done** | game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged |
 | F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/routines.cpp: both scores and both lives to 0 |
+| F21.13 | `TRY_PAIR_UD` | $FB05 | 20 | **done** | the vertical pair itself (inside the TRY_PAIR_1 rewrite; only reached from it) |
+| F21.13 | `TRY_PAIR_LR` | $FB22 | 20 | **done** | the horizontal pair itself (inside the TRY_PAIR_2 rewrite; only reached from it) |
 | F21.12 | `TRY_DOWN` | $FB5C | 20 | **done** | game::tryDirection (direction 2) |
 | F21.3 | `RNG_STEP` | $FBE0 | 20 | **done** | game::rngStep: the shift-register random number; its bit-mask table is 0x80 >> n (checked equal to the cartridge bytes) |
 | F21.5 | `NEW_MAZE` | $FC0C | 21 | **done** | game::newMaze: the wafer map filled (two places empty), pill flags $3C, then PLACE_OBJECTS |
@@ -60,13 +68,9 @@
 | - | `EXIT_FF93` | $FF93 | 1 | to do | a lone RTS: nothing to write |
 | - | `KERNEL_LINE_P1_P0` | $F067 | 3 | to do | picture only (F23) |
 | - | `SOUND_WRITE` | $FF8B | 8 | to do | sound chip only (F24) |
-| - | `TRY_PAIR_1` | $FAFC | 9 | to do | drops the caller's return (rts twice) |
-| - | `TRY_PAIR_2` | $FB19 | 9 | to do | drops the caller's return |
 | - | `CLEAR_GRAPHICS` | $F483 | 11 | to do | picture only (F23) |
 | - | `SOUND_START` | $FF43 | 18 | to do | needs ROM tables (F22) |
 | - | `KERNEL_LINE_P1` | $F053 | 20 | to do | writes only chip registers (picture): proved with the renderer (F23) |
-| - | `TRY_PAIR_UD` | $FB05 | 20 | to do | drops the caller's return |
-| - | `TRY_PAIR_LR` | $FB22 | 20 | to do | drops the caller's return |
 | - | `KERNEL_LINE_P0` | $F06A | 21 | to do | picture only (F23) |
 | - | `PACMAN_KEEP_GOING` | $F793 | 39 | to do | drops the caller's return |
 | - | `SOUND_EFFECTS` | $FF55 | 54 | to do | needs ROM tables (F22); chip writes (F24) |

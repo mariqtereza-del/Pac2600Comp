@@ -24,6 +24,10 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.13', 'TRY_PAIR_1', 'try-pair', 0xFAFC, "game::tryPair (vertical): after the random step try up and down in the order it picks; a taken turn drops the caller's return too"),
+    ('F21.13', 'TRY_PAIR_UD', 'try-pair', 0xFB05, 'the vertical pair itself (inside the TRY_PAIR_1 rewrite; only reached from it)'),
+    ('F21.13', 'TRY_PAIR_2', 'try-pair', 0xFB19, 'game::tryPair (horizontal): left and right'),
+    ('F21.13', 'TRY_PAIR_LR', 'try-pair', 0xFB22, 'the horizontal pair itself (inside the TRY_PAIR_2 rewrite; only reached from it)'),
     ('F21.12', 'TRY_UP', 'try', 0xFB36, "game::tryDirection (direction 3): may the object turn up here? Reads the maze wall table through game::Cartridge; if yes it sets the state and DROPS THE CALLER'S RETURN"),
     ('F21.12', 'TRY_DOWN', 'try', 0xFB5C, 'game::tryDirection (direction 2)'),
     ('F21.12', 'TRY_LEFT', 'try', 0xFB70, 'game::tryDirection (direction 1)'),

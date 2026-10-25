@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-13 — The TRY_PAIR routines rewritten; the stack bytes again (2026-10-26, Stage F21.13)
+
+- **Routine:** `game::tryPair(ram, cart, object, vertical, rngResultIsZero)`: vertical pair up then down when the random result is 0, else down then up; horizontal pair left then right when 0, else right then left; stops at the first turn taken. The random step itself is F21.3.
+- **Stack bytes:** a native routine that replaces code containing JSRs leaves different stale return addresses in the stack bytes ($F6-$FF), which the lockstep comparison covers. The adapter writes the addresses the original would have pushed (they depend on the order tried). This is the same effect as the PHP byte of LOCATE_OBJECT (T-F21-7) and is why the stack bytes are excluded only at the end of F21 when no 6502 code is left.
+- **Result:** 70 of 70 games identical; 66,441 calls compared with the original (memory, registers, flags, stack): 0 differences; identical together with F21.1-F21.12.
+- **Reversible:** Yes.
+
 ### T-F21-12 — The TRY routines rewritten; dropping the caller (2026-10-26, Stage F21.12)
 
 - **Routine:** `game::tryDirection`. Up needs bit 6 and down bit 5 of the wall-table byte of the cell (`$FE13 + cell`), not in the first / last row; left and right need bit 7 of the byte of the neighbour cell (cell - 1 / cell + 2) clear, with the tunnel ends of row 3 (cells $3E and $38) closed; a ghost may not turn straight back; a turn that is taken sets the state (direction bits and the step-due bit).

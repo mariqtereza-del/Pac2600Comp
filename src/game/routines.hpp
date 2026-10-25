@@ -118,4 +118,16 @@ struct TryResult {
 };
 TryResult tryDirection(Ram& ram, const Cartridge& cart, uint8_t object, uint8_t direction);
 
+// F21.13  TRY_PAIR_1 ($FAFC) with TRY_PAIR_UD ($FB05), and TRY_PAIR_2 ($FB19) with TRY_PAIR_LR ($FB22): after a random step, try two directions of one
+// axis in an order the random number picks (vertical pair: up then down when the result is 0, else down then up; horizontal pair: left then right when
+// 0, else right then left). The first turn that is allowed is taken (and, as in F21.12, ends the caller too); if neither is, the routine returns.
+// `rngResultIsZero` is the Z flag the random step left (A = 0).
+struct PairResult {
+  uint8_t count;        // how many directions were tried (1 or 2)
+  uint8_t dir[2];       // the directions, in the order tried
+  TryResult res[2];     // their results
+  bool taken;           // the last one tried was taken
+};
+PairResult tryPair(Ram& ram, const Cartridge& cart, uint8_t object, bool vertical, bool rngResultIsZero);
+
 }  // namespace game

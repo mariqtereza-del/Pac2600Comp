@@ -215,4 +215,20 @@ TryResult tryDirection(Ram& ram, const Cartridge& cart, uint8_t object, uint8_t 
   return r;
 }
 
+// TRY_PAIR_UD / TRY_PAIR_LR (the choice of order is made from the random step's result by TRY_PAIR_1 / TRY_PAIR_2).
+PairResult tryPair(Ram& ram, const Cartridge& cart, uint8_t object, bool vertical, bool rngResultIsZero) {
+  PairResult p{};
+  const uint8_t low = vertical ? 3 : 1;   // up / left
+  const uint8_t high = vertical ? 2 : 0;  // down / right
+  p.dir[0] = rngResultIsZero ? low : high;
+  p.dir[1] = rngResultIsZero ? high : low;
+  p.res[0] = tryDirection(ram, cart, object, p.dir[0]);
+  p.count = 1;
+  if (p.res[0].exit == TryExit::Taken) { p.taken = true; return p; }
+  p.res[1] = tryDirection(ram, cart, object, p.dir[1]);
+  p.count = 2;
+  p.taken = p.res[1].exit == TryExit::Taken;
+  return p;
+}
+
 }  // namespace game

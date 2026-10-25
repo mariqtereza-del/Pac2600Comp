@@ -81,13 +81,10 @@ void moveNative(Machine& m) {
 //  turn back refused (ghosts): A = state bits, Y = direction, flags of the CMP with TBL_FE67, normal return;
 //  taken: Y = direction, A = the high byte of the return address that PLA PLA throws away, zero/negative from it, carry from the path, and the RTS
 //  that follows returns to the caller's caller.
-void tryNative(Machine& m, uint8_t dir) {
-  const uint8_t object = m.x;
+// The registers and flags of one TRY routine up to the point where it returns or (taken) is about to throw its caller's return away. Returns true if
+// the turn is taken (then A, N and Z are still to be set by the two pops); false means a normal return is next.
+bool tryRegisters(Machine& m, uint8_t dir, const game::TryResult& r, uint8_t object, uint8_t stateBefore) {
   const uint8_t cin = m.p & 1;
-  const uint8_t stateBefore = m.read(static_cast<uint16_t>(0xBB + object));
-  const game::Cartridge cart(m.romBytes());
-  game::TryResult r{};
-  withRam(m, [&](game::Ram& ram) { r = game::tryDirection(ram, cart, object, dir); });
   uint8_t carry = cin;
   const uint8_t t = r.tableByte;
   auto setFlags = [&](uint8_t av, bool c) {
@@ -101,31 +98,30 @@ void tryNative(Machine& m, uint8_t dir) {
   };
   switch (dir) {
     case 3: {
-      if (r.exit == game::TryExit::AtEdge) { setFlags(r.row, cin); m.rts(); return; }
+      if (r.exit == game::TryExit::AtEdge) { setFlags(r.row, cin); return false; }
       const uint8_t a1 = static_cast<uint8_t>((t << 1) | cin);
       carry = t >> 7;
-      if (r.exit == game::TryExit::Wall) { setFlags(a1, carry); m.y = r.cell; m.rts(); return; }
+      if (r.exit == game::TryExit::Wall) { setFlags(a1, carry); m.y = r.cell; return false; }
       break;
     }
     case 2: {
-      if (r.exit == game::TryExit::AtEdge) { m.a = r.row; cmpState(r.row, 7); m.rts(); return; }
+      if (r.exit == game::TryExit::AtEdge) { m.a = r.row; cmpState(r.row, 7); return false; }
       const uint8_t a1 = static_cast<uint8_t>(t << 1);   // the carry into the first ROL is the one left by CMP #7: clear for rows below 7
       const uint8_t c1 = t >> 7;
       const uint8_t a2 = static_cast<uint8_t>((a1 << 1) | c1);
       carry = a1 >> 7;
-      if (r.exit == game::TryExit::Wall) { setFlags(a2, carry); m.y = r.cell; m.rts(); return; }
+      if (r.exit == game::TryExit::Wall) { setFlags(a2, carry); m.y = r.cell; return false; }
       break;
     }
     default: {
       const uint8_t edgeCell = (dir == 1) ? 0x3E : 0x38;
       const bool cr = (r.row == 3) ? (r.cell >= edgeCell) : (r.row >= 3);
-      if (r.exit == game::TryExit::AtEdge) { m.a = 3; m.y = r.cell; cmpState(r.cell, edgeCell); m.rts(); return; }
+      if (r.exit == game::TryExit::AtEdge) { m.a = 3; m.y = r.cell; cmpState(r.cell, edgeCell); return false; }
       carry = cr;
       if (r.exit == game::TryExit::Wall) {
         setFlags(t, cr);
         m.y = static_cast<uint8_t>(dir == 1 ? r.cell - 1 : r.cell + 2);
-        m.rts();
-        return;
+        return false;
       }
       break;
     }
@@ -137,14 +133,62 @@ void tryNative(Machine& m, uint8_t dir) {
     const uint8_t rev = static_cast<uint8_t>((dir ^ 1) << 6);
     m.a = stateBefore & 0xC0;
     cmpState(stateBefore & 0xC0, rev);
-    if (r.exit == game::TryExit::TurnBack) { m.rts(); return; }
+    if (r.exit == game::TryExit::TurnBack) return false;
   }
-  // taken: PLA PLA (the caller's return is thrown away), then RTS
+  return true;
+}
+
+// The two pops (PLA PLA) of a taken turn: the return address on top of the stack is thrown away, A gets its high byte; the RTS that follows goes to
+// the caller's caller.
+void dropCallerAndReturn(Machine& m) {
   ++m.sp;
   ++m.sp;
   const uint8_t high = m.read(static_cast<uint16_t>(0x100 + m.sp));
   m.a = high;
   m.setZN(high);
+  m.rts();
+}
+
+void tryNative(Machine& m, uint8_t dir) {
+  const uint8_t object = m.x;
+  const uint8_t stateBefore = m.read(static_cast<uint16_t>(0xBB + object));
+  const game::Cartridge cart(m.romBytes());
+  game::TryResult r{};
+  withRam(m, [&](game::Ram& ram) { r = game::tryDirection(ram, cart, object, dir); });
+  if (tryRegisters(m, dir, r, object, stateBefore)) dropCallerAndReturn(m);
+  else m.rts();
+}
+
+// F21.13 TRY_PAIR_1 / TRY_PAIR_2 (with TRY_PAIR_UD / TRY_PAIR_LR inside). The object is in X. First the random step (its registers, as RNG_STEP leaves
+// them), then up to two TRY routines in the order its zero flag picks. A taken turn throws away this routine's return too (the same two pops, then the
+// RTS goes to the caller's caller). If neither turn is taken, the end of TRY_PAIR_UD/LR (PLA PLA, RTS) gives A = $FB (the high byte of the address
+// after the JSR inside TRY_PAIR_1/2, thrown away), N set, Z clear, and returns to the caller; Y and the carry stay as the last TRY routine left them.
+void rngRegisters(Machine& m);
+
+void pairNative(Machine& m, bool vertical) {
+  rngRegisters(m);
+  const bool zero = (m.p & 0x02) != 0;
+  const uint8_t object = m.x;
+  const uint8_t stateBefore = m.read(static_cast<uint16_t>(0xBB + object));
+  const game::Cartridge cart(m.romBytes());
+  game::PairResult pr{};
+  withRam(m, [&](game::Ram& ram) { pr = game::tryPair(ram, cart, object, vertical, zero); });
+  // The original pushes return addresses with its JSRs and leaves them in the stack bytes (part of the compared memory): the address after the JSR
+  // into TRY_PAIR_UD / TRY_PAIR_LR at the top, and under it the address after the JSR into each TRY routine that was run (the last one stays).
+  const uint16_t sp0 = m.sp;
+  auto pushed = [&](int slot, uint16_t ret) {
+    const uint16_t base = static_cast<uint16_t>(0x100 + sp0 - 2 * slot);
+    m.write(base, static_cast<uint8_t>(ret >> 8));
+    m.write(static_cast<uint16_t>(base - 1), static_cast<uint8_t>(ret & 0xFF));
+  };
+  pushed(0, vertical ? 0xFB01 : 0xFB1E);
+  static const uint16_t kRet[2][2][2] = {{{0xFB26, 0xFB29}, {0xFB2F, 0xFB32}}, {{0xFB09, 0xFB0C}, {0xFB12, 0xFB15}}};
+  for (int i = 0; i < pr.count; ++i) {
+    pushed(1, kRet[vertical ? 1 : 0][zero ? 0 : 1][i]);
+    if (tryRegisters(m, pr.dir[i], pr.res[i], object, stateBefore)) { dropCallerAndReturn(m); return; }
+  }
+  m.a = 0xFB;
+  m.setZN(m.a);
   m.rts();
 }
 
@@ -231,7 +275,7 @@ void wrapNative(Machine& m, bool top) {
 
 // F21.3 RNG_STEP ($FBE0). Registers the original leaves: A = the returned value, Y = new state and 7, carry = the old bit 7 (the carry out of ROL RNG_STATE),
 // zero and negative from A (the last instruction is AND).
-void rngStepNative(Machine& m) {
+void rngRegisters(Machine& m) {
   const uint8_t old = m.read(0xCB);
   uint8_t result = 0;
   withRam(m, [&result](game::Ram& r) { result = game::rngStep(r); });
@@ -239,6 +283,10 @@ void rngStepNative(Machine& m) {
   m.a = result;
   m.p = static_cast<uint8_t>((m.p & ~0x01) | (old >> 7));
   m.setZN(m.a);
+}
+
+void rngStepNative(Machine& m) {
+  rngRegisters(m);
   m.rts();
 }
 
@@ -284,6 +332,11 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "try-pair") {
+    m.registerNative(0xFAFC, "TRY_PAIR_1 (native)", [](Machine& mm) { pairNative(mm, true); });
+    m.registerNative(0xFB19, "TRY_PAIR_2 (native)", [](Machine& mm) { pairNative(mm, false); });
+    return true;
+  }
   if (name == "try") {
     m.registerNative(0xFB36, "TRY_UP (native)", [](Machine& mm) { tryNative(mm, 3); });
     m.registerNative(0xFB5C, "TRY_DOWN (native)", [](Machine& mm) { tryNative(mm, 2); });

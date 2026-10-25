@@ -43,6 +43,17 @@ std::string Emulator::load(const std::string& romName, const std::vector<std::ui
   return {};
 }
 
+void Emulator::randomisePowerOnRam(std::uint32_t seed)
+{
+  std::uint32_t x = seed * 2654435761u + 0x9E3779B9u;  // xorshift32; a zero state would stay zero
+  if(x == 0) x = 1;
+  std::uint8_t* ram = impl_->core.getRAM();
+  for(int i = 0; i < 128; ++i) {
+    x ^= x << 13; x ^= x >> 17; x ^= x << 5;
+    ram[i] = static_cast<std::uint8_t>(x >> 11);
+  }
+}
+
 void Emulator::runFrame() { impl_->core.runFrame(); }
 
 const std::int16_t* Emulator::audio() const { return impl_->core.getAudioBuffer(); }

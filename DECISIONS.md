@@ -72,7 +72,52 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **What it means for future sessions:** don't propose deleting build folders, measurement data, downloads or old backups to save space. Only mention disk space again if free space on F: becomes a real problem (86 GB free today).
 - **Reversible:** Yes. You can ask for any of the clean-ups at any time.
 
+### D-004 — Authentic first: the port follows the 1981 console, not Stella (2026-10-25, Stage D14)
+
+**Your words:** "It would be optimal to ensure the game ran as it would on an Atari 2600 in 1981. Any discrepancies between an authentic setup and the Stella emulator need to be fixed in favor of the authentic setup."
+
+- **What it means for the work:** where Stella does something different from a real NTSC Atari 2600 of 1981, the port follows the real console, if that can be shown from the hardware's own numbers. Stella stays the reference for *what the game does* (its emulation core is proven equal to ours, D14); it is no longer the reference for *speed, sound pitch or picture shape*.
+- **Applied so far:** the speed and sound pitch (T-D14-2). Power-on memory was examined and needs no change (T-D14-3). The picture shape is a question for you (see `DISCREPANCIES.md`).
+- **Changes earlier choices:** T-D9-1 (60.000 frames a second, "match Stella") is replaced by T-D14-2.
+- **Reversible:** Yes. `--stella-speed` brings Stella's speed back for comparison.
+
+### D-005 — Default picture: 12:7 pixels, game area, fitted and centred (2026-10-25, Stage D14)
+
+**Your words:** "The 12:7 aspect ratio centered within a 16:9 display (in my case and most common use-cases) should be the default option. Of course that 12:7 ratio should be scaled to the closest desktop resolution the user is using."
+
+- **What changed:** the default pixel shape is **12:7** (was Stella's 19:10) and the default mode is **Game area** (key 4), which fits the picture to the window or screen and centres it (it was Sharp). Keys 1-4 still switch modes; `--pixel-aspect stella` brings back 19:10, `--pixel-aspect W:H` any shape.
+- **Why Game area:** it is the only mode that scales to the display (any size, not whole steps) and shows only the lines the game draws, which fits "scaled to the closest desktop resolution". If you meant Fill (all 228 rows, with black bands), it is key 2.
+- **Measured (real window, a game running):** 2560x1440: picture 2046x1440 centred (257 pixels of black each side), shape 1.714 (12:7 = 1.714); 1920x1080: 1535x1080; 1366x768: 1091x768; 1280x1024 (not 16:9): 1280x901, centred between black bands; fullscreen check OK. Nothing outside the picture is lit.
+- **Replaces:** the default in T-D6-1 (19:10), and records the authenticity question left open in `DISCREPANCIES.md`.
+- **Reversible:** Yes.
+
 ## Technical choices made by Claude Code
+
+### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
+
+- **Facts:** a real NTSC 2600 runs from the 3,579,545.45 Hz colour clock: 228 clocks a line, 262 lines a frame = **59.9227 frames a second**; its sound chip makes 3,579,545.45 / 114 = **31,399.5 samples a second**. Stella's core plays 60.000 frames and 31,440 samples (524 pairs per frame), 0.13 % fast and 0.13 % sharp (`docs\TIMING.md`). The emulation counts CPU cycles, so only the playing speed changes, never the game.
+- **Choice:** the game is paced at the console's frame rate, and the sound device is told the samples are 31,400 Hz (the nearest whole number; 14 ppm from the true value), so one frame still carries 524 sound pairs. The sound card steers the frame clock as before (T-D9-2). `--stella-speed` (60 Hz, 31,440 Hz) stays as a comparison switch. Code: `kConsoleFrameHz`, `frameRate`, `soundRate`, `Pacer` in `main.cpp`.
+- **Proof:** a 9-minute muted run measured **59.9235 frames a second** (console 59.9228; the rest is the 31,400 rounding), 0 underruns, 0 dropped sound; 93.6 % of game frames were shown for exactly 3 refreshes of the 180 Hz screen (30,280 of 32,355). A 20 s audio check: 0 underruns, source format 31,400 Hz. With `--stella-speed`: 59.99 frames a second. The emulation is unchanged: 2,500 frames still equal the C3 fingerprints and the C5 audio bit for bit; the key replay and the side-by-side check still give 0 differences.
+- **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
+- **Reversible:** Yes.
+
+### T-D14-3 — Power-on memory: random or zero makes no difference to this game (2026-10-25, Stage D14, owner's rule D-004)
+
+- **Facts:** a real console's RAM holds random bytes when it is switched on; Stella's app imitates that (`plr.ramrandom`), but its libretro core, which we use, overwrites the RAM with zeros before every frame, so ours starts with zeros (`docs\DISPLAY.md`).
+- **Test:** `--ram-seed N` (new) fills the RAM with pseudo-random bytes before the first frame. Seeds 0, 1, 2, 3, 7 and 99, 3,000 frames each (attract mode, Reset at frame 1800, a game starting): **0 differences** in any picture against the zero start. After the first frame the RAM is byte for byte the same for seed 5 and for zeros: the game's own start-up code rewrites everything.
+- **Choice:** keep the zero start (recordings stay exactly repeatable); keep `--ram-seed` as a tool. If Phase E/F ever finds a place where the game reads RAM before writing it, this is the first thing to revisit (F14: where randomness comes from).
+- **Not proved:** that the random bytes reached the core's RAM copy by anything but the stock path (they are written the way Stella's own libretro wrapper does it); the proof is that nothing differs, not that something changed.
+- **Reversible:** Yes.
+
+### T-D14-1 — The side-by-side partner is Stella's core run by the Phase C tool, not the Stella app (2026-10-25, Stage D14)
+
+- **Choice:** the reference is `stella_script.exe` (the Stella 7.0 core, the same code `third_party\stella` that our program uses, driven frame by frame, zeroed memory at power-on). The same input goes into both: a recording is turned into a Stella input script, and a Phase C script into a recording (`tools\d14_side_by_side.py`).
+- **Why not the Stella app:** it cannot play our recordings, starts with random memory (`docs\DISPLAY.md`) and runs on its own clock, so no frame of it can be paired with a frame of ours; it would give a picture to look at, not a measurement. Starting it also needs the owner's OK. An eye comparison stays possible whenever the owner wants it.
+- **What is compared:** the fingerprint of every frame (the same FNV hash of the 160 x H palette numbers that Phase C wrote) and, at ten chosen frames, the whole picture byte for byte. The window is compared as well: the real window replays the recording and writes its own fingerprints.
+- **Result:** 0 differences everywhere. Inputs: the owner's recording (1,860 frames, with Colour/B&W and the left difficulty switch changed, fire, all directions), a short test recording (219 frames), and the bot route of C7 (9,800 frames: ghost eaten, power pills, death, bonus item, level end, game over). Headless and window replay both: 0 of 9,800, 0 of 1,860. Pictures: 10 of 10 identical on the route (including the eight C7 moments and the game-over picture) and on each recording.
+- **The tool can see a difference:** the owner's recording with one key press removed (frame 840) gave 963 differing frames, the first at frame 897.
+- **Not covered:** sound (D8 proved it identical to Phase C), the Stella app itself, anything after the last frame of an input.
+- **Reversible:** Yes.
 
 ### T-D13-1 — Input recordings: a small text file of input changes, starting from power-on (2026-10-25, Stage D13)
 

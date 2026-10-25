@@ -78,3 +78,7 @@ The logic runs in the two places where the CPU is not drawing: the top area afte
 ## What the port does (Stage D9)
 
 The PC port runs at **60.000 frames a second**, the rate Stella plays at, steered by the sound card's clock so the music cannot drift against the picture. It is not paced by the monitor. The 59.923 Hz of the console's crystal is not used. Measured over 10 minutes on a 180 Hz screen: 59.9993 frames a second, 93.4 % of game frames shown for exactly 3 refreshes. See `DECISIONS.md` T-D9-1 and T-D9-2.
+
+## Decision (Stage D14, owner's rule D-004)
+
+The port plays at the console's own **59.9227 Hz** with the sound chip's own **31,399.5 Hz** (31,400 Hz to the sound device), not at Stella's 60.000 Hz / 31,440 Hz. See `DECISIONS.md` T-D14-2 (this replaces T-D9-1).

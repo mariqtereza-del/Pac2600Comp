@@ -20,6 +20,10 @@ public:
   // Starts the console with these ROM bytes (a copy is made; the file is not touched). Empty string = ok.
   std::string load(const std::string& romName, const std::vector<std::uint8_t>& romBytes);
 
+  // Fills the 128 bytes of RIOT RAM with pseudo-random bytes from this seed, as a real console's memory is at power-on.
+  // Only before the first runFrame (Stella's libretro wrapper otherwise starts it with zeros). Same seed = same bytes.
+  void randomisePowerOnRam(std::uint32_t seed);
+
   void runFrame();  // one whole TV frame; the console's Reset switch is as last set by setConsoleReset
 
   // Sound made by the last runFrame (Stage D8): 16-bit stereo, left and right interleaved, audioFrames() pairs.

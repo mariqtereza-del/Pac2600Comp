@@ -146,6 +146,8 @@ struct Options {
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
   std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
   std::string recordFile, replayFile;  // input recording (--record) and playback (--replay), Stage D13
+  long long ramSeed = -1;              // --ram-seed N: power-on memory filled from seed N (-1 = zeros)
+  bool stellaSpeed = false;            // --stella-speed: 60.000 frames a second like Stella, instead of the console's own 59.92 (comparison only)
   double audioCheckSeconds = 0;
   int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
   bool mute = false;  // play the sound stream with the volume at zero (tests)
@@ -153,8 +155,8 @@ struct Options {
   bool timerClock = false;  // pace the game from the PC clock instead of the sound card (comparison only)
   int stallMs = 0;    // tests: freeze the loop once, 5 seconds in (--audio-check: the game loop; the game window: the window thread)
   bool windowGiven = false;  // --window on the command line: do not use the remembered window
-  layout::Mode mode = layout::Mode::Sharp;
-  layout::PixelShape pixelShape{0, 0};  // {0, 0} = Stella's shape for the picture
+  layout::Mode mode = layout::Mode::GameArea;  // fits the display (D-005); keys 1-4 switch it while playing
+  layout::PixelShape pixelShape{12, 7};        // the standard NTSC shape of a 2600 pixel (D-005); {0, 0} = Stella's 19:10 (--pixel-aspect stella)
   int windowW = kWindowW, windowH = kWindowH;
   double timedSeconds = 0;
   int frames = 600, saveFrame = 300;
@@ -174,6 +176,8 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--keys-replay") { o.keysReplayScript = next(); o.keysReplayCsv = next(); }
     else if(a == "--help-check") o.helpCheckPng = next();
     else if(a == "--pad-check") o.padCheckFile = next();
+    else if(a == "--stella-speed") o.stellaSpeed = true;
+    else if(a == "--ram-seed") o.ramSeed = std::atoll(next().c_str());
     else if(a == "--record") o.recordFile = next();
     else if(a == "--replay") o.replayFile = next();
     else if(a == "--audio-check") { o.audioCheckSeconds = std::atof(next().c_str()); o.audioCheckFile = next(); }
@@ -186,7 +190,11 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--fullscreen-check") o.fullscreenCheckFile = next();
     else if(a == "--state-report") o.stateReportFile = next();
     else if(a == "--window") { o.windowGiven = true; if(!parsePair(next(), 'x', o.windowW, o.windowH)) std::fprintf(stderr, "--window must look like 1280x960\n"); }
-    else if(a == "--pixel-aspect") { if(!parsePair(next(), ':', o.pixelShape.num, o.pixelShape.den)) std::fprintf(stderr, "--pixel-aspect must look like 12:7\n"); }
+    else if(a == "--pixel-aspect") {
+      const std::string text = next();
+      if(text == "stella") o.pixelShape = {0, 0};
+      else if(!parsePair(text, ':', o.pixelShape.num, o.pixelShape.den)) std::fprintf(stderr, "--pixel-aspect must look like 12:7, or be stella\n");
+    }
     else if(a == "--timed") { o.timedSeconds = std::atof(next().c_str()); o.timedReport = next(); }
     else if(a == "--frames") o.frames = std::atoi(next().c_str());
     else if(a == "--save-frame") o.saveFrame = std::atoi(next().c_str());
@@ -769,17 +777,32 @@ bool padCheck(const Options& o)
   return ok;
 }
 
-// ---- Frame pacing (Stage D9, DECISIONS.md T-D9-1 and T-D9-2) ----
+// ---- Frame pacing (Stage D9, DECISIONS.md T-D9-1 and T-D9-2; the authentic speed: D-004 and T-D14-2) ----
+
+// A real NTSC Atari 2600 runs from the colour clock of 3,579,545.45 Hz: 228 colour clocks a line, 262 lines a frame =
+// 59.9227 frames a second, and its sound chip makes 31,399.5 samples a second. Stella plays at exactly 60 frames and
+// 31,440 samples (0.13 % fast). The port follows the console (the owner's rule: authentic first); --stella-speed brings
+// back Stella's speed for comparison. The emulation itself is counted in CPU cycles and does not change.
+constexpr double kConsoleFrameHz = 3579545.4545 / (228.0 * 262.0);
+
+double frameRate(const Options& o) { return o.stellaSpeed ? 60.0 : kConsoleFrameHz; }
+
+// The rate the sound device is told the emulator's samples have: the sound chip's own rate, which sets pitch and speed.
+int soundRate(const Options& o, const Emulator& emulator)
+{
+  return o.stellaSpeed ? emulator.audioRate() : static_cast<int>(std::lround(emulator.audioRate() * kConsoleFrameHz / 60.0));
+}
 
 // Decides when the next game frame is due. Frames are started from a steady PC timer (so they are evenly spaced, which a
 // monitor needs to show each one for the same number of refreshes), but the timer's speed is steered by the sound card:
 // when more sound is waiting than the target the next frames are started a little later, when less, a little sooner.
-// So on average the game runs exactly as fast as the sound card plays (60.000 frames a second for this game: 524 sound
-// pairs per frame at 31,440 per second), and music and picture cannot drift apart. Without a sound device, or with
+// So on average the game runs exactly as fast as the sound card plays (59.92 frames a second for this game: 524 sound
+// pairs per frame at 31,400 per second), and music and picture cannot drift apart. Without a sound device, or with
 // --timer-clock, the steering is simply off and the PC's clock is used.
 class Pacer {
 public:
-  Pacer(const AudioOutput& audio, bool timerOnly) : audio_(audio), useAudio_(audio.isOpen() && !timerOnly), next_(SDL_GetTicksNS()) {}
+  Pacer(const AudioOutput& audio, bool timerOnly, double frameHz)
+      : audio_(audio), useAudio_(audio.isOpen() && !timerOnly), frameNs_(1e9 / frameHz), next_(SDL_GetTicksNS()) {}
 
   bool due(Uint64 now) const { return now >= next_; }
 
@@ -796,19 +819,19 @@ public:
       correctionSum_ += correction;
     }
     ++frames_;
-    next_ += static_cast<Uint64>(static_cast<double>(kFrameNs) * (1.0 + correction));
-    if(now > next_ + 5 * kFrameNs) next_ = now;  // far behind (the PC was busy): do not try to catch up
+    next_ += static_cast<Uint64>(frameNs_ * (1.0 + correction));
+    if(now > next_ + static_cast<Uint64>(5 * frameNs_)) next_ = now;  // far behind (the PC was busy): do not try to catch up
   }
 
   bool usesSoundClock() const { return useAudio_; }
   double averageCorrectionPpm() const { return frames_ ? 1e6 * correctionSum_ / static_cast<double>(frames_) : 0.0; }
 
 private:
-  static constexpr Uint64 kFrameNs = 1000000000ull / 60;  // Stella plays NTSC at exactly 60 Hz (docs\TIMING.md)
   static constexpr double kGain = 4e-6;           // period change per sound pair above target (a time constant of about 8 s)
   static constexpr double kMaxCorrection = 1e-3;  // never more than 0.1 %
   const AudioOutput& audio_;
   bool useAudio_;
+  double frameNs_;  // one frame of the console's clock, in nanoseconds
   Uint64 next_;
   double smoothed_ = 0, correctionSum_ = 0;
   long long frames_ = 0;
@@ -848,9 +871,9 @@ bool audioCheck(const Options& o)
   if(const std::string error = emulator.load(fileNameOf(found->check.path), bytes); !error.empty()) { report << "result=" << error << '\n'; return false; }
 
   AudioOutput audio;
-  if(!audio.open(emulator.audioRate(), o.mute)) { report << "result=FAIL " << audio.problem() << '\n'; return false; }
+  if(!audio.open(soundRate(o, emulator), o.mute)) { report << "result=FAIL " << audio.problem() << '\n'; return false; }
 
-  Pacer pacer(audio, o.timerClock);  // the same pacing as the game window
+  Pacer pacer(audio, o.timerClock, frameRate(o));  // the same pacing as the game window
   const Uint64 started = SDL_GetTicksNS();
   long long frames = 0;
   bool stalled = false;
@@ -1090,7 +1113,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   if(!options.fingerprintFile.empty()) { fingerprints.open(options.fingerprintFile); fingerprints << "frame,hash\n"; }
 
   AudioOutput audio;
-  if(!audio.open(emulator.audioRate(), options.mute)) std::fprintf(stderr, "%s\nThe game goes on without sound.\n", audio.problem().c_str());
+  if(!audio.open(soundRate(options, emulator), options.mute)) std::fprintf(stderr, "%s\nThe game goes on without sound.\n", audio.problem().c_str());
 
   Screen screen;
   screen.renderer = renderer;
@@ -1127,7 +1150,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   const Uint64 started = SDL_GetTicksNS();
 
   std::thread game([&]() {
-    Pacer pacer(audio, options.timerClock);
+    Pacer pacer(audio, options.timerClock, frameRate(options));
     usedSoundClock = pacer.usesSoundClock();
     Uint64 lastLoop = SDL_GetTicksNS();
     long long frames = 0;
@@ -1309,6 +1332,8 @@ int headlessRun(const Options& o)
   std::ofstream fingerprints;
   if(!o.fingerprintFile.empty()) { fingerprints.open(o.fingerprintFile); fingerprints << "frame,hash\n"; }
 
+  if(o.ramSeed >= 0) emulator.randomisePowerOnRam(static_cast<std::uint32_t>(o.ramSeed));
+
   // --replay: the console is given the recorded input of each frame; without --frames the whole recording is run.
   inputlog::Recording replay;
   const bool replaying = !o.replayFile.empty();
@@ -1370,6 +1395,9 @@ int headlessRun(const Options& o)
     wav.close();
     report << "audio_wav=" << o.audioWav << "\naudio_rate=" << rate << "\naudio_bytes=" << wavBytes << '\n';
   }
+  report << "final_ram=";
+  for(int i = 0; i < 128; ++i) { char b[3]; std::snprintf(b, sizeof b, "%02x", emulator.ram()[i]); report << b; }
+  report << '\n';
   report << "rom=" << found->check.path << "\nrom_sha1=" << found->check.sha1 << "\nframes_run=" << frames
          << "\nlast_frame_fingerprint=" << hash << "\npng_saved=" << (saved ? "yes" : "no") << "\nresult=" << (saved ? "OK" : "FAIL") << '\n';
   return saved ? 0 : 6;

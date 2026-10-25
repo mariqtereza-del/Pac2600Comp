@@ -1303,7 +1303,28 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D13-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D13: Input recording and replay`.
     - **Next stage:** D14 — Side-by-side check.
-14. **[Not started] D14 — Side-by-side check.** Same input recording into our build and Stella; frames compared at 10 moments. Differences go to `DISCREPANCIES.md`.
+14. **[Done] D14 — Side-by-side check.** *(expanded 2026-10-25)*
+    - **Objective:** the same input is run in our program and in Stella (7.0, the same emulation), and the pictures are compared: every frame's fingerprint, and ten whole pictures byte for byte. Any difference is written to `DISCREPANCIES.md`.
+    - **Why it matters:** it proves that the port, with its window, recording, switches and replay, shows what Stella shows, before the release (D15) and before Phase E builds on it.
+    - **Prerequisites:** D13 Done (commit `ca88e59`); the Phase C reference tool `build\stella_probe\stella_script.exe`.
+    - **What Claude Code will do:**
+      1. `tools\d14_side_by_side.py`: turns a recording (`.inputs`) or a Phase C script into a Stella input script and back; runs the reference (`stella_script.exe`), our headless replay and, with `--window`, our real window replaying the recording; compares the fingerprint of every frame and ten whole pictures.
+      2. Runs it on: your own recordings (human play, with switches changed) and the bot's 9,800-frame route (C7: ghost eaten, power pills, death, bonus item, level end, game over).
+      3. Proves the tool can see a difference (a recording with one key press removed must differ).
+      4. `DISCREPANCIES.md`: the result and the known, intended differences from the Stella app.
+    - **What I must do:** read the result; optionally (only with your OK, because it starts Stella) look at the real Stella app next to our window.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your OK of the result.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 0 differences, or every difference written down and explained.
+    - **Verification:** the numbers printed by the tool (frames, pictures, differences) for every input, for the headless and the window replay; the negative test.
+    - **Completion criteria:** all of the above and the owner's OK.
+    - **Potential problems:** "Stella" here is its emulation core as built in Phase C (zeroed memory at power-on), not the Stella app, which cannot read our recordings and starts with random memory, so its frames cannot be compared one by one. Sound is not part of this comparison (audio was proved identical to the Phase C audio in D8).
+    - **Recovery:** one new tool and two documents; undo by returning to `ca88e59` (with your OK).
+    - **Documentation updates:** `DECISIONS.md` (T-D14-1), `DISCREPANCIES.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage D14: Side-by-side check`.
+    - **Added during the stage (owner's rule D-004, authentic first):** speed and sound pitch changed to the real console's (T-D14-2); power-on memory examined (T-D14-3); `DISCREPANCIES.md` now holds an authenticity table; open: the picture shape.
+    - **Next stage:** D15 — Release folder.
 15. **[Not started] D15 — Release folder.** `tools\make_release.ps1` builds `PacMan2600-0.1.0-windows.zip` (name changes after J2) with the `.exe`, needed DLLs, licences, README and *no ROM*. The script scans the zip and fails if any `.a26` or 4 KB file of unknown origin is inside.
 16. **[Not started] D16 — Gate D: Phase 1 done.** You play a full game from the release zip, unzipped somewhere new. Checklist: correct shape, fullscreen and windowed, sound, keyboard, pad, ROM picker, replays identical, discrepancies list reviewed, version 0.1.0 tagged in Git.
 

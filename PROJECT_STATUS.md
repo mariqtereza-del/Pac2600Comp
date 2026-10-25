@@ -1,6 +1,6 @@
-Current stage: D14 — Side-by-side check (Phase D) — not started
+Current stage: D15 — Release folder (Phase D) — not started
 
-Last updated: 2026-10-25, Stage D13 done (owner: the replay of their own recording is identical; at the end of a recording the keyboard takes over, as designed). Stage D12 done (owner: F4, the F1 list and the remembered switches work, no issues). Stage D11 done (owner: the PS4 pad works without issue, including hotplugging; also fixed: mode 4 now leaves 4 black rows under the life markers). Stage D10 done (owner: the keys feel right). Stage D9 done (owner: it feels right). Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
+Last updated: 2026-10-25, Stage D14 done (owner accepted the result and the authentic-first rule D-004; speed 59.9227 Hz; default picture 12:7 Game area, D-005). Stage D13 done (owner: the replay of their own recording is identical; at the end of a recording the keyboard takes over, as designed). Stage D12 done (owner: F4, the F1 list and the remembered switches work, no issues). Stage D11 done (owner: the PS4 pad works without issue, including hotplugging; also fixed: mode 4 now leaves 4 black rows under the life markers). Stage D10 done (owner: the keys feel right). Stage D9 done (owner: it feels right). Stage D8 done (owner heard the start tune and the death wail, no delay; the remaining crackle is judged the original sound, T-D8-3). Stage D7 done (owner confirmed fullscreen and scaling). Phase C complete (Gate C met, `docs\GATE_C.md`). Phase A complete (Gate A met). Phase B complete (Gate B met, `docs\GATE_B.md`).
 
 ## Stages done
 
@@ -42,6 +42,7 @@ Last updated: 2026-10-25, Stage D13 done (owner: the replay of their own recordi
 | D11 — PS4 controller | SDL gamepad layer (`Pads` in `main.cpp`, rules in `controls.*`, T-D11-1): D-pad/left stick = joystick (50 % press, 30 % release, one direction), Cross/Square = fire, Options = Reset, Share = Select; pad read each loop so unplugging cannot stick a direction. `test_controls` 108 checks; `--pad-check` with a virtual gamepad 31 of 31 OK (all buttons, stick, dead zone, unplug and replug); earlier checks still pass (key replay 344,460 frames 0 differences, audio = C5, fingerprints = C3). Owner: the real PS4 pad works without issue, including hotplugging. Also T-D11-2: mode 4 (Game area) shows rows 11-203 so the life markers no longer touch the screen edge. |
 | D12 — Console switches | F4 = Colour / B&W (latched like F5/F6); all three switches saved in `settings.ini` and restored at start (T-D12-1). `test_controls` 117 checks; replay of all recorded Phase C inputs now incl. `switches\bw`: 350,460 frames, 0 differences; injected F4/F5/F6 in the real window gave switch values 3f 7f ff f7 and the ini lines; a second run started from them (f7). Earlier checks still pass (pad-check 31, audio = C5, fingerprints = C3). Owner: no issues. |
 | D13 — Input recording and replay | `src\host\inputlog.*`, `--record` / `--replay` (window and `--headless`), `tools\record_inputs.cmd`, `tools\replay_inputs.cmd` (T-D13-1). `test_inputlog` 25 checks; a 720-frame window recording replayed in the window and headless: 0 differences in every pair; 2,399-frame recording window vs headless 0 differences; wrong-ROM, garbage and missing files refused. Earlier checks still pass (key replay 350,460 frames 0 differences, audio = C5, fingerprints = C3). Owner: their own recording replayed identically. |
+| D14 — Side-by-side check | `tools\d14_side_by_side.py`: the same input in Stella's core (Phase C tool) and in our program, headless and window: owner's recording (1,860 frames), a test recording (219) and the C7 bot route (9,800): **0 fingerprint differences in 11,879 frames, 30 of 30 whole pictures identical**; the tool sees a deliberate change (963 frames). Owner's rule D-004 (authentic first): speed and sound now the real console's 59.9227 Hz / 31,400 Hz (9-minute run 59.9235 Hz, 0 underruns; T-D14-2); random power-on memory made no difference (T-D14-3); default picture 12:7 Game area, fitted and centred (D-005). `DISCREPANCIES.md`. |
 
 ## Key facts so far
 
@@ -80,12 +81,12 @@ Last updated: 2026-10-25, Stage D13 done (owner: the replay of their own recordi
 
 ## Next stage
 
-D14 - Side-by-side check: the same input recording is run in our build and in Stella; frames are compared at 10 moments; differences go to `DISCREPANCIES.md`. Starting Stella needs your OK (via `tools\run_stella.cmd`).
+D15 - Release folder: `tools\make_release.ps1` builds `PacMan2600-0.1.0-windows.zip` with the `.exe`, needed DLLs, licences, README and **no ROM**; the script scans the zip and fails if any `.a26` or 4 KB file of unknown origin is inside..
 
 ## Handoff from the last session
 
-Stage D13 done: **the program records and replays games** (`tools\record_inputs.cmd`, `tools\replay_inputs.cmd`). You confirmed your own recording replayed identically. When a recording ends, the keyboard takes over (intended). Proof: window record, window replay and headless replay agree on every frame's fingerprint.
+Stage D14 done. **Proof that the port shows what Stella's emulation shows** (0 differences, 11,879 frames). Following your rule that authentic comes first (D-004), the game now runs at the real console's speed and pitch (59.9227 Hz), and the default picture is 12:7, fitted to the display and centred (D-005). Random power-on memory made no difference to this game, so memory still starts at zeros.
 
-Updated: `src\host\inputlog.*`, `src\host\main.cpp`, `src\host\CMakeLists.txt`, `tests\host\test_inputlog.cpp`, `tools\build_host.cmd`, `tools\record_inputs.cmd`, `tools\replay_inputs.cmd`, `.gitignore` (`/recordings/`), `DECISIONS.md` (T-D13-1), `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d13\`, `recordings\` (your recordings). The ROM was only read; nothing installed, deleted or pushed.
+Updated: `tools\d14_side_by_side.py`, `DISCREPANCIES.md`, `src\host\main.cpp`, `src\host\emulator.*`, `DECISIONS.md` (D-004, D-005, T-D14-1..3), `docs\TIMING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`. Local only: `reference\d14\`. The ROM was only read; nothing installed, deleted or pushed.
 
-Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and the `d7_`-`d13_` ini files. Delete only with your OK.
+Still in `build\host\test_tmp` (ignored by Git): small test files, including `flipped.a26` and the `d7_`-`d14_` ini files. Delete only with your OK.

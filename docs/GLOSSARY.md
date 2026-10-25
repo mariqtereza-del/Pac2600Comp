@@ -178,3 +178,6 @@ Every project term in one line of plain English. New terms are added in the stag
 | Opcode | The first byte of a 6502 instruction; it says which instruction it is and how many bytes follow. |
 | Coverage map | A map of the ROM saying which bytes the processor actually ran as instructions and which it only read as data, made by running the recorded games (Stage F1). |
 | Label | A name written in front of a line of the listing (`L_F123:`) so that jumps and data references can say where they go instead of using a number. |
+| Scanline | One horizontal line of the TV picture. The 2600 draws 262 per frame, and the program counts its work in lines (one line = 76 processor cycles). |
+| Kernel | The part of the program that draws the picture line by line, timed to the cycle, because the console has no memory for a whole picture. |
+| Vertical blank / overscan | The scanlines before and after the visible picture in which the game logic runs. |

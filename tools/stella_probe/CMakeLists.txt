@@ -42,3 +42,8 @@ target_link_options(stella_bot PRIVATE /MAP)
 add_executable(stella_coverage coverage.cpp)
 target_link_libraries(stella_coverage PRIVATE stella_core)
 target_link_options(stella_coverage PRIVATE /MAP)
+
+# stella_pctrace: which instruction runs on which scanline, for chosen frames (Stage F5, DECISIONS.md T-F5-1).
+add_executable(stella_pctrace pctrace.cpp)
+target_link_libraries(stella_pctrace PRIVATE stella_core)
+target_link_options(stella_pctrace PRIVATE /MAP)

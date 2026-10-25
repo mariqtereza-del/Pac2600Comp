@@ -1673,7 +1673,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F4_DATA_TABLES.md`, `DECISIONS.md` (T-F4-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F4: Code versus data`.
     - **Next stage:** F5 — The frame loop.
-5. **[Not started] F5 — The frame loop.** Find the start-up code and the four parts of every frame: vertical sync, vertical blank (logic time), the visible picture ("kernel"), overscan (more logic time).
+5. **[Done] F5 — The frame loop.** *(expanded and done 2026-10-26)*
+    - **Objective:** find, in the code and by running it, the start-up and the six parts of every frame (vertical sync, top logic, wait, the picture "kernel", bottom logic, wait), mark them in the listing, and prove that every frame has the same shape.
+    - **Why it matters:** the rebuilt game must do the same work in the same order on every frame, and the kernel must be reproduced line by line; this is the skeleton everything else hangs on.
+    - **Prerequisites:** F4 Done (`1627c57`); the timing facts of Stage C4.
+    - **What Claude Code will do:**
+      1. A new measuring tool `stella_pctrace.exe` (`tools\stella_probe\pctrace.cpp`): one line per executed instruction with its scanline and colour clock, for chosen frames of a recording, checked against the golden trace.
+      2. `tools\f5_frame.py`: traces 8 sets of frames (attract, play, a death, game over, a new game, two players, Reset in play), checks that the six landmarks occur in the same order in every frame, measures the scanlines of each part, writes `reference\disasm\pacman_frame.asm` (local only) with the landmarks as labels and a banner for each part, and requires a byte-identical rebuild.
+      3. `docs\F5_FRAME_LOOP.md`.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the frame map, the labelled listing, a byte-identical rebuild.
+    - **Verification:** `python -I tools\f5_frame.py rom\pacman.a26` says "problems: none" for 31 traced frames and BYTE-IDENTICAL; every traced run equals its golden trace on every frame.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the banners mark where each part begins; subroutines shared between parts (the kernel's helpers at `$F053-$F06A`, the sound and input routines) sit between them and are sorted out in F8 (routine list); the exact line on which the top and bottom logic end varies with what the game does that frame (measured ranges are in the document).
+    - **Recovery:** new tool and local files; undo by returning to `1627c57` (with your OK).
+    - **Documentation updates:** `docs\F5_FRAME_LOOP.md`, `DECISIONS.md` (T-F5-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F5: The frame loop`.
+    - **Next stage:** F6 — What actually runs.
 6. **[Not started] F6 — What actually runs.** Replay every golden trace with execution logging; every ROM byte is marked executed, read as data, or never touched.
 7. **[Not started] F7 — Naming all 128 RAM bytes.** Each byte watched across the baseline traces and named (`pacman_x`, `ghost_mode`…), with uncertain names marked "?".
 8. **[Not started] F8 — Routine list and call map.** Every subroutine listed, with who calls it.

@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F5-1 — The frame loop, found by tracing instructions with their scanlines (2026-10-26, Stage F5)
+
+- **Tool:** `stella_pctrace.exe` (same method and same private-member trick as `stella_coverage`, Stage F1; checked against the golden trace on every frame of the recording: 0 differences in all 8 runs).
+- **Finding:** in all 31 traced frames (attract mode, play, a death, game over, a new game, two players, Game Reset in play) the same six landmarks occur in the same order: `FRAME_START` `$F7D6` (scanline 258: wait for the line end, VBLANK and VSYNC on, clear collisions, work out values; `$F875` sets the vertical-blank timer to `$29`), `VSYNC_END` `$F87C` (scanline 0), `VBLANK_WAIT` `$F0C5` (the loop on INTIM, starting on scanline 10 to 22, ending on scanline 33), `KERNEL_START` `$F0CA` (scanline 33: VBLANK off; the picture is drawn by the code from `$F0CC` to about `$F389`), `OVERSCAN_TIMER` `$F389` (scanline 195, while the last picture lines are still being drawn), `OVERSCAN_WAIT` `$F7D1` (the loop on INTIM, starting on scanline 224 to 240, ending on scanline 258) and then the loop closes by falling into `FRAME_START`. The start-up code at `$F000` clears the whole page `$00-$FF`, sets first values and jumps into the loop at `FRAME_START` (not at the top).
+- **Agrees with:** the C4 measurements (docs\TIMING.md) which were made from outside; this is the first time the lines are tied to code addresses.
+- **In the listing:** labels `RESET`, `FRAME_START`, `VBLANK_TIMER_SETUP`, `VSYNC_END`, `VBLANK_WAIT`, `KERNEL_START`, `OVERSCAN_TIMER`, `OVERSCAN_WAIT` and a banner at each part. Still byte-identical (SHA-1 `0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1`); local only.
+- **Not claimed:** which routines belong to which part (F8), what the top and bottom logic compute (F9 onward).
+- **Reversible:** Yes.
+
 ### T-F4-1 — Data tables cut and named by how they are read (2026-10-26, Stage F4)
 
 - **Method:** from the instruction-level coverage of 29 recorded games (F1) each data byte knows which instructions read it; each reader is followed forward (within 14 instructions, stopping at a return or jump) to the chip register its value is stored into; ranges touched by readers are merged where they overlap or touch; the data is cut at old labels, range edges and kind changes. Kinds: GFX (read through a pointer or table and stored into GRP0/GRP1), COLOR, PF, SND, TBL (read but not stored straight into a chip register), UNREAD, VECTORS.

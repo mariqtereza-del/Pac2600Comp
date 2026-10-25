@@ -182,3 +182,6 @@ Every project term in one line of plain English. New terms are added in the stag
 | Kernel | The part of the program that draws the picture line by line, timed to the cycle, because the console has no memory for a whole picture. |
 | Vertical blank / overscan | The scanlines before and after the visible picture in which the game logic runs. |
 | Look-ahead read | After many instructions the processor reads the next byte without using it. The measuring tool records it, so a byte touched only that way is not data. (Stage F6) |
+| Zero page | The first 256 bytes of the processor's address space. On the 2600 the chips sit in $00-$7F and the 128 bytes of memory (RAM) in $80-$FF; instructions on this page are shorter and faster. (Stage F7) |
+| Stack | A part of memory where the processor keeps the return addresses of subroutine calls. Here it is $F6-$FF, growing downwards. (Stage F7) |
+| Shift register (random number) | A byte whose bits are shifted along with a new bit made from two old ones; repeating this gives a long, repeatable series that looks random. (Stage F7) |

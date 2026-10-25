@@ -1713,7 +1713,25 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F6_COVERAGE.md`, `DECISIONS.md` (T-F6-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F6: What actually runs`.
     - **Next stage:** F7 — Naming all 128 RAM bytes.
-7. **[Not started] F7 — Naming all 128 RAM bytes.** Each byte watched across the baseline traces and named (`pacman_x`, `ghost_mode`…), with uncertain names marked "?".
+7. **[Done] F7 — Naming all 128 RAM bytes.** *(expanded and done 2026-10-26)*
+    - **Objective:** give every one of the 128 bytes of the console's memory (`$80-$FF`) a name and a stated meaning, each marked sure, likely or "?", and put the names into the listing without changing a byte of the rebuilt ROM.
+    - **Why it matters:** every later stage (input, movement, maze, ghosts, scoring, states) reads and rewrites these bytes; the C++ rebuild's state structure and the lockstep test of F20 are built from this map.
+    - **Prerequisites:** F6 Done (`067528b`): the code map of what runs; F5 listing; the 70 baseline traces.
+    - **What Claude Code will do:**
+      1. Read the whole listing (about 1,800 instructions) and follow each RAM byte through every instruction that touches it.
+      2. `tools\f7_ram.py`: holds the table (address, name, confidence, meaning), counts static users and measures every byte over the 70 traces (439,680 frames), runs checks that test the claims of the names (frame counter, player-block swap, decimal score digits, position ranges, stack, unused bytes), writes `reference\disasm\pacman_ram.asm` (local only) with every zero-page RAM operand replaced by its name, assembles it and requires byte-identical; writes `docs\F7_RAM_MAP.md`.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 128 named bytes (84 sure, 32 likely, 12 "?"), all checks PASS, byte-identical rebuild.
+    - **Verification:** `python -I tools\f7_ram.py rom\pacman.a26` says "problems: none" and BYTE-IDENTICAL.
+    - **Completion criteria:** all of the above; each of `$80-$FF` named exactly once.
+    - **Potential problems:** the names say what a byte holds, not yet how the game uses it; scratch bytes (`$D2-$E3`) are shared by the picture and the logic and stay "?"; names marked likely may be refined by F9-F17 (then the table here is updated).
+    - **Recovery:** new script and local files; undo by returning to `067528b` (with your OK).
+    - **Documentation updates:** `docs\F7_RAM_MAP.md`, `DECISIONS.md` (T-F7-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F7: Naming all 128 RAM bytes`.
+    - **Next stage:** F8 — Routine list and call map.
 8. **[Not started] F8 — Routine list and call map.** Every subroutine listed, with who calls it.
 9. **[Not started] F9 — Input reading.**
 10. **[Not started] F10 — Pac-Man's movement and turning.**

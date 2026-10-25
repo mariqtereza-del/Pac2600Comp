@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F7-1 — The 128 RAM bytes named from the code, with confidence marks (2026-10-26, Stage F7)
+
+- **Method:** the whole listing was read; every byte of `$80-$FF` followed through the instructions that touch it (F6 code map) and measured over the 70 traces. The table lives in `tools\f7_ram.py`, which writes `docs\F7_RAM_MAP.md` and the named listing (`reference\disasm\pacman_ram.asm`, local only; byte-identical to the ROM).
+- **Result:** 84 names sure, 32 likely, 12 uncertain ("?"). Structure found: two copies of a 20-byte player block (`$88-$9B` and `$9C-$AF`: wafer map, lives, level step, pill flags, score colour) exchanged at a change of turn; five-object arrays (Pac-Man then four ghosts) for x, y, state, speed accumulator; scores as decimal digits in `$CC-$D1`; stack in `$F6-$FF` (deepest call chain 10 bytes); `$EA` and `$EB` unused.
+- **Correction:** Stage E4 recorded "no randomness found". The game does have a random source: `$CB` is a shift register stepped by the routine at `$FBE0` and used when a ghost chooses a direction. It is seeded the same way (`$FF`) at power-on and at every game start, so replays are still identical. F14 follows it.
+- **Found while checking:** the frame counter reads 2, not 1, in the frame Select sets it (the same frame adds 1); the incoming player's lives are lowered by 1 in the frame of the swap. Both are in the checks of the tool.
+- **Not claimed:** direction codes and state bits of `$BB-$BF`, the flag bits of `$E7`, the exact use of the scratch bytes; they belong to F9-F17.
+- **Reversible:** Yes.
+
 ### T-F6-1 — What actually runs: all 70 recordings, and a read is data only when it fetches data (2026-10-26, Stage F6)
 
 - **Method:** `stella_coverage` replays every baseline entry (each checked against its golden trace, 0 differences in all 70, 439,680 frames). BL-065/066 need their memory edits, so the tool got optional trailing arguments `<frame>:<hex address>:<hex value>` (test only, applied before that frame; same rule as the host's `--poke`).

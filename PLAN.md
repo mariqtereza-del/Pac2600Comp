@@ -1986,7 +1986,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F20_LOCKSTEP.md`, `DECISIONS.md` (T-F20-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F20: Lockstep harness`.
     - **Next stage:** F21 — Rewrite one routine per session (F21.1 first).
-21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES.** *(expanded below)*
+21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS.** *(expanded below)*
     - **Objective (F21.1):** set up the way a routine is rewritten and prove it with the first, smallest routine that changes memory: CLEAR_SCORES (`$FC7D`, 14 bytes: both scores and both lives to 0).
     - **Why it matters:** every later session follows the same protocol; the protocol must detect a wrong routine even when the recorded games do not show it (a wrong register).
     - **Prerequisites:** F20 Done (`bb3df0f`).
@@ -2005,7 +2005,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Recovery:** new files and small changes to the lockstep tool; undo by returning to `bb3df0f` (with your OK).
     - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F21.1: Rewrite CLEAR_SCORES`.
-    - **Next stage:** F21.2 — Rewrite SWAP_PLAYERS.
+    - **Next stage:** F21.2 — Rewrite SWAP_PLAYERS (done, below).
+    - **F21.2 — Rewrite SWAP_PLAYERS** *(expanded and done 2026-10-26)*
+      - **Objective:** rewrite SWAP_PLAYERS (`$FB9F`, 14 bytes: exchanges the 20-byte block of the player in turn, `$88-$9B`, with the other player's block, `$9C-$AF`) as C++ and prove it with the F21.1 protocol.
+      - **Why it matters:** it is the whole of the two-player turn change; a mistake would show at the first change of turn.
+      - **Prerequisites:** F21.1 Done (`696d22a`).
+      - **What Claude Code will do:** `game::swapPlayers` in `src\game\routines.cpp`; the adapter in `src\lockstep\natives.cpp` (leaves A = old `$88`, Y = old `$9C`, X = $FF, negative set, zero clear, carry untouched, like the original); the routine added to the DONE list of `tools\f21_routines.py`.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** 70 of 70 games identical; every call equal to the original.
+      - **Verification:** `python -I tools\f21_routines.py rom\pacman.a26` says `result: OK` (SWAP_PLAYERS: 70 of 70 games identical, 139 calls compared with the original, 0 different; CLEAR_SCORES still clean; both together identical).
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** only the 19 changes of turn and the 120 two-player game starts of the recordings exercise it; the registers it leaves are covered by the call check.
+      - **Recovery:** two small code additions; undo by returning to `696d22a` (with your OK).
+      - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-2), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F21.2: Rewrite SWAP_PLAYERS`.
+      - **Next stage:** F21.3 — Rewrite RNG_STEP.
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.

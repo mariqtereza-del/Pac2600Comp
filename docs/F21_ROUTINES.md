@@ -12,12 +12,14 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **SWAP_PLAYERS**: identical in 70 of 70 games; 139 calls compared with the original code, 0 different.
 - The fixture "wrong on purpose" (forgets `LIVES_P2`) was found by the memory comparison in 68 of the 68 games that call the routine; the fixture with a wrong `X` register leaves every frame identical but was found by the routine check in 68 games: this is why the routine check exists.
 
 ## The ledger
 
 | Stage | Routine | Entry | Bytes | Status | Note |
 | --- | --- | --- | --- | --- | --- |
+| F21.2 | `SWAP_PLAYERS` | $FB9F | 14 | **done** | game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged |
 | F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/routines.cpp: both scores and both lives to 0 |
 | - | `EXIT_F9E4` | $F9E4 | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FB5B` | $FB5B | 1 | to do | a lone RTS: nothing to write |
@@ -32,7 +34,6 @@
 | - | `CLEAR_GRAPHICS` | $F483 | 11 | to do | picture only (F23) |
 | - | `WRAP_TO_BOTTOM` | $FD26 | 12 | to do |  |
 | - | `TRY_UP` | $FB36 | 14 | to do |  |
-| - | `SWAP_PLAYERS` | $FB9F | 14 | to do |  |
 | - | `SOUND_START` | $FF43 | 18 | to do | needs ROM tables (F22) |
 | - | `KERNEL_LINE_P1` | $F053 | 20 | to do | writes only chip registers (picture): proved with the renderer (F23) |
 | - | `TRY_PAIR_UD` | $FB05 | 20 | to do | drops the caller's return |

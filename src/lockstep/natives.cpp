@@ -44,6 +44,19 @@ void clearScores(Machine& m, int variant = 0) {
   m.rts();
 }
 
+// F21.2 SWAP_PLAYERS ($FB9F). Registers the original leaves: A = the old first byte of the block of the player in turn ($88), Y = the old first byte of
+// the other block ($9C) (the last pair exchanged), X = $FF, flags of the last DEX (negative set, zero clear), carry untouched.
+void swapPlayers(Machine& m) {
+  const uint8_t oldA = m.read(0x88);
+  const uint8_t oldY = m.read(0x9C);
+  withRam(m, [](game::Ram& r) { game::swapPlayers(r); });
+  m.a = oldA;
+  m.y = oldY;
+  m.x = 0xFF;
+  m.setZN(m.x);
+  m.rts();
+}
+
 }  // namespace
 
 bool registerNativeByName(Machine& m, const std::string& name) {
@@ -52,6 +65,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
   if (name == "clear-scores") { m.registerNative(0xFC7D, "CLEAR_SCORES (native)", [](Machine& mm) { clearScores(mm); }); return true; }
   if (name == "clear-scores-wrong") { m.registerNative(0xFC7D, "CLEAR_SCORES (native, wrong on purpose)", [](Machine& mm) { clearScores(mm, 1); }); return true; }
   if (name == "clear-scores-badreg") { m.registerNative(0xFC7D, "CLEAR_SCORES (native, register wrong on purpose)", [](Machine& mm) { clearScores(mm, 2); }); return true; }
+  if (name == "swap-players") { m.registerNative(0xFB9F, "SWAP_PLAYERS (native)", [](Machine& mm) { swapPlayers(mm); }); return true; }
   return false;
 }
 

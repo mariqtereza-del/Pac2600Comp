@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.2', 'SWAP_PLAYERS', 'swap-players', 0xFB9F, 'game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged'),
 ]
 # why a routine cannot be proved by the memory comparison alone, or what it needs first
 NOTES = {

@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-2 — SWAP_PLAYERS rewritten (2026-10-26, Stage F21.2)
+
+- **Routine:** `game::swapPlayers` exchanges the 20 bytes `MAZE_00..SCORE_COLOUR` ($88-$9B) with `MAZE_P2_00..SCORE_COLOUR_P2` ($9C-$AF). The adapter reproduces the registers the original leaves (A = old $88, Y = old $9C, X = $FF, N set, Z clear).
+- **Result:** 70 of 70 games identical with the native routine; 139 calls compared with the original (memory, registers, flags): 0 differences; identical together with CLEAR_SCORES.
+- **Reversible:** Yes.
+
 ### T-F21-1 — How a routine is rewritten, and the first one (2026-10-26, Stage F21.1)
 
 - **Protocol:** (1) the routine becomes a C++ function in `src\game\routines.cpp` on the 128 memory bytes with the F7 names (generated `ram_map.hpp`); (2) an adapter in `src\lockstep\natives.cpp` registers it at the entry address and reproduces the registers and flags the original leaves; (3) `lockstep.exe --native <name> --verify` runs all recorded games and, at every call, compares the native results (memory, A, X, Y, SP, return address, flags except B/U) with the original code run on a copy; (4) done only when both are clean in all 70 games.

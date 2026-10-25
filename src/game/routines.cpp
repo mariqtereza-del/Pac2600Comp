@@ -10,4 +10,13 @@ void clearScores(Ram& ram) {
   at(ram, ram::LIVES_P2) = 0;
 }
 
+// SWAP_PLAYERS ($FB9F). The original loops X from $13 down to 0, exchanging the bytes MAZE_00+X and MAZE_P2_00+X.
+void swapPlayers(Ram& ram) {
+  for (uint8_t i = 0; i < 20; ++i) {
+    const uint8_t mine = at(ram, ram::MAZE_00 + i);
+    at(ram, ram::MAZE_00 + i) = at(ram, ram::MAZE_P2_00 + i);
+    at(ram, ram::MAZE_P2_00 + i) = mine;
+  }
+}
+
 }  // namespace game

@@ -1,0 +1,27 @@
+id: BL-067
+title: Two players: an idle game for two players to the end
+shows: Game Select pressed once (game 1, two players), Game Reset on frame 240, nobody plays: the turns of the two players.
+inputs: BL-067.inputs
+frames: 3800
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 6a46909004f39c310f3f235f71e67822c55181c5c7e364f913ed49b0e6eeb691
+trace_bytes: 1142826
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Select is pressed on frames 120-129 and Game Reset on frame 240 (a two-player game, byte $E6 bit 6 set); Pac-Man walks left (LEFT on frames 370-419); then nobody touches the joystick.
+  - Play begins on frame 368: byte $E6 reads 40 (bit 7: 0); lives counter 3; score bytes 00/01; wafers in the map 125; byte $99 08; Pac-Man (76,60).
+  - Play begins on frame 776: byte $E6 reads c0 (bit 7: 1); lives counter 3; score bytes 00/02; wafers in the map 125; byte $99 08; Pac-Man (76,60).
+  - Play begins on frame 1278: byte $E6 reads 40 (bit 7: 0); lives counter 2; score bytes 00/02; wafers in the map 124; byte $99 08; Pac-Man (76,60).
+  - Play begins on frame 1782: byte $E6 reads c0 (bit 7: 1); lives counter 2; score bytes 00/02; wafers in the map 125; byte $99 08; Pac-Man (76,60).
+  - Play begins on frame 2288: byte $E6 reads 40 (bit 7: 0); lives counter 1; score bytes 00/02; wafers in the map 124; byte $99 08; Pac-Man (76,60).
+  - Play begins on frame 2792: byte $E6 reads c0 (bit 7: 1); lives counter 1; score bytes 00/02; wafers in the map 125; byte $99 08; Pac-Man (76,60).
+  - Play begins on frame 3175: byte $E6 reads 40 (bit 7: 0); lives counter 0; score bytes 00/02; wafers in the map 124; byte $99 08; Pac-Man (76,60).
+  - The pause flag comes on at frame 530 with $E6 = 40 and lives 3; it clears on frame 776 with $E6 = c0 and lives 3.
+  - The pause flag comes on at frame 1032 with $E6 = c0 and lives 3; it clears on frame 1278 with $E6 = 40 and lives 2.
+  - The pause flag comes on at frame 1536 with $E6 = 40 and lives 2; it clears on frame 1782 with $E6 = c0 and lives 2.
+  - The pause flag comes on at frame 2042 with $E6 = c0 and lives 2; it clears on frame 2288 with $E6 = 40 and lives 1.
+  - The pause flag comes on at frame 2546 with $E6 = 40 and lives 1; it clears on frame 2792 with $E6 = c0 and lives 1.
+  - The pause flag comes on at frame 3048 with $E6 = c0 and lives 1; it clears on frame 3175 with $E6 = 40 and lives 0.
+  - The lives counter reads 0 from frame 3174.
+  - How to check it against the real game: press Game Select once (two bars appear), Game Reset, and let both players be caught: the turn passes from one to the other after each death.

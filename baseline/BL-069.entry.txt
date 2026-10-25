@@ -1,0 +1,15 @@
+id: BL-069
+title: Random joystick moves and random console buttons, seed 32
+shows: A seeded random game of 24000 frames: joystick holds of 4-40 frames, and every 1,100 frames one console control (Reset, Select, Fire for 10 frames; a difficulty or colour switch held for 500 frames).
+inputs: BL-069.inputs
+frames: 24000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 004be1f6a76119d415c6692de2c074a3a1e999dfa33049e3c4e553f20a071149
+trace_bytes: 7248116
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240; random joystick moves by the rule of tools\e8_entries.py. Console controls used: frame 1200 right difficulty A (to frame 1699); frame 2300 left difficulty A (to frame 2799); frame 3400 Reset; frame 4500 left difficulty A (to frame 4999); frame 5600 Fire; frame 6700 Select; frame 7800 left difficulty A (to frame 8299); frame 8900 Reset; frame 10000 Select; frame 11100 Reset; frame 12200 left difficulty A (to frame 12699); frame 13300 left difficulty A (to frame 13799); frame 14400 Reset; frame 15500 right difficulty A (to frame 15999); frame 16600 left difficulty A (to frame 17099); frame 17700 Reset; frame 18800 black and white (to frame 19299); frame 19900 Fire; frame 21000 right difficulty A (to frame 21499); frame 22100 Reset; frame 23200 black and white (to frame 23699).
+  - Games started (the lives counter becomes 3): on frames 240, 3400, 5600, 8900, 11100, 14400, 17700, 19900, 22100.
+  - Movement rules over every frame of play (pause frames left out): Pac-Man made 2301 one-pixel steps, 0 jumps through the openings at the top or bottom and 0 other changes of place; the ghosts made 6617 changes of place, 8 jumps through the openings and 0 other changes larger than 3 pixels.
+  - How to check it against the real game: replay the recording with the host program (--replay).

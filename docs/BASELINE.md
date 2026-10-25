@@ -141,3 +141,20 @@ Measured in BL-048 and BL-049 (`DECISIONS.md` T-E6-1, computed by `tools\e6_entr
 ## Long play, in short (Stage E7)
 
 Measured in BL-050 to BL-057 (`DECISIONS.md` T-E7-1, computed by `tools\e7_entries.py`): the bonus item is on the board while byte $E7 bit 1 is set (up to 768 frames) and gives +100 at x 72-80, y 40; Pac-Man's speed is the same in every level; the ghosts' speed rises with the level (average 1.41 pixels per 4-frame change in level 1, 2.34 in level 6); clearing a level adds a life; ghosts use the openings at the top and bottom as Pac-Man does. The bot clears five levels in 36,000 frames and was not stopped by a game over; random-input games of 30,000 frames keep every movement rule.
+| BL-058 | 900 | Game Reset pressed in the middle of a game |
+| BL-059 | 1200 | Game Select pressed in the middle of a game, then Game Reset |
+| BL-060 | 800 | Control: the same walk with no switch touched |
+| BL-061 | 800 | During play: the left difficulty switch moved to A |
+| BL-062 | 800 | During play: the right difficulty switch moved to A |
+| BL-063 | 800 | During play: the colour/black-and-white switch moved to black and white |
+| BL-064 | 40000 | A very long idle: 40,000 frames at the title screen |
+| BL-065 | 700 | ARTIFICIAL: the score is set to 9,995 by a memory edit |
+| BL-066 | 700 | ARTIFICIAL: the score is set to 4,995 by a memory edit |
+| BL-067 | 3800 | Two players: an idle game for two players to the end |
+| BL-068 | 24000 | Random joystick moves and random console buttons, seed 31 |
+| BL-069 | 24000 | Random joystick moves and random console buttons, seed 32 |
+| BL-070 | 12000 | Eaten ghosts walk back to the box |
+
+## Edge cases, in short (Stage E8)
+
+Measured in BL-058 to BL-070 (`DECISIONS.md` T-E8-1, `docs\GATE_E.md`): Game Reset in play restarts at once; Game Select in play ends the game and advances the selection; the left difficulty switch sets `$E7` bit 5, the right one changes nothing, black-and-white changes colour bytes only; nothing breaks in a 40,000-frame idle; the score is four digits and wraps from 9,999 to 0 with no extra life; in two-player play `$E6` bit 7 is player two's turn and each player has own lives, score and map; an eaten ghost's flag (bit 3 of `$BC+i`) clears when it is back at the box. Entries BL-065 and BL-066 use a memory edit (`pokes:` line, `--poke`) and are labelled ARTIFICIAL.

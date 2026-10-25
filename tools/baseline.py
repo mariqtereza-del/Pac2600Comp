@@ -38,8 +38,11 @@ def make_trace(rom, entry_id, fields, target):
     inputs = BASE / fields['inputs']
     OUT.mkdir(parents=True, exist_ok=True)
     scratch = OUT / (entry_id + '.scratch.ini')
+    pokes = []
+    for item in fields.get('pokes', '').split():  # TEST ONLY memory edits, Stage E8: <frame>:<hex address>:<hex value>
+        pokes += ['--poke', item]
     r = subprocess.run([str(EXE), '--headless', str(OUT / (entry_id + '.png')), str(rom), '--replay', str(inputs), '--trace', str(target),
-                        '--settings', str(scratch)], capture_output=True, text=True)
+                        '--settings', str(scratch)] + pokes, capture_output=True, text=True)
     if r.returncode != 0:
         raise SystemExit('%s: the program failed (exit %d)' % (entry_id, r.returncode))
 

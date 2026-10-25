@@ -1,0 +1,29 @@
+id: BL-070
+title: Eaten ghosts walk back to the box
+shows: The first 12,000 frames of the first long bot game (Stage E7): every ghost eaten, and what happens to its place bytes and to bit 3 of its state byte until it is home.
+inputs: BL-070.inputs
+frames: 12000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: a07b43a194eb4816332693446a7fed301c5624319a869eaf4428e3728bc9eff6
+trace_bytes: 3613016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - The input is the first 12,000 frames of the bot game of seed 1 (stella_bot route (seed 1): level end at frame 7019, game over at frame -1); Game Reset on frame 1800.
+  - Ghosts eaten (score rises of 20, 40, 80 or 160): on frames 2288 (+20), 2322 (+40), 3161 (+20), 3243 (+40), 3400 (+80), 4792 (+20), 4963 (+40), 5392 (+20), 8011 (+20), 8049 (+40), 8738 (+20), 8827 (+40), 9008 (+80), 9089 (+160).
+  - Ghost 0: bit 3 of byte $bc sets on frame 2288 (0 frames from the nearest ghost-eaten frame 2288) with the ghost at (21,70), and clears on frame 2816 (528 frames later) with the ghost at (76,30); its changes of place in between: 1 px: 79, 2 px: 36.
+  - Ghost 0: bit 3 of byte $bc sets on frame 3400 (0 frames from the nearest ghost-eaten frame 3400) with the ghost at (83,0), and clears on frame 3660 (260 frames later) with the ghost at (76,30); its changes of place in between: 1 px: 9, 2 px: 4.
+  - Ghost 0: bit 3 of byte $bc sets on frame 4792 (0 frames from the nearest ghost-eaten frame 4792) with the ghost at (136,50), and clears on frame 5160 (368 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 42, 2 px: 19.
+  - Ghost 0: bit 3 of byte $bc sets on frame 5392 (0 frames from the nearest ghost-eaten frame 5392) with the ghost at (85,10), and clears on frame 5608 (216 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 6, 2 px: 3.
+  - Ghost 0: bit 3 of byte $bc sets on frame 9008 (0 frames from the nearest ghost-eaten frame 9008) with the ghost at (84,20), and clears on frame 9236 (228 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 6, 2 px: 4.
+  - Ghost 1: bit 3 of byte $bd sets on frame 3161 (0 frames from the nearest ghost-eaten frame 3161) with the ghost at (21,10), and clears on frame 3605 (444 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 25, 2 px: 25.
+  - Ghost 1: bit 3 of byte $bd sets on frame 8049 (0 frames from the nearest ghost-eaten frame 8049) with the ghost at (136,15), and clears on frame 8413 (364 frames later) with the ghost at (78,30); its changes of place in between: 1 px: 18, 2 px: 37.
+  - Ghost 1: bit 3 of byte $bd sets on frame 9089 (0 frames from the nearest ghost-eaten frame 9089) with the ghost at (88,44), and clears on frame 9237 (148 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 2, 2 px: 5.
+  - Ghost 2: bit 3 of byte $be sets on frame 2322 (0 frames from the nearest ghost-eaten frame 2322) with the ghost at (21,70), and clears on frame 2850 (528 frames later) with the ghost at (76,30); its changes of place in between: 1 px: 84, 2 px: 39.
+  - Ghost 2: bit 3 of byte $be sets on frame 8738 (0 frames from the nearest ghost-eaten frame 8738) with the ghost at (10,0), and clears on frame 9234 (496 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 36, 2 px: 34.
+  - Ghost 3: bit 3 of byte $bf sets on frame 3243 (0 frames from the nearest ghost-eaten frame 3243) with the ghost at (41,0), and clears on frame 3607 (364 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 19, 2 px: 19.
+  - Ghost 3: bit 3 of byte $bf sets on frame 4963 (0 frames from the nearest ghost-eaten frame 4963) with the ghost at (88,32), and clears on frame 5611 (648 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 50, 2 px: 50.
+  - Ghost 3: bit 3 of byte $bf sets on frame 8011 (0 frames from the nearest ghost-eaten frame 8011) with the ghost at (136,15), and clears on frame 8411 (400 frames later) with the ghost at (78,30); its changes of place in between: 1 px: 14, 2 px: 32.
+  - Ghost 3: bit 3 of byte $bf sets on frame 8827 (0 frames from the nearest ghost-eaten frame 8827) with the ghost at (26,0), and clears on frame 9235 (408 frames later) with the ghost at (77,30); its changes of place in between: 1 px: 14, 2 px: 32.
+  - In 14 of 14 episodes the flag clears with the ghost back at the start place (x 72-80, y 28-32). The scared state during a power pill is not this flag: in the first power pill of BL-044 the ghosts that were not eaten (ghosts 1 and 3) never set it. Which byte holds the scared state is still not identified.
+  - How to check it against the real game: eat a ghost during a power pill: its eyes go back to the box in the middle; nothing is visible on the status bar.

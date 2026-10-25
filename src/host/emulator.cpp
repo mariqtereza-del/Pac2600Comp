@@ -109,6 +109,11 @@ std::vector<std::uint32_t> Emulator::colours() const
   return out;
 }
 
+void Emulator::pokeRam(int address, std::uint8_t value)
+{
+  if(address >= 0x80 && address <= 0xFF) impl_->core.getRAM()[address - 0x80] = value;
+}
+
 const std::uint8_t* Emulator::ram() const { return impl_->core.osystem().console().system().m6532().getRAM(); }
 
 std::uint64_t Emulator::pictureFingerprint() const

@@ -51,6 +51,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <array>
 #include <vector>
 
 #include "audio.hpp"
@@ -149,6 +150,7 @@ struct Options {
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
   std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
   std::string recordFile, replayFile;  // input recording (--record) and playback (--replay), Stage D13
+  std::vector<std::array<int, 3>> pokes;  // --poke <frame>:<hex address>:<hex value> (headless only, TEST ONLY, Stage E8): memory edits before a frame
   std::string traceFile;               // --trace <file>: what the game did on every frame (Stage E1, docs\BASELINE.md)
   long long ramSeed = -1;              // --ram-seed N: power-on memory filled from seed N (-1 = zeros)
   bool softGlow = false;               // --soft-glow: Stella's phosphor glow on (headless tests of F7)
@@ -185,6 +187,14 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--soft-glow") o.softGlow = true;
     else if(a == "--ram-seed") o.ramSeed = std::atoll(next().c_str());
     else if(a == "--trace") o.traceFile = next();
+    else if(a == "--poke") {
+      const std::string v = next();
+      const std::size_t c1 = v.find(':'), c2 = c1 == std::string::npos ? c1 : v.find(':', c1 + 1);
+      if(c2 != std::string::npos)
+        o.pokes.push_back({std::atoi(v.substr(0, c1).c_str()), static_cast<int>(std::strtol(v.substr(c1 + 1, c2 - c1 - 1).c_str(), nullptr, 16)),
+                           static_cast<int>(std::strtol(v.substr(c2 + 1).c_str(), nullptr, 16))});
+      else std::fprintf(stderr, "--poke needs <frame>:<hex address>:<hex value>\n");
+    }
     else if(a == "--record") o.recordFile = next();
     else if(a == "--replay") o.replayFile = next();
     else if(a == "--audio-check") { o.audioCheckSeconds = std::atof(next().c_str()); o.audioCheckFile = next(); }
@@ -1398,6 +1408,8 @@ int headlessRun(const Options& o)
     if(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10) in.reset = true;
     if(replaying) applyInput(emulator, in, false);
     else emulator.setConsoleReset(in.reset);
+    for(const auto& pk : o.pokes)
+      if(pk[0] == f) emulator.pokeRam(pk[1], static_cast<std::uint8_t>(pk[2]));
     emulator.runFrame();
     if(traceOut) writeTrace(traceOut, emulator, f, in.pack());
     if(wav) {

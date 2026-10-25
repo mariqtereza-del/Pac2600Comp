@@ -1,0 +1,17 @@
+id: BL-058
+title: Game Reset pressed in the middle of a game
+shows: A game is started, Pac-Man walks left and eats two wafers, then Game Reset is pressed on frame 450: the game starts again.
+inputs: BL-058.inputs
+frames: 900
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 3e3ed56992363efd4fdd8ef8160eed77957c364825231e553a75c2fe26f6fa5d
+trace_bytes: 270026
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game; play begins on frame 367.
+  - Joystick: LEFT on frames 370-419. Frame 449: lives 3, score 2, 124 wafers in the map, Pac-Man (64,60), ghosts (83,40) (79,40) (84,40) (80,40).
+  - Game Reset is pressed on frames 450-459 (the console switch register reads 3e).
+  - Frame 450 (the same frame): the pause flag comes on; lives 3, score 0, 126 wafers in the map, Pac-Man (76,60), ghosts (76,30) (76,30) (76,30) (76,30). It stays on until frame 576 (127 frames, the start tune again).
+  - Frame 577 (play begins again): lives 3, score 1, 125 wafers in the map, Pac-Man (76,60), ghosts (76,30) (76,30) (76,30) (76,30).
+  - How to check it against the real game: start a game, eat a few wafers, then press Game Reset: the game starts again from nothing, three lives, score 0.

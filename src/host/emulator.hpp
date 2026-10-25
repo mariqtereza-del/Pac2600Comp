@@ -50,6 +50,9 @@ public:
   const std::uint8_t* indexed() const;      // height() x kWidth palette indexes, exactly what the TIA drew
   std::vector<std::uint32_t> colours() const;  // the same picture as 0xAARRGGBB, kWidth wide, as Stella shows it
   const std::uint8_t* ram() const;          // the 128 bytes of RIOT RAM
+  // TEST ONLY (Stage E8, DECISIONS.md T-E8-1): writes one byte of RIOT RAM (address 0x80-0xFF). Used by `--poke` in headless
+  // tests that need a state the game cannot reach in reasonable time (a high score). Never used in play.
+  void pokeRam(int address, std::uint8_t value);
 
   // FNV-1a over the indexed picture; the same fingerprint the Phase C tools record (reference\c3).
   std::uint64_t pictureFingerprint() const;

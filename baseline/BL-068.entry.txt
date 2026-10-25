@@ -1,0 +1,15 @@
+id: BL-068
+title: Random joystick moves and random console buttons, seed 31
+shows: A seeded random game of 24000 frames: joystick holds of 4-40 frames, and every 1,100 frames one console control (Reset, Select, Fire for 10 frames; a difficulty or colour switch held for 500 frames).
+inputs: BL-068.inputs
+frames: 24000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: cc4f6153fc258d681f2aba6086012e70838fcaca8898697f9e4c29136c6edcaf
+trace_bytes: 7247126
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240; random joystick moves by the rule of tools\e8_entries.py. Console controls used: frame 1200 left difficulty A (to frame 1699); frame 2300 Fire; frame 3400 left difficulty A (to frame 3899); frame 4500 left difficulty A (to frame 4999); frame 5600 Fire; frame 6700 right difficulty A (to frame 7199); frame 7800 Reset; frame 8900 Fire; frame 10000 Fire; frame 11100 Fire; frame 12200 right difficulty A (to frame 12699); frame 13300 Reset; frame 14400 Select; frame 15500 Reset; frame 16600 Select; frame 17700 left difficulty A (to frame 18199); frame 18800 left difficulty A (to frame 19299); frame 19900 right difficulty A (to frame 20399); frame 21000 left difficulty A (to frame 21499); frame 22100 left difficulty A (to frame 22599); frame 23200 Fire.
+  - Games started (the lives counter becomes 3): on frames 240, 2300, 5600, 7800, 10000, 13300, 15500, 23200.
+  - Movement rules over every frame of play (pause frames left out): Pac-Man made 1041 one-pixel steps, 0 jumps through the openings at the top or bottom and 0 other changes of place; the ghosts made 4001 changes of place, 0 jumps through the openings and 0 other changes larger than 3 pixels.
+  - How to check it against the real game: replay the recording with the host program (--replay).

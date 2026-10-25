@@ -1,0 +1,20 @@
+id: BL-066
+title: ARTIFICIAL: the score is set to 4,995 by a memory edit
+shows: NOT A REAL GAME SITUATION. On frame 380 two memory bytes are overwritten so that the score reads 4,995; Pac-Man then eats wafers (LEFT, DOWN, RIGHT) and the score crosses 5,000.
+inputs: BL-066.inputs
+frames: 700
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+pokes: 380:CC:95 380:CE:49
+trace_sha256: c4bcf6620ff6a2f4fbb591eb17365448416f9cdc75d8b9b543631488aad50e00
+trace_bytes: 210016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - ARTIFICIAL TEST: on frame 380 (before running that frame) byte $CC is set to 95 and byte $CE to 49 (a score of 4,995); in a real game this is not possible by playing. Nothing else is touched.
+  - Pac-Man walks LEFT (frames 370-419), DOWN (420-469), RIGHT (470-539) and eats wafers as in BL-045.
+  - Score changes (frame: score bytes $CE/$CC, decimal score, lives): 379: 00/02, 2, 3; 380: 49/95, 4995, 3; 438: 49/96, 4996, 3; 484: 49/97, 4997, 3; 505: 49/98, 4998, 3; 519: 49/99, 4999, 3; 534: 50/00, 5000, 3; 548: 50/01, 5001, 3; 562: 50/02, 5002, 3.
+  - The lives counter reads 3 on every frame from 380 to the end: no extra life.
+  - Byte $CD reads 00 throughout (it never takes part).
+  - Every thousand from 1,000 to 10,000 was crossed the same way (score set 5 below it): lives counter values seen: 1000: 3; 2000: 3; 3000: 3; 4000: 3; 5000: 3; 6000: 3; 7000: 3; 8000: 3; 9000: 3; 10000: 3. So no extra life is given at any multiple of 1,000.
+  - In the three long bot games (scores up to about 4,000) the lives counter rose 0 times other than at a level clear (BL-054: 5 rises of the lives counter, 5 of them at a level clear, top score 3221; BL-055: 5 rises of the lives counter, 5 of them at a level clear, top score 3558; BL-056: 5 rises of the lives counter, 5 of them at a level clear, top score 4094).
+  - How to check it against the real game: this cannot be checked on the real console without a cheat device; it is a memory edit in the emulator.

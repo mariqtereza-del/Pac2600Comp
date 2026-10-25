@@ -1,0 +1,13 @@
+id: BL-060
+title: Control: the same walk with no switch touched
+shows: The walk of BL-061 to BL-063 with every console switch left alone: what they are compared with.
+inputs: BL-060.inputs
+frames: 800
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 5a1aab241ee7bfc484888b1072d99600eadfd7f459d78060110cf785bb7924cc
+trace_bytes: 240016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240; Pac-Man walks left (LEFT on frames 370-419); no switch is touched. Frame 799: lives 2, score 2, 124 wafers in the map, Pac-Man (76,60), ghosts (82,30) (83,30) (83,30) (85,30).
+  - How to check it against the real game: start a game and walk left.

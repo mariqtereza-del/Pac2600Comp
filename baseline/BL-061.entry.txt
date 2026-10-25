@@ -1,0 +1,16 @@
+id: BL-061
+title: During play: the left difficulty switch moved to A
+shows: As BL-060 but the left difficulty switch moved to A on frame 450 and left there.
+inputs: BL-061.inputs
+frames: 800
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: c2b914e312b5cc8187ff25040a2d59ed1d80026827edd710cf2fb3687391359a
+trace_bytes: 240716
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - As BL-060 (Game Reset on frame 240, LEFT on frames 370-419) and, from frame 450 to the end, the left difficulty switch moved to A (input bit 128).
+  - Compared with BL-060 frame by frame: the first difference is on frame 450 (the switch register changes on frame 450); at that frame the memory bytes that differ are $e7: 00 in BL-060, 20 here; the picture is the same.
+  - Over the whole entry the memory bytes that ever differ from BL-060 are: $e7.
+  - First frame at which a ghost place differs from BL-060: none; Pac-Man place: none; the lives counter on frame 799 is 2 (BL-060: 2).
+  - How to check it against the real game: start a game, walk left, then move that switch on the console while the game runs.

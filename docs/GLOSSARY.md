@@ -171,3 +171,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Score bytes | Memory bytes $CC (tens and ones) and $CE (hundreds), each half-byte one decimal digit. Working labels found in Stage E5 by matching the status bar with memory. |
 | Bonus item | The small square that appears in the middle of the maze (row y = 40, x 72-80) for up to 768 frames; eating it gives 100 points. Memory byte $E7 bit 1 is set while it is on the board (working label, Stage E7). |
 | Seed | A number that fixes a "random" sequence, so the same random input can be played again exactly. |
+| Memory edit (poke) | Writing one value into the console's memory from outside the game, used only in two labelled test entries to reach a score that cannot be played to. Marked ARTIFICIAL; never used in play. |
+| Gate E | The check at the end of Phase E that the baseline of recorded games is complete enough to be the target of the reverse-engineering phase (`docs\GATE_E.md`). |

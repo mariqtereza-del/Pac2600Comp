@@ -1,0 +1,17 @@
+id: BL-064
+title: A very long idle: 40,000 frames at the title screen
+shows: The console is switched on and nothing is touched for 40,000 frames (11 minutes).
+inputs: BL-064.inputs
+frames: 40000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 802df03d3e0bd18b1915e6c897aee546a110003da1a47c6ed268618af51b192b
+trace_bytes: 12069006
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - The switch register reads 3f on every frame: True; the lives counter stays 0.
+  - 39746 different pictures and 40000 different memory states in the 40,000 frames.
+  - The whole 128-byte memory state never repeats within the entry.
+  - Memory bytes that change at all (changes counted): $80: 39999, $81: 156, $82: 156, $85: 21896, $86: 22744, $b0: 38708, $b2: 6698, $b3: 6742, $b4: 6737, $b5: 6681, $b7: 4608, $b8: 4540, $b9: 4562, $ba: 4645, $bc: 2243, $bd: 2172, $be: 2203, $bf: 2267, $c1: 9999, $c2: 10000, $c3: 10000, $c4: 10000, $cb: 21490, $d8: 1, $da: 1, $dd: 2499, $df: 4999, $e1: 1, $e2: 1, $e7: 14, $ec: 156, $ee: 39389, $f2: 39999, $f3: 157, $f5: 157, $f6: 12261, $f7: 1, $f8: 6081, $f9: 1, $fa: 17788, $fb: 26565, $fc: 1, $fd: 1, $fe: 1, $ff: 1.
+  - Byte $81 runs from 0 to 156 and byte $EC from 1 to 18; the lives counter stays 0; the score bytes ($CC/$CE) read cb/ed on the last frame.
+  - How to check it against the real game: switch on and watch the title screen for eleven minutes without touching anything.

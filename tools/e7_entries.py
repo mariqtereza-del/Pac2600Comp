@@ -131,7 +131,7 @@ def analyse(t, start):
 def invariants(t, start):
     """Movement rules of Stages E3/E4 over every frame of a long game (frames with the pause flag set are left out).
     Returns Pac-Man's one-pixel steps, his other changes of place, the ghosts' changes of place, the ghosts' jumps through
-    the openings at the top and bottom of the maze (a jump of more than 3 pixels to or from y above 70, or to or from y 0, in column 75-78)
+    the openings at the top and bottom of the maze (a jump of more than 3 pixels to or from y above 70, or to or from y 0, in column 72-80)
     and the ghosts' other jumps of more than 2 pixels."""
     big = steps = gsteps = 0
     passages, other, ppass = [], [], []
@@ -142,7 +142,7 @@ def invariants(t, start):
         if p != q:
             if e4.dist(p, q) == 1:
                 steps += 1
-            elif 75 <= p[0] <= 78 and 75 <= q[0] <= 78 and (p[1] > 70 or q[1] > 70 or min(p[1], q[1]) <= 0):
+            elif 72 <= p[0] <= 80 and 72 <= q[0] <= 80 and (p[1] > 70 or q[1] > 70 or min(p[1], q[1]) <= 0):
                 ppass.append((f, q, p))
             else:
                 big += 1
@@ -151,7 +151,7 @@ def invariants(t, start):
             if a != b:
                 gsteps += 1
                 if e4.dist(a, b) > 3:
-                    (passages if 75 <= a[0] <= 78 and 75 <= b[0] <= 78 and (a[1] > 70 or b[1] > 70 or min(a[1], b[1]) <= 0) else other).append((f, i, b, a))
+                    (passages if 72 <= a[0] <= 80 and 72 <= b[0] <= 80 and (a[1] > 70 or b[1] > 70 or min(a[1], b[1]) <= 0) else other).append((f, i, b, a))
     return steps, big, gsteps, passages, other, ppass
 
 

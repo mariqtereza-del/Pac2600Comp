@@ -1,0 +1,17 @@
+id: BL-059
+title: Game Select pressed in the middle of a game, then Game Reset
+shows: As BL-058 but Game Select is pressed on frame 450 and Game Reset on frame 700.
+inputs: BL-059.inputs
+frames: 1200
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: e6b211e6358e685cd12fac69cc171fc51e3228404322e6ccd26dcf580cb01e8a
+trace_bytes: 360236
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game (game 1, one player); Pac-Man walks left (LEFT on frames 370-419). Frame 449: lives 3, score 2, 124 wafers in the map, Pac-Man (64,60), ghosts (83,40) (79,40) (84,40) (80,40); byte $E6 reads 00.
+  - Game Select is pressed on frames 450-459 (switch register 3d).
+  - Frame 450 (same frame): lives 0, score 1, 124 wafers in the map, Pac-Man (64,96), ghosts (83,40) (77,40) (84,40) (80,40); byte $E6 reads 40 (bit 6 set: the selection is now two players, the next in the cycle of Stage E2); the pause flag is off.
+  - Frame 699: lives 0, score 1, 124 wafers in the map, Pac-Man (64,96), ghosts (96,70) (64,52) (70,40) (101,60); the lives counter is still 0, Pac-Man stays at (64,96) and the ghosts are walking (the game is no longer being played).
+  - Game Reset on frames 700-709 starts a game for 2 players: frame 700 lives 3, byte $E6 40.
+  - How to check it against the real game: start a game, then press Game Select: the game stops at once; Game Reset then starts the next selection.

@@ -1,0 +1,18 @@
+id: BL-065
+title: ARTIFICIAL: the score is set to 9,995 by a memory edit
+shows: NOT A REAL GAME SITUATION. On frame 380 two memory bytes are overwritten so that the score reads 9,995; Pac-Man then eats wafers (LEFT, DOWN, RIGHT) and the score crosses 10,000.
+inputs: BL-065.inputs
+frames: 700
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+pokes: 380:CC:95 380:CE:99
+trace_sha256: 5deed6c134d9fad96183a14f8dd48a8010ae371bc66869eb0efeb7037e0b7c93
+trace_bytes: 210016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - ARTIFICIAL TEST: on frame 380 (before running that frame) byte $CC is set to 95 and byte $CE to 99 (a score of 9,995); in a real game this is not possible by playing. Nothing else is touched.
+  - Pac-Man walks LEFT (frames 370-419), DOWN (420-469), RIGHT (470-539) and eats wafers as in BL-045.
+  - Score changes (frame: score bytes $CE/$CC, decimal score, lives): 379: 00/02, 2, 3; 380: 99/95, 9995, 3; 438: 99/96, 9996, 3; 484: 99/97, 9997, 3; 505: 99/98, 9998, 3; 519: 99/99, 9999, 3; 534: 00/00, 0, 3; 548: 00/01, 1, 3; 562: 00/02, 2, 3.
+  - The lives counter reads 3 on every frame from 380 to the end: no extra life.
+  - Byte $CD reads 00 throughout (it never takes part).
+  - How to check it against the real game: this cannot be checked on the real console without a cheat device; it is a memory edit in the emulator.

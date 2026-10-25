@@ -1537,7 +1537,26 @@ Build a library of recorded games, each paired with exactly what the original di
     - **Documentation updates:** `docs\BASELINE.md`, `DECISIONS.md` (T-E7-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage E7: Long play`.
     - **Next stage:** E8 — Edge cases and Gate E.
-8. **[Not started] E8 — Edge cases and Gate E.** Pressing Reset mid-game, switching variation mid-game, flipping difficulty switches during play, very long idle, score near its maximum (reached by a memory-edit test in Stella's debugger, clearly labelled as artificial). Also seeded random-input runs of several seeds (a net for situations nobody thought of). Gate: at least 30 baseline entries covering every topic in your brief's Phase E list, each with a golden trace (traces repeat byte for byte), a plain-words description that could be checked against the real game, and the lockstep-ready format of E1; the gate rests on those facts, not on anyone playing.
+8. **[Done] E8 — Edge cases and Gate E.** *(expanded and done 2026-10-26)*
+    - **Objective:** baseline entries for the edge cases (Reset and Select in the middle of a game, the three console switches during play, a very long idle, a score at its limit, two players, random controls), and Gate E: is the baseline complete enough to be the target of Phase F?
+    - **Why it matters:** Rule 10: Phase F (reading the code and rebuilding it) must not start on a baseline that has holes nobody knows about.
+    - **Prerequisites:** E7 Done (`3dd3899`).
+    - **What Claude Code will do:**
+      1. A test-only memory edit for the host (`--poke <frame>:<hex address>:<hex value>`, headless only; `pokes:` line in an entry; `Emulator::pokeRam`), because a score near its limit cannot be played to. Entries that use it are labelled ARTIFICIAL.
+      2. `tools\e8_entries.py`: BL-058 to BL-070 (Reset in play, Select in play, a control walk and three switch entries, a 40,000-frame idle, two ARTIFICIAL score entries, two players, two seeded random games with random console buttons, and the eyes of eaten ghosts).
+      3. `docs\GATE_E.md`: the checklist with a verdict and the evidence; fresh runs of every earlier check.
+    - **What I must do:** nothing (D-008).
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 13 new entries (BL-058 to BL-070); 70 in all; `docs\GATE_E.md`.
+    - **Verification:** every new entry's two traces identical; a fresh `baseline.py check` of all 70 equals the stored SHA-256 values; seven new inputs (55,500 frames) equal Stella's own script runner; the unit tests, the key replay (350,460 frames) and the Git file check all pass again after the host change.
+    - **Completion criteria:** Gate E items in `docs\GATE_E.md` all PASS or moved to Phase F with a reason.
+    - **Potential problems:** the two ARTIFICIAL entries cannot be compared with Stella's script runner (it has no memory edit) and are not evidence about real play; the scared state of the ghosts, the order of the ghost flicker and the exact meaning of most bytes are code-reading questions and are moved to Phase F (T-E8-2).
+    - **Recovery:** new files plus a small test-only addition to the host; undo by returning to `3dd3899` (with your OK).
+    - **Documentation updates:** `docs\GATE_E.md`, `docs\BASELINE.md`, `DECISIONS.md` (T-E8-1, T-E8-2), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage E8: Edge cases and Gate E`.
+    - **Next stage:** F1 — Analysis tools (Phase F).
 
 ### Phase F — Reverse engineering and source reconstruction (26 stages)
 

@@ -12,6 +12,9 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **WRAP_TO_BOTTOM**: identical in 70 of 70 games; 40 calls compared with the original code, 0 different.
+- **WRAP_TO_TOP**: identical in 70 of 70 games; 40 calls compared with the original code, 0 different.
+- **WRAP_SET_Y**: identical in 70 of 70 games; 40 calls compared with the original code, 0 different.
 - **RNG_STEP**: identical in 70 of 70 games; 155820 calls compared with the original code, 0 different.
 - **SWAP_PLAYERS**: identical in 70 of 70 games; 139 calls compared with the original code, 0 different.
 - The fixture "wrong on purpose" (forgets `LIVES_P2`) was found by the memory comparison in 68 of the 68 games that call the routine; the fixture with a wrong `X` register leaves every frame identical but was found by the routine check in 68 games: this is why the routine check exists.
@@ -20,6 +23,9 @@
 
 | Stage | Routine | Entry | Bytes | Status | Note |
 | --- | --- | --- | --- | --- | --- |
+| F21.4 | `WRAP_SET_Y` | $FD3C | 3 | **done** | the shared end of both (written inside wrapToTop/wrapToBottom; never entered on its own) |
+| F21.4 | `WRAP_TO_TOP` | $FD32 | 10 | **done** | game::wrapToTop: direction bits $F0 and y = $0B (the opening in the top wall) |
+| F21.4 | `WRAP_TO_BOTTOM` | $FD26 | 12 | **done** | game::wrapToBottom: direction bits $30 and y = $51 (the opening in the bottom wall); registered together with WRAP_TO_TOP and the shared end WRAP_SET_Y |
 | F21.2 | `SWAP_PLAYERS` | $FB9F | 14 | **done** | game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged |
 | F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/routines.cpp: both scores and both lives to 0 |
 | F21.3 | `RNG_STEP` | $FBE0 | 20 | **done** | game::rngStep: the shift-register random number; its bit-mask table is 0x80 >> n (checked equal to the cartridge bytes) |
@@ -27,14 +33,11 @@
 | - | `EXIT_FB5B` | $FB5B | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FF93` | $FF93 | 1 | to do | a lone RTS: nothing to write |
 | - | `KERNEL_LINE_P1_P0` | $F067 | 3 | to do | picture only (F23) |
-| - | `WRAP_SET_Y` | $FD3C | 3 | to do | end of both WRAP routines: written with them |
 | - | `SOUND_WRITE` | $FF8B | 8 | to do | sound chip only (F24) |
 | - | `SET_DIRECTION` | $F9E5 | 9 | to do | table TBL_FE63 (F22); falls into MOVE_OBJECT |
 | - | `TRY_PAIR_1` | $FAFC | 9 | to do | drops the caller's return (rts twice) |
 | - | `TRY_PAIR_2` | $FB19 | 9 | to do | drops the caller's return |
-| - | `WRAP_TO_TOP` | $FD32 | 10 | to do |  |
 | - | `CLEAR_GRAPHICS` | $F483 | 11 | to do | picture only (F23) |
-| - | `WRAP_TO_BOTTOM` | $FD26 | 12 | to do |  |
 | - | `TRY_UP` | $FB36 | 14 | to do |  |
 | - | `SOUND_START` | $FF43 | 18 | to do | needs ROM tables (F22) |
 | - | `KERNEL_LINE_P1` | $F053 | 20 | to do | writes only chip registers (picture): proved with the renderer (F23) |

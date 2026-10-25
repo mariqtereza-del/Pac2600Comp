@@ -1986,7 +1986,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F20_LOCKSTEP.md`, `DECISIONS.md` (T-F20-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F20: Lockstep harness`.
     - **Next stage:** F21 — Rewrite one routine per session (F21.1 first).
-21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP.** *(expanded below)*
+21. **[In progress] F21 — Rewrite one routine per session** (F21.1, F21.2 …, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts. The ledger of done and to-do routines is `docs\F21_ROUTINES.md`. **F21.1 done 2026-10-26: CLEAR_SCORES. F21.2 done 2026-10-26: SWAP_PLAYERS. F21.3 done 2026-10-26: RNG_STEP. F21.4 done 2026-10-26: the WRAP routines.** *(expanded below)*
     - **Objective (F21.1):** set up the way a routine is rewritten and prove it with the first, smallest routine that changes memory: CLEAR_SCORES (`$FC7D`, 14 bytes: both scores and both lives to 0).
     - **Why it matters:** every later session follows the same protocol; the protocol must detect a wrong routine even when the recorded games do not show it (a wrong register).
     - **Prerequisites:** F20 Done (`bb3df0f`).
@@ -2035,7 +2035,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Recovery:** small additions; undo by returning to `fd1468b` (with your OK).
       - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-3), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F21.3: Rewrite RNG_STEP`.
-      - **Next stage:** F21.4 — Rewrite the WRAP routines (WRAP_TO_TOP, WRAP_TO_BOTTOM and their shared end WRAP_SET_Y).
+      - **Next stage:** F21.4 — Rewrite the WRAP routines (done, below).
+    - **F21.4 — Rewrite the WRAP routines** *(expanded and done 2026-10-26)*
+      - **Objective:** rewrite WRAP_TO_BOTTOM (`$FD26`), WRAP_TO_TOP (`$FD32`) and their shared end WRAP_SET_Y (`$FD3C`) as C++ (put Pac-Man or a ghost into the opening of the bottom or top wall).
+      - **Why it matters:** they are the only place where the openings of the maze are entered, for Pac-Man (from the stick code) and ghosts (from the ghost decision, by a jump).
+      - **Prerequisites:** F21.3 Done (`3552e18`).
+      - **What Claude Code will do:** `game::wrapToBottom` / `game::wrapToTop` (direction bits $30 / $F0 and y = $51 / $0B; object in X), one adapter for both (A = new y, zero/negative clear, X, Y, carry untouched); the group added to the DONE list (one native name `wrap`, so the ledger shows three rows and the runs count once); `tools\f21_routines.py` no longer runs a native twice.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** 70 of 70 games identical; every call equal to the original, entered by `JSR` and by `JMP`.
+      - **Verification:** `python -I tools\f21_routines.py rom\pacman.a26` says `result: OK` (the WRAP group: 70 of 70 games identical, 40 calls compared with the original, 0 different; all four rewrites together identical).
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** only 40 calls in the recordings (15 and 12 from Pac-Man's code, 10 and 2 from the ghost decision, plus the extra games); both entry kinds occur.
+      - **Recovery:** small additions; undo by returning to `3552e18` (with your OK).
+      - **Documentation updates:** `docs\F21_ROUTINES.md`, `DECISIONS.md` (T-F21-4), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F21.4: Rewrite the WRAP routines`.
+      - **Next stage:** F21.5 — Rewrite NEW_MAZE and PLACE_OBJECTS (NEW_MAZE falls into PLACE_OBJECTS).
 22. **[Not started] F22 — Data loader.** Reads maze, shapes, colours and sound tables from the player's ROM at start-up, by address, after checking the fingerprint. Our source contains addresses and logic, not Atari's data.
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.

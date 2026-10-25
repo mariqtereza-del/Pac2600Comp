@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-4 — The WRAP routines rewritten (2026-10-26, Stage F21.4)
+
+- **Routines:** `game::wrapToBottom` (state = (state and $0F) or $30, y = $51) and `game::wrapToTop` (state = (state and $0F) or $F0, y = $0B) for the object in X; the shared end WRAP_SET_Y is inside them. Registered at both entry addresses, so calls by `JSR` (Pac-Man) and by `JMP` (ghost decision) both reach the native routine.
+- **Result:** 70 of 70 games identical; 40 calls compared with the original (memory, registers, flags): 0 differences; identical together with F21.1-F21.3.
+- **Reversible:** Yes.
+
 ### T-F21-3 — RNG_STEP rewritten (2026-10-26, Stage F21.3)
 
 - **Routine:** `game::rngStep`: r = RNG_STATE; x = (r << 1) xor r; r = (r << 1) | bit 6 of x; returns (0x80 >> (r and 7)) and r. The adapter leaves A = result, Y = r and 7, carry = old bit 7, zero/negative from A, like the original.

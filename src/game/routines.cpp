@@ -30,4 +30,16 @@ uint8_t rngStep(Ram& ram) {
   return static_cast<uint8_t>((0x80 >> (next & 7)) & next);
 }
 
+namespace {
+// WRAP_SET_Y ($FD3C): the shared end of both routines.
+void wrapEnd(Ram& ram, uint8_t object, uint8_t directionBits, uint8_t y) {
+  uint8_t& state = at(ram, ram::PACMAN_STATE + object);
+  state = static_cast<uint8_t>((state & 0x0F) | directionBits);
+  at(ram, ram::PACMAN_Y + object) = y;
+}
+}  // namespace
+
+void wrapToBottom(Ram& ram, uint8_t object) { wrapEnd(ram, object, 0x30, 0x51); }
+void wrapToTop(Ram& ram, uint8_t object) { wrapEnd(ram, object, 0xF0, 0x0B); }
+
 }  // namespace game

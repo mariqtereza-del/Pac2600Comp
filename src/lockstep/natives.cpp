@@ -30,6 +30,16 @@ void withRam(Machine& m, F&& fn) {
     if (after[i] != before[i]) m.write(static_cast<uint16_t>(0x80 + i), after[i]);
 }
 
+// F21.4 WRAP_TO_BOTTOM ($FD26) / WRAP_TO_TOP ($FD32): the object is in X. The original leaves A = the new y ($51 / $0B), X and Y untouched, zero and
+// negative clear (LDA of a positive number), carry untouched.
+void wrapNative(Machine& m, bool top) {
+  const uint8_t object = m.x;
+  withRam(m, [object, top](game::Ram& r) { if (top) game::wrapToTop(r, object); else game::wrapToBottom(r, object); });
+  m.a = top ? 0x0B : 0x51;
+  m.setZN(m.a);
+  m.rts();
+}
+
 // F21.3 RNG_STEP ($FBE0). Registers the original leaves: A = the returned value, Y = new state and 7, carry = the old bit 7 (the carry out of ROL RNG_STATE),
 // zero and negative from A (the last instruction is AND).
 void rngStepNative(Machine& m) {
@@ -79,6 +89,11 @@ bool registerNativeByName(Machine& m, const std::string& name) {
   if (name == "clear-scores-wrong") { m.registerNative(0xFC7D, "CLEAR_SCORES (native, wrong on purpose)", [](Machine& mm) { clearScores(mm, 1); }); return true; }
   if (name == "clear-scores-badreg") { m.registerNative(0xFC7D, "CLEAR_SCORES (native, register wrong on purpose)", [](Machine& mm) { clearScores(mm, 2); }); return true; }
   if (name == "swap-players") { m.registerNative(0xFB9F, "SWAP_PLAYERS (native)", [](Machine& mm) { swapPlayers(mm); }); return true; }
+  if (name == "wrap") {
+    m.registerNative(0xFD26, "WRAP_TO_BOTTOM (native)", [](Machine& mm) { wrapNative(mm, false); });
+    m.registerNative(0xFD32, "WRAP_TO_TOP (native)", [](Machine& mm) { wrapNative(mm, true); });
+    return true;
+  }
   return false;
 }
 

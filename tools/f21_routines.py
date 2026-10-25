@@ -24,6 +24,9 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.4', 'WRAP_TO_BOTTOM', 'wrap', 0xFD26, 'game::wrapToBottom: direction bits $30 and y = $51 (the opening in the bottom wall); registered together with WRAP_TO_TOP and the shared end WRAP_SET_Y'),
+    ('F21.4', 'WRAP_TO_TOP', 'wrap', 0xFD32, 'game::wrapToTop: direction bits $F0 and y = $0B (the opening in the top wall)'),
+    ('F21.4', 'WRAP_SET_Y', 'wrap', 0xFD3C, 'the shared end of both (written inside wrapToTop/wrapToBottom; never entered on its own)'),
     ('F21.3', 'RNG_STEP', 'rng', 0xFBE0, 'game::rngStep: the shift-register random number; its bit-mask table is 0x80 >> n (checked equal to the cartridge bytes)'),
     ('F21.2', 'SWAP_PLAYERS', 'swap-players', 0xFB9F, 'game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged'),
 ]
@@ -71,7 +74,12 @@ def main():
     problems = []
     results = {}
     with concurrent.futures.ThreadPoolExecutor(8) as ex:
+        seen = set()
         for stage, name, native, entry, what in DONE:
+            if native in seen:
+                results[name] = results[[d[1] for d in DONE if d[2] == native][0]]
+                continue
+            seen.add(native)
             res = list(ex.map(lambda it: run(it[0], it[1], [native]), items))
             bad = [r for r in res if r[1] != 0]
             c = sum(calls(r[2])[0] for r in res)
@@ -80,7 +88,7 @@ def main():
                 stage, name, len(res) - len(bad), len(res), c, sum(calls(r[2])[1] for r in res)))
             if bad:
                 problems.append('%s: %s' % (name, bad[0][2][:3]))
-        allres = list(ex.map(lambda it: run(it[0], it[1], [d[2] for d in DONE]), items))
+        allres = list(ex.map(lambda it: run(it[0], it[1], sorted({d[2] for d in DONE})), items))
         allbad = [r for r in allres if r[1] != 0]
         print('all rewritten routines together: %d games identical of %d' % (len(allres) - len(allbad), len(allres)))
         if allbad:

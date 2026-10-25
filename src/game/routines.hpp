@@ -28,4 +28,10 @@ void swapPlayers(Ram& ram);
 // one bit of the new state, picked by its low three bits (zero or not is all the callers ask).
 uint8_t rngStep(Ram& ram);
 
+// F21.4  WRAP_TO_BOTTOM ($FD26) and WRAP_TO_TOP ($FD32), with their shared end WRAP_SET_Y ($FD3C): Pac-Man or a ghost (object 0-4) enters the opening
+// in the bottom or top wall of the maze. The direction bits of its state are set (bottom: $30, top: $F0; the low four bits are kept) and its y
+// is set to the start of the opening animation ($51 below the maze, $0B above it).
+void wrapToBottom(Ram& ram, uint8_t object);
+void wrapToTop(Ram& ram, uint8_t object);
+
 }  // namespace game

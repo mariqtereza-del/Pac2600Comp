@@ -7,7 +7,8 @@
 // Script lines ('#' starts a comment):
 //   <from> <to> <INPUT>     hold INPUT on frames from..to (inclusive). INPUT is one of
 //                           UP DOWN LEFT RIGHT FIRE SELECT RESET (held while active) or
-//                           LDIFF_A LDIFF_B RDIFF_A RDIFF_B COLOR BW (switches: stay where set)
+//                           LDIFF_A LDIFF_B RDIFF_A RDIFF_B COLOR BW (switches: stay where set);
+//                           RUP RDOWN RLEFT RRIGHT RFIRE = the second (right) joystick, added in Stage F9
 //   dump <from> <to> <step> save the picture of frames from, from+step, ... to as frame_NNNNNN_160xH.raw
 //   region <y0> <y1> <x0> <x1>  also record the colours inside this picture area (rows y0..y1, columns x0..x1)
 
@@ -69,7 +70,9 @@ int main(int argc, char* argv[])
     {"RIGHT", Event::LeftJoystickRight}, {"FIRE", Event::LeftJoystickFire}, {"SELECT", Event::ConsoleSelect},
     {"RESET", Event::ConsoleReset}, {"LDIFF_A", Event::ConsoleLeftDiffA}, {"LDIFF_B", Event::ConsoleLeftDiffB},
     {"RDIFF_A", Event::ConsoleRightDiffA}, {"RDIFF_B", Event::ConsoleRightDiffB},
-    {"COLOR", Event::ConsoleColor}, {"BW", Event::ConsoleBlackWhite}};
+    {"COLOR", Event::ConsoleColor}, {"BW", Event::ConsoleBlackWhite},
+    {"RUP", Event::RightJoystickUp}, {"RDOWN", Event::RightJoystickDown}, {"RLEFT", Event::RightJoystickLeft},
+    {"RRIGHT", Event::RightJoystickRight}, {"RFIRE", Event::RightJoystickFire}};
 
   std::vector<Hold> holds;
   std::set<int> dump;

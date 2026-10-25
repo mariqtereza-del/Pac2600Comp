@@ -29,8 +29,16 @@ SET = ['BL-002', 'BL-003', 'BL-005', 'BL-019', 'BL-020', 'BL-025', 'BL-026', 'BL
        'BL-050', 'BL-051', 'BL-052', 'BL-053', 'BL-054', 'BL-055', 'BL-056', 'BL-058', 'BL-059', 'BL-061', 'BL-063', 'BL-064', 'BL-067', 'BL-068', 'BL-069']
 
 
+# Stage F9: situations no baseline game reaches, found while reading the input code (the Select switch held for a while, the
+# difficulty switch at A with the bonus item or a power pill). They have no golden trace: only the instructions they run are taken.
+EXTRA = ['X-select-hold', 'X-left-A-idle', 'X-power-A']
+
+
 def run(entry):
     out = OUT / ('cov_%s.csv' % entry)
+    if entry.startswith('X-'):
+        r = subprocess.run([str(EXE), str(ROM), str(ROOT / 'tools' / 'f9_inputs' / (entry + '.inputs')), str(out)], capture_output=True, text=True)
+        return entry, r.returncode, r.stdout.strip().splitlines()[-1] if r.stdout.strip() else r.stderr.strip()
     r = subprocess.run([str(EXE), str(ROM), str(ROOT / 'baseline' / (entry + '.inputs')), str(out), str(ROOT / 'reference' / 'baseline' / (entry + '.trace'))],
                        capture_output=True, text=True)
     return entry, r.returncode, r.stdout.strip().splitlines()[-1] if r.stdout.strip() else r.stderr.strip()
@@ -42,7 +50,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     rom = ROM.read_bytes()
     with cf.ThreadPoolExecutor(8) as ex:
-        results = list(ex.map(run, SET))
+        results = list(ex.map(run, SET + EXTRA))
     bad = [r for r in results if r[1] != 0]
     total = sum(int(re.search(r'checked (\d+) frames', r[2]).group(1)) for r in results if re.search(r'checked (\d+) frames', r[2]))
     for e, rc, line in results:
@@ -51,7 +59,7 @@ def main():
         print('FAIL: a run differs from its golden trace or failed: %s' % [b[0] for b in bad])
         return 1
     executed, reads, outside = {}, {}, 0
-    for entry in SET:
+    for entry in SET + EXTRA:
         for line in (OUT / ('cov_%s.csv' % entry)).read_text().split('\n'):
             p = line.split(',')
             if p[0] == 'x':
@@ -81,7 +89,7 @@ def main():
     for base in range(0, 4096, 64):
         rows.append('F%03X  %s' % (base, ''.join(kind[base:base + 64])))
     counts = {k: kind.count(k) for k in 'CcD.'}
-    text = ('# stella_coverage union over %d baseline recordings (%d frames, every one checked equal to its golden trace: picture and all 128 memory bytes)\n' % (len(SET), total)
+    text = ('# stella_coverage union over %d baseline recordings (%d frames, every one checked equal to its golden trace: picture and all 128 memory bytes) plus extra runs without golden trace (Stage F9)\n' % (len(SET), total)
             + '\n'.join(rows) + '\n' + 'C first byte of an executed instruction, c its other bytes, D read as data only, . never executed or read\n'
             + 'counts: ' + ', '.join('%s %d' % (k, v) for k, v in counts.items()) + '\n'
             + 'executed instruction starts outside the ROM: %d\n' % outside

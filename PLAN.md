@@ -1752,7 +1752,25 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F8_ROUTINES.md`, `DECISIONS.md` (T-F8-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F8: Routine list and call map`.
     - **Next stage:** F9 — Input reading.
-9. **[Not started] F9 — Input reading.**
+9. **[Done] F9 — Input reading.** *(expanded and done 2026-10-26)*
+    - **Objective:** find every place where the program reads the joysticks, buttons and switches, say exactly what each read means and when it happens, and prove it with the recorded games and two extra experiments.
+    - **Why it matters:** the rebuilt game takes its inputs from a small structure; which joystick belongs to which player, which switch is read when, and the Select repeat must match the original exactly.
+    - **Prerequisites:** F8 Done (`8c31973`): routines, RAM names; the 70 baseline traces; the Stella-core tools.
+    - **What Claude Code will do:**
+      1. `tools\f9_input.py`: scan the code for every instruction that reads SWCHA, SWCHB, INPT0-5; check the effect on memory in all 70 traces (joystick, fire, Reset, Select, difficulty, TV type); run two experiments no baseline game contains (player 2 with the right joystick; Select held for 160 frames; the script runner got the right-joystick commands); measure the scanline of each read with `stella_pctrace`; write `docs\F9_INPUT.md`.
+      2. The experiments showed three pieces of code the listing had as data (the not-taken side of branches no baseline game takes). Add three extra input files (`tools\f9_inputs\X-*.inputs`) that run them, include them in `f1_coverage.py` and `f6_coverage.py`, and re-run the whole chain F1-F8 (all byte-identical).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the input map (five reads), all checks PASS, the corrected code map (C 1,810, c 1,735, D 509, untouched 42).
+    - **Verification:** `python -I tools\f9_input.py rom\pacman.a26` says "problems: none" (10 PASS lines); `f1_coverage`, `f6_coverage` ("0 differences" 70 times) and `f2`-`f8` still say problems: none / BYTE-IDENTICAL.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the recorded games contain only the left joystick, so player 2 never moved in them; any future recording of player 2 needs the right-joystick bits (the host has no keys for it yet).
+    - **Recovery:** new files, two tool edits and one measuring-tool edit; undo by returning to `8c31973` (with your OK).
+    - **Documentation updates:** `docs\F9_INPUT.md`, corrections in `docs\F4_DATA_TABLES.md` and `docs\F6_COVERAGE.md`, `DECISIONS.md` (T-F9-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F9: Input reading`.
+    - **Next stage:** F10 — Pac-Man's movement and turning.
 10. **[Not started] F10 — Pac-Man's movement and turning.**
 11. **[Not started] F11 — Maze and wafer storage.**
 12. **[Not started] F12 — Collisions** (the 2600 has hardware collision flags; find whether the game uses them or its own checks).

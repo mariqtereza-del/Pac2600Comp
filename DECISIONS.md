@@ -134,6 +134,16 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F9-1 — Input reading, and code that was listed as data (2026-10-26, Stage F9)
+
+- **Reads:** exactly five instructions read inputs: `$F61E` SWCHA (joysticks), `$F857` SWCHB bit 3 (TV type), `$F886` INPT4 (left fire), `$F88A` SWCHB bits 0-1 (Reset, Select), `$F91C` SWCHB bit 6/7 (difficulty). Details and scanlines in `docs\F9_INPUT.md`.
+- **Player 2 uses the RIGHT joystick and the RIGHT difficulty switch** (tested: right stick moves Pac-Man in player 2's turn, the left stick is ignored, bit 5 of GAME_FLAGS follows the right switch). All recorded games hold only the left joystick, so player 2 never moved in them.
+- **Select held:** steps the game number on the press and again every 31 frames (tested: steps at frames 100, 131, 162, ...).
+- **Owner decision for Phase H (not needed now):** keys/pad for player 2's joystick in the PC program. The faithful default would be a second key set or the second pad; to be asked when the host is revisited.
+- **Correction to F2-F6:** `$F5C2-$F5C3` (`LDY #$50`), `$F832` (`DEY`) and `$F907-$F908` (`BEQ $F8C8`) were listed as data; they are code (the not-taken side of branches). Proved by three extra games `tools/f9_inputs/X-*.inputs` (difficulty A with power pill; difficulty A with the bonus item showing; Select held). They have no golden trace (only their instructions count) and are included in `f1_coverage.py` and `f6_coverage.py`. New numbers: C 1,810, c 1,735, D 509, untouched 42; F4: 539 data bytes in 61 segments. F2-F8 re-run: all byte-identical.
+- **Rule for Phase F:** a byte no recording runs is not proof of data; read the code around table holes before trusting them.
+- **Reversible:** Yes.
+
 ### T-F8-1 — Routines found by following the code, the frame loop kept whole (2026-10-26, Stage F8)
 
 - **Method:** `tools\f8_routines.py` takes the start-up and every JSR target (33 targets, two of them only from JSRs that never ran) as entries, follows branches, jumps and fall-through, and makes a shared tail of any code that two routines reach by a jump. The pieces of the frame loop (cut by its jumps) are folded back into `MAIN`: an unnamed piece reached only from the main loop belongs to it.

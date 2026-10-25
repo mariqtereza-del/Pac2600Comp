@@ -1,5 +1,8 @@
 # Stage F6: what actually runs (2026-10-26)
 
+> **Correction in Stage F9 (2026-10-26):** the three look-ahead-only bytes (class n) and the single bytes after them are code, not data (see `docs/F9_INPUT.md`). With three extra games the map is now **C 1,810, c 1,735, D 509, n 0, untouched 42**. The text below is the original F6 result.
+
+
 `python -I tools\f6_coverage.py rom\pacman.a26` replays **all 70** baseline entries (439,680 frames; BL-065/066 with their test-only memory edits) one instruction at a time. Every run equals its golden trace on every frame (picture and all 128 memory bytes): 70 lines with 0 differences. The map is `reference\f6\coverage_all.txt` and the run counts `reference\f6\run_counts.csv` (both local only).
 
 | Class | Meaning | Bytes |

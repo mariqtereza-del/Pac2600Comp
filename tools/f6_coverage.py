@@ -43,9 +43,15 @@ def entries():
     return ids
 
 
+EXTRA = ['X-select-hold', 'X-left-A-idle', 'X-power-A']  # Stage F9: situations no baseline game reaches; no golden trace, only the instructions they run count
+
+
 def run(item):
     entry, pokes = item
     out = OUT / ('cov_%s.csv' % entry)
+    if entry.startswith('X-'):
+        r = subprocess.run([str(EXE), str(ROM), str(ROOT / 'tools' / 'f9_inputs' / (entry + '.inputs')), str(out)], capture_output=True, text=True)
+        return entry, r.returncode, r.stdout.strip().splitlines()[-1] if r.stdout.strip() else r.stderr.strip()
     r = subprocess.run([str(EXE), str(ROM), str(ROOT / 'baseline' / (entry + '.inputs')), str(out),
                         str(ROOT / 'reference' / 'baseline' / (entry + '.trace'))] + pokes, capture_output=True, text=True)
     return entry, r.returncode, r.stdout.strip().splitlines()[-1] if r.stdout.strip() else r.stderr.strip()
@@ -96,7 +102,7 @@ def main():
     ROM = pathlib.Path(sys.argv[1]).resolve()
     OUT.mkdir(parents=True, exist_ok=True)
     rom = ROM.read_bytes()
-    items = entries()
+    items = entries() + [(e, []) for e in EXTRA]
     with cf.ThreadPoolExecutor(8) as ex:
         results = list(ex.map(run, items))
     for e, rc, line in results:
@@ -128,7 +134,7 @@ def main():
     changed = [i for i in range(4096) if f1 and f1[i] != kind[i]]
     rows = ['F%03X  %s' % (b, ''.join(kind[b:b + 64])) for b in range(0, 4096, 64)]
     counts = {k: kind.count(k) for k in 'CcDn.'}
-    lines = ['# stella_coverage over ALL %d baseline entries (%d frames, every one equal to its golden trace: picture and all 128 memory bytes)' % (len(items), total)]
+    lines = ['# stella_coverage over ALL %d baseline entries (%d frames, every one equal to its golden trace: picture and all 128 memory bytes) and %d extra runs without golden trace (Stage F9)' % (len(items) - len(EXTRA), total, len(EXTRA))]
     lines += rows
     lines += ['C first byte of an executed instruction, c its other bytes, D read as data only, n only the look-ahead byte after an instruction, . never executed or read',
               'counts: ' + ', '.join('%s %d' % (k, v) for k, v in counts.items()),

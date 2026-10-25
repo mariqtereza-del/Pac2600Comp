@@ -1,5 +1,8 @@
 # Stage F4: code versus data (2026-10-26)
 
+> **Correction in Stage F9 (2026-10-26):** `$F5C2-$F5C3`, `$F832` and `$F907-$F908` are code, not data. The tables are now **539 data bytes in 61 segments** (TBL 263 / 34, UNREAD 24 / 11); see `docs/F9_INPUT.md`. The text below is the original F4 result.
+
+
 `python -I tools\f4_tables.py rom\pacman.a26` (run after `tools\f2_disasm.py` and `tools\f3_names.py`) makes `reference\disasm\pacman_tables.asm` (**local only**) and `reference\disasm\tables_stats.txt` (the full segment table), assembles the listing and requires it to equal the ROM.
 
 | Kind | Bytes | Segments | How it was decided |

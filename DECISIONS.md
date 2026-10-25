@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F23-1 — F23 is split into four sessions; the video-chip model is proved on its own first (2026-10-26, Stage F23.1)
+
+- **Plan change (Rule 12):** F23 as one stage is too large. Split: F23.1 the video-chip model (writes to pixels); F23.2 the drawing code as native code (128 bytes to timed writes, `$F07F-$F4E6`); F23.3 whole games with both; F23.4 collision flags from the model instead of the oracle.
+- **Why the model first:** the picture is a function of the timed writes. With the emulator's own writes as input, a wrong picture can only be the model's fault; later, with our own writes, only the drawing code's.
+- **Reference:** the golden traces already hold a fingerprint of every frame's 228 x 160 picture (the emulator's `TIA::frameBuffer`), so no pictures need to be stored; `pic=` saves a few for looking at differences.
+- **Result:** 8,266 of 8,266 sampled frames equal; the first pixel column of a player = end-of-strobe clock - 68 + 5, missile and ball + 4 (each pinned: one off breaks the pictures). The write-effect delays are not pinned by the game's pictures (windows in `docs/F23_VIDEO.md`); middle values are used.
+- **Reversible:** Yes.
+
 ### T-F22-1 — The data loader checks size and fingerprint and owns a private copy (2026-10-26, Stage F22)
 
 - **Choice:** `game::CartridgeData` in `src\game` (not in the window program): it has its own small SHA-1, so the game code and its tests depend on nothing else. Size must be exactly 4096 and SHA-1 `0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1`; a refused file leaves the object empty (all zero) so a wrong ROM can never be played by accident. The loader makes a private copy so the game never points into a caller's buffer.

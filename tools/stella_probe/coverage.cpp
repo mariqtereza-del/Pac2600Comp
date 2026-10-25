@@ -201,7 +201,16 @@ int main(int argc, char* argv[])
   }
   // Stage F12: `watch=<file>:<hex pc>,<hex pc>..` writes `frame,pc,A` after each run of those instructions.
   std::string watchFile, tiaFile, dumpFile;
+  std::string picFile;
+  std::set<int> picSet;
   for(int i = 5; i < argc; ++i) {
+    if(std::strncmp(argv[i], "pic=", 4) == 0) {   // Stage F23: pic=<file>:<frame>,<frame>.. saves the picture (int32 frame, then height x 160 colour bytes) of those frames
+      std::string a = argv[i] + 4;
+      const size_t c = a.rfind(':');
+      picFile = a.substr(0, c);
+      std::istringstream in(a.substr(c + 1));
+      for(std::string t; std::getline(in, t, ','); ) picSet.insert(std::stoi(t));
+    }
     if(std::strncmp(argv[i], "tiaregs=", 8) == 0) {
       stella.tiaRegMask = 0;
       std::istringstream in(argv[i] + 8);
@@ -265,6 +274,12 @@ int main(int argc, char* argv[])
     for(const auto& pk : pokes)
       if(pk[0] == f && pk[1] >= 0x80 && pk[1] <= 0xFF) stella.getRAM()[pk[1] - 0x80] = static_cast<uInt8>(pk[2]);
     stella.runFrameCounted();
+    if(picSet.count(f)) {
+      std::ofstream pw(picFile, std::ios::binary | std::ios::app);
+      const int32_t fr = f;
+      pw.write(reinterpret_cast<const char*>(&fr), 4);
+      pw.write(reinterpret_cast<const char*>(tia.frameBuffer()), static_cast<std::streamsize>(tia.height()) * kWidth);
+    }
 
     if(f < static_cast<int>(expect.size())) {
       char hash[17];

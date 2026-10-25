@@ -2412,7 +2412,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Documentation updates:** `docs\F22_LOADER.md`, `docs\GLOSSARY.md`, `DECISIONS.md` (T-F22-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F22: Data loader`.
       - **Next stage:** F23 — Native renderer.
-23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
+23. **[In progress] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included. Split into four sessions (Rule 12, T-F23-1): **F23.1 done 2026-10-26: the video-chip model.** F23.2 the drawing code as native code (timed chip writes from the 128 bytes). F23.3 whole games: drawing code + model give the golden pictures in every frame. F23.4 the collision flags from the model replace the oracle. *(expanded below)*
+    - **F23.1 — The video-chip model** *(expanded and done 2026-10-26)*
+      - **Objective:** a small model of the video chip that turns timed chip writes into the 160 x 228 picture, proved against the emulator's pictures.
+      - **Why it matters:** the renderer has two halves: what the game writes (the drawing code) and how the chip turns writes into pixels. Proving the second half alone, with the emulator's own writes, means any later difference is the first half's fault.
+      - **Prerequisites:** F22 Done (`3955176`); F18 (the picture is a function of the 128 bytes at `$F07F`).
+      - **What Claude Code will do:** `stella_coverage` gets the option `pic=<file>:<frames>` (saves the emulator picture of chosen frames); `tools\f23_dump.py` saves the emulator's chip writes of 8,266 sampled frames (every 53rd of the 70 games, plus the frame before each) in `reference\f23`; `game::TiaVideo` (`src\game\tia_video.*`); `tests\game\test_tia_video.cpp` feeds the writes to the model and compares each finished picture's fingerprint with the golden trace; `tools\f23_tia.py` runs it with controls and timing-window scans and writes `docs\F23_VIDEO.md`.
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** all sampled pictures equal; the controls fail.
+      - **Verification:** `python -I tools\f23_tia.py rom\pacman.a26` says `result: OK` (8,266 of 8,266 equal; moving the player, missile or ball position constant by one makes 0, 958 or 7,299 equal).
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** the exact moment of register writes is not pinned by the game's pictures (windows in the document); model code for modes the game never uses is untested.
+      - **Recovery:** new files and a small addition to `tools\stella_probe\coverage.cpp`; undo by returning to `3955176` (with your OK).
+      - **Documentation updates:** `docs\F23_VIDEO.md`, `DECISIONS.md` (T-F23-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F23.1: The video-chip model`.
+      - **Next stage:** F23.2 — The drawing code as native code.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.
 25. **[Not started] F25 — Whole-game lockstep.** All golden traces identical in RAM, picture and sound. Anything not identical is either fixed or entered in `DISCREPANCIES.md` with cause and impact, for your review.
 26. **[Not started] F26 — Gate F: emulator out.** The game build no longer contains Stella; it lives on only in the test tool. The gate rests on lockstep: every golden trace and every random-input run identical in memory, picture and sound; you may also play a full game, but nothing waits for it. Tag `0.5.0-native`.

@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.22', 'MAIN/top logic', 'top-logic', 0xF87E, 'game::topLogic ($F87E-$F9A7): new game, game-number steps, difficulty bit, the ghost of the frame (three updates), the opening animations, the colours; ends by going on at $F07F'),
     ('F21.21', 'SCORE_DIGITS', 'score-digits', 0xF3EE, 'game::scoreDigits: the digits of a score to picture pointers (leading zeros blank) and the seven rows of the score line written to the picture chip, then CLEAR_GRAPHICS; chip writes compared in order'),
     ('F21.20', 'PACMAN_KEEP_GOING', 'keep-going', 0xF793, 'game::pacmanKeepGoing: stick neutral, exactly on a cell: try to go on, else stand still; ends the caller when he stands still (no move); contract: X, stack pointer, arrival address, live memory'),
     ('F21.19', 'SOUND_MUSIC', 'sound-music', 0xFF94, 'game::soundMusic: the death sound, the start tune and the scared-ghost sweep, written to a game::SoundChip; two cartridge tables'),
@@ -192,6 +193,11 @@ def write_doc(results, n, found_w, used_w, found_r, ok):
             d.append('| %s | `%s` | $%04X | %d | **done** | %s |' % (done[nm][0], nm, r[0], r[2], done[nm][4]))
         else:
             d.append('| - | `%s` | $%04X | %d | to do | %s |' % (nm, r[0], r[2], NOTES.get(nm, '')))
+    names = {r[1] for r in rows}
+    extra = [x for x in DONE if x[1] not in names]
+    if extra:
+        d += ['', '### Parts of the main loop (`MAIN`) rewritten', '', '| Stage | Part | Starts at | What |', '| --- | --- | --- | --- |']
+        d += ['| %s | %s | $%04X | %s |' % (x[0], x[1], x[3], x[4]) for x in extra]
     d += ['', 'Order for the next sessions: smallest first among the routines whose result shows in the memory (the picture-only and sound-chip-only routines wait for F23/F24; those that need cartridge tables wait for F22 or use a table checked equal to the ROM): SWAP_PLAYERS, RNG_STEP, the WRAP routines, NEW_MAZE and PLACE_OBJECTS, LOCATE_OBJECT, MOVE_OBJECT, the TRY routines, ANIMATE_OBJECT, then the ghost routines. The main loop (`MAIN`: start-up, top and bottom logic, kernel) is cut into routines in the last sessions of F21.']
     (ROOT / 'docs' / 'F21_ROUTINES.md').write_text('\n'.join(d) + '\n', encoding='utf-8')
 

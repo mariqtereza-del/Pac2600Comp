@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-22 — The top logic of the frame rewritten; the console as an input structure (2026-10-26, Stage F21.22)
+
+- **Piece:** `game::topLogic` covers `$F87E-$F9A7` (the frame ends one instruction earlier, at `$F87C`, so the native piece starts after the frame boundary and the golden rows are unchanged). It ends by going on at `$F07F`, the start of the drawing code.
+- **Console input:** the game logic receives a `game::ConsoleInput` (fire, Reset, Select pressed; the two difficulty switches in position A); the lockstep adapter fills it from the machine's console registers. The finished game will fill it from the keyboard, the pad and the settings (D10-D12).
+- **Result:** 70 of 70 games identical; 439,610 calls (one per frame) compared with the original (memory above the stack pointer, chip writes, stack pointer, arrival address): 0 differences; identical together with F21.1-F21.21.
+- **Reversible:** Yes.
+
 ### T-F21-21 — SCORE_DIGITS rewritten; the picture chip as an interface (2026-10-26, Stage F21.21)
 
 - **Routine:** `game::scoreDigits`: five digits (the hundred-thousands digit is never shown), leading zeros blank (shape 10), a score of 0 shows one 0, shapes from the cartridge table `$FEF6` by address, pointer high bytes $FE, background colour black after the third digit and TEMP_D2 after the fifth, then seven rows of the six-picture writes and CLEAR_GRAPHICS.

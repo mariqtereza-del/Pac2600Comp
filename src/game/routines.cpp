@@ -552,4 +552,101 @@ void scoreDigits(Ram& ram, const Cartridge& cart, TiaChip& chip, uint8_t offset)
   chip.write(chip::GRP1, 0);
 }
 
+// The top logic of the frame ($F87E-$F9A7).
+namespace {
+
+void clearTitleSelectStep(Ram& ram, TiaChip& chip) {        // L_F8C8: the game number goes up by one
+  at(ram, ram::GAME_SELECT) = static_cast<uint8_t>(at(ram, ram::GAME_SELECT) + 1);
+  at(ram, ram::PACMAN_Y) = 0x60;
+  at(ram, ram::GAME_FLAGS) = 0x10;
+  at(ram, ram::PLAYER_MODE) ^= 0x40;                        // one player / two players alternately
+  clearScores(ram);
+  chip.write(chip::AUDV0, 0);
+  chip.write(chip::AUDV1, 0);
+  at(ram, ram::SOUND_ACTIVE) = 0;
+  at(ram, ram::ATTRACT_SHIFT) = 1;
+  at(ram, ram::FRAME_COUNTER) = 1;
+  uint8_t select = at(ram, ram::GAME_SELECT);
+  if (select == 0x12) select = 2;
+  at(ram, ram::GAME_SELECT) = select;
+  uint8_t shown = static_cast<uint8_t>(((select >> 1) - 2) & 7);   // the game number shown on the score line
+  if (shown == 0) shown = 8;
+  at(ram, ram::SCORE_P1_LO) = shown;
+  at(ram, ram::SCORE_P2_LO) = shown;
+}
+
+void startGame(Ram& ram) {            // F890: a new game
+  at(ram, ram::RNG_STATE) = 0xFF;
+  clearScores(ram);
+  at(ram, ram::LIVES_P2) = 0;
+  at(ram, ram::ATTRACT_SHIFT) = 0;
+  at(ram, ram::GAME_FLAGS) = 0x08;
+  at(ram, ram::SPEED_ACC0) = (at(ram, ram::GAME_SELECT) >= 8) ? 0x0B : 0x09;    // Pac-Man's speed seed (F10)
+  newGameSetup(ram);
+  at(ram, ram::PLAYER_MODE) &= 0x7F;
+  if (at(ram, ram::PLAYER_MODE) & 0x40) {                   // two players: the second block is set up too
+    swapPlayers(ram);
+    newGameSetup(ram);
+    at(ram, ram::LIVES_P2) = static_cast<uint8_t>(at(ram, ram::LIVES_P2) + 1);
+  }
+}
+
+}  // namespace
+
+bool topLogic(Ram& ram, const Cartridge& cart, const ConsoleInput& in, TiaChip& chip) {
+  at(ram, ram::COLOUR_SCORE_P1) = at(ram, ram::SCORE_COLOUR);
+  const bool start = (at(ram, ram::ATTRACT_SHIFT) != 0 && in.fire) || in.reset;
+  if (start) {
+    startGame(ram);
+    at(ram, ram::SELECT_REPEAT) = 0;
+  } else if (!in.select) {
+    at(ram, ram::SELECT_REPEAT) = 0;
+  } else {
+    if (at(ram, ram::SELECT_REPEAT) == 0) clearTitleSelectStep(ram, chip);
+    for (;;) {                                               // L_F8FF: held down, a step every 32 frames
+      at(ram, ram::SELECT_REPEAT) = static_cast<uint8_t>(at(ram, ram::SELECT_REPEAT) + 1);
+      if ((at(ram, ram::SELECT_REPEAT) & 0x1F) != 0) break;
+      clearTitleSelectStep(ram, chip);
+    }
+  }
+  // L_F90D: the difficulty switch of the player in turn becomes GAME_FLAGS bit 5
+  at(ram, ram::GAME_FLAGS) &= 0xDF;
+  const bool playerTwo = (at(ram, ram::PLAYER_MODE) & 0x80) != 0;
+  if (playerTwo ? in.rightDifficultyA : in.leftDifficultyA) at(ram, ram::GAME_FLAGS) |= 0x20;
+  at(ram, ram::COLOUR_SPRITE1) = 6;
+  uint8_t object = at(ram, ram::FRAME_COUNTER) & 3;
+  uint8_t colour0 = object;
+  const uint8_t pill = at(ram, ram::PILL_FLAGS);
+  if (pill & 0x80) colour0 = (pill & 0x40) ? 4 : 5;
+  at(ram, ram::COLOUR_SPRITE0) = colour0;
+  ++object;                                                  // 1-4: the ghost of this frame
+  bool update;
+  if (at(ram, static_cast<uint8_t>(ram::PACMAN_STATE + object)) & 0x08) {   // eyes: always updated, with another picture
+    at(ram, ram::SPRITE0_PTR_LO) = 0xC6;
+    update = true;
+  } else {
+    update = !(at(ram, ram::EAT_PAUSE) & 0x80);
+  }
+  if (update && !(at(ram, ram::GAME_FLAGS) & 0x80)) {
+    for (int i = 0; i < 3; ++i)
+      if (!ghostUpdate(ram, cart, object)) return false;
+  }
+  at(ram, ram::SPRITE_X) = at(ram, static_cast<uint8_t>(ram::PACMAN_X + object));
+  at(ram, ram::SPRITE0_Y) = static_cast<uint8_t>(at(ram, static_cast<uint8_t>(ram::PACMAN_Y + object)) + 0x0B);
+  if (at(ram, static_cast<uint8_t>(ram::PACMAN_STATE + object)) & 0x20) animateObject(ram, cart, object, 0);
+  if (at(ram, ram::PACMAN_STATE) & 0x20) animateObject(ram, cart, 0, 1);
+  // the six colour values: the colour table of the cartridge ($FF2B; $FF36 when the mask says black and white), the title shift, the mask
+  const bool colourTv = (at(ram, ram::COLOUR_MASK) & 0x80) != 0;
+  const uint16_t table = colourTv ? 0xFF2B : 0xFF36;
+  at(ram, ram::TEMP_D3) = 0xFF;
+  at(ram, ram::TEMP_D2) = colourTv ? 0x2B : 0x36;
+  for (int x = 5; x >= 0; --x) {
+    uint8_t& entry = at(ram, static_cast<uint8_t>(ram::COLOUR_BG + x));
+    entry = (cart.at(static_cast<uint16_t>(table + entry)) ^ at(ram, ram::ATTRACT_SHIFT)) & at(ram, ram::COLOUR_MASK);
+  }
+  chip.write(chip::COLUP1, at(ram, ram::COLOUR_SPRITE1));
+  chip.write(chip::COLUP0, at(ram, ram::COLOUR_SPRITE0));
+  return true;
+}
+
 }  // namespace game

@@ -101,6 +101,25 @@ void soundEffectsNative(Machine& m, bool wrong = false) {
   m.rts();
 }
 
+// F21.22 The top logic ($F87E-$F9A7): the code arrives here when the vertical sync has been switched off (the frame boundary is the instruction before) and
+// goes on at $F07F. The inputs come from the console registers of the machine. Contract: the registers are all reloaded at $F07F, so only the stack pointer
+// and the arrival address are compared; free stack bytes are ignored (the routines called from here leave old return addresses).
+void topLogicNative(Machine& m) {
+  game::ConsoleInput in;
+  in.fire = !(m.read(0x3C) & 0x80);                // INPT4: bit 7 low = pressed
+  const uint8_t swchb = m.read(0x282);
+  in.reset = !(swchb & 0x01);
+  in.select = !(swchb & 0x02);
+  in.leftDifficultyA = (swchb & 0x40) != 0;
+  in.rightDifficultyA = (swchb & 0x80) != 0;
+  MachineChip chip(m, false);
+  const game::Cartridge cart(m.romBytes());
+  bool ok = true;
+  withRam(m, [&](game::Ram& r) { ok = game::topLogic(r, cart, in, chip); });
+  if (!ok) { m.fail(); return; }
+  m.pc = 0xF07F;
+}
+
 // F21.21 SCORE_DIGITS ($F3EE): the offset of the score (4 or 5) is in Y. It ends with CLEAR_GRAPHICS and an RTS. The picture-chip writes are compared in order
 // (not their cycle positions: the timing of the picture is proved by the executor of F18 and the renderer of F23). Contract: the two callers load Y and
 // A afresh and use neither X nor the flags; the stack pointer and the return address are compared.
@@ -462,6 +481,14 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "top-logic") {
+    Machine::Contract c;
+    c.deadStack = true;
+    c.regs = 16 | 32;
+    c.stopAt = 0xF07F;
+    m.registerNative(0xF87E, "TOP_LOGIC (native)", [](Machine& mm) { topLogicNative(mm); }, c);
+    return true;
+  }
   if (name == "score-digits") {
     Machine::Contract c;
     c.regs = 16 | 32;

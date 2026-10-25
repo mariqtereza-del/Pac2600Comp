@@ -177,7 +177,7 @@ class TiaChip {
 };
 using SoundChip = TiaChip;   // the sound routines see the same chip
 namespace chip {
-inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C;
+inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07;
 inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18, AUDV0 = 0x19, AUDV1 = 0x1A;
 }
 
@@ -210,5 +210,22 @@ KeepGoing pacmanKeepGoing(Ram& ram, const Cartridge& cart);
 // then the five digit shapes (cartridge bytes at $FE00 + shape pointer + row) written to GRP0 / GRP1 in the six-picture order; finally the graphics registers
 // are cleared again (CLEAR_GRAPHICS).
 void scoreDigits(Ram& ram, const Cartridge& cart, TiaChip& chip, uint8_t offset);
+
+// The console as the game logic sees it in one frame: the buttons and switches the top logic reads (F9).
+struct ConsoleInput {
+  bool fire = false;          // the fire button of the left joystick
+  bool reset = false;         // the Reset switch pressed
+  bool select = false;        // the Select switch pressed
+  bool leftDifficultyA = false;   // the left difficulty switch in position A (SWCHB bit 6 set)
+  bool rightDifficultyA = false;  // the right difficulty switch in position A (SWCHB bit 7 set)
+};
+
+// F21.22  The top logic of the frame ($F87E-$F9A7), after the vertical sync has been switched off: the score colour of player 1; a new game (fire on the
+// title screen, or Reset) or a step of the game number (Select: at once, then every 32 frames while held); the difficulty switch of the player in turn
+// into GAME_FLAGS bit 5; the sprite colours; the ghost of this frame (object (FRAME_COUNTER and 3) + 1) updated three times unless the game is
+// frozen or paused; the picture set-up values SPRITE_X and SPRITE0_Y; the opening animations of that ghost and of Pac-Man; the six colour values made
+// from the colour table of the cartridge ($FF2B, or $FF36 for black and white), the title-screen shift and the colour mask; COLUP1 and COLUP0.
+// The code then goes on with the drawing code at $F07F. Returns false if ghostDecide met the never-run path.
+bool topLogic(Ram& ram, const Cartridge& cart, const ConsoleInput& input, TiaChip& chip);
 
 }  // namespace game

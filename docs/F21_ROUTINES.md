@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **MAIN/top logic**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
 - **SCORE_DIGITS**: identical in 70 of 70 games; 460580 calls compared with the original code, 0 different.
 - **PACMAN_KEEP_GOING**: identical in 70 of 70 games; 127587 calls compared with the original code, 0 different.
 - **SOUND_MUSIC**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
@@ -88,5 +89,11 @@
 | - | `CLEAR_GRAPHICS` | $F483 | 11 | to do | picture only (F23) |
 | - | `KERNEL_LINE_P1` | $F053 | 20 | to do | writes only chip registers (picture): proved with the renderer (F23) |
 | - | `KERNEL_LINE_P0` | $F06A | 21 | to do | picture only (F23) |
+
+### Parts of the main loop (`MAIN`) rewritten
+
+| Stage | Part | Starts at | What |
+| --- | --- | --- | --- |
+| F21.22 | MAIN/top logic | $F87E | game::topLogic ($F87E-$F9A7): new game, game-number steps, difficulty bit, the ghost of the frame (three updates), the opening animations, the colours; ends by going on at $F07F |
 
 Order for the next sessions: smallest first among the routines whose result shows in the memory (the picture-only and sound-chip-only routines wait for F23/F24; those that need cartridge tables wait for F22 or use a table checked equal to the ROM): SWAP_PLAYERS, RNG_STEP, the WRAP routines, NEW_MAZE and PLACE_OBJECTS, LOCATE_OBJECT, MOVE_OBJECT, the TRY routines, ANIMATE_OBJECT, then the ghost routines. The main loop (`MAIN`: start-up, top and bottom logic, kernel) is cut into routines in the last sessions of F21.

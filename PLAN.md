@@ -1392,16 +1392,37 @@ No mode distorts the proportions. Letterboxing (bars top/bottom) or pillarboxing
 
 ### Phase E — The original game's behavioural baseline (8 stages)
 
-Build a library of recorded play sessions, each paired with exactly what the original did, so Phase F has a precise target. Every recording is replayed by the emulator build and saved as a "golden" trace: the 128 RAM bytes, a picture fingerprint and a sound fingerprint for every frame. These traces stay local (they come from Atari's program).
+Build a library of recorded games, each paired with exactly what the original did, so Phase F has a precise target. **No stage waits for the owner's play (D-008, 2026-10-26):** every input comes from Claude Code's own scripts, from the search-playing bot `stella_bot` (C7, which already cleared level 1 and played to game over), and from seeded random input. A recording made by the owner is welcome but never needed. Every recording is replayed by the emulator build and saved as a "golden" trace: the 128 RAM bytes, a picture fingerprint and a sound fingerprint for every frame. These traces stay local (they come from Atari's program).
 
-1. **[Not started] E1 — Baseline format.** `docs\BASELINE.md` defines a test entry: ID (e.g. `BL-012`), what it shows, the `.inputs` file, the golden trace, and plain-words observations (score, lives, timings in frames). Claude Code adds a "trace" switch to the host and proves a replay gives a byte-identical trace twice.
+1. **[Done] E1 — Baseline format.** *(expanded 2026-10-26)*
+    - **Objective:** fix what one baseline test is (`docs\BASELINE.md`), and give the host a trace switch (`--trace <file>`) that writes, for every frame of a replay, exactly what the original did: the input, the switch register, the picture fingerprint, the sound fingerprint and all 128 bytes of memory. Prove that a replay gives a byte-identical trace every time.
+    - **Why it matters:** Phase F rebuilds the game in our own code and tests it against these traces frame by frame (lockstep, F20); a trace that is not exactly repeatable would make that test meaningless.
+    - **Prerequisites:** D16 Done (Gate D passed, tag `v0.1.0`, commit `c9509dc`).
+    - **What Claude Code will do:**
+      1. `src\host\trace.*` (no emulator code): the trace file format and the fingerprint function; `tests\host\test_trace.cpp`.
+      2. `--trace <file>` in the host, for `--headless --replay` and for the window with `--replay` or `--record`, all from the same code, so a window trace and a no-window trace of one recording can be compared.
+      3. `baseline\` (in Git: only inputs and plain-words entries) and `reference\baseline\` (local: the traces, which carry Atari's memory contents): the first entry `BL-001` as the worked example, made by `tools\baseline.py`, which also checks an entry (replay twice, compare byte for byte, compare with the recorded SHA-256).
+      4. Cross-check the trace against the independent Phase C reference run of Stella's core (RAM and picture of every frame of the 9,800-frame bot route).
+      5. `docs\BASELINE.md`: the entry format, the trace columns, where things live, what is committed and what is not, how Phase F uses it.
+    - **What I must do:** nothing in this stage except read `docs\BASELINE.md` and say if the plain-words description of an entry is something you could check against the real game.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** `docs\BASELINE.md`; `--trace` working; `BL-001` with a trace that replays identically.
+    - **Verification:** `test_trace` passes; the same recording traced twice no-window gives equal files; the window trace equals the no-window trace; the trace's RAM and picture columns equal the Phase C reference on all 9,800 route frames; trace SHA-256 stored in the entry equals a fresh run; the earlier checks (fingerprints = C3, audio = C5, key replay) still pass.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** a trace is large (about 300 bytes a frame: a 10-minute game is 11 MB), so traces stay local and only their SHA-256 goes into Git; a window run can drop or repeat a frame only if the program is stalled (the frame counter, not the clock, is what is recorded).
+    - **Recovery:** new files plus a small edit to `main.cpp`, `CMakeLists.txt`, `build_host.cmd`, `.gitignore`; undo by returning to `3dd32c4` (with your OK).
+    - **Documentation updates:** `docs\BASELINE.md`, `DECISIONS.md` (T-E1-n), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage E1: Baseline format`.
+    - **Next stage:** E2 — Starting up.
 2. **[Not started] E2 — Starting up.** Power-on, attract mode, each game variation chosen with Select, Reset to start. Scripted by Claude Code; no playing needed.
-3. **[Not started] E3 — Pac-Man's movement.** Speed in frames per maze step, turning at corners, pushing into walls, reversing, holding diagonals, wrapping through the side tunnel. Mostly scripted; you play one short recorded session.
+3. **[Not started] E3 — Pac-Man's movement.** Speed in frames per maze step, turning at corners, pushing into walls, reversing, holding diagonals, wrapping through the side tunnel. All scripted, plus bot play for the situations a script cannot reach.
 4. **[Not started] E4 — Ghosts.** Leaving the box, chasing, flicker order, speed, the blue/vulnerable state, eyes returning, and how they choose turns. Claude Code also records the same start position with different input timing to see whether ghost choices change (a clue to how randomness works).
 5. **[Not started] E5 — Eating and scoring.** Wafers, power pills, ghosts eaten in a row, the bonus item, extra lives. Every score value is read from RAM and from the screen and must agree.
 6. **[Not started] E6 — Dying and game over.** Collision timing, the death animation and sound, respawn, losing the last life, the game-over screen, starting again.
-7. **[Not started] E7 — Long play.** You play three full games with the recorder on, as far as you comfortably can (the more levels, the better). Claude Code extracts level transitions, speed-ups and any changes between levels.
-8. **[Not started] E8 — Edge cases and Gate E.** Pressing Reset mid-game, switching variation mid-game, flipping difficulty switches during play, very long idle, score near its maximum (reached by a memory-edit test in Stella's debugger, clearly labelled as artificial). Gate: at least 30 baseline entries covering every topic in your brief's Phase E list, each with a golden trace and a plain-words description you could check against the real game.
+7. **[Not started] E7 — Long play.** Played by the computer, no human needed: `stella_bot` is extended to carry on into later levels (it stops after level 1 today) and plays at least three full games with different seeds, as many levels as it manages; seeded random-input games of tens of thousands of frames are added. Claude Code extracts level transitions, speed-ups and any changes between levels. If the bot cannot get past some level, that is written down as a limit of the bot (not worked around by asking for a human), and the random runs and scripts cover what they can.
+8. **[Not started] E8 — Edge cases and Gate E.** Pressing Reset mid-game, switching variation mid-game, flipping difficulty switches during play, very long idle, score near its maximum (reached by a memory-edit test in Stella's debugger, clearly labelled as artificial). Also seeded random-input runs of several seeds (a net for situations nobody thought of). Gate: at least 30 baseline entries covering every topic in your brief's Phase E list, each with a golden trace (traces repeat byte for byte), a plain-words description that could be checked against the real game, and the lockstep-ready format of E1; the gate rests on those facts, not on anyone playing.
 
 ### Phase F — Reverse engineering and source reconstruction (26 stages)
 
@@ -1461,7 +1482,7 @@ Findings are recorded the moment they are made, with the address, the evidence a
 23. **[Not started] F23 — Native renderer.** Produces each 160-pixel-wide frame from the game state; compared pixel for pixel against the emulator on every frame of every golden trace, flicker included.
 24. **[Not started] F24 — Native sound generator.** A small model of the TIA's two sound channels; output compared sample by sample with the emulator's.
 25. **[Not started] F25 — Whole-game lockstep.** All golden traces identical in RAM, picture and sound. Anything not identical is either fixed or entered in `DISCREPANCIES.md` with cause and impact, for your review.
-26. **[Not started] F26 — Gate F: emulator out.** The game build no longer contains Stella; it lives on only in the test tool. You play a full game on the native build. Tag `0.5.0-native`.
+26. **[Not started] F26 — Gate F: emulator out.** The game build no longer contains Stella; it lives on only in the test tool. The gate rests on lockstep: every golden trace and every random-input run identical in memory, picture and sound; you may also play a full game, but nothing waits for it. Tag `0.5.0-native`.
 
 #### When a routine is hard to understand
 
@@ -1598,7 +1619,7 @@ If an approach fails outright, the plan proposes the next-best one and says plai
 2. Project folder: `F:\Ports\Pac-Man - Atari 2600`.
 3. Put the `.a26` file in the project folder's top level. It stays there untouched; Claude Code works on copies (A3, B4).
 
-**Later, at the stage that needs it:** approving the tool list (A5), your one-minute play check (C2), recorded play sessions (E3, E7), the default screen mode (Gate D), any literal-code approvals (Gate G), modern features (Phase I), the legal decision and project name (J1, J2).
+**Later, at the stage that needs it:** approving the tool list (A5), your one-minute play check (C2), the default screen mode (Gate D, done), no play sessions (D-008), any literal-code approvals (Gate G), modern features (Phase I), the legal decision and project name (J1, J2).
 
 **Claude Code finds by itself:** your hardware and installed tools, the ROM's identity and structure, display and timing facts, and every technical choice inside a stage.
 

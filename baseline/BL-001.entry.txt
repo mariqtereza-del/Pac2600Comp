@@ -1,0 +1,20 @@
+id: BL-001
+title: Game Reset starts a game; nobody plays; Pac-Man is caught
+shows: What the original does from power-on when Game Reset is pressed once and nothing else is touched: the start, the start tune's pause, and the first death.
+inputs: BL-001.inputs
+frames: 700
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: dc180ac26f97f1b49aad9dcb63461568d429c1adc27ab734c9f10f19104fe7b4
+trace_bytes: 210016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are the working labels of
+  Stage C7 (docs\CAPTURES.md), not yet confirmed (Phase F).
+  - Frames 0-59: nothing is pressed. The game runs its attract mode (the title screen with the moving ghost).
+  - Frames 60-69: Game Reset is held (console switch register reads 3e instead of 3f). On frame 60 the lives counter (byte $98) is
+    already 3: the game starts on the very frame Reset is first seen.
+  - Frames 60-186: the pause flag (byte $D2, bit 6) is set: the start tune plays and nothing moves. 127 frames, a little over 2 seconds.
+  - Frame 187: the pause flag clears; the game is running. No joystick is touched, so Pac-Man stays still.
+  - Frame 480: the pause flag is set again: a ghost has caught Pac-Man and the death begins (293 frames after play began).
+  - Frame 605: the lives counter drops from 3 to 2, 125 frames after the death began. The pause flag is still set at the end of the entry (frame 699).
+  - How to check it against the real game: start a game with Reset and do not touch the joystick; the start tune, then about
+    5 seconds of waiting, then Pac-Man is caught and loses a life, at 60 frames a second (about 59.92 on the real console).

@@ -163,3 +163,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Input recording | A small text file (`.inputs`) saying what the joystick and switches were doing on every frame. Played back from power-on it gives the same game again, because the game itself does nothing random. |
 | GPL (GNU General Public License) | The licence of Stella. A program that contains Stella may be passed on only if its complete source code goes with it and the same licence applies. That is why the release zip holds the source. |
 | Runtime files (msvcp140.dll and friends) | Small Microsoft files every program built with this compiler needs. They are shipped next to the program so the PC does not need anything installed. |
+| Trace | A file with one line per frame saying what the game did on that frame: the input, the switches, a fingerprint of the picture, a fingerprint of the sound and all 128 bytes of the console's memory. Phase F compares the rebuilt game against it. |
+| Baseline entry | One recorded game (an input file) with a plain-words description and a trace of what the original did. |

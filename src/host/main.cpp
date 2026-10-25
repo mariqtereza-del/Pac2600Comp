@@ -60,6 +60,7 @@
 #include "layout.hpp"
 #include "rom_finder.hpp"
 #include "settings.hpp"
+#include "trace.hpp"
 #include "windowstate.hpp"
 
 namespace {
@@ -148,6 +149,7 @@ struct Options {
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
   std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
   std::string recordFile, replayFile;  // input recording (--record) and playback (--replay), Stage D13
+  std::string traceFile;               // --trace <file>: what the game did on every frame (Stage E1, docs\BASELINE.md)
   long long ramSeed = -1;              // --ram-seed N: power-on memory filled from seed N (-1 = zeros)
   bool softGlow = false;               // --soft-glow: Stella's phosphor glow on (headless tests of F7)
   bool stellaSpeed = false;            // --stella-speed: 60.000 frames a second like Stella, instead of the console's own 59.92 (comparison only)
@@ -182,6 +184,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--stella-speed") o.stellaSpeed = true;
     else if(a == "--soft-glow") o.softGlow = true;
     else if(a == "--ram-seed") o.ramSeed = std::atoll(next().c_str());
+    else if(a == "--trace") o.traceFile = next();
     else if(a == "--record") o.recordFile = next();
     else if(a == "--replay") o.replayFile = next();
     else if(a == "--audio-check") { o.audioCheckSeconds = std::atof(next().c_str()); o.audioCheckFile = next(); }
@@ -364,6 +367,19 @@ void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset)
   emulator.setConsoleReset(in.reset || extraReset);
   emulator.setDifficulty(in.leftDifficultyA, in.rightDifficultyA);
   emulator.setBlackWhite(in.blackWhite);
+}
+
+// One line of a frame trace (Stage E1): the input given on this frame and what the console did.
+void writeTrace(std::ofstream& out, const Emulator& emulator, long long frame, std::uint32_t input)
+{
+  trace::Row row;
+  row.frame = frame;
+  row.input = input;
+  row.switches = emulator.consoleSwitches();
+  row.picture = emulator.pictureFingerprint();
+  row.audio = trace::fnv1a(emulator.audio(), static_cast<std::size_t>(emulator.audioFrames()) * 4);  // 16-bit stereo: 4 bytes a pair
+  for(std::size_t i = 0; i < row.ram.size(); ++i) row.ram[i] = emulator.ram()[i];
+  out << trace::line(row);
 }
 
 // The F1 list, drawn over the picture with SDL's built-in text.
@@ -1113,6 +1129,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     if(replay.romSha1 != romSha1) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, "This recording was made with a different ROM than the one that is loaded.", window); return 0; }
   }
   inputlog::Recorder recorder;  // --record: written when the window closes
+  std::ofstream traceOut;       // --trace: what the game did on every frame
+  if(!options.traceFile.empty()) { traceOut.open(options.traceFile, std::ios::binary); traceOut << trace::header(romSha1); }
   std::ofstream fingerprints;   // --fingerprints: the picture's fingerprint of every frame (tests)
   if(!options.fingerprintFile.empty()) { fingerprints.open(options.fingerprintFile); fingerprints << "frame,hash\n"; }
 
@@ -1185,6 +1203,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
           std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
           fingerprints << frames << ',' << hash << '\n';
         }
+        if(traceOut) writeTrace(traceOut, emulator, frames, in.pack());
         audio.push(emulator.audio(), emulator.audioFrames());
         if(options.pushKeys) {
           const int joystick = emulator.ram()[0xED - 0x80];  // C6: up 1, down 2, left 4, right 8
@@ -1355,6 +1374,8 @@ int headlessRun(const Options& o)
     if(replay.romSha1 != found->check.sha1) { report << "result=the recording was made with a different ROM\n"; return 6; }
   }
   const int frames = replaying && o.frames == 600 ? static_cast<int>(replay.frames) : o.frames;
+  std::ofstream traceOut;
+  if(!o.traceFile.empty()) { traceOut.open(o.traceFile, std::ios::binary); traceOut << trace::header(found->check.sha1); }
   const int saveFrame = replaying && o.saveFrame >= frames ? std::max(0, frames - 1) : o.saveFrame;
 
   // Optional audio file: a standard WAV, 16-bit stereo at the emulator's rate, like the one the Phase C tool wrote.
@@ -1373,14 +1394,12 @@ int headlessRun(const Options& o)
   bool saved = false;
   char hash[17];
   for(int f = 0; f < frames; ++f) {
-    if(replaying) {
-      controls::Input in = controls::Input::unpack(replay.bitsAt(f));
-      if(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10) in.reset = true;
-      applyInput(emulator, in, false);
-    } else {
-      emulator.setConsoleReset(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10);
-    }
+    controls::Input in = controls::Input::unpack(replaying ? replay.bitsAt(f) : 0u);
+    if(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10) in.reset = true;
+    if(replaying) applyInput(emulator, in, false);
+    else emulator.setConsoleReset(in.reset);
     emulator.runFrame();
+    if(traceOut) writeTrace(traceOut, emulator, f, in.pack());
     if(wav) {
       wav.write(reinterpret_cast<const char*>(emulator.audio()), static_cast<std::streamsize>(emulator.audioFrames()) * 4);
       wavBytes += static_cast<std::uint32_t>(emulator.audioFrames()) * 4;

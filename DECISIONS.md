@@ -91,6 +91,16 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Replaces:** the default in T-D6-1 (19:10), and records the authenticity question left open in `DISCREPANCIES.md`.
 - **Reversible:** Yes.
 
+### D-008 — The owner's input is avoided unless absolutely necessary (2026-10-26, Stage E1)
+
+**Your words:** "Make the change to Phase E in PLAN.md and commit. Remember, you are translating. My input should be avoided, unless absolutely necessary." (after asking why the plan wanted your play-throughs, since the goal is an exactly accurate port with no emulation layer.)
+
+- **What it means:** the port is a translation of the ROM, and its accuracy is proved by machines: the original and our code run on the same inputs and are compared on every frame (lockstep). Nothing in that needs a person, so no stage may wait for the owner's play, reading or judgement of "feel". Owner input is kept for what only the owner can give: legal choices and the project name (J1, J2), approvals the rules require (installing, deleting, publishing, running Stella's app), choices of taste that are theirs (done at Gate D), and files only they have.
+- **Changed in `PLAN.md` (Phase E and F26):** E3 is scripted (no recorded session); E7 is played by the bot (`stella_bot`, extended to later levels) and by seeded random input; E8's gate rests on traces and descriptions, not on anyone playing; the "you play" step of Gate F is optional (lockstep decides); the "needed from you" list loses the play sessions. E4's randomness probing and E2, E5, E6 were already automatic.
+- **How I will work:** I decide technical questions myself and do not ask for human play, reading or checking as a step of a stage. At the end of a stage I say what was proved by measurement; if a person's look would add something, I say so as an option, never as a condition.
+- **If a bot or script really cannot reach something:** that is written down as a limit, with what was tried; the owner is asked only if no automatic way exists.
+- **Reversible:** Yes.
+
 ### D-007 — No phosphor glow by default; F7 turns it on (2026-10-26, Gate D)
 
 **You noticed:** in black and white mode "Pac-Man has a ghosting effect when moving. Is that intended?" **Your choice:** option 1, "off by default (authentic), with a key to turn the soft blend on".
@@ -122,6 +132,16 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Choice:** the game is paced at the console's frame rate, and the sound device is told the samples are 31,400 Hz (the nearest whole number; 14 ppm from the true value), so one frame still carries 524 sound pairs. The sound card steers the frame clock as before (T-D9-2). `--stella-speed` (60 Hz, 31,440 Hz) stays as a comparison switch. Code: `kConsoleFrameHz`, `frameRate`, `soundRate`, `Pacer` in `main.cpp`.
 - **Proof:** a 9-minute muted run measured **59.9235 frames a second** (console 59.9228; the rest is the 31,400 rounding), 0 underruns, 0 dropped sound; 93.6 % of game frames were shown for exactly 3 refreshes of the 180 Hz screen (30,280 of 32,355). A 20 s audio check: 0 underruns, source format 31,400 Hz. With `--stella-speed`: 59.99 frames a second. The emulation is unchanged: 2,500 frames still equal the C3 fingerprints and the C5 audio bit for bit; the key replay and the side-by-side check still give 0 differences.
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
+- **Reversible:** Yes.
+
+### T-E1-1 — Baseline entries and frame traces (2026-10-26, Stage E1)
+
+- **Choice:** an entry is a plain-words text, an `.inputs` file (both in Git, `baseline\`) and a golden trace (local, `reference\baseline\`; its SHA-256 is in the entry text). A trace is one text line per frame: frame, input, switch register, picture fingerprint, sound fingerprint, 128 bytes of memory (`docs\BASELINE.md`, `src\host\trace.*`). Text, not binary: it can be compared with ordinary tools and read by a person; about 300 bytes a frame, 11 MB for ten minutes of play.
+- **Why local:** the memory contents are Atari's program state (Rule 7, J3's content audit). Only inputs, words and a SHA-256 are shared; anyone with their own ROM can recreate a trace and check it against the SHA-256.
+- **The fingerprint:** a finding of this stage. The "FNV-1a" of Phase C uses the start value `1469598103934665603`, one digit short of the textbook `14695981039346656037` (a typing slip in `tools\stella_probe` that every Phase C fingerprint inherited). It is still a fine fingerprint; changing it now would break every stored comparison, so it is kept and written down (`test_trace` pins its values, computed independently in Python).
+- **Where the trace is written:** by the same code in the headless replay and in the window (`writeTrace` in `main.cpp`, from the game thread, after each frame), so the two can be compared; the frame counter, not the clock, is recorded, so the pace of the window does not matter.
+- **Proof:** see `docs\BASELINE.md`: byte-identical on repeat (BL-001); window = no-window on 700 frames; the 9,800-frame route equals Phase C's independent reference on memory, picture and switches for every frame; `test_trace` 18 checks; earlier checks unchanged (2,500 frames equal C3 fingerprints and C5 audio, 350,460 frames of key replay, 1,860-frame side-by-side, unit tests).
+- **Not proved:** that the sound column equals an independent sound record frame by frame (the reference sound files are one WAV, not per frame); it is the fingerprint of the bytes the proven-identical WAV holds.
 - **Reversible:** Yes.
 
 ### T-D15-1 — The release zip: what is in it, the ROM scan, the GPL duties (2026-10-26, Stage D15)

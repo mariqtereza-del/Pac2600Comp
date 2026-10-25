@@ -30,6 +30,17 @@ void withRam(Machine& m, F&& fn) {
     if (after[i] != before[i]) m.write(static_cast<uint16_t>(0x80 + i), after[i]);
 }
 
+// F21.5 NEW_MAZE ($FC0C) and PLACE_OBJECTS ($FC21): both end with LDA #$80 (A = $80, negative set, zero clear), X = $FF (the loop leaves it after
+// DEX of 0), Y = 0 (LDY #0 in the loop), carry untouched.
+void placeNative(Machine& m, bool newMaze) {
+  withRam(m, [newMaze](game::Ram& r) { if (newMaze) game::newMaze(r); else game::placeObjects(r); });
+  m.a = 0x80;
+  m.x = 0xFF;
+  m.y = 0;
+  m.setZN(m.a);
+  m.rts();
+}
+
 // F21.4 WRAP_TO_BOTTOM ($FD26) / WRAP_TO_TOP ($FD32): the object is in X. The original leaves A = the new y ($51 / $0B), X and Y untouched, zero and
 // negative clear (LDA of a positive number), carry untouched.
 void wrapNative(Machine& m, bool top) {
@@ -94,6 +105,8 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     m.registerNative(0xFD32, "WRAP_TO_TOP (native)", [](Machine& mm) { wrapNative(mm, true); });
     return true;
   }
+  if (name == "new-maze") { m.registerNative(0xFC0C, "NEW_MAZE (native)", [](Machine& mm) { placeNative(mm, true); }); return true; }
+  if (name == "place-objects") { m.registerNative(0xFC21, "PLACE_OBJECTS (native)", [](Machine& mm) { placeNative(mm, false); }); return true; }
   return false;
 }
 

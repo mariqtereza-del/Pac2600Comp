@@ -34,4 +34,11 @@ uint8_t rngStep(Ram& ram);
 void wrapToBottom(Ram& ram, uint8_t object);
 void wrapToTop(Ram& ram, uint8_t object);
 
+// F21.5  PLACE_OBJECTS ($FC21): freezes the game (GAME_FLAGS bit 7), sets the event timer to $3C (the freeze lasts 60 steps) and puts the four ghosts
+// at x = $4C, y = $1E (state 0) and Pac-Man at x = $4C, y = $3C with the state $80.
+void placeObjects(Ram& ram);
+// F21.5  NEW_MAZE ($FC0C): fills the wafer map of the player in turn (all 126 wafers and the 4 power pills; two places stay empty), sets the pill
+// flags to $3C, and then does PLACE_OBJECTS (the original falls into it).
+void newMaze(Ram& ram);
+
 }  // namespace game

@@ -42,4 +42,26 @@ void wrapEnd(Ram& ram, uint8_t object, uint8_t directionBits, uint8_t y) {
 void wrapToBottom(Ram& ram, uint8_t object) { wrapEnd(ram, object, 0x30, 0x51); }
 void wrapToTop(Ram& ram, uint8_t object) { wrapEnd(ram, object, 0xF0, 0x0B); }
 
+// PLACE_OBJECTS ($FC21). Objects 0-4 are Pac-Man and the four ghosts (x at $B1+n, y at $B6+n, state at $BB+n).
+void placeObjects(Ram& ram) {
+  at(ram, ram::GAME_FLAGS) |= 0x80;
+  at(ram, ram::EVENT_TIMER) = 0x3C;
+  for (uint8_t n = 0; n <= 4; ++n) {
+    at(ram, ram::PACMAN_X + n) = 0x4C;
+    at(ram, ram::PACMAN_Y + n) = 0x1E;
+    at(ram, ram::PACMAN_STATE + n) = 0;
+  }
+  at(ram, ram::PACMAN_Y) = 0x3C;
+  at(ram, ram::PACMAN_STATE) = 0x80;
+}
+
+// NEW_MAZE ($FC0C). The 16 wafer bytes $88-$97 are set to $FF, except $8E = $7F and $8A = $FE (the two places that start empty, F11).
+void newMaze(Ram& ram) {
+  for (uint8_t i = 0; i < 16; ++i) at(ram, ram::MAZE_00 + i) = 0xFF;
+  at(ram, ram::MAZE_06) = 0x7F;
+  at(ram, ram::MAZE_02) = 0xFE;
+  at(ram, ram::PILL_FLAGS) = 0x3C;
+  placeObjects(ram);
+}
+
 }  // namespace game

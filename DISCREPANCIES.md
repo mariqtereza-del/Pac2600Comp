@@ -35,7 +35,7 @@ A deliberate change (one key press removed from your recording) was seen by the 
 | --- | --- | --- | --- |
 | Memory at power-on | random | zeros (so a recording always replays the same) | `docs\DISPLAY.md`, T-D13-1 |
 | Game speed | exactly 60.000 Hz | 59.92 Hz, the console's own (changed in D14) | `docs\TIMING.md`, T-D14-2 |
-| Picture shape and size | its own scaling options | Sharp / Fill / TV frame / Game area (keys 1-4), pixel shape 19:10 | T-D6-1 |
+| Picture shape and size | its own scaling options | Sharp / Fill / TV frame / Game area (keys 1-4), pixel shape 12:7 by default (D-005) | T-D6-1 |
 | Controls | its own key map | `docs\CONTROLS.md` | T-D10-1, T-D11-1 |
 
 ## Not compared

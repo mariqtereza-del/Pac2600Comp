@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-24 — The start of the next frame rewritten (2026-10-26, Stage F21.24)
+
+- **Piece:** `game::frameStart` covers `$F7D6-$F87A`: the vertical blank and sync on and the collision flags cleared (three chip writes), the sprite pictures from the cartridge tables, FRAME_COUNTER + 1, every 256 frames TICK256 + 1 and, unless it wraps, BONUS_TIMER - 1 with the flip of the item flag (on for 3 ticks, 2 with the difficulty bit, off for 18; F15), the title shift ATTRACT_SHIFT (never 0), the picture set-up values, the colour mask (colour / black and white, title shift), and three colour indices. It leaves X = 0 for the vertical-sync-off write at `$F87C`, which ends the frame.
+- **Result:** 70 of 70 games identical; 439,680 calls (every frame) compared with the original (memory, chip writes, X, stack pointer, arrival address): 0 differences; identical together with F21.1-F21.23.
+- **Reversible:** Yes.
+
 ### T-F21-23 — The bottom logic of the frame rewritten (2026-10-26, Stage F21.23)
 
 - **Piece:** `game::bottomLogic` covers `$F4E7-$F7CE` with all its ways to end (title screen, pause, game over, freeze, death, new map, Pac-Man's move or stand-still); every path ends in the sound routines, with the mirror bit of Pac-Man's picture before them on the paths that reach `$F7BA`.

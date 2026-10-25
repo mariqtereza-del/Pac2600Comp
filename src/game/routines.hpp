@@ -177,7 +177,7 @@ class TiaChip {
 };
 using SoundChip = TiaChip;   // the sound routines see the same chip
 namespace chip {
-inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07, REFP1 = 0x0C;
+inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07, REFP1 = 0x0C, VSYNC = 0x00, VBLANK = 0x01, CXCLR = 0x2C;
 inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18, AUDV0 = 0x19, AUDV1 = 0x1A;
 }
 
@@ -218,6 +218,7 @@ struct ConsoleInput {
   bool select = false;        // the Select switch pressed
   bool leftDifficultyA = false;   // the left difficulty switch in position A (SWCHB bit 6 set)
   bool rightDifficultyA = false;  // the right difficulty switch in position A (SWCHB bit 7 set)
+  bool colour = true;             // the colour / black-and-white switch in position colour (SWCHB bit 3 set)
 };
 
 // F21.22  The top logic of the frame ($F87E-$F9A7), after the vertical sync has been switched off: the score colour of player 1; a new game (fire on the
@@ -240,5 +241,13 @@ struct FrameInput {
 // item, power pill, ghost: F12), the joystick and Pac-Man's turns, his wafer, the new map, his move and stand-still rules (F10, F11), and at the end
 // the sound routines (F19). Returns false if ghostUpdate's never-run path was met (it is not called from here, so this does not occur); kept for symmetry.
 bool bottomLogic(Ram& ram, const Cartridge& cart, const FrameInput& input, TiaChip& chip);
+
+// F21.24  The start of the next frame ($F7D6-$F87A), after the overscan wait: the vertical blank and the vertical sync are switched on and the collision flags
+// cleared (chip writes); the picture of Pac-Man and of the ghost sprite chosen from the cartridge tables ($FDAB: four ghost pictures by FRAME_COUNTER bits 4-5;
+// $FDC2: four Pac-Man pictures by bits 3-4, or $FDFA by the event timer while he dies, or the first one while frozen); FRAME_COUNTER goes up; every 256
+// frames TICK256 goes up and, unless it wraps, the bonus item's timer is counted (F15); on the title screen ATTRACT_SHIFT goes up whenever FRAME_COUNTER wraps
+// (never to 0); the picture set-up values; the colour mask from the colour / black-and-white switch and the title shift; three colour indices.
+// The code then goes on at $F87C (where the vertical sync is switched off: the frame boundary).
+void frameStart(Ram& ram, const Cartridge& cart, const ConsoleInput& input, TiaChip& chip);
 
 }  // namespace game

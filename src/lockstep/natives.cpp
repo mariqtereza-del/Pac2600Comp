@@ -101,6 +101,19 @@ void soundEffectsNative(Machine& m, bool wrong = false) {
   m.rts();
 }
 
+// F21.24 The start of the next frame ($F7D6-$F87A): arrives after the overscan wait, goes on at $F87C with X = 0 (the next instruction writes X to the vertical
+// sync). The colour / black-and-white switch is read from the machine. Contract: X, the stack pointer and the arrival address are compared; A, Y and the
+// flags are reloaded by the code at $F87C.
+void frameStartNative(Machine& m) {
+  game::ConsoleInput in;
+  in.colour = (m.read(0x282) & 0x08) != 0;
+  MachineChip chip(m, false);
+  const game::Cartridge cart(m.romBytes());
+  withRam(m, [&](game::Ram& r) { game::frameStart(r, cart, in, chip); });
+  m.x = 0;
+  m.pc = 0xF87C;
+}
+
 // F21.23 The bottom logic ($F4E7-$F7CE): arrives after the picture code, goes on at $F7D1 (the wait for the overscan timer). The joystick port and the two
 // collision flags are read from the machine (the flags come from the oracle until the renderer exists, F23). Contract: the registers are all reloaded at
 // $F7D1, so only the stack pointer and the arrival address are compared; free stack bytes are ignored.
@@ -497,6 +510,13 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "frame-start") {
+    Machine::Contract c;
+    c.regs = 2 | 16 | 32;
+    c.stopAt = 0xF87C;
+    m.registerNative(0xF7D6, "FRAME_START (native)", [](Machine& mm) { frameStartNative(mm); }, c);
+    return true;
+  }
   if (name == "bottom-logic") {
     Machine::Contract c;
     c.deadStack = true;

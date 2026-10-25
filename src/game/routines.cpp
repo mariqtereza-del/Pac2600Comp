@@ -910,4 +910,59 @@ bool bottomLogic(Ram& ram, const Cartridge& cart, const FrameInput& input, TiaCh
   return true;
 }
 
+// The start of the next frame ($F7D6-$F87A).
+void frameStart(Ram& ram, const Cartridge& cart, const ConsoleInput& in, TiaChip& chip) {
+  chip.write(chip::VBLANK, 3);
+  chip.write(chip::VSYNC, 3);
+  chip.write(chip::CXCLR, 3);
+  const uint8_t counter = at(ram, ram::FRAME_COUNTER);
+  const uint8_t eighths = counter >> 3;
+  at(ram, ram::SPRITE0_PTR_LO) = cart.at(0xFDAB + ((eighths >> 1) & 3));
+  uint8_t sprite1 = 0;
+  bool chosen = false;
+  if (at(ram, ram::GAME_FLAGS) & 0x40) {                         // dying: the picture follows the event timer
+    sprite1 = cart.at(0xFDFA + ((at(ram, ram::EVENT_TIMER) >> 2) & 0x0F));
+    chosen = sprite1 != 0;
+  }
+  if (!chosen) {
+    sprite1 = cart.at(0xFDC2 + (eighths & 3));
+    if (at(ram, ram::GAME_FLAGS) & 0x80) sprite1 = cart.at(0xFDC2);        // frozen: the first picture
+  }
+  at(ram, ram::SPRITE1_PTR_LO) = sprite1;
+  uint8_t& frame = at(ram, ram::FRAME_COUNTER);
+  frame = static_cast<uint8_t>(frame + 1);
+  if (frame == 0) {
+    uint8_t& tick = at(ram, ram::TICK256);
+    tick = static_cast<uint8_t>(tick + 1);
+    bool attractStep = true;
+    if (tick != 0) {                                             // the bonus item's timer (F15)
+      uint8_t& bonus = at(ram, ram::BONUS_TIMER);
+      bonus = static_cast<uint8_t>(bonus - 1);
+      if (bonus == 0) {
+        uint8_t& flags = at(ram, ram::GAME_FLAGS);
+        flags ^= 0x02;
+        uint8_t length = 0x12;
+        if (flags & 0x02) length = (flags & 0x20) ? 2 : 3;
+        bonus = length;
+      }
+      attractStep = at(ram, ram::ATTRACT_SHIFT) != 0;
+    }
+    if (attractStep) {                                           // the title-screen shift, never 0
+      uint8_t& shift = at(ram, ram::ATTRACT_SHIFT);
+      do shift = static_cast<uint8_t>(shift + 1); while (shift == 0);
+    }
+  }
+  at(ram, ram::SPRITE0_PTR_HI) = 0xFD;
+  at(ram, ram::SPRITE1_PTR_HI) = 0xFD;
+  at(ram, ram::SPRITE1_Y) = static_cast<uint8_t>(at(ram, ram::PACMAN_Y) + 0x0B);
+  at(ram, ram::SPRITE0_LINES) = 7;
+  at(ram, ram::SPRITE1_LINES) = 6;
+  uint8_t mask = in.colour ? 0xFF : 0x0F;
+  if (at(ram, ram::ATTRACT_SHIFT) != 0) mask ^= 0x08;
+  at(ram, ram::COLOUR_MASK) = mask;
+  at(ram, ram::COLOUR_BG) = 7;
+  at(ram, ram::COLOUR_MAZE) = 8;
+  at(ram, ram::COLOUR_SCORE_P2) = at(ram, ram::SCORE_COLOUR_P2);
+}
+
 }  // namespace game

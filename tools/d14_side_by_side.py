@@ -19,7 +19,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 REF = ROOT / 'build' / 'stella_probe' / 'stella_script.exe'
-OURS = ROOT / 'build' / 'host' / 'pacman2600.exe'
+OURS = pathlib.Path(os.environ.get('PACMAN_EXE') or ROOT / 'build' / 'host' / 'pacman2600.exe')  # PACMAN_EXE: test another build (the gate check uses the release's)
 SHA1 = '0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1'
 
 HELD = [('UP', 1), ('DOWN', 2), ('LEFT', 4), ('RIGHT', 8), ('FIRE', 16), ('SELECT', 32), ('RESET', 64)]

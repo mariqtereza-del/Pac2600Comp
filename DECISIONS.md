@@ -123,6 +123,7 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Result of the first run** (test zip, 3,281 files scanned): nothing that could be a ROM; unzipped into a fresh folder under `out\` and run from there: `--self-check` OK, `--find-rom` with no ROM anywhere exit 5, with the ROM given by path (the ROM was never copied) exit 0, 4 s muted run 59.97 frames a second, default Framed picture, 13 files, no `.a26` or `.bin`.
 - **Not proved by me:** that it runs on a PC that never had Visual Studio (this PC has it; the DLL list says it should); the owner's try.
 - **Our own code's licence:** not chosen (J1). The README says only that the program as a whole is distributed under GPL v2 because of Stella, and does not choose for the owner.
+- **Added at Gate D (2026-10-26, found by the owner):** the first release only told people to use `--record` / `--replay` on a command line, which a double-click cannot do. The zip now also holds `Record a game.cmd` (starts the game recording into a `recordings` folder next to the program, named by date and time) and `Replay a game.cmd` (plays the file dropped on it, else the newest recording), and the README says where a recording goes.
 - **Reversible:** Yes.
 
 ### T-D14-3 — Power-on memory: random or zero makes no difference to this game (2026-10-25, Stage D14, owner's rule D-004)

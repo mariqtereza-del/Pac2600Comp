@@ -203,9 +203,15 @@ KEYS                                              PS4 PAD
   Esc                     quit
 The three switches (F4, F5, F6) stay where you leave them, also for the next start.
 
-RECORDING (for testers)
-  pacman2600.exe --record my.inputs     plays as usual and writes every frame's input to my.inputs when you close it
-  pacman2600.exe --replay my.inputs     plays that recording back from power-on; the game comes out exactly the same
+RECORDING (to keep a game and watch it again, or for testers)
+  Double-click  "Record a game.cmd"   to play as usual while every frame's input is recorded. Close the game with Esc
+                (or the X button): the recording is then saved in the "recordings" folder next to the program.
+  Double-click  "Replay a game.cmd"   to play the newest recording back from power-on; the game comes out exactly the
+                same. To replay another recording, drag its file onto "Replay a game.cmd". When a recording ends, the
+                keyboard takes over again.
+  By hand (Command Prompt, in this folder):   pacman2600.exe --record "C:\some folder\my.inputs"
+                                              pacman2600.exe --replay "C:\some folder\my.inputs"
+  A name without a folder is saved in the folder the Command Prompt was in, not beside the program.
 
 FILES THE PROGRAM WRITES
   settings.ini next to pacman2600.exe: the path of your game file, the window place and size, the three switches.
@@ -228,6 +234,33 @@ Needs: Windows 10 or 11 (64 bit); Visual Studio Build Tools with the "Desktop de
 Unzip the source zip, then run  tools\build_host.cmd  in a command window. The program appears in build\host.
 The libraries are in third_party\ (SDL3 3.4.18 and Stella 7.0, unchanged; the one build-time fix is in
 third_party\CMakeLists.txt).
+"@
+
+$recordCmd = @"
+@echo off
+rem Plays the game and records every frame's input. Close the game with Esc: the file is then in the recordings folder.
+setlocal
+cd /d "%~dp0"
+if not exist "recordings" mkdir "recordings"
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "STAMP=%%i"
+start "" "%~dp0pacman2600.exe" --record "%~dp0recordings\play-%STAMP%.inputs"
+echo Recording. Close the game with Esc; the recording is saved in the "recordings" folder next to the program.
+timeout /t 5 >nul
+"@
+
+$replayCmd = @"
+@echo off
+rem Plays a recording back: the one dropped on this file, or else the newest one in the recordings folder.
+setlocal
+cd /d "%~dp0"
+set "FILE=%~1"
+if "%FILE%"=="" for /f "delims=" %%f in ('dir /b /o-d "recordings\*.inputs" 2^>nul') do if not defined FILE set "FILE=%~dp0recordings\%%f"
+if "%FILE%"=="" (
+  echo There is no recording yet. Use "Record a game.cmd" first, or drag a .inputs file onto this file.
+  pause
+  exit /b 1
+)
+start "" "%~dp0pacman2600.exe" --replay "%FILE%"
 "@
 
 $romNote = @"
@@ -267,6 +300,8 @@ try {
   Add-File $zip $sourceZip "source/PacMan2600-$Version-source.zip"
   Add-Text $zip $readme 'README.txt'
   Add-Text $zip $romNote 'roms/PUT_YOUR_ROM_HERE.txt'
+  Add-Text $zip $recordCmd 'Record a game.cmd'
+  Add-Text $zip $replayCmd 'Replay a game.cmd'
   Add-Text $zip $building 'source/BUILDING.txt'
   $info = "PacMan2600 $Version`n" + $(if ($dirty) { "TEST BUILD: made with uncommitted changes; the source zip is the last commit, not exactly this program`n" } else { '' }) + "Git commit: $commit`nCommit date: $commitDate`nMicrosoft runtime from: $($crt.FullName)`nSHA-256 of the files:`n" + ($hashes -join "`n") + "`n"
   Add-Text $zip $info 'BUILD-INFO.txt'

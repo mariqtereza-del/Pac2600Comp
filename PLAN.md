@@ -1346,7 +1346,26 @@ Grow the host program one visible feature at a time, each checked against Stella
     - **Documentation updates:** `DECISIONS.md` (T-D15-n), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage D15: Release folder`.
     - **Next stage:** D16 — Gate D: Phase 1 done.
-16. **[Not started] D16 — Gate D: Phase 1 done.** You play a full game from the release zip, unzipped somewhere new. Checklist: correct shape, fullscreen and windowed, sound, keyboard, pad, ROM picker, replays identical, discrepancies list reviewed, version 0.1.0 tagged in Git.
+16. **[In progress] D16 — Gate D: Phase 1 done.** *(expanded 2026-10-26)*
+    - **Objective:** decide, with evidence, whether Phase D is complete: the release zip, unzipped in a new place, plays Pac-Man correctly. Items: correct shape, fullscreen and windowed, sound, keyboard, pad, ROM picker, replays identical, discrepancies list reviewed, version `0.1.0` tagged in Git.
+    - **Why it matters:** Rule 10: no new major phase (E: play recordings, F: the native rebuild) until the previous one meets its completion criteria. This is also the first version that is a finished thing.
+    - **Prerequisites:** D15 Done (commit `72d8ca7`); the release zip `out\PacMan2600-0.1.0-windows.zip`.
+    - **What Claude Code will do:**
+      1. `tools\d16_gate_check.ps1 <unzipped folder>`: runs the checks that need no human on the program **from the unzipped release**: the picture shape and border in the window at four sizes, the real fullscreen round trip, sound with 0 underruns, injected keys reaching the game and the switches, the virtual pad, recording then replaying (window and no window, identical fingerprints), the ROM search (nothing found, wrong file, right file by path; the ROM is never copied), and the release's own files (no ROM, SHA-256 equal to `BUILD-INFO.txt`).
+      2. Re-runs the side-by-side check against Stella (`tools\d14_side_by_side.py`) and the key and unit tests, so the gate rests on fresh runs, not on earlier notes.
+      3. `docs\GATE_D.md`: the checklist with a verdict and the evidence for each item, and what only you can judge.
+    - **What I must do:** unzip the release somewhere new, start `pacman2600.exe`, use the real ROM picker once (or the `roms` folder), play a **full game** (all three lives): sound, keys, the PS4 pad, fullscreen (Alt+Enter), a recording and its replay (`pacman2600.exe --record my.inputs`, then `--replay my.inputs`), and read `DISCREPANCIES.md`. Then tell me yes or what is wrong.
+    - **Exact instructions:** given at the end of the stage.
+    - **Required input:** your full play-through and your verdict on `DISCREPANCIES.md`.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** every item PASS; tag `v0.1.0` made in Git (local; nothing is pushed).
+    - **Verification:** the gate script's report; fresh side-by-side run; your play.
+    - **Completion criteria:** all items PASS with evidence, your OK, the tag.
+    - **Potential problems:** the ROM picker is a Windows dialog that I cannot click for you (it is only checked by you); the pad needs the real pad; sound quality is judged by ear.
+    - **Recovery:** new files only (a script, a document, a tag); undo by returning to `72d8ca7` and removing the tag (with your OK).
+    - **Documentation updates:** `docs\GATE_D.md`, `PROJECT_STATUS.md`, `PLAN.md`, `DECISIONS.md` if anything is decided.
+    - **Git checkpoint:** `Stage D16: Gate D` and the tag `v0.1.0`.
+    - **Next stage:** E1 — see Phase E.
 
 #### Getting the shape right (stage D6 in detail)
 

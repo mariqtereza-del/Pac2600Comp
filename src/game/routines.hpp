@@ -177,7 +177,7 @@ class TiaChip {
 };
 using SoundChip = TiaChip;   // the sound routines see the same chip
 namespace chip {
-inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07;
+inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07, REFP1 = 0x0C;
 inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18, AUDV0 = 0x19, AUDV1 = 0x1A;
 }
 
@@ -227,5 +227,18 @@ struct ConsoleInput {
 // from the colour table of the cartridge ($FF2B, or $FF36 for black and white), the title-screen shift and the colour mask; COLUP1 and COLUP0.
 // The code then goes on with the drawing code at $F07F. Returns false if ghostDecide met the never-run path.
 bool topLogic(Ram& ram, const Cartridge& cart, const ConsoleInput& input, TiaChip& chip);
+
+// What the chip tells the game in one frame, besides the console switches: the joysticks and the two collision flags (F12, F18).
+struct FrameInput {
+  uint8_t swcha = 0xFF;       // the joystick port: left joystick in the upper nibble, right joystick in the lower; 0 = pressed
+  bool bonusTouched = false;  // missile 1 and the ball both overlapped Pac-Man (the bonus item)
+  bool ghostTouched = false;  // player 0 (the ghost of the frame) overlapped player 1 (Pac-Man)
+};
+
+// F21.23  The bottom logic of the frame ($F4E7-$F7CE), after the picture is drawn: nothing on the title screen; otherwise the pause after a ghost was
+// eaten (the pause counter only), the event timer (scare, freeze, death delay: F16, F17), the freeze set-up of the ghost speeds, the collisions (bonus
+// item, power pill, ghost: F12), the joystick and Pac-Man's turns, his wafer, the new map, his move and stand-still rules (F10, F11), and at the end
+// the sound routines (F19). Returns false if ghostUpdate's never-run path was met (it is not called from here, so this does not occur); kept for symmetry.
+bool bottomLogic(Ram& ram, const Cartridge& cart, const FrameInput& input, TiaChip& chip);
 
 }  // namespace game

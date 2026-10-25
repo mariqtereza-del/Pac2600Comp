@@ -101,6 +101,22 @@ void soundEffectsNative(Machine& m, bool wrong = false) {
   m.rts();
 }
 
+// F21.23 The bottom logic ($F4E7-$F7CE): arrives after the picture code, goes on at $F7D1 (the wait for the overscan timer). The joystick port and the two
+// collision flags are read from the machine (the flags come from the oracle until the renderer exists, F23). Contract: the registers are all reloaded at
+// $F7D1, so only the stack pointer and the arrival address are compared; free stack bytes are ignored.
+void bottomLogicNative(Machine& m) {
+  game::FrameInput in;
+  in.swcha = m.read(0x280);
+  in.bonusTouched = (m.read(0x31) & m.read(0x33) & 0x40) != 0;
+  in.ghostTouched = (m.read(0x37) & 0x80) != 0;
+  MachineChip chip(m, false);
+  const game::Cartridge cart(m.romBytes());
+  bool ok = true;
+  withRam(m, [&](game::Ram& r) { ok = game::bottomLogic(r, cart, in, chip); });
+  if (!ok) { m.fail(); return; }
+  m.pc = 0xF7D1;
+}
+
 // F21.22 The top logic ($F87E-$F9A7): the code arrives here when the vertical sync has been switched off (the frame boundary is the instruction before) and
 // goes on at $F07F. The inputs come from the console registers of the machine. Contract: the registers are all reloaded at $F07F, so only the stack pointer
 // and the arrival address are compared; free stack bytes are ignored (the routines called from here leave old return addresses).
@@ -481,6 +497,14 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "bottom-logic") {
+    Machine::Contract c;
+    c.deadStack = true;
+    c.regs = 16 | 32;
+    c.stopAt = 0xF7D1;
+    m.registerNative(0xF4E7, "BOTTOM_LOGIC (native)", [](Machine& mm) { bottomLogicNative(mm); }, c);
+    return true;
+  }
   if (name == "top-logic") {
     Machine::Contract c;
     c.deadStack = true;

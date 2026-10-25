@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-23 — The bottom logic of the frame rewritten (2026-10-26, Stage F21.23)
+
+- **Piece:** `game::bottomLogic` covers `$F4E7-$F7CE` with all its ways to end (title screen, pause, game over, freeze, death, new map, Pac-Man's move or stand-still); every path ends in the sound routines, with the mirror bit of Pac-Man's picture before them on the paths that reach `$F7BA`.
+- **Inputs:** the joystick port and the two collision flags come in a `game::FrameInput`; until the renderer (F23) exists, the lockstep tool takes the flags from the oracle of F20.
+- **Result:** 70 of 70 games identical; 439,610 calls (one per frame) compared with the original (memory, chip writes, stack pointer, arrival address): 0 differences; identical together with F21.1-F21.22.
+- **Reversible:** Yes.
+
 ### T-F21-22 — The top logic of the frame rewritten; the console as an input structure (2026-10-26, Stage F21.22)
 
 - **Piece:** `game::topLogic` covers `$F87E-$F9A7` (the frame ends one instruction earlier, at `$F87C`, so the native piece starts after the frame boundary and the golden rows are unchanged). It ends by going on at `$F07F`, the start of the drawing code.

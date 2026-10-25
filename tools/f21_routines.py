@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.23', 'MAIN/bottom logic', 'bottom-logic', 0xF4E7, 'game::bottomLogic ($F4E7-$F7CE): pause and event timer, freeze set-up, collisions, wafers, new map, Pac-Man joystick and moves, sound; ends by going on at $F7D1'),
     ('F21.22', 'MAIN/top logic', 'top-logic', 0xF87E, 'game::topLogic ($F87E-$F9A7): new game, game-number steps, difficulty bit, the ghost of the frame (three updates), the opening animations, the colours; ends by going on at $F07F'),
     ('F21.21', 'SCORE_DIGITS', 'score-digits', 0xF3EE, 'game::scoreDigits: the digits of a score to picture pointers (leading zeros blank) and the seven rows of the score line written to the picture chip, then CLEAR_GRAPHICS; chip writes compared in order'),
     ('F21.20', 'PACMAN_KEEP_GOING', 'keep-going', 0xF793, 'game::pacmanKeepGoing: stick neutral, exactly on a cell: try to go on, else stand still; ends the caller when he stands still (no move); contract: X, stack pointer, arrival address, live memory'),

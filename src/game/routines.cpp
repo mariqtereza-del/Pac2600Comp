@@ -649,4 +649,265 @@ bool topLogic(Ram& ram, const Cartridge& cart, const ConsoleInput& in, TiaChip& 
   return true;
 }
 
+// The bottom logic of the frame ($F4E7-$F7CE).
+namespace {
+
+struct Bottom {
+  Ram& ram;
+  const Cartridge& cart;
+  const FrameInput& in;
+  TiaChip& chip;
+
+  uint8_t& flags() { return at(ram, ram::GAME_FLAGS); }
+  uint8_t& pill() { return at(ram, ram::PILL_FLAGS); }
+  uint8_t wall(unsigned i) { return cart.at(0xFE13 + (i & 0xFF)); }
+
+  // L_F7C3: the sound at the end of every frame (the volumes are silenced first), and the mirror bit of Pac-Man's picture at L_F7BA
+  void sounds() {
+    chip.write(chip::AUDV0, 0);
+    chip.write(chip::AUDV1, 0);
+    soundEffects(ram, chip);
+    soundMusic(ram, cart, chip);
+  }
+  void finish() {                                           // L_F7BA
+    if (at(ram, ram::PACMAN_STATE) & 0x01) chip.write(chip::REFP1, 0x08);
+    sounds();
+  }
+
+  // the pressed directions: joystick bits up 1, down 2, left 4, right 8 (the TEMP_D2 copy is what the original works on)
+  enum class Where { Finish, KeepGoing };
+
+  Where joystickAndMove() {                                 // L_F6CE
+    const uint8_t joy = at(ram, ram::JOY_DIRECTION);
+    at(ram, ram::TEMP_D2) = joy;
+    if (joy == 0) return Where::KeepGoing;
+    enum { Horizontal, Vertical } step = (at(ram, ram::PACMAN_STATE) & 0x80) ? Horizontal : Vertical;   // moving vertically: try sideways first
+    for (;;) {
+      if (step == Horizontal) {                             // L_F6DD
+        const uint8_t pressed = (at(ram, ram::TEMP_D2) >> 2) & 3;      // bit 0 left, bit 1 right
+        bool turn = false;
+        uint8_t dir = 0;
+        if (pressed != 0 && at(ram, ram::Y_OFFSET) == 0) {
+          const bool left = (pressed & 1) != 0;
+          const uint8_t cell = at(ram, ram::CELL_INDEX);
+          if (at(ram, ram::X_OFFSET) != 0) {                // between two cell columns: a turn round is always allowed
+            turn = true;
+            dir = left ? 1 : 0;
+          } else if (left) {
+            if (at(ram, ram::POS_CODE) != 0xF9 && !(wall(static_cast<uint8_t>(cell - 1)) & 0x80)) { turn = true; dir = 1; }
+          } else if (!(at(ram, ram::CELL_ROW) == 3 && cell == 0x38) && !(wall(static_cast<uint8_t>(cell + 2)) & 0x80)) {
+            turn = true;
+            dir = 0;
+          }
+        }
+        if (turn) {                                         // L_F700 / L_F71B: the mirror bit, then SET_DIRECTION (which moves)
+          if (dir == 1) at(ram, ram::PACMAN_STATE) |= 0x01;
+          else at(ram, ram::PACMAN_STATE) &= 0xFE;
+          setDirection(ram, 0, dir);
+          return Where::Finish;
+        }
+        const uint8_t rest = at(ram, ram::TEMP_D2) & 0xF3;  // L_F725: only up / down left to try
+        if (rest == 0) return Where::KeepGoing;
+        at(ram, ram::TEMP_D2) = rest;
+        step = Vertical;
+        continue;
+      }
+      // L_F72D: vertical
+      const uint8_t d2 = at(ram, ram::TEMP_D2);
+      bool turn = false;
+      uint8_t dir = 0;
+      if ((d2 & 3) != 0 && at(ram, ram::X_OFFSET) == 0) {
+        const bool up = (d2 & 1) != 0;
+        bool done = false;
+        if (at(ram, ram::PACMAN_X) == 0x4C) {               // the middle column: the openings
+          const uint8_t y = at(ram, ram::PACMAN_Y);
+          if (y == 0 && up) { wrapToTop(ram, 0); return Where::Finish; }
+          if (y == 0x46 && (d2 & 2)) { wrapToBottom(ram, 0); return Where::Finish; }
+        }
+        if (at(ram, ram::Y_OFFSET) != 0) { turn = true; dir = up ? 3 : 2; done = true; }   // between two rows: always allowed
+        else {
+          const uint8_t t = wall(at(ram, ram::CELL_INDEX));
+          if (up ? (t & 0x40) : (t & 0x20)) { turn = true; dir = up ? 3 : 2; }
+          done = true;
+        }
+        (void)done;
+      }
+      if (turn) {
+        setDirection(ram, 0, dir);
+        return Where::Finish;
+      }
+      at(ram, ram::TEMP_D2) = at(ram, ram::TEMP_D2) & 0xFC;   // L_F781: nothing vertical; look at the sideways request again
+      step = Horizontal;
+    }
+  }
+
+  void eatWafer() {                                         // L_F666 (Pac-Man not in an opening)
+    if (at(ram, ram::Y_OFFSET) != 0) return;
+    uint8_t cell = at(ram, ram::CELL_INDEX);
+    uint8_t t = wall(cell);
+    if (at(ram, ram::PACMAN_X) != 0x4C && (at(ram, ram::PACMAN_STATE) & 0x80)) t |= wall(static_cast<uint8_t>(cell + 1));
+    if (!(t & 1)) return;
+    const uint8_t index = t >> 2;
+    const uint8_t byte = cart.at(0xFE79 + ((at(ram, ram::CELL_ROW) << 1) | ((t >> 1) & 1)));
+    const uint8_t mask = cart.at(0xFE6A + (index & 7));
+    uint8_t& maze = at(ram, static_cast<uint8_t>(ram::MAZE_00 + byte));
+    if (!(maze & mask)) return;
+    maze &= static_cast<uint8_t>(~mask);
+    addScore(ram, cart, 4, mask);                            // the original keeps the mask in X: TEMP_E1 gets it
+    soundStart(ram, cart, 0);
+  }
+
+  // L_F6AA: the new map when nothing is left; returns true if the map was refilled (the original then goes on at L_F7BA)
+  bool newMapCheck() {
+    uint8_t left = pill() & 0x3C;
+    for (uint8_t i = 0; i < 16; ++i) left |= at(ram, static_cast<uint8_t>(ram::MAZE_00 + i));
+    if (left != 0) return false;
+    if (at(ram, ram::LIVES) != 9) at(ram, ram::LIVES) = static_cast<uint8_t>(at(ram, ram::LIVES) + 1);
+    if (at(ram, ram::LEVEL_SPEED) != 0x0E) at(ram, ram::LEVEL_SPEED) = static_cast<uint8_t>(at(ram, ram::LEVEL_SPEED) + 1);
+    newMaze(ram);
+    return true;
+  }
+
+  // L_F61E: the joystick, Pac-Man in an opening or in the maze
+  void pacman() {
+    uint8_t joy = in.swcha;
+    if (!(at(ram, ram::PLAYER_MODE) & 0x80)) joy >>= 4;
+    joy = static_cast<uint8_t>(~joy) & 0x0F;
+    at(ram, ram::JOY_DIRECTION) = joy;
+    if (joy != 0) at(ram, ram::TICK256) = 0;
+    uint8_t& state = at(ram, ram::PACMAN_STATE);
+    if (state & 0x20) {                                     // in an opening: only a turn round
+      const bool up = (joy & 1) != 0, down = (joy & 2) != 0;
+      if ((up && !(state & 0x80)) || (!up && down && (state & 0x80))) {
+        if (state & 0x10) state ^= 0x80;
+        else {
+          at(ram, ram::PACMAN_Y) = static_cast<uint8_t>((0x3F ^ at(ram, ram::PACMAN_Y)) & 0x3F);
+          state ^= 0xC0;
+        }
+      }
+      return finish();
+    }
+    eatWafer();
+    if (newMapCheck()) return finish();
+    if (joystickAndMove() == Where::KeepGoing) {
+      if (pacmanKeepGoing(ram, cart) != KeepGoing::Stands) moveObject(ram, 0);
+    }
+    finish();
+  }
+
+  void run() {
+    if (at(ram, ram::ATTRACT_SHIFT) != 0) return sounds();             // the title screen: sound only
+    locateObject(ram, 0);
+    if (at(ram, ram::EAT_PAUSE) & 0x80) {                              // the pause after a ghost was eaten
+      at(ram, ram::EAT_PAUSE) = static_cast<uint8_t>(at(ram, ram::EAT_PAUSE) - 1);
+      return sounds();
+    }
+    uint8_t& timer = at(ram, ram::EVENT_TIMER);
+    if (timer != 0 && (at(ram, ram::FRAME_COUNTER) & 1)) {            // L_F4F7: the event timer runs every second frame
+      timer = static_cast<uint8_t>(timer - 1);
+      if (timer == 0) {
+        if (pill() & 0x80) {
+          if (pill() & 0x40) { pill() &= 0xBF; timer = 0x20; goto after_timer; }     // flashing part of the scare
+          pill() &= 0x7C;                                                            // the scare is over
+        }
+        if (flags() & 0x40) {                                                        // the death delay is over
+          flags() &= 0xBF;
+          placeObjects(ram);
+          if ((at(ram, ram::PLAYER_MODE) & 0x40) && at(ram, ram::LIVES_P2) != 0) {  // two players: the turn passes
+            swapPlayers(ram);
+            at(ram, ram::PLAYER_MODE) ^= 0x80;
+          }
+          if ((at(ram, ram::LIVES) | at(ram, ram::LIVES_P2)) != 0) {
+            at(ram, ram::LIVES) = static_cast<uint8_t>(at(ram, ram::LIVES) - 1);
+            flags() |= 0x08;
+          } else {                                                                   // game over
+            flags() = 0;
+            at(ram, ram::ATTRACT_SHIFT) = 0x5F;
+            at(ram, ram::PACMAN_Y) = 0x5F;
+            return sounds();
+          }
+        } else if (flags() & 0x80) {
+          flags() &= 0x7F;                                                           // the freeze is over
+        }
+      }
+    }
+  after_timer:
+    if (flags() & 0x80) {                                                            // frozen: the ghosts' speed set-up
+      const uint8_t level = at(ram, ram::LEVEL_SPEED);
+      const uint8_t below = static_cast<uint8_t>(level - 1);
+      for (uint8_t x = 4; x >= 1; x = static_cast<uint8_t>(x - 1)) {
+        at(ram, static_cast<uint8_t>(ram::SPEED_ACC0 + x)) = (x & 1) ? below : level;
+        at(ram, static_cast<uint8_t>(ram::GHOST_TIMER0 - 1 + x)) = below;
+      }
+      return sounds();
+    }
+    // L_F573: the bonus item
+    if (in.bonusTouched) {
+      addScore(ram, cart, 6, 0);
+      soundStart(ram, cart, 1);
+      flags() ^= 0x02;
+      at(ram, ram::BONUS_TIMER) = 0x12;
+    } else {
+      // L_F591: a power pill (only on the four places, with the pill still there)
+      uint8_t x = 0;
+      bool onPill = false;
+      const uint8_t py = at(ram, ram::PACMAN_Y), px = at(ram, ram::PACMAN_X);
+      if (py == 0x05 || py == 0x41) {
+        if (py == 0x41) x = 1;
+        if (px == 0x04 || px == 0x94) {
+          if (px == 0x94) x = static_cast<uint8_t>(x + 2);
+          onPill = true;
+        }
+      }
+      if (onPill) {
+        const uint8_t mask = cart.at(0xFE6C + x);
+        if (pill() & mask) {
+          pill() = static_cast<uint8_t>((pill() & ~mask) | 0xC0);
+          timer = (flags() & 0x20) ? 0x50 : 0xA0;
+          addScore(ram, cart, 5, x);
+          soundStart(ram, cart, 2);
+          if (newMapCheck()) return finish();
+          return joystickPartAfterPill();
+        }
+      }
+    }
+    // L_F5D3: a ghost touched Pac-Man (checked in four frames out of eight)
+    if (!(at(ram, ram::FRAME_COUNTER) & 4) && in.ghostTouched) {
+      const uint8_t x = at(ram, ram::FRAME_COUNTER) & 3;
+      uint8_t& ghost = at(ram, static_cast<uint8_t>(ram::GHOST_STATE0 + x));
+      if (pill() & 0x80) {
+        if (!(ghost & 0x08)) {
+          ghost |= 0x08;
+          const uint8_t y = pill() & 3;
+          addScore(ram, cart, y, x);
+          if (y != 3) pill() = static_cast<uint8_t>(pill() + 1);
+          soundStart(ram, cart, 3);
+          at(ram, ram::EAT_PAUSE) = 0x9F;
+        }
+      } else if (!(ghost & 0x08)) {                                                  // Pac-Man is caught
+        flags() |= 0xC0;
+        at(ram, ram::EVENT_TIMER) = 0x3F;
+        return finish();
+      }
+    }
+    pacman();
+  }
+
+  // after a power pill was eaten the original jumps to L_F6AA (the new map test) and carries on from there with the joystick part
+  void joystickPartAfterPill() {
+    if (joystickAndMove() == Where::KeepGoing) {
+      if (pacmanKeepGoing(ram, cart) != KeepGoing::Stands) moveObject(ram, 0);
+    }
+    finish();
+  }
+};
+
+}  // namespace
+
+bool bottomLogic(Ram& ram, const Cartridge& cart, const FrameInput& input, TiaChip& chip) {
+  Bottom b{ram, cart, input, chip};
+  b.run();
+  return true;
+}
+
 }  // namespace game

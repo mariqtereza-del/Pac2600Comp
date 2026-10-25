@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F16-1 — What the level changes, the speeds and the timers (2026-10-26, Stage F16)
+
+- **Method:** `tools\f16_levels.py` lists every use of `LEVEL_SPEED`, `GAME_SELECT` and `EVENT_TIMER`, computes speeds from the accumulator cycle, and checks the rules on every frame of the 70 games.
+- **Result:** the level changes **only the ghosts**: their speed accumulator start values (objects 2 and 4: level, objects 1 and 3: level - 1) and their chase-timer reload (table `$FE6F` by level / 2, +1 for objects 2 and 3). Start level = ((game number - 2) and 6) + 4; +1 per map up to $0E. Measured steps per handled frame agree with 3 x the accumulator share to three digits on levels 4-12. Event timer: pill $A0 ($50 with difficulty bit) steps of two frames, then 32 steps of flashing, independent of the level; freeze $3C; death $3F; stands still in the eaten pause. 46 starts, 20 steps and 283,995 timer frames right.
+- **Correction:** the eaten-ghost pause is 32 frames (EAT_PAUSE counts from $9F to $7F), not 160 as written in the F12 and F13 documents; those texts were corrected. The timer evidence (scared times 384 + 32 per ghost eaten) shows it.
+- **Not claimed:** levels above 14 (do not exist), two players, the picture colours (F18).
+- **Reversible:** Yes.
+
 ### T-F15-1 — Scoring, bonus item and lives proved on every frame (2026-10-26, Stage F15)
 
 - **Method:** `tools\f15_scoring.py` compares, frame by frame in the 70 games, the score change with the sum of amounts the code adds (using F11 wafer and pill events and the F12 flag logs), every change of the lives byte, the bonus timer at the 256-frame tick and the end of a death.

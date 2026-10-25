@@ -24,7 +24,7 @@ All of this is in the bottom logic, once per frame, after the picture is drawn a
 1. **Bonus item** (`$F573-$F58F`): the flag byte is the AND of CXM1P and CXP1FB; its bit 6 means that missile 1 *and* the ball both overlapped Pac-Man (the item is drawn with these two). Then: +100 points (`ADD_SCORE` 6), sound 1, the item's on-flag (`GAME_FLAGS` bit 1) toggled off, `BONUS_TIMER` = $12.
 2. **Power pills** are not tested with the flags: Pac-Man standing exactly on one of the four places (F11).
 3. **A ghost** (`$F5D3-$F61B`): only when `FRAME_COUNTER` bit 2 is clear, so on 4 frames of every 8; the ghost tested is number `FRAME_COUNTER & 3`, which is exactly the one the kernel draws as player 0 in that frame (one ghost is drawn per frame, flicker). If CXPPMM bit 7 is set:
-   - ghost scared (`PILL_FLAGS` bit 7) and not yet eaten: set bit 3 of its state ("eaten, eyes only"); `ADD_SCORE` with Y = `PILL_FLAGS & 3` (+20, +40, +80, +160 for the 1st to 4th ghost of one pill); count +1 (stays at 3); sound 3; `EAT_PAUSE` = $9F (the game freezes for 160 frames);
+   - ghost scared (`PILL_FLAGS` bit 7) and not yet eaten: set bit 3 of its state ("eaten, eyes only"); `ADD_SCORE` with Y = `PILL_FLAGS & 3` (+20, +40, +80, +160 for the 1st to 4th ghost of one pill); count +1 (stays at 3); sound 3; `EAT_PAUSE` = $9F (the game freezes for 32 frames: EAT_PAUSE counts from $9F down to $7F);
    - ghost scared but already eaten: nothing (the eyes are harmless);
    - ghost not scared and not eaten: Pac-Man dies: `GAME_FLAGS` |= $C0, `EVENT_TIMER` = $3F, and the rest of the frame is skipped (the death sequence is F17);
    - ghost not scared but eaten (eyes still travelling home after the scare ended): nothing.

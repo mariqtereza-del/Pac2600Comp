@@ -1888,7 +1888,25 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F15_SCORING.md`, `DECISIONS.md` (T-F15-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F15: Scoring, bonus item and lives`.
     - **Next stage:** F16 — Levels, speed-ups and timers.
-16. **[Not started] F16 — Levels, speed-ups and timers.**
+16. **[Done] F16 — Levels, speed-ups and timers.** *(expanded and done 2026-10-26)*
+    - **Objective:** find everything that depends on the level and every timer, and prove the rules.
+    - **Why it matters:** speed and timing are the difficulty of the game; the rebuilt game must have the same ones on every level.
+    - **Prerequisites:** F15 Done (`fcf4e66`); F10, F13 (movement and ghosts); the flag logs in `reference\f12`.
+    - **What Claude Code will do:**
+      1. `tools\f16_levels.py`: list every use of the level byte, the game number and the event timer; check the start level and the +1 per map; compute the ghost speed from the accumulator cycle for each level and compare with the measured steps; check the event timer (scared time, freeze, death delay) on every frame.
+      2. Write `docs\F16_LEVELS.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 0 wrong frames; a complete list of what the level changes.
+    - **Verification:** `python -I tools\f16_levels.py rom\pacman.a26` says `result: OK` (46 game starts and 20 level steps right; 283,995 timer frames right).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** levels above 14 do not exist; the difficulty-A scare time is from the code only if no recording shows it.
+    - **Recovery:** one new script and a generated document; undo by returning to `fcf4e66` (with your OK).
+    - **Documentation updates:** `docs\F16_LEVELS.md`, `DECISIONS.md` (T-F16-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`; correction of the pause length in the F12 and F13 documents.
+    - **Git checkpoint:** `Stage F16: Levels, speed-ups and timers`.
+    - **Next stage:** F17 — Game states.
 17. **[Not started] F17 — Game states:** attract mode, start, death, level end, game over, variations, console switches.
 18. **[Not started] F18 — The drawing kernel and flicker schedule.** Exactly which object is drawn on which line in which frame.
 19. **[Not started] F19 — Sound routines and their tables.**

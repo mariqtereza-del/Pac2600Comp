@@ -10,7 +10,7 @@ are written as `.byte`.
 Syntax (one instruction per line; `;` starts a comment):
   LDA #$10   LDA $80   LDA $80,X   LDA $0080 (four hex digits: absolute even below $100)   LDA $1234,Y
   LDA ($80,X)   LDA ($80),Y   JMP ($1234)   ASL A   BNE $F012 (the target address)   BNE label
-  label:   .org $F000   .byte $01,$02   .word $F000
+  label:   .org $F000   .byte $01,$02   .word $F000   NAME = $2A (an equate)
 """
 import pathlib
 import re
@@ -131,6 +131,10 @@ def assemble(source, org=0):
         out = bytearray()
         pc = org
         for line in lines:
+            me = re.match(r'^([A-Za-z_]\w*)\s*=\s*(.+)$', line)
+            if me:  # an equate: NAME = value (names a number, takes no space)
+                labels[me.group(1)] = value(me.group(2), labels, pas)
+                continue
             while True:
                 m = re.match(r'^([A-Za-z_][\w]*):\s*(.*)$', line)
                 if not m:
@@ -277,6 +281,8 @@ def selftest(rom_path):
     # branches and labels
     a, lab = assemble('.org $F000\nstart: LDX #$05\nloop: DEX\nBNE loop\nJMP start\n', 0xF000)
     check('labels and branches (backward branch -3, JMP absolute)', a == bytes([0xA2, 5, 0xCA, 0xD0, 0xFD, 0x4C, 0x00, 0xF0]), a.hex())
+    a, _ = assemble('WSYNC = $02\nCOLUBK = $09\nSTA WSYNC\nSTA COLUBK,X\nSTA $0002\n')
+    check('equates (NAME = value) give zero-page forms, and a four-digit number stays absolute', a == bytes([0x85, 0x02, 0x95, 0x09, 0x8D, 0x02, 0x00]), a.hex())
     # refusals
     refused = 0
     for src in ('LDA #$100', 'BNE $F200', 'STX $80,X', 'FOO $10', 'LDA $10,Z'):

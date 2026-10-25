@@ -1632,7 +1632,27 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F2_RAW_DISASSEMBLY.md`, `DECISIONS.md` (T-F2-1, T-F2-2), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F2: Raw disassembly`.
     - **Next stage:** F3 — Hardware names.
-3. **[Not started] F3 — Hardware names.** Replace raw addresses of the TIA and RIOT chips with their standard names (`WSYNC`, `GRP0`, `INTIM`…).
+3. **[Done] F3 — Hardware names.** *(expanded and done 2026-10-26)*
+    - **Objective:** in the listing, replace the numbers of the video chip (TIA) and the timer/input chip (RIOT) with their standard names (`WSYNC`, `GRP0`, `INTIM`...), without changing a single byte of the rebuilt ROM.
+    - **Why it matters:** every line that touches the screen, the sound or the controls becomes readable at once, and a wrong name would show up as a wrong guess later, so the names are checked against an independent source.
+    - **Prerequisites:** F2 Done (`8f0b4d1`): `reference\disasm\pacman_raw.asm`.
+    - **What Claude Code will do:**
+      1. Give the assembler of F1 equates (`NAME = value`), with a test.
+      2. `tools\f3_names.py`: names every chip operand (a store writes, everything else reads; chip copies at other addresses get an `_AT<address>` name), writes `reference\disasm\pacman_named.asm` (local only), assembles it and requires byte-identical.
+      3. Check the name tables against the tables in Stella's debugger source (vendored, read only) on every run.
+      4. `docs\F3_HARDWARE_NAMES.md`.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the named listing, a byte-identical rebuild, the statistics.
+    - **Verification:** `python -I tools\f3_names.py rom\pacman.a26` says the tables equal Stella's and BYTE-IDENTICAL; `python -I tools\f1_6502.py selftest rom\pacman.a26` (9 checks); the rebuilt bytes replay golden traces.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** a read-modify-write instruction on a chip address would be ambiguous (none exists); `STA $00,X` is a sweep over the whole page, not a register, and stays a number; the names say what the hardware does, not what the game does with it (later stages).
+    - **Recovery:** new tool and local files; undo by returning to `8f0b4d1` (with your OK).
+    - **Documentation updates:** `docs\F3_HARDWARE_NAMES.md`, `DECISIONS.md` (T-F3-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F3: Hardware names`.
+    - **Next stage:** F4 — Code versus data.
 4. **[Not started] F4 — Code versus data.** Mark graphics shapes, maze data, colour and sound tables as data.
 5. **[Not started] F5 — The frame loop.** Find the start-up code and the four parts of every frame: vertical sync, vertical blank (logic time), the visible picture ("kernel"), overscan (more logic time).
 6. **[Not started] F6 — What actually runs.** Replay every golden trace with execution logging; every ROM byte is marked executed, read as data, or never touched.

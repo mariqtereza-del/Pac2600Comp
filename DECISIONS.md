@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F3-1 — Hardware names in the listing (2026-10-26, Stage F3)
+
+- **What:** 178 operands now carry a standard hardware name (47 different registers, 51 equates): e.g. 28 uses of the wait-for-line register, 13 of the player-0 graphics register, 15 each of the playfield registers PF1 and PF2, the sound registers (AUDC/AUDF/AUDV, 16), the collision reads (CXM1P, CXP1FB, CXPPMM), the fire button (INPT4), the joystick and console switches (SWCHA, SWCHB) and the timer (TIM64T set, INTIM read). `STA $00,X` (a sweep over the whole page at the start) stays a number. No chip address was left without a name.
+- **Rules:** a store writes, every other instruction reads (the same address has two names). Chip copies: the video chip ignores some address bits, so `$31`, `$33`, `$37`, `$3C` are copies of the collision/input read registers `CXM1P`, `CXP1FB`, `CXPPMM`, `INPT4`; they are written with an equate `CXM1P_AT31 = $31`, so the exact address survives and the rebuild stays byte-identical. The same for the timer-chip mirrors.
+- **Check:** every run compares the name tables (45 write names, 14 read names, the RIOT ports and timers) with the tables in Stella's debugger source (`CartDebug.cxx`, vendored, read only): equal. The assembler of F1 got equates, with one more self-test (9 checks, 0 failed).
+- **Proof:** the named listing assembles byte-identical to the ROM (same SHA-1 `0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1`); the bytes replay golden traces BL-001, BL-049 and BL-067 equal (the bytes are the ROM's, so this is a formality). The listing is local only (`reference\disasm\pacman_named.asm`).
+- **Not claimed:** the names say what the chip does; what the game means by each use (for example which write is the sprite of Pac-Man) is for F5 onward.
+- **Reversible:** Yes.
+
 ### T-F2-1 — The raw listing; why no second assembler was needed (2026-10-26, Stage F2)
 
 - **The listing:** 2,184 lines: 1,815 instructions (8 never run in the recorded games: two calls to `$FB36` and `$FB5C` and two `PLA PLA RTS` pieces, recognised because they decode exactly into official instructions), 544 data bytes, 279 labels (242 code, 37 data). Every branch, jump, call and absolute reference into the ROM is written with its label; no reference used the mirror `$1000-$1FFF`. No names or comments yet (F3 onwards). It stays in `reference\disasm\` (local only: it is the original program in readable form; Rule 7).

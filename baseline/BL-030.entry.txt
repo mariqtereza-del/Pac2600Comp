@@ -1,0 +1,24 @@
+id: BL-030
+title: Pac-Man reverses at once
+shows: LEFT for 10 frames, then RIGHT held: the direction is reversed in the middle of a corridor.
+inputs: BL-030.inputs
+frames: 480
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: d6aebc36c66aca45da74e37b759958318df9903b04749a3ea49a72b3dcac3f5f
+trace_bytes: 144016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game (lives counter reads 3 from frame 240).
+  - Play begins on frame 367 (pause flag clears); Pac-Man stands at (76,60), the start place.
+  - Joystick on frames 367-369: nothing.
+  - Joystick on frames 370-379: LEFT.
+  - Joystick on frames 380-439: RIGHT.
+  - Joystick on frames 440-479: nothing.
+  - Pac-Man moves left from (76,60) to (71,60): 5 pixels, first step on frame 371, last on frame 378; frames between steps: 2,2,2,1 (1 x 1 frame, 3 x 2 frames); 0.625 pixels per frame
+  - Pac-Man moves right from (71,60) to (88,60): 17 pixels, first step on frame 380, last on frame 409; frames between steps: 2,2,1,2,2,2,2,1,2,2,2,1,2,2,... (3 x 1 frame, 13 x 2 frames); 0.567 pixels per frame
+  - Direction change left -> right at (71,60): last step of the first leg on frame 378, first step of the next on frame 380 (2 frames apart).
+  - Frames 409-464: Pac-Man does not move (stays at (88,60)) although RIGHT is held at frame 409: a wall in the way.
+  - Pac-Man took no pixel step on a frame when no direction was held.
+  - Frames 465-479: the pause flag (byte $D2 bit 6) is set for 15 frames; the lives counter reads 3 before and 3 at its end; bytes $B1/$B6 go from (88,60) to (88,60).
+  - How to check it against the real game: start a game, hold left for a moment, then hold right (switch on, press Game Reset, wait for the start tune to end; the frame numbers are counted from power-on at 60 per second; the joystick moves are listed above).

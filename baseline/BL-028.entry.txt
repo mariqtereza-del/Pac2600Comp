@@ -1,0 +1,23 @@
+id: BL-028
+title: A turn asked for early and held is taken at the corner
+shows: LEFT for 2 frames, then DOWN held from the start of the corridor: Pac-Man goes on left and turns down at the first corner.
+inputs: BL-028.inputs
+frames: 520
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: d4f4edbbc671c97a3dc7d242b5559dd7af8068fec09ba81019bbbba1bee7aa09
+trace_bytes: 156016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game (lives counter reads 3 from frame 240).
+  - Play begins on frame 367 (pause flag clears); Pac-Man stands at (76,60), the start place.
+  - Joystick on frames 367-369: nothing.
+  - Joystick on frames 370-371: LEFT.
+  - Joystick on frames 372-459: DOWN.
+  - Joystick on frames 460-519: nothing.
+  - Pac-Man moves left from (76,60) to (64,60): 12 pixels, first step on frame 371, last on frame 391; frames between steps: 2,2,2,1,2,2,2,1,2,2,2 (2 x 1 frame, 9 x 2 frames); 0.571 pixels per frame
+  - Pac-Man moves down from (64,60) to (64,70): 10 pixels, first step on frame 393, last on frame 409; frames between steps: 1,2,2,2,1,2,2,2,2 (2 x 1 frame, 7 x 2 frames); 0.588 pixels per frame
+  - Direction change left -> down at (64,60): last step of the first leg on frame 391, first step of the next on frame 393 (2 frames apart).
+  - Frames 409-519: Pac-Man does not move (stays at (64,70)) although DOWN is held at frame 409: a wall in the way.
+  - Pac-Man took no pixel step on a frame when no direction was held.
+  - How to check it against the real game: start a game, tap left, then hold down at once; Pac-Man walks left alone and turns down at the corner (switch on, press Game Reset, wait for the start tune to end; the frame numbers are counted from power-on at 60 per second; the joystick moves are listed above).

@@ -1,0 +1,20 @@
+id: BL-029
+title: A turn asked for only briefly is not remembered
+shows: LEFT for 2 frames, DOWN for 2 frames, then nothing: Pac-Man walks left to the wall at the corner and stays there.
+inputs: BL-029.inputs
+frames: 480
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 1b94a74ffc53274e30891be55d635b37ab8d921edcf430a0ffc4e59dcaabc38c
+trace_bytes: 144016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game (lives counter reads 3 from frame 240).
+  - Play begins on frame 367 (pause flag clears); Pac-Man stands at (76,60), the start place.
+  - Joystick on frames 367-369: nothing.
+  - Joystick on frames 370-371: LEFT.
+  - Joystick on frames 372-373: DOWN.
+  - Joystick on frames 374-479: nothing.
+  - Pac-Man moves left from (76,60) to (64,60): 12 pixels, first step on frame 371, last on frame 391; frames between steps: 2,2,2,1,2,2,2,1,2,2,2 (2 x 1 frame, 9 x 2 frames); 0.571 pixels per frame
+  - Pac-Man took 10 pixel steps on frames when no direction was held (first on frame 375): it keeps going in its last direction.
+  - How to check it against the real game: start a game, tap left, then tap down, then let go of the joystick (switch on, press Game Reset, wait for the start tune to end; the frame numbers are counted from power-on at 60 per second; the joystick moves are listed above).

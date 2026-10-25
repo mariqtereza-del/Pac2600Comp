@@ -1,0 +1,18 @@
+id: BL-035
+title: Computer play: the whole first level by the search bot
+shows: The 9,800-frame route of the search-playing bot of Stage C7: a game played, with about 280 joystick moves; used here to check the movement rules over a long game.
+inputs: BL-035.inputs
+frames: 9800
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 3b5f64b32584414e6589b5864d91e9c095f497b1de4133b19a2f980f0d9141c4
+trace_bytes: 2948816
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - This entry is the input of Stage C7 (tools\captures\c7_route.txt) replayed from power-on: a computer-played game that clears level 1.
+  - Movement rules measured over every frame of play (frames with the pause flag set are left out; each is checked step by step):
+  - Pixel steps of one pixel counted: 2178 (1471 horizontal, 707 vertical). Steps that were larger than one pixel or diagonal: 0.
+  - Every position reached in play is either on a corridor row (y a multiple of 10: 0,10,20,30,40,50,60,70) or on one of 11 vertical corridors (x = 4,24,36,52,64,88,100,116,128,136,148).
+  - Frames between two pixel steps of Pac-Man (when they are 3 or fewer): 1 frame: 475 times, 2 frames: 1661 times; so Pac-Man averages 0.563 pixels per frame while moving.
+  - Pac-Man never leaves the playing area: x runs from 4 to 148, y from 0 to 70 in play.
+  - How to check it against the real game: replay the route of tools\captures\c7_captures.txt in Stella (Stage C7) and watch Pac-Man: he always moves along the corridors, one pixel at a time.

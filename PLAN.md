@@ -1436,7 +1436,26 @@ Build a library of recorded games, each paired with exactly what the original di
     - **Documentation updates:** `docs\BASELINE.md`, `docs\CONTROLS.md` (a correction), `DECISIONS.md` (T-E2-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage E2: Starting up`.
     - **Next stage:** E3 — Pac-Man's movement.
-3. **[Not started] E3 — Pac-Man's movement.** Speed in frames per maze step, turning at corners, pushing into walls, reversing, holding diagonals, wrapping through the side tunnel. All scripted, plus bot play for the situations a script cannot reach.
+3. **[Done] E3 — Pac-Man's movement.** *(expanded and done 2026-10-26)*
+    - **Objective:** baseline entries for how Pac-Man moves: speed, stopping at walls, turning at corners (also when the turn is asked for early), reversing, a stick held diagonally, the openings at the top and bottom of the maze, and bot play over a whole level.
+    - **Why it matters:** the rebuilt game must move Pac-Man pixel for pixel like the original, including the odd frame pattern of its steps and the way a held turn is remembered.
+    - **Prerequisites:** E2 Done (`8daa0e8`); `tools\baseline.py`, `tools\e2_entries.py`.
+    - **What Claude Code will do:**
+      1. Explore with throw-away scripts which situations show different behaviour (turn early, brief request, reversal, diagonals, the opening).
+      2. `tools\e3_entries.py`: writes BL-026 to BL-037 (BL-035 is the Stage C7 bot route), makes each trace twice (byte-identical required), and writes the observations from the traces (steps, legs, frames between steps, direction changes, wall stops, pauses).
+      3. Cross-check the new inputs against the independent Phase C reference core (`tools\d14_side_by_side.py`).
+    - **What I must do:** nothing (D-008).
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 12 new entries (BL-026 to BL-037); 37 entries in all.
+    - **Verification:** every new entry's two traces identical; a fresh `baseline.py check` of all 37 equals the stored SHA-256 values; six new inputs (BL-026, 028, 031, 034, 036, 037) give 0 fingerprint differences and 0 different pictures against Stella's own script runner; BL-035 shows no step larger than one pixel in 9,800 frames.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the opening at the bottom and top of the maze starts a pause of 84 frames in which bytes $B1/$B6 hold other values than Pac-Man's place; what the game is doing in those frames (and what the status-bar number means) is not understood yet and is written as measured only (Phase F). Scripted entries last only about 150 frames of play before a ghost catches Pac-Man, so long cases come from the bot.
+    - **Recovery:** new files only; undo by returning to `8daa0e8` (with your OK).
+    - **Documentation updates:** `docs\BASELINE.md`, `docs\CONTROLS.md`, `DECISIONS.md` (T-E3-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage E3: Pac-Man's movement`.
+    - **Next stage:** E4 — Ghosts.
 4. **[Not started] E4 — Ghosts.** Leaving the box, chasing, flicker order, speed, the blue/vulnerable state, eyes returning, and how they choose turns. Claude Code also records the same start position with different input timing to see whether ghost choices change (a clue to how randomness works).
 5. **[Not started] E5 — Eating and scoring.** Wafers, power pills, ghosts eaten in a row, the bonus item, extra lives. Every score value is read from RAM and from the screen and must agree.
 6. **[Not started] E6 — Dying and game over.** Collision timing, the death animation and sound, respawn, losing the last life, the game-over screen, starting again.

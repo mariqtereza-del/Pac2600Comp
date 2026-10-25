@@ -58,7 +58,7 @@ The lockstep tool (F20) runs the emulator and the rebuilt code on one `.inputs` 
 
 ## Plan for the entries (Phase E)
 
-E2 start-up and variations; E3 Pac-Man's movement; E4 ghosts; E5 eating and scoring; E6 dying and game over; E7 your three long games; E8 edge cases. Gate E needs at least 30 entries, each with a trace and a description you could check against the real game.
+E2 start-up and variations (done); E3 Pac-Man's movement (done); E4 ghosts; E5 eating and scoring; E6 dying and game over; E7 your three long games; E8 edge cases. Gate E needs at least 30 entries, each with a trace and a description you could check against the real game.
 
 ## Entries so far
 
@@ -89,3 +89,19 @@ E2 start-up and variations; E3 Pac-Man's movement; E4 ghosts; E5 eating and scor
 | BL-023 | 2300 | Game Reset pressed at frame 1400 of the attract mode |
 | BL-024 | 2700 | Game Reset pressed at frame 1800 of the attract mode |
 | BL-025 | 3300 | Game Reset pressed at frame 2400 of the attract mode |
+| BL-026 | 560 | Pac-Man walks left to the wall and back right to the other wall |
+| BL-027 | 560 | Pac-Man turns down the first side corridor, then goes up and down it |
+| BL-028 | 520 | A turn asked for early and held is taken at the corner |
+| BL-029 | 480 | A turn asked for only briefly is not remembered |
+| BL-030 | 480 | Pac-Man reverses at once |
+| BL-031 | 500 | Joystick held diagonally: LEFT and DOWN together |
+| BL-032 | 500 | Joystick held diagonally: LEFT and UP together |
+| BL-033 | 500 | Joystick held diagonally: RIGHT and DOWN together |
+| BL-034 | 760 | DOWN pressed in the bottom corridor under the middle of the maze, and held |
+| BL-035 | 9800 | Computer play: the whole first level by the search bot |
+| BL-036 | 760 | UP pressed just after Pac-Man has come out at the top of the maze |
+| BL-037 | 760 | UP pressed while the pause flag of the bottom opening is set |
+
+## Pac-Man's movement, in short (Stage E3)
+
+Measured in BL-026 to BL-037 (`DECISIONS.md` T-E3-1; all numbers come from the traces by `tools\e3_entries.py`): Pac-Man (bytes $B1 = x, $B6 = y) moves one pixel at a time, never diagonally, along corridors at y = 0, 10, ... 70 and 11 vertical corridors; about 0.57 pixels per frame (2 frames per step, 1 frame about every fourth step). He stops at a wall, goes on after the stick is released, remembers a turn that is held until the corner but not a 2-frame tap, and reverses 2 frames after the press. The openings are in the top and bottom walls in the column x = 76 (there is no side tunnel); using one sets the pause flag for 84 frames without losing a life. What the game does inside those 84 frames is not yet understood.

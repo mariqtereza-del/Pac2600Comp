@@ -1,0 +1,31 @@
+id: BL-027
+title: Pac-Man turns down the first side corridor, then goes up and down it
+shows: LEFT to the corner, then DOWN, UP, DOWN held in turn: the vertical speed and the stops at the ends of the corridor.
+inputs: BL-027.inputs
+frames: 560
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: b82792910c808ca683c487e1adb636f3056282c9499c0ecdb517a50c9644fe41
+trace_bytes: 168016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game (lives counter reads 3 from frame 240).
+  - Play begins on frame 367 (pause flag clears); Pac-Man stands at (76,60), the start place.
+  - Joystick on frames 367-369: nothing.
+  - Joystick on frames 370-399: LEFT.
+  - Joystick on frames 400-429: DOWN.
+  - Joystick on frames 430-459: UP.
+  - Joystick on frames 460-519: DOWN.
+  - Joystick on frames 520-559: nothing.
+  - Pac-Man moves left from (76,60) to (64,60): 12 pixels, first step on frame 371, last on frame 391; frames between steps: 2,2,2,1,2,2,2,1,2,2,2 (2 x 1 frame, 9 x 2 frames); 0.571 pixels per frame
+  - Pac-Man moves down from (64,60) to (64,70): 10 pixels, first step on frame 401, last on frame 417; frames between steps: 1,2,2,2,1,2,2,2,2 (2 x 1 frame, 7 x 2 frames); 0.588 pixels per frame
+  - Pac-Man moves up from (64,70) to (64,53): 17 pixels, first step on frame 431, last on frame 459; frames between steps: 2,1,2,2,2,1,2,2,2,2,1,2,2,2,... (4 x 1 frame, 12 x 2 frames); 0.586 pixels per frame
+  - Pac-Man moves down from (64,53) to (64,70): 17 pixels, first step on frame 461, last on frame 489; frames between steps: 2,2,1,2,2,2,1,2,2,2,2,1,2,2,... (4 x 1 frame, 12 x 2 frames); 0.586 pixels per frame
+  - Direction change left -> down at (64,60): last step of the first leg on frame 391, first step of the next on frame 401 (10 frames apart).
+  - Direction change down -> up at (64,70): last step of the first leg on frame 417, first step of the next on frame 431 (14 frames apart).
+  - Direction change up -> down at (64,53): last step of the first leg on frame 459, first step of the next on frame 461 (2 frames apart).
+  - Frames 391-400: Pac-Man does not move (stays at (64,60)) although LEFT is held at frame 391: a wall in the way.
+  - Frames 417-430: Pac-Man does not move (stays at (64,70)) although DOWN is held at frame 417: a wall in the way.
+  - Frames 489-559: Pac-Man does not move (stays at (64,70)) although DOWN is held at frame 489: a wall in the way.
+  - Pac-Man took no pixel step on a frame when no direction was held.
+  - How to check it against the real game: start a game, hold left until Pac-Man reaches the corner, then down, up, down (switch on, press Game Reset, wait for the start tune to end; the frame numbers are counted from power-on at 60 per second; the joystick moves are listed above).

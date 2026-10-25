@@ -1,0 +1,33 @@
+id: BL-037
+title: UP pressed while the pause flag of the bottom opening is set
+shows: As BL-034, but the joystick is switched from DOWN to UP on frame 575, before the pause flag has cleared.
+inputs: BL-037.inputs
+frames: 760
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 4f9a2b69359c7f59196c5e74ea80fb81acd00d5a6620aa3a3fdcf2d2596bab96
+trace_bytes: 228016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game (lives counter reads 3 from frame 240).
+  - Play begins on frame 367 (pause flag clears); Pac-Man stands at (76,60), the start place.
+  - Joystick on frames 367-369: nothing.
+  - Joystick on frames 370-419: LEFT.
+  - Joystick on frames 420-469: DOWN.
+  - Joystick on frames 470-489: RIGHT.
+  - Joystick on frames 490-574: DOWN.
+  - Joystick on frames 575-699: UP.
+  - Joystick on frames 700-759: nothing.
+  - Pac-Man moves left from (76,60) to (64,60): 12 pixels, first step on frame 371, last on frame 391; frames between steps: 2,2,2,1,2,2,2,1,2,2,2 (2 x 1 frame, 9 x 2 frames); 0.571 pixels per frame
+  - Pac-Man moves down from (64,60) to (64,70): 10 pixels, first step on frame 421, last on frame 437; frames between steps: 1,2,2,2,1,2,2,2,2 (2 x 1 frame, 7 x 2 frames); 0.588 pixels per frame
+  - Pac-Man moves right from (64,70) to (76,70): 12 pixels, first step on frame 470, last on frame 490; frames between steps: 2,2,2,1,2,2,2,2,1,2,2 (2 x 1 frame, 9 x 2 frames); 0.571 pixels per frame
+  - Direction change left -> down at (64,60): last step of the first leg on frame 391, first step of the next on frame 421 (30 frames apart).
+  - Direction change down -> right at (64,70): last step of the first leg on frame 437, first step of the next on frame 470 (33 frames apart).
+  - Frame 491: the position jumps from (76,70) to (76,81) (not a one-pixel step).
+  - Frames 391-420: Pac-Man does not move (stays at (64,60)) although LEFT is held at frame 391: a wall in the way.
+  - Frames 437-469: Pac-Man does not move (stays at (64,70)) although DOWN is held at frame 437: a wall in the way.
+  - Frames 660-759: Pac-Man does not move (stays at (76,70)) although UP is held at frame 660: a wall in the way.
+  - Pac-Man took no pixel step on a frame when no direction was held.
+  - Frames 492-659: the pause flag (byte $D2 bit 6) is set for 168 frames; the lives counter reads 3 before and 3 at its end; bytes $B1/$B6 go from (76,81) to (76,70).
+  - Frame 491: byte $B6 reads 81, more than the lowest corridor row (70); in the picture of that frame Pac-Man is drawn below the bottom of the maze, under the opening (looked at by eye).
+  - How to check it against the real game: as BL-034, then press up on frame 575 (switch on, press Game Reset, wait for the start tune to end; the frame numbers are counted from power-on at 60 per second; the joystick moves are listed above).

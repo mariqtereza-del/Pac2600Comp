@@ -1,0 +1,24 @@
+id: BL-026
+title: Pac-Man walks left to the wall and back right to the other wall
+shows: From the start place the joystick is held LEFT, then RIGHT: the horizontal speed, the stop at a wall and the way back.
+inputs: BL-026.inputs
+frames: 560
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: a761a31b4ccd7db4a99054a8d06796d7567556964c6e94884028a0e9617aff3f
+trace_bytes: 168016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts a game (lives counter reads 3 from frame 240).
+  - Play begins on frame 367 (pause flag clears); Pac-Man stands at (76,60), the start place.
+  - Joystick on frames 367-369: nothing.
+  - Joystick on frames 370-439: LEFT.
+  - Joystick on frames 440-519: RIGHT.
+  - Joystick on frames 520-559: nothing.
+  - Pac-Man moves left from (76,60) to (64,60): 12 pixels, first step on frame 371, last on frame 391; frames between steps: 2,2,2,1,2,2,2,1,2,2,2 (2 x 1 frame, 9 x 2 frames); 0.571 pixels per frame
+  - Pac-Man moves right from (64,60) to (88,60): 24 pixels, first step on frame 441, last on frame 481; frames between steps: 1,2,2,2,1,2,2,2,2,1,2,2,2,1,... (6 x 1 frame, 17 x 2 frames); 0.585 pixels per frame
+  - Direction change left -> right at (64,60): last step of the first leg on frame 391, first step of the next on frame 441 (50 frames apart).
+  - Frames 391-440: Pac-Man does not move (stays at (64,60)) although LEFT is held at frame 391: a wall in the way.
+  - Frames 481-559: Pac-Man does not move (stays at (88,60)) although RIGHT is held at frame 481: a wall in the way.
+  - Pac-Man took no pixel step on a frame when no direction was held.
+  - How to check it against the real game: start a game, then hold the joystick left for about a second and a quarter, then right (switch on, press Game Reset, wait for the start tune to end; the frame numbers are counted from power-on at 60 per second; the joystick moves are listed above).

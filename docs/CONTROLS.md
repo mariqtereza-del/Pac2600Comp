@@ -104,3 +104,7 @@ D-pad or left stick = joystick (50 % push to start, 30 % to let go, one directio
 ## The console switches in the port (Stage D12)
 
 F4 = Colour / B&W, F5 = left difficulty, F6 = right difficulty; each is a real switch (it stays where you put it) and F1 shows where it is. They are remembered in `settings.ini` and restored at the next start. Chosen in `DECISIONS.md` T-D12-1.
+
+## Correction (Stage E3, 2026-10-26)
+
+Stage C6 wrote that up/down at the start place "do nothing" because of walls: that is right for the start place itself. Stage E3 (entries BL-026 to BL-037, `docs\BASELINE.md` "Pac-Man's movement") measured the rest: speed, turns, reversal, diagonals and the openings in the top and bottom walls (column x = 76, not the sides). Held diagonal directions are not a separate case: Pac-Man takes whichever of the two is open.

@@ -196,8 +196,8 @@ KEYS                                              PS4 PAD
   F3 (hold)               Game Reset: new game      Options               Game Reset
   F2 (hold)               Game Select: variation    Share                 Game Select
   F4                      TV type: Colour / B&W
-  F7                      soft glow on / off (off = the picture as on a real TV; on = Stella's smoothing of the flicker)
   F5 / F6                 left / right difficulty switch A / B
+  F7                      soft glow on / off (off = as on a real TV)
   1 2 3 4 5               picture: Sharp, Fill, TV frame, Game area, Framed (5 is the standard)
   Alt + Enter             fullscreen on / off
   F1                      shows this list on the screen
@@ -215,7 +215,7 @@ RECORDING (to keep a game and watch it again, or for testers)
   A name without a folder is saved in the folder the Command Prompt was in, not beside the program.
 
 FILES THE PROGRAM WRITES
-  settings.ini next to pacman2600.exe: the path of your game file, the window place and size, the three switches.
+  settings.ini next to pacman2600.exe: the path of your game file, the window place and size, the three switches, the soft glow.
 
 LICENCES AND SOURCE
   This program contains the emulation code of Stella 7.0 (GNU General Public License version 2) and uses SDL 3.4.18

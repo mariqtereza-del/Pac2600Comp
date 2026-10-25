@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-21 — SCORE_DIGITS rewritten; the picture chip as an interface (2026-10-26, Stage F21.21)
+
+- **Routine:** `game::scoreDigits`: five digits (the hundred-thousands digit is never shown), leading zeros blank (shape 10), a score of 0 shows one 0, shapes from the cartridge table `$FEF6` by address, pointer high bytes $FE, background colour black after the third digit and TEMP_D2 after the fifth, then seven rows of the six-picture writes and CLEAR_GRAPHICS.
+- **Chip interface:** `game::TiaChip` (register writes); `SoundChip` is an alias. The finished game will give the renderer (F23) and the sound generator (F24) the same kind of interface.
+- **What is compared:** memory, stack pointer, return address and the order and values of all chip writes; not their cycle positions (F18 and F23 cover the timing).
+- **Result:** 70 of 70 games identical; 460,580 calls compared; identical together with F21.1-F21.20.
+- **Reversible:** Yes.
+
 ### T-F21-20 — PACMAN_KEEP_GOING rewritten; routines that continue instead of returning (2026-10-26, Stage F21.20)
 
 - **Routine:** `game::pacmanKeepGoing`: not exactly on a cell -> nothing (the main loop moves him); on a cell -> try his own direction with the TRY routines: allowed -> the direction is set again and the routine returns (the main loop moves him); refused -> the routine pops its caller's return and the main loop continues at `$F7BA` with no move.

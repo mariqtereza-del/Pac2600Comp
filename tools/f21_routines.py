@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.21', 'SCORE_DIGITS', 'score-digits', 0xF3EE, 'game::scoreDigits: the digits of a score to picture pointers (leading zeros blank) and the seven rows of the score line written to the picture chip, then CLEAR_GRAPHICS; chip writes compared in order'),
     ('F21.20', 'PACMAN_KEEP_GOING', 'keep-going', 0xF793, 'game::pacmanKeepGoing: stick neutral, exactly on a cell: try to go on, else stand still; ends the caller when he stands still (no move); contract: X, stack pointer, arrival address, live memory'),
     ('F21.19', 'SOUND_MUSIC', 'sound-music', 0xFF94, 'game::soundMusic: the death sound, the start tune and the scared-ghost sweep, written to a game::SoundChip; two cartridge tables'),
     ('F21.18', 'SOUND_EFFECTS', 'sound-effects', 0xFF55, 'game::soundEffects: the sound effect of the frame on channel 0, written to a game::SoundChip; the call check now compares the writes to the sound chip'),

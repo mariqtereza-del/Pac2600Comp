@@ -170,12 +170,14 @@ uint8_t soundStart(Ram& ram, const Cartridge& cart, uint8_t sound);
 
 // The sound chip as the game logic sees it: it is given register writes. In the finished game the sound generator of F24 stands behind it; in the
 // lockstep tool the writes go to the emulated chip (and are compared with the original's writes).
-class SoundChip {
+class TiaChip {
  public:
-  virtual ~SoundChip() = default;
+  virtual ~TiaChip() = default;
   virtual void write(uint8_t reg, uint8_t value) = 0;
 };
+using SoundChip = TiaChip;   // the sound routines see the same chip
 namespace chip {
+inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C;
 inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18, AUDV0 = 0x19, AUDV1 = 0x1A;
 }
 
@@ -198,5 +200,15 @@ void soundMusic(Ram& ram, const Cartridge& cart, SoundChip& chip);
 // goes on at $F7BA without moving him: he stands still.
 enum class KeepGoing { NotOnCell, Moved, Stands };
 KeepGoing pacmanKeepGoing(Ram& ram, const Cartridge& cart);
+
+// F21.21  SCORE_DIGITS ($F3EE) with the CLEAR_GRAPHICS ($F483) it falls into: turns the decimal digits of one player's score into the
+// picture pointers of the score line and draws the line. `offset` is the byte of the score's high part (4 for player 1, 5 for player 2; the score is
+// SCORE_P1_LO + offset, - 2, - 4). Only five digits are shown (the hundred-thousands digit never): the low nibble of the high byte and both nibbles of the
+// middle and low bytes; leading zeros are blank (shape number 10), a score of 0 shows one 0. The digit pointers go to $D5-$DE (low byte from the cartridge
+// table at $FEF6, high byte $FE), TEMP_E1 counts the digits that are not zero, TEMP_E2 is the slot being filled. The background colour is set to black
+// after the third digit and to TEMP_D2 (the score colour) after the fifth. Then seven picture rows (row 6 down to 0), each: the graphics registers cleared,
+// then the five digit shapes (cartridge bytes at $FE00 + shape pointer + row) written to GRP0 / GRP1 in the six-picture order; finally the graphics registers
+// are cleared again (CLEAR_GRAPHICS).
+void scoreDigits(Ram& ram, const Cartridge& cart, TiaChip& chip, uint8_t offset);
 
 }  // namespace game

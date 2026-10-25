@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **SCORE_DIGITS**: identical in 70 of 70 games; 460580 calls compared with the original code, 0 different.
 - **PACMAN_KEEP_GOING**: identical in 70 of 70 games; 127587 calls compared with the original code, 0 different.
 - **SOUND_MUSIC**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
 - **SOUND_EFFECTS**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
@@ -77,6 +78,7 @@
 | F21.8 | `MOVE_OBJECT` | $F9EE | 56 | **done** | game::moveObject: the speed accumulator (x17) and the one-pixel step with the border rules |
 | F21.16 | `GHOST_UPDATE` | $F9AA | 58 | **done** | game::ghostUpdate: everything for one ghost in one frame (eyes at the pen, locate, decide, move); contract: X, stack pointer, return address and live memory |
 | F21.19 | `SOUND_MUSIC` | $FF94 | 85 | **done** | game::soundMusic: the death sound, the start tune and the scared-ghost sweep, written to a game::SoundChip; two cartridge tables |
+| F21.21 | `SCORE_DIGITS` | $F3EE | 149 | **done** | game::scoreDigits: the digits of a score to picture pointers (leading zeros blank) and the seven rows of the score line written to the picture chip, then CLEAR_GRAPHICS; chip writes compared in order |
 | F21.14 | `ANIMATE_OBJECT` | $FC8B | 155 | **done** | game::animateObject: the opening animation of an object (waiting, down the outside, back into the maze, up) and the sprite scratch bytes; three small cartridge tables through game::Cartridge |
 | F21.15 | `GHOST_DECIDE` | $FA26 | 214 | **done** | game::ghostDecide: the ghost decision (aim, chase, scared, eyes, opening, random wandering) built from the rewritten TRY, TRY_PAIR, RNG and WRAP routines; contract: X, stack pointer, return address and live memory |
 | - | `EXIT_F9E4` | $F9E4 | 1 | to do | a lone RTS: nothing to write |
@@ -86,6 +88,5 @@
 | - | `CLEAR_GRAPHICS` | $F483 | 11 | to do | picture only (F23) |
 | - | `KERNEL_LINE_P1` | $F053 | 20 | to do | writes only chip registers (picture): proved with the renderer (F23) |
 | - | `KERNEL_LINE_P0` | $F06A | 21 | to do | picture only (F23) |
-| - | `SCORE_DIGITS` | $F3EE | 149 | to do | needs ROM tables (F22) and the picture |
 
 Order for the next sessions: smallest first among the routines whose result shows in the memory (the picture-only and sound-chip-only routines wait for F23/F24; those that need cartridge tables wait for F22 or use a table checked equal to the ROM): SWAP_PLAYERS, RNG_STEP, the WRAP routines, NEW_MAZE and PLACE_OBJECTS, LOCATE_OBJECT, MOVE_OBJECT, the TRY routines, ANIMATE_OBJECT, then the ghost routines. The main loop (`MAIN`: start-up, top and bottom logic, kernel) is cut into routines in the last sessions of F21.

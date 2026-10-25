@@ -101,6 +101,17 @@ void soundEffectsNative(Machine& m, bool wrong = false) {
   m.rts();
 }
 
+// F21.21 SCORE_DIGITS ($F3EE): the offset of the score (4 or 5) is in Y. It ends with CLEAR_GRAPHICS and an RTS. The picture-chip writes are compared in order
+// (not their cycle positions: the timing of the picture is proved by the executor of F18 and the renderer of F23). Contract: the two callers load Y and
+// A afresh and use neither X nor the flags; the stack pointer and the return address are compared.
+void scoreDigitsNative(Machine& m) {
+  MachineChip chip(m, false);
+  const game::Cartridge cart(m.romBytes());
+  const uint8_t offset = m.y;
+  withRam(m, [&](game::Ram& r) { game::scoreDigits(r, cart, chip, offset); });
+  m.rts();
+}
+
 // F21.20 PACMAN_KEEP_GOING ($F793): Pac-Man is object 0. Not on a cell, or the turn allowed: a normal return (the main loop then calls MOVE_OBJECT). A wall
 // in the way: the original pops its caller's return and continues at $F7BA (no move), which the adapter does by raising the stack pointer by two and
 // setting the program counter. Contract: X (kept), stack pointer, return address / arrival address; the registers A, Y and the flags are loaded afresh
@@ -451,6 +462,12 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "score-digits") {
+    Machine::Contract c;
+    c.regs = 16 | 32;
+    m.registerNative(0xF3EE, "SCORE_DIGITS (native)", [](Machine& mm) { scoreDigitsNative(mm); }, c);
+    return true;
+  }
   if (name == "keep-going") {
     Machine::Contract c;
     c.deadStack = true;

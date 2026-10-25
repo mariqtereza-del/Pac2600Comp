@@ -14,6 +14,7 @@
 //                                                              the bytes the instruction itself is made of: filtered by the reader)
 //   m,<offset>,<times>                                         (instruction starts that were not in the ROM: counted, not listed)
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -21,6 +22,7 @@
 #include <fstream>
 #include <iterator>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -43,6 +45,10 @@ struct PcTag { using type = uInt16 M6502::*; friend type steal(PcTag); };
 template struct Rob<PcTag, &M6502::PC>;
 struct ATag { using type = uInt8 M6502::*; friend type steal(ATag); };
 template struct Rob<ATag, &M6502::A>;
+struct XTag { using type = uInt8 M6502::*; friend type steal(XTag); };
+template struct Rob<XTag, &M6502::X>;
+struct YTag { using type = uInt8 M6502::*; friend type steal(YTag); };
+template struct Rob<YTag, &M6502::Y>;
 
 constexpr int kWidth = 160;
 
@@ -63,6 +69,22 @@ class CoverageStella : public StellaLIBRETRO {
     int frame = 0;
     std::vector<uint16_t> watch;                          // Stage F12: ROM addresses whose instruction result (A) is logged
     std::vector<std::array<int, 3>> watched;              // frame, address, A after the instruction
+    int tiaFrom = -1, tiaTo = -2, tiaStride = 1;
+    bool tiaOn = false;                                   // log TIA writes (tiaw=) ; ramdump= alone does not
+    std::set<int> onlyFrames;                             // frames= : if not empty, only these frames are logged
+    bool logFrame() const { return frame >= tiaFrom && frame <= tiaTo && frame % tiaStride == 0 && (onlyFrames.empty() || onlyFrames.count(frame)); }                         // Stage F18: frames whose writes to the TIA are logged
+    int dumpPc = -1;                                      // Stage F18: memory dump when the instruction at this address is about to run
+    std::vector<std::pair<int, std::string>> dumps;
+    std::vector<std::array<int, 6>> tiaWrites;            // frame, scanline after, clock after, pc, register, value
+
+    // The value a store instruction wrote: STA / STX / STY by opcode (the data bus holds the next opcode after the instruction).
+    static int storedValue(uint8_t op, M6502& cpu)
+    {
+      if(op == 0x85 || op == 0x8D || op == 0x95 || op == 0x99 || op == 0x9D || op == 0x81 || op == 0x91) return cpu.*steal(ATag{});
+      if(op == 0x86 || op == 0x8E || op == 0x96) return cpu.*steal(XTag{});
+      if(op == 0x84 || op == 0x8C || op == 0x94) return cpu.*steal(YTag{});
+      return -1;
+    }
 
     // Same steps as StellaLIBRETRO::runFrame(), with updateVideo() unrolled to single instructions (see timing.cpp).
     void runFrameCounted()
@@ -80,7 +102,18 @@ class CoverageStella : public StellaLIBRETRO {
         const uInt32 line = tia.scanlines();
         while(line == tia.scanlines()) {
           const uInt16 pc = cpu.*steal(PcTag{});
+          if((pc & 0x1000) && static_cast<int>(pc & 0x0FFF) == dumpPc && logFrame()) {
+            std::string h;
+            for(int i = 0; i < 128; ++i) { char b[3]; std::snprintf(b, sizeof b, "%02x", riot.getRAM()[i]); h += b; }
+            dumps.emplace_back(frame, h);
+          }
           const bool ok = cpu.execute(1);
+          if(tiaOn && logFrame()) {
+            const uInt16 w = cpu.lastWriteAddress();
+            const int sv = (pc & 0x1000) ? storedValue(static_cast<const uint8_t*>(getROM())[pc & 0x0FFF], cpu) : -1;
+            if(sv >= 0 && !(w & 0x1080) && (w & 0x3F) < 0x2D && (w & 0x3F) != 0x02)
+              tiaWrites.push_back({frame, static_cast<int>(tia.scanlines()), static_cast<int>(tia.clocksThisLine()), pc & 0x0FFF, w & 0x3F, sv});
+          }
           if(pc & 0x1000) {
             for(uint16_t w : watch)
               if(w == pc) watched.push_back({frame, pc, cpu.*steal(ATag{})});
@@ -166,8 +199,29 @@ int main(int argc, char* argv[])
     if(std::sscanf(argv[i], "%d:%x:%x", &pf, &pa, &pv) == 3) pokes.push_back({pf, pa, pv});
   }
   // Stage F12: `watch=<file>:<hex pc>,<hex pc>..` writes `frame,pc,A` after each run of those instructions.
-  std::string watchFile;
-  for(int i = 5; i < argc; ++i)
+  std::string watchFile, tiaFile, dumpFile;
+  for(int i = 5; i < argc; ++i) {
+    if(std::strncmp(argv[i], "tiastride=", 10) == 0) stella.tiaStride = std::max(1, std::atoi(argv[i] + 10));
+    if(std::strncmp(argv[i], "frames=", 7) == 0) {
+      std::ifstream fl(argv[i] + 7);
+      for(int fnum; fl >> fnum; ) stella.onlyFrames.insert(fnum);
+      if(stella.tiaFrom < 0) { stella.tiaFrom = 0; stella.tiaTo = 1 << 30; }
+    }
+    if(std::strncmp(argv[i], "ramdump=", 8) == 0) {
+      std::string a = argv[i] + 8;
+      if(stella.tiaFrom < 0) { stella.tiaFrom = 0; stella.tiaTo = 1 << 30; }
+      const size_t c = a.rfind(':');
+      dumpFile = a.substr(0, c);
+      stella.dumpPc = static_cast<int>(std::stoul(a.substr(c + 1), nullptr, 16)) & 0x0FFF;
+    }
+    if(std::strncmp(argv[i], "tiaw=", 5) == 0) {
+      std::string a = argv[i] + 5;
+      const size_t c1 = a.rfind(':'), c0 = a.rfind(':', c1 - 1);
+      tiaFile = a.substr(0, c0);
+      stella.tiaOn = true;
+      stella.tiaFrom = std::stoi(a.substr(c0 + 1, c1 - c0 - 1));
+      stella.tiaTo = std::stoi(a.substr(c1 + 1));
+    }
     if(std::strncmp(argv[i], "watch=", 6) == 0) {
       std::string a = argv[i] + 6;
       const size_t c = a.rfind(':');
@@ -175,6 +229,7 @@ int main(int argc, char* argv[])
       std::istringstream in(a.substr(c + 1));
       for(std::string t; std::getline(in, t, ','); ) stella.watch.push_back(static_cast<uint16_t>(std::stoul(t, nullptr, 16)));
     }
+  }
 
   stella.setROM(romPath.c_str(), rom.data(), rom.size());
   if(!stella.create(false)) { std::fprintf(stderr, "Stella could not create the console\n"); return 4; }
@@ -222,6 +277,14 @@ int main(int argc, char* argv[])
   for(const auto& [k, n] : stella.dataReads) out << "r," << k.first << ',' << k.second << ',' << n << '\n';
   for(const auto& [pc, n] : stella.outside) out << "m," << pc << ',' << n << '\n';
   out.close();
+  if(!dumpFile.empty()) {
+    std::ofstream w(dumpFile);
+    for(const auto& e : stella.dumps) w << e.first << ',' << e.second << '\n';
+  }
+  if(!tiaFile.empty()) {
+    std::ofstream w(tiaFile);
+    for(const auto& e : stella.tiaWrites) w << e[0] << ',' << e[1] << ',' << e[2] << ',' << std::hex << e[3] << ',' << e[4] << ',' << e[5] << std::dec << '\n';
+  }
   if(!watchFile.empty()) {
     std::ofstream w(watchFile);
     for(const auto& e : stella.watched) w << e[0] << ',' << std::hex << e[1] << std::dec << ',' << e[2] << '\n';

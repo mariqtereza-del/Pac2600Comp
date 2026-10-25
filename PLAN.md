@@ -1926,7 +1926,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F17_STATES.md`, `DECISIONS.md` (T-F17-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F17: Game states`.
     - **Next stage:** F18 — The drawing kernel and flicker schedule.
-18. **[Not started] F18 — The drawing kernel and flicker schedule.** Exactly which object is drawn on which line in which frame.
+18. **[Done] F18 — The drawing kernel and the flicker schedule.** *(expanded and done 2026-10-26)*
+    - **Objective:** know exactly what the drawing code puts on every scanline of every frame, and which object (ghost, Pac-Man, pill, item, wafers, score, markers) it is.
+    - **Why it matters:** the native renderer (F23) must reproduce the picture, the flicker and (as it turned out) the collision flags from the game state; it needs an exact reference to compare against.
+    - **Prerequisites:** F17 Done (`cbbe493`); F12 flag logs in `reference\f12`; F8 routines; the built `stella_coverage.exe` and `build\host\pacman2600.exe`.
+    - **What Claude Code will do:**
+      1. Add options to the measuring tool `stella_coverage` (`tiaw=` every write to the TIA chip with scanline and clock, `ramdump=` the 128 bytes when an instruction is about to run, `frames=` and `tiastride=` to choose frames); rebuild; the 70 replays still equal their golden traces.
+      2. `tools\f18_cpu.py`: a small interpreter of the original bytes (read only) that runs `$F07F-$F4E7` over 128 bytes and lists the TIA writes. `tools\f18_kernel.py`: checks that list against the emulator, then reads out the line map, the row template, the flicker, the sprite columns and the collision flags.
+      3. Write `docs\F18_KERNEL.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the interpreter equals the emulator write for write; flicker and flags follow from it.
+    - **Verification:** `python -I tools\f18_kernel.py rom\pacman.a26` says `result: OK` (8,240 of 8,240 sampled frames equal write for write; the ghost drawn is (FRAME_COUNTER and 3) + 1 in 101,417 of 101,417 frames; the ghost flag predicted from the sprites in 101,417 of 101,417 frames; 141 sprite rows of real pictures exact). The option `--cached` reuses the saved results to rewrite the document (the full run takes about 15 minutes).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the pixel-for-pixel picture and the colours are F23; the wall patterns are not listed here.
+    - **Recovery:** two new scripts, options in the measuring tool and a generated document; undo by returning to `cbbe493` (with your OK).
+    - **Documentation updates:** `docs\F18_KERNEL.md`, `DECISIONS.md` (T-F18-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F18: The drawing kernel and flicker schedule`.
+    - **Next stage:** F19 — Sound routines and their tables.
 19. **[Not started] F19 — Sound routines and their tables.**
 20. **[Not started] F20 — Lockstep harness.** A test tool that runs the emulator and the native code together on the same inputs, compares all 128 RAM bytes every frame, and on the first difference stops and reports the frame, the byte, both values and the routine responsible.
 21. **[Not started] F21 — Rewrite one routine per session** (F21.1, F21.2…, one per item in F8's list, smallest and leaf routines first). Each rewrite must turn its part of the lockstep test green before the next starts.

@@ -191,3 +191,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Cell / row | The maze is a grid: cells 4 pixels wide, rows 10 pixels high. A table in the ROM says which sides of each cell are open. (Stage F10) |
 | Collision flag | A note the TIA chip keeps by itself while drawing the picture: it records which pairs of objects (sprites, missiles, ball, playfield) overlapped. The game reads it after the picture to know that a ghost touched Pac-Man. It is cleared once per frame. (Stage F12) |
 | Wander | A ghost decision made with the random number instead of aiming at a target: try to go straight, otherwise a sideways direction chosen at random. Used when the ghost's timer runs out, when it cannot chase, and on the title screen. (Stage F13) |
+| Kernel (drawing kernel) | The part of the program that draws the picture while the television beam moves down the screen. It must write to the chip line by line, to the cycle. (Stage F18) |
+| Scanline | One horizontal line of the television picture. The game has about 262 per frame; the maze is drawn on lines 35 to 198. (Stage F18) |

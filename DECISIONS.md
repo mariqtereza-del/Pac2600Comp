@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F18-1 — An exact executor for the drawing code, checked against the emulator (2026-10-26, Stage F18)
+
+- **Decision:** the drawing code is cycle-counted and rewrites playfield registers in the middle of scanlines, so reading it line by line is not a safe way to know it. Instead `tools\f18_cpu.py` (a 6502 interpreter of the original bytes, 128 bytes of memory in, TIA writes out) was written and proved against the emulator: 8,240 sampled frames from all 70 games, every write equal in scanline, colour clock, instruction address, register and value. It is a measuring tool, not part of the game; the native renderer (F23) is compared against its output and against the emulator pictures.
+- **Found:** the picture is a pure function of the 128 bytes at `$F07F`; fixed line map (maze rows of 20 lines from line 35, wafers as playfield dots on lines 11-12 of a row, score 207-213, life markers 217-222); one ghost per frame, (FRAME_COUNTER and 3) + 1, 101,417 of 101,417 frames; Pac-Man mirrored when `PACMAN_STATE` bit 0 was set; sprite column = strobe clock - 68 + 5 - HMP; first graphics line 2y + 39 (ghost) / 2y + 40 (Pac-Man); power pills blink by FRAME_COUNTER bit 3; the bonus item is in the row from line 115.
+- **Consequence for F12:** the ghost flag is exactly the overlap of the two sprites in the maze lines; predicted in all 101,417 frames where the game reads it (665 set). The native game can compute it from its own renderer.
+- **Not claimed:** colours, the full pixel picture, wall patterns (F23).
+- **Reversible:** Yes.
+
 ### T-F17-1 — Six states and every change between them proved (2026-10-26, Stage F17)
 
 - **Method:** `tools\f17_states.py` derives the state of each frame from `ATTRACT_SHIFT`, `GAME_FLAGS` and `EAT_PAUSE` only and checks each change against a table of causes and the memory on entry.

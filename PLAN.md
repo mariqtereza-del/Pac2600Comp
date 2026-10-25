@@ -1732,7 +1732,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F7_RAM_MAP.md`, `DECISIONS.md` (T-F7-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F7: Naming all 128 RAM bytes`.
     - **Next stage:** F8 — Routine list and call map.
-8. **[Not started] F8 — Routine list and call map.** Every subroutine listed, with who calls it.
+8. **[Done] F8 — Routine list and call map.** *(expanded and done 2026-10-26)*
+    - **Objective:** list every subroutine of the program, with its name, size, callers, callees, the memory and chip registers it touches and how often it ran, and show the whole call structure.
+    - **Why it matters:** the C++ version is built routine by routine; the call map says what depends on what, which routines return early (drop the caller's return address), and how deep the stack gets.
+    - **Prerequisites:** F7 Done (`5d7896d`): RAM names; F6 code map and run counts; the F7 listing.
+    - **What Claude Code will do:**
+      1. `tools\f8_routines.py`: finds entries from the start-up and every JSR target, follows the code of each (branches, jumps, falling through), turns code reached by jump from two routines into shared tails, folds the pieces of the frame loop into `MAIN`, and records callers, callees, RAM and chip use, double returns (PLA PLA) and stack need.
+      2. Names each routine from reading the code (confidence sure / likely / "?").
+      3. Checks, then writes `reference\disasm\pacman_routines.asm` (local only; banner and name per routine) and requires byte-identical; writes `docs\F8_ROUTINES.md`.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 40 routines (the main loop and 39 others), call tree, all checks PASS, byte-identical rebuild.
+    - **Verification:** `python -I tools\f8_routines.py rom\pacman.a26` says "problems: none" and BYTE-IDENTICAL.
+    - **Completion criteria:** every instruction that ran belongs to exactly one routine; JSR counts equal the run counts; no recursion; stack need fits the 10 bytes of F7.
+    - **Potential problems:** routines that end by dropping the caller's return and continuing in the main loop (`PACMAN_KEEP_GOING`) break the usual call/return picture; routine names marked "?" are guesses from the shape of the code and are settled in F10-F13.
+    - **Recovery:** new script and local files; undo by returning to `5d7896d` (with your OK).
+    - **Documentation updates:** `docs\F8_ROUTINES.md`, `DECISIONS.md` (T-F8-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F8: Routine list and call map`.
+    - **Next stage:** F9 — Input reading.
 9. **[Not started] F9 — Input reading.**
 10. **[Not started] F10 — Pac-Man's movement and turning.**
 11. **[Not started] F11 — Maze and wafer storage.**

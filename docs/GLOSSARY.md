@@ -185,3 +185,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Zero page | The first 256 bytes of the processor's address space. On the 2600 the chips sit in $00-$7F and the 128 bytes of memory (RAM) in $80-$FF; instructions on this page are shorter and faster. (Stage F7) |
 | Stack | A part of memory where the processor keeps the return addresses of subroutine calls. Here it is $F6-$FF, growing downwards. (Stage F7) |
 | Shift register (random number) | A byte whose bits are shifted along with a new bit made from two old ones; repeating this gives a long, repeatable series that looks random. (Stage F7) |
+| Subroutine / routine | A piece of the program that other parts call (JSR) and that gives control back (RTS) when done. (Stage F8) |
+| Shared tail | The last part of a routine that two or more routines jump into instead of each having a copy. (Stage F8) |

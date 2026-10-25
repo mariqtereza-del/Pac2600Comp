@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F8-1 — Routines found by following the code, the frame loop kept whole (2026-10-26, Stage F8)
+
+- **Method:** `tools\f8_routines.py` takes the start-up and every JSR target (33 targets, two of them only from JSRs that never ran) as entries, follows branches, jumps and fall-through, and makes a shared tail of any code that two routines reach by a jump. The pieces of the frame loop (cut by its jumps) are folded back into `MAIN`: an unnamed piece reached only from the main loop belongs to it.
+- **Result:** 40 routines: `MAIN` and 39 subroutines, all named from reading the code (sure / likely / "?" in `docs/F8_ROUTINES.md`). Every instruction that ran belongs to exactly one; each routine entered only by JSR ran exactly as often as its JSR instructions (70 games); no recursion; deepest nesting 10 bytes of stack, as F7 found.
+- **Found:** eight routines drop the caller's return address as well (PLA PLA): the four direction tries end the decision of the caller at once; `PACMAN_KEEP_GOING` ends by continuing in the main loop. The C++ version needs an early exit at these points.
+- **Not claimed:** names marked "?" (the pair-trying helpers, `PACMAN_KEEP_GOING`) are guesses from the shape of the code; F10-F13 settle them.
+- **Reversible:** Yes.
+
 ### T-F7-1 — The 128 RAM bytes named from the code, with confidence marks (2026-10-26, Stage F7)
 
 - **Method:** the whole listing was read; every byte of `$80-$FF` followed through the instructions that touch it (F6 code map) and measured over the 70 traces. The table lives in `tools\f7_ram.py`, which writes `docs\F7_RAM_MAP.md` and the named listing (`reference\disasm\pacman_ram.asm`, local only; byte-identical to the ROM).

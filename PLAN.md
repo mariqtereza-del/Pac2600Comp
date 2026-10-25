@@ -1830,7 +1830,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F12_COLLISIONS.md`, `DECISIONS.md` (T-F12-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F12: Collisions`.
     - **Next stage:** F13 — Ghost movement and decisions.
-13. **[Not started] F13 — Ghost movement and decisions.**
+13. **[Done] F13 — Ghost movement and decisions.** *(expanded and done 2026-10-26)*
+    - **Objective:** state exactly how a ghost decides and moves (chase, scared, eyes, pen, openings, random wandering) and prove it with a model that reproduces the recorded games frame by frame.
+    - **Why it matters:** the ghosts are the opposition; their routes, the random number they use and their timing must be identical for the lockstep test (F20) and for the feel of the original.
+    - **Prerequisites:** F12 Done (`b909eab`); F10 movement; F11 maze; F7 RAM names; F8 routines; the 70 baseline traces.
+    - **What Claude Code will do:**
+      1. Read `GHOST_UPDATE`, `GHOST_DECIDE`, the `TRY_*` routines, `RNG_STEP`, `MOVE_OBJECT`, `ANIMATE_OBJECT`, `WRAP_*` and the top logic that calls them, and write them as a model in `tools\f13_ghosts.py`.
+      2. Predict, for the ghost a frame handles, x, y, state, accumulator, timer and the random number `$CB`, from the memory of the frame before; compare with all 70 recorded games; count frames on other roads by reason; count the roads taken; check the frozen-game timers.
+      3. Write `docs\F13_GHOSTS.md` (generated).
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 0 wrong frames out of the predicted ones.
+    - **Verification:** `python -I tools\f13_ghosts.py rom\pacman.a26` says `result: OK` (348,146 of 348,146 predicted frames right; the random number `$CB` predicted in 86,851 of them; 82,024 frozen frames checked for the timers).
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the scared-ghost y-aim looks like an error in the original (a mirrored y is worked out and not stored) and is kept exactly; ghosts handled three times a frame; roads never taken in the games are marked in the code listing.
+    - **Recovery:** one new script and a generated document; undo by returning to `b909eab` (with your OK).
+    - **Documentation updates:** `docs\F13_GHOSTS.md`, `DECISIONS.md` (T-F13-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F13: Ghost movement and decisions`.
+    - **Next stage:** F14 — Randomness: where it comes from.
 14. **[Not started] F14 — Randomness: where it comes from.**
 15. **[Not started] F15 — Scoring, bonus item and lives.**
 16. **[Not started] F16 — Levels, speed-ups and timers.**

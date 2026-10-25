@@ -134,6 +134,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F13-1 — The ghosts written as a model and proved on 348,146 frames (2026-10-26, Stage F13)
+
+- **Method:** `tools\f13_ghosts.py` is a model of the code (not an emulator): from the previous frame memory and the ROM tables it predicts the handled ghost x, y, state, accumulator, timer and the random number `$CB`, and compares with the recorded memory. Frames on other roads are counted by reason and skipped (Select/Reset, title-screen fire or difficulty, frozen game, death or new map, change of turn, BL-065/066).
+- **Result:** 348,146 of 348,146 predicted frames exactly right (193 of them with the ghost eaten by the bottom logic of the same frame, F12), all other ghosts unchanged; the 82,024 frozen frames with the timers set by the bottom logic also right.
+- **Found:** one ghost is handled per frame (FRAME_COUNTER of the previous trace row & 3, plus 1) but `GHOST_UPDATE` runs three times, so each ghost moves up to three steps every 4th frame; a ghost decides only exactly on a cell; chase = x first then y, first allowed direction wins, never straight back; timer at zero = one random wander decision; scared ghosts mirror x but aim at Pac-Man own y (the mirrored y is never stored: an error of the original, kept); eyes go to (x $58, y $1F) and wait above the pen while scared; 1 time in 16 at x = $4C on the top or bottom row a ghost takes the opening; the animation of an opening also runs during the eaten pause.
+- **Corrections made while working:** the first model took the mirrored y (wrong, 805 frames) and skipped the animation in the eaten pause (8 frames); both fixed from the code.
+- **Not claimed:** where `$CB` starts (F14); level speed-ups (F16); the death sequence and frozen frames beyond the timers (F17).
+- **Reversible:** Yes.
+
 ### T-F12-1 — Collisions are the chip's own flags (2026-10-26, Stage F12)
 
 - **Method:** a new option of `stella_coverage` (`watch=<file>:<pc>,<pc>`, T-F12-1; it only reads) logs the value the game gets at `$F575` (CXM1P AND CXP1FB) and `$F5D9` (CXPPMM) for every frame of the 70 games; `tools\f12_collisions.py` checks the reaction rules against the recorded memory of each frame. All 70 replays still equal their golden traces with the changed tool.

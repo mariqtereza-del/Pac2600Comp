@@ -1,0 +1,20 @@
+id: BL-057
+title: The first 4000 frames of a long game by the search bot, with the bonus item (long1)
+shows: The bot of Stage E7 playing on past the first level (stella_bot route (seed 1): level end at frame 7019, game over at frame -1): levels, deaths, the speed of Pac-Man and the ghosts in each level, the bonus item.
+inputs: BL-057.inputs
+frames: 4000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: adf39b1515b39225181771709e1785a676cc777061928b3533ed165edf0c2ec4
+trace_bytes: 1203016
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 1800 starts the game; play begins on frame 1927. Input: stella_bot route (seed 1): level end at frame 7019, game over at frame -1 (the route script of `stella_bot ... long`, turned into a recording; cut after 4000 frames).
+  - No game over within the entry; 0 deaths; the score at the end is 379 (3 lives left); 4000 frames in all.
+  - Levels: the wafer map refills (a level is cleared) on frames none: 0 levels cleared, a 1 level reached. Lives counter at each refill: -.
+  - Level 1 (frames 1927-3999): Pac-Man frames between steps: 1 frames: 172, 2 frames: 597 (769 steps). Ghost 0 frames between changes of place: 4 frames: 499 (499 steps); sizes of the changes of place of all four ghosts: 1 px: 1032, 2 px: 703 (average 1.41 pixels per change).
+  - Level 1: power pill windows frames 2226-2673 (448 frames); frames 3124-3603 (480 frames); bonus item on the board frames 3071-3739 (669 frames, 1144 frames after the level began, 39 wafers eaten by then).
+  - Score rises of 100 (not a wafer, pill or ghost value): 1 times, on frames 3740; at the first, Pac-Man is at (72,40) and the bonus item flag ($E7 bit 1) goes from 1 to 0.
+  - Bonus item eaten (the flag goes 1 to 0 on a frame where the score rises by 2 or more): frame 3740: +100, Pac-Man at (72,40).
+  - Movement rules over every frame of play (pause frames left out): Pac-Man made 784 one-pixel steps, 2 jumps through the openings at the top or bottom of the maze (column 76, see BL-034) and 0 other changes of place; the ghosts made 1736 changes of place, 0 jumps through the same openings (none) and 0 other changes larger than 3 pixels (changes of 1 to 3 pixels are normal; the size grows with the level).
+  - How to check it against the real game: replay the recording in Stella (the host program with --replay) and compare with the numbers above.

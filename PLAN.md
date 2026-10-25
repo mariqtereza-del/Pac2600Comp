@@ -1516,7 +1516,27 @@ Build a library of recorded games, each paired with exactly what the original di
     - **Documentation updates:** `docs\BASELINE.md`, `docs\CONTROLS.md`, `DECISIONS.md` (T-E6-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage E6: Dying and game over`.
     - **Next stage:** E7 — Long play.
-7. **[Not started] E7 — Long play.** Played by the computer, no human needed: `stella_bot` is extended to carry on into later levels (it stops after level 1 today) and plays at least three full games with different seeds, as many levels as it manages; seeded random-input games of tens of thousands of frames are added. Claude Code extracts level transitions, speed-ups and any changes between levels. If the bot cannot get past some level, that is written down as a limit of the bot (not worked around by asking for a human), and the random runs and scripts cover what they can. **Added in E5:** the bot must also learn to eat the bonus item (not eaten in the C7 route), recorded as its own entry with the score it gives.
+7. **[Done] E7 — Long play.** *(expanded and done 2026-10-26)*
+    - **Objective:** long games without a human: the bot taught to play on into later levels and to eat the bonus item; three long bot games with different seeds; four seeded random-input games of 30,000 frames; baseline entries that record levels, speed changes between levels and the bonus item.
+    - **Why it matters:** the rebuilt game must be right in level 6 as well as level 1, and the movement rules must hold over tens of thousands of frames nobody planned.
+    - **Prerequisites:** E6 Done (`876692b`); `tools\stella_probe\bot.cpp` (Stage C7), `tools\baseline.py`, `tools\e2_entries.py` to `tools\e6_entries.py`.
+    - **What Claude Code will do:**
+      1. Add an optional fifth argument `long` to `stella_bot` (bonus-item bit `$E7` bit 1 found by comparing frames; the item is rewarded; steering goes on after a level ends). Without it the bot behaves as in Stage C7: the default run gave the same 279 moves as `tools\captures\c7_route.txt`.
+      2. Rebuild with `tools\build_stella_probe.cmd`; run seeds 1, 2, 3 for 36,000 frames each.
+      3. `tools\e7_entries.py`: BL-050 to BL-053 (seeded random input, 30,000 frames each, seeds 11-14), BL-054 to BL-056 (the three bot games), BL-057 (the first 4,000 frames of the first bot game, with the first bonus item); observations computed from the traces.
+      4. Cross-check the new inputs against the independent Phase C reference core.
+    - **What I must do:** nothing (D-008).
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 8 new entries (BL-050 to BL-057); 57 in all.
+    - **Verification:** every new entry's two traces identical; a fresh `baseline.py check` of all 57 equals the stored SHA-256 values; the default bot run reproduces the C7 route; five new inputs equal Stella's own script runner on every frame.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the bot did not reach a game over in 36,000 frames (it cleared five levels in each game and was still alive), so the long games stop at the frame limit; game over is covered by E6. The bot's own play is not "the original's behaviour"; only the replay by the host counts as evidence. Each long bot run took about 45 minutes.
+    - **Recovery:** new files and one optional bot mode; undo by returning to `876692b` (with your OK).
+    - **Documentation updates:** `docs\BASELINE.md`, `DECISIONS.md` (T-E7-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage E7: Long play`.
+    - **Next stage:** E8 — Edge cases and Gate E.
 8. **[Not started] E8 — Edge cases and Gate E.** Pressing Reset mid-game, switching variation mid-game, flipping difficulty switches during play, very long idle, score near its maximum (reached by a memory-edit test in Stella's debugger, clearly labelled as artificial). Also seeded random-input runs of several seeds (a net for situations nobody thought of). Gate: at least 30 baseline entries covering every topic in your brief's Phase E list, each with a golden trace (traces repeat byte for byte), a plain-words description that could be checked against the real game, and the lockstep-ready format of E1; the gate rests on those facts, not on anyone playing.
 
 ### Phase F — Reverse engineering and source reconstruction (26 stages)

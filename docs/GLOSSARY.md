@@ -169,3 +169,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | Turn request | The joystick direction held while Pac-Man walks along a corridor. If it is still held when he reaches a corner he turns there; a 2-frame tap is not remembered (Stage E3). |
 | Ghost place bytes | Memory bytes $B2-$B5 (x) and $B7-$BA (y) hold the four ghosts' places; found in Stage E4 by watching what moves. Working labels, not yet confirmed. |
 | Score bytes | Memory bytes $CC (tens and ones) and $CE (hundreds), each half-byte one decimal digit. Working labels found in Stage E5 by matching the status bar with memory. |
+| Bonus item | The small square that appears in the middle of the maze (row y = 40, x 72-80) for up to 768 frames; eating it gives 100 points. Memory byte $E7 bit 1 is set while it is on the board (working label, Stage E7). |
+| Seed | A number that fixes a "random" sequence, so the same random input can be played again exactly. |

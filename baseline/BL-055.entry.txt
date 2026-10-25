@@ -1,0 +1,32 @@
+id: BL-055
+title: A long game by the search bot (long2)
+shows: The bot of Stage E7 playing on past the first level (stella_bot route (seed 2): level end at frame 7955, game over at frame -1): levels, deaths, the speed of Pac-Man and the ghosts in each level, the bonus item.
+inputs: BL-055.inputs
+frames: 36300
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 82d7c484a016ebd5f2df525d76efebd4b815b7341042026605a65f40f7609d5b
+trace_bytes: 10951616
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 1800 starts the game; play begins on frame 1927. Input: stella_bot route (seed 2): level end at frame 7955, game over at frame -1 (the route script of `stella_bot ... long`, turned into a recording; 300 idle frames added at the end).
+  - No game over within the entry; 6 deaths; the score at the end is 3558 (2 lives left); 36300 frames in all.
+  - Levels: the wafer map refills (a level is cleared) on frames 7955, 14714, 19683, 25343, 32405: 5 levels cleared, a 6 level reached. Lives counter at each refill: 3, 3, 4, 5, 4.
+  - Level 1 (frames 1927-7955): Pac-Man frames between steps: 1 frames: 499, 2 frames: 1736, 3 frames: 2 (2237 steps). Ghost 0 frames between changes of place: 4 frames: 1395 (1395 steps); sizes of the changes of place of all four ghosts: 1 px: 3173, 2 px: 2156 (average 1.40 pixels per change).
+  - Level 1: power pill windows frames 2226-2673 (448 frames); frames 3133-3515 (383 frames); frames 5031-5541 (511 frames); frames 6139-6649 (511 frames); bonus item on the board frames 3071-3838 (768 frames, 1144 frames after the level began, 39 wafers eaten by then).
+  - Level 2 (frames 7955-14714): Pac-Man frames between steps: 1 frames: 520, 2 frames: 1842, 3 frames: 2 (2364 steps). Ghost 0 frames between changes of place: 4 frames: 1536 (1536 steps); sizes of the changes of place of all four ghosts: 1 px: 2502, 2 px: 3662 (average 1.59 pixels per change).
+  - Level 2: power pill windows frames 9332-9715 (384 frames); frames 11364-11779 (416 frames); frames 12716-13163 (448 frames); frames 14135-14549 (415 frames); bonus item on the board frames 8447-9214 (768 frames, 492 frames after the level began, 19 wafers eaten by then); frames 13823-13900 (78 frames, 5868 frames after the level began, 119 wafers eaten by then).
+  - Level 3 (frames 14714-19683): Pac-Man frames between steps: 1 frames: 451, 2 frames: 1574, 3 frames: 2 (2027 steps). Ghost 0 frames between changes of place: 4 frames: 1095 (1095 steps); sizes of the changes of place of all four ghosts: 1 px: 957, 2 px: 3252, 10 px: 1, 13 px: 1, 74 px: 1 (average 1.79 pixels per change).
+  - Level 3: power pill windows frames 15050-15465 (416 frames); frames 16455-16965 (511 frames); frames 17227-17705 (479 frames); frames 18965-19475 (511 frames); bonus item on the board frames 18431-18744 (314 frames, 3717 frames after the level began, 115 wafers eaten by then).
+  - Level 4 (frames 19683-25343): Pac-Man frames between steps: 1 frames: 502, 2 frames: 1751, 3 frames: 1 (2254 steps). Ghost 0 frames between changes of place: 4 frames: 1261 (1261 steps); sizes of the changes of place of all four ghosts: 1 px: 308, 2 px: 4388, 3 px: 149 (average 1.97 pixels per change).
+  - Level 4: power pill windows frames 20537-21047 (511 frames); frames 21307-21753 (447 frames); frames 22324-22771 (448 frames); frames 24402-24817 (416 frames); bonus item on the board frames 23295-23672 (378 frames, 3612 frames after the level began, 109 wafers eaten by then).
+  - Level 5 (frames 25343-32405): Pac-Man frames between steps: 1 frames: 551, 2 frames: 1923, 3 frames: 1 (2475 steps). Ghost 0 frames between changes of place: 4 frames: 1496 (1496 steps); sizes of the changes of place of all four ghosts: 1 px: 2, 2 px: 4952, 3 px: 889 (average 2.15 pixels per change).
+  - Level 5: power pill windows frames 26895-27373 (479 frames); frames 27670-28117 (448 frames); frames 28964-29411 (448 frames); frames 29868-30315 (448 frames); bonus item on the board frames 28159-28926 (768 frames, 2816 frames after the level began, 72 wafers eaten by then).
+  - Level 6 (frames 32405-36299): Pac-Man frames between steps: 1 frames: 338, 2 frames: 1188, 3 frames: 1 (1527 steps). Ghost 0 frames between changes of place: 4 frames: 781 (781 steps); sizes of the changes of place of all four ghosts: 1 px: 1, 2 px: 2069, 3 px: 1082 (average 2.34 pixels per change).
+  - Level 6: power pill windows frames 33362-33777 (416 frames); frames 34020-34435 (416 frames); bonus item on the board frames 33535-33760 (226 frames, 1130 frames after the level began, 53 wafers eaten by then).
+  - Score rises of 21 (not a wafer, pill or ghost value): 1 times, on frames 22523; at the first, Pac-Man is at (64,21) and the bonus item flag ($E7 bit 1) goes from 0 to 0.
+  - Score rises of 41 (not a wafer, pill or ghost value): 1 times, on frames 16664; at the first, Pac-Man is at (49,50) and the bonus item flag ($E7 bit 1) goes from 0 to 0.
+  - Score rises of 100 (not a wafer, pill or ghost value): 4 times, on frames 13901, 18745, 23673, 33761; at the first, Pac-Man is at (72,40) and the bonus item flag ($E7 bit 1) goes from 1 to 0.
+  - Bonus item eaten (the flag goes 1 to 0 on a frame where the score rises by 2 or more): frame 13901: +100, Pac-Man at (72,40); frame 18745: +100, Pac-Man at (73,40); frame 23673: +100, Pac-Man at (74,40); frame 33761: +100, Pac-Man at (72,40).
+  - Movement rules over every frame of play (pause frames left out): Pac-Man made 13062 one-pixel steps, 2 jumps through the openings at the top or bottom of the maze (column 76, see BL-034) and 0 other changes of place; the ghosts made 29546 changes of place, 3 jumps through the same openings (frame 18816 ghost 0 (75,70) to (76,82); frame 18852 ghost 0 (76,90) to (76,16); frame 18960 ghost 0 (76,10) to (76,0)) and 0 other changes larger than 3 pixels (changes of 1 to 3 pixels are normal; the size grows with the level).
+  - How to check it against the real game: replay the recording in Stella (the host program with --replay) and compare with the numbers above.

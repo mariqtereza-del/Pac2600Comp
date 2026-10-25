@@ -10,7 +10,12 @@
 // It writes its moves as an input script for stella_script.exe; only a replay of that script counts as
 // evidence (DECISIONS.md T-C7-1). It only reads the ROM and writes into its output folder.
 //
-// Usage: stella_bot <rom> <out_dir> <max_frames> <seed>
+// Stage E7: with a fifth argument "long" it keeps steering after the level ends (later levels, until game over) and goes for
+// the bonus item: byte $E7 bit 1 = the item is on the board (found by comparing frames of the C7 route), it sits near (76,50),
+// and eating it is seen as that bit going 1 -> 0 on a frame where the score ($CC/$CE, decimal digits) rises by 2 or more.
+// Without the fifth argument the behaviour is exactly the Stage C7 one (its route file is reproduced).
+//
+// Usage: stella_bot <rom> <out_dir> <max_frames> <seed> [long]
 
 #include <bit>
 #include <cstdint>
@@ -56,6 +61,12 @@ bool waferLeft(int bit) { return (ram()[0x88 - 0x80 + bit / 8] >> (bit % 8)) & 1
 int lives() { return ram()[0x98 - 0x80]; }
 bool paused() { return (ram()[0xD2 - 0x80] & 0x40) != 0; }
 bool pill() { return (ram()[0xF2 - 0x80] & 0x02) != 0; }
+int bcd(int x) { return (x >> 4) * 10 + (x & 15); }
+int score() { return bcd(ram()[0xCC - 0x80]) + 100 * bcd(ram()[0xCE - 0x80]); }
+bool itemOn() { return (ram()[0xE7 - 0x80] & 0x02) != 0; }
+bool g_long = false;
+bool g_bonusNow = false;  // the last frame run by step() ate the bonus item
+int g_bonus = 0;  // bonus items eaten so far (long mode)
 Pos pos() { return {ram()[0xB1 - 0x80], ram()[0xB6 - 0x80]}; }
 
 // One frame with the joystick held in dir (-1: released); learns maze steps and eaten wafer positions.
@@ -66,7 +77,10 @@ void step(int dir, bool reset = false)
   const Pos p0 = pos();
   stella.setInputEvent(Event::ConsoleReset, reset ? 1 : 0);
   for(int d = 0; d < 4; ++d) stella.setInputEvent(kDir[d], d == dir ? 1 : 0);
+  const bool itemBefore = itemOn();
+  const int scoreBefore = score();
   stella.runFrame();
+  g_bonusNow = g_long && itemBefore && !itemOn() && score() - scoreBefore >= 2;
   if(paused()) return;
   const Pos p1 = pos();
   if(p1 != p0 && std::abs(p1.first - p0.first) + std::abs(p1.second - p0.second) <= 4) {
@@ -90,24 +104,25 @@ std::map<Pos, int> distances(Pos from)
   return dist;
 }
 
-struct Outcome { int eaten; int ghosts; int deathAt; Pos end; };
+struct Outcome { int eaten; int ghosts; int deathAt; Pos end; int bonus = 0; };
 
 // Plays dir for the given frames. A pause with the power pill in effect is a ghost eaten (play goes on);
 // any other pause is a death, unless the wafer map refilled (level end, counted as a huge meal).
-Outcome simulate(int dir, int frames, int startWafers, int ghosts = 0)
+Outcome simulate(int dir, int frames, int startWafers, int ghosts = 0, int bonus = 0)
 {
   bool wasPaused = paused();
   for(int f = 0; f < frames; ++f) {
     const int w = wafers();
     step(dir);
-    if(wafers() > w) return {1000, ghosts, -1, pos()};
+    if(g_bonusNow) ++bonus;
+    if(wafers() > w) return {1000, ghosts, -1, pos(), bonus};
     if(paused() && !wasPaused) {
       if(pill()) ++ghosts;
-      else return {startWafers - wafers(), ghosts, f, pos()};
+      else return {startWafers - wafers(), ghosts, f, pos(), bonus};
     }
     wasPaused = paused();
   }
-  return {startWafers - wafers(), ghosts, -1, pos()};
+  return {startWafers - wafers(), ghosts, -1, pos(), bonus};
 }
 
 }  // namespace
@@ -125,6 +140,8 @@ int main(int argc, char* argv[])
   const std::string romPath = argv[1], outDir = argv[2];
   const int maxFrames = std::stoi(argv[3]);
   uint64_t lcg = std::stoull(argv[4]);
+  g_long = argc > 5 && std::string(argv[5]) == "long";
+  std::vector<int> levelEnds, bonusAt;
   auto rnd = [&]() { lcg = lcg * 6364136223846793005ULL + 1442695040888963407ULL; return static_cast<double>(lcg >> 11) / 9007199254740992.0; };
 
   std::ifstream romFile(romPath, std::ios::binary);
@@ -146,7 +163,7 @@ int main(int argc, char* argv[])
   while(frame < maxFrames) {
     if(gameOver < 0 && lives() == 0 && pos() == Pos{76, 95}) gameOver = frame;
     if(gameOver >= 0 && frame >= gameOver + kAfterGameOver) break;
-    const bool steering = gameOver < 0 && (levelEnd < 0 || frame < levelEnd + kAfterLevel);
+    const bool steering = gameOver < 0 && (g_long || levelEnd < 0 || frame < levelEnd + kAfterLevel);
 
     double best = -1e18;
     Pos target{-1, -1};
@@ -163,7 +180,7 @@ int main(int argc, char* argv[])
           out[d1][d2] = o1;
           if(o1.deathAt >= 0 || o1.eaten >= 1000) continue;  // every d2 gives the same outcome
           stella.loadState(mid.data(), mid.size());
-          out[d1][d2] = simulate(d2, kStep2, w0, o1.ghosts);
+          out[d1][d2] = simulate(d2, kStep2, w0, o1.ghosts, o1.bonus);
           if(out[d1][d2].deathAt >= 0) out[d1][d2].deathAt += kStep1;
         }
       }
@@ -174,6 +191,11 @@ int main(int argc, char* argv[])
       int bestDist = 1 << 30;
       for(const auto& [bit, p] : waferAt)
         if(waferLeft(bit) && fromHere.count(p) && fromHere.at(p) < bestDist) { bestDist = fromHere.at(p); target = p; }
+      if(g_long && itemOn()) {
+        int itemDist = 1 << 30;
+        for(const auto& [p, d] : fromHere)
+          if(p.second == 50 && p.first >= 72 && p.first <= 80 && d < itemDist) { itemDist = d; target = p; }
+      }
       if(target.first < 0)
         for(const auto& [p, d] : fromHere)
           if(!visited.count(p) && d < bestDist) { bestDist = d; target = p; }
@@ -186,7 +208,7 @@ int main(int argc, char* argv[])
           if(o.deathAt >= 0) v = -10000.0 + o.deathAt;
           else {
             const auto it = toTarget.find(o.end);
-            v = 1000.0 * o.eaten + 3000.0 * o.ghosts - (it == toTarget.end() ? 500.0 : it->second);
+            v = 1000.0 * o.eaten + 3000.0 * o.ghosts + 6000.0 * o.bonus - (it == toTarget.end() ? 500.0 : it->second);
           }
           v += (d1 == dir ? 0.5 : 0.0) + 0.01 * rnd();  // keep going; deterministic tie-break
           if(v > best) { best = v; dir = d1; }
@@ -198,7 +220,8 @@ int main(int argc, char* argv[])
     for(int f = 0; f < kDecide && frame < maxFrames; ++f, ++frame) {
       const int w = wafers();
       step(dir);
-      if(levelEnd < 0 && wafers() > w) levelEnd = frame;
+      if(wafers() > w) { levelEnds.push_back(frame); if(levelEnd < 0) levelEnd = frame; }
+      if(g_bonusNow) bonusAt.push_back(frame);
       moves.push_back(dir);
       visited.insert(pos());
     }
@@ -219,8 +242,14 @@ int main(int argc, char* argv[])
   std::ofstream wmap(outDir + "/wafer_positions.csv");
   wmap << "bit,x,y\n";
   for(const auto& [bit, p] : waferAt) wmap << bit << ',' << p.first << ',' << p.second << '\n';
+  if(g_long) {
+    std::ofstream lv(outDir + "/long_summary.txt");
+    lv << "level ends at frames:"; for(int f : levelEnds) lv << ' ' << f;
+    lv << "\nbonus items eaten at frames:"; for(int f : bonusAt) lv << ' ' << f;
+    lv << "\nfinal score " << score() << "\n";
+  }
   std::printf("done: %d frames, level end at %d, game over at %d, wafers left %d, lives %d, maze %zu places, "
-              "%zu wafer positions learned\n", frame, levelEnd, gameOver, wafers(), lives(), maze.size(), waferAt.size());
+              "%zu wafer positions learned; level ends %zu, bonus items eaten %zu, score %d\n", frame, levelEnd, gameOver, wafers(), lives(), maze.size(), waferAt.size(), levelEnds.size(), bonusAt.size(), score());
   stella.destroy();
   return 0;
 }

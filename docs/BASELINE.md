@@ -129,3 +129,15 @@ Measured in BL-045 to BL-047 (`DECISIONS.md` T-E5-1, computed by `tools\e5_entri
 ## Dying and game over, in short (Stage E6)
 
 Measured in BL-048 and BL-049 (`DECISIONS.md` T-E6-1, computed by `tools\e6_entries.py`): the pause flag comes on at the catch, the life is taken 125 or 126 frames later, the pause ends 245 or 246 frames after it began (126 for the last life), Pac-Man returns to (76,60) and the ghosts to (76,30). After game over the ghosts walk again from 120 frames later; the fire button starts a new game only after a delay (about 500 frames in the idle game).
+| BL-050 | 30000 | Random joystick moves, seed 11, 30000 frames |
+| BL-051 | 30000 | Random joystick moves, seed 12, 30000 frames |
+| BL-052 | 30000 | Random joystick moves, seed 13, 30000 frames |
+| BL-053 | 30000 | Random joystick moves, seed 14, 30000 frames |
+| BL-054 | 36300 | A long game by the search bot (seed 1): five levels |
+| BL-055 | 36300 | A long game by the search bot (seed 2): five levels |
+| BL-056 | 36300 | A long game by the search bot (seed 3): five levels |
+| BL-057 | 4000 | The first 4000 frames of the first long game, with the first bonus item |
+
+## Long play, in short (Stage E7)
+
+Measured in BL-050 to BL-057 (`DECISIONS.md` T-E7-1, computed by `tools\e7_entries.py`): the bonus item is on the board while byte $E7 bit 1 is set (up to 768 frames) and gives +100 at x 72-80, y 40; Pac-Man's speed is the same in every level; the ghosts' speed rises with the level (average 1.41 pixels per 4-frame change in level 1, 2.34 in level 6); clearing a level adds a life; ghosts use the openings at the top and bottom as Pac-Man does. The bot clears five levels in 36,000 frames and was not stopped by a game over; random-input games of 30,000 frames keep every movement rule.

@@ -1,0 +1,17 @@
+id: BL-052
+title: Random joystick moves, seed 13, 30000 frames
+shows: A seeded random game: a hold of one direction for 4 to 40 frames (sometimes none), Game Reset on frame 240, the fire button every 1,500 frames from frame 3000; used to check the movement rules over a very long game.
+inputs: BL-052.inputs
+frames: 30000
+rom_sha1: 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1
+trace_sha256: 3573be87c9ef73d4ee88c0d0443e81d39411a020de9dbfc224f97b0f0904e6c7
+trace_bytes: 9049196
+observations:
+  Frames are counted from power-on (frame 0). Memory bytes are named by their address; the meanings are working labels
+  (Stages C6 and C7, docs\CONTROLS.md and docs\CAPTURES.md), not yet confirmed (Phase F). Every number below was read from the trace.
+  - Game Reset on frame 240 starts the game; play begins on frame 367. Input made from seed 13 by the rule in tools\e7_entries.py.
+  - Games started (the lives counter becomes 3): on frames 240, 3000, 4504, 7500, 10500, 13500, 16500, 19500, 22500, 25500, 28500.
+  - Deaths seen (pause flag with the lives counter dropping later): 32; the lives counter reads 0 on frames 1557, 4161, 5681, 8623, 11849, 14647, 18685, 20681, 24141, 26873.
+  - Highest score 32; most wafers eaten from a full map 32; wafer-map refills (level cleared): 0.
+  - Movement rules over every frame of play (pause frames left out): Pac-Man made 2309 one-pixel steps, 0 jumps through the openings at the top or bottom of the maze (column 76, see BL-034) and 0 other changes of place; the ghosts made 7142 changes of place, 0 jumps through the same openings (none) and 0 other changes larger than 3 pixels (changes of 1 to 3 pixels are normal; the size grows with the level).
+  - How to check it against the real game: replay the recording in Stella (the host program with --replay) and compare with the numbers above.

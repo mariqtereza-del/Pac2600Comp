@@ -1653,7 +1653,26 @@ Findings are recorded the moment they are made, with the address, the evidence a
     - **Documentation updates:** `docs\F3_HARDWARE_NAMES.md`, `DECISIONS.md` (T-F3-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage F3: Hardware names`.
     - **Next stage:** F4 — Code versus data.
-4. **[Not started] F4 — Code versus data.** Mark graphics shapes, maze data, colour and sound tables as data.
+4. **[Done] F4 — Code versus data.** *(expanded and done 2026-10-26)*
+    - **Objective:** in the listing, mark every data byte as data, cut it into tables, and name each table by how the program uses it (sprite shapes, colours, playfield, sound, other tables, never read), with its size and its readers, without changing a byte of the rebuilt ROM.
+    - **Why it matters:** the graphics, maze and sound tables are the "content" of the game; the C++ version needs them cut at the right places, and the cut must come from evidence, not guesses.
+    - **Prerequisites:** F3 Done (`83b6b0b`): the named listing; the instruction-level coverage files of F1.
+    - **What Claude Code will do:**
+      1. `tools\f4_tables.py`: from the 29 coverage recordings, which instruction read which data byte; follow each read forward to the chip register the value ends in (GRP0/GRP1 = shape, COLUPx = colour, PFx = playfield, AUDxx = sound); merge the ranges each reader touched; cut at old labels and range edges; name each segment `<KIND>_Fxxx`; the three CPU vectors written as `.word`.
+      2. Write `reference\disasm\pacman_tables.asm` (local only), assemble, require byte-identical.
+      3. `docs\F4_DATA_TABLES.md`.
+    - **What I must do:** nothing.
+    - **Exact instructions:** none.
+    - **Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** 544 data bytes in 66 named segments; a byte-identical rebuild.
+    - **Verification:** `python -I tools\f4_tables.py rom\pacman.a26` says BYTE-IDENTICAL; the rebuilt bytes replay golden traces.
+    - **Completion criteria:** all of the above.
+    - **Potential problems:** the kind is how the bytes are used, not what they mean in the game: 37 segments (266 bytes) are read but not stored straight into a chip register (`TBL`) and need the routines (F5 onward) to be understood; sprite tables are cut by the reads of the games played, so the cut between two shapes inside a `GFX` block is not yet known (it comes with the kernel stage); 26 bytes were never read.
+    - **Recovery:** new tool and local files; undo by returning to `83b6b0b` (with your OK).
+    - **Documentation updates:** `docs\F4_DATA_TABLES.md`, `DECISIONS.md` (T-F4-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage F4: Code versus data`.
+    - **Next stage:** F5 — The frame loop.
 5. **[Not started] F5 — The frame loop.** Find the start-up code and the four parts of every frame: vertical sync, vertical blank (logic time), the visible picture ("kernel"), overscan (more logic time).
 6. **[Not started] F6 — What actually runs.** Replay every golden trace with execution logging; every ROM byte is marked executed, read as data, or never touched.
 7. **[Not started] F7 — Naming all 128 RAM bytes.** Each byte watched across the baseline traces and named (`pacman_x`, `ghost_mode`…), with uncertain names marked "?".

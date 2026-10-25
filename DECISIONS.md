@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F4-1 — Data tables cut and named by how they are read (2026-10-26, Stage F4)
+
+- **Method:** from the instruction-level coverage of 29 recorded games (F1) each data byte knows which instructions read it; each reader is followed forward (within 14 instructions, stopping at a return or jump) to the chip register its value is stored into; ranges touched by readers are merged where they overlap or touch; the data is cut at old labels, range edges and kind changes. Kinds: GFX (read through a pointer or table and stored into GRP0/GRP1), COLOR, PF, SND, TBL (read but not stored straight into a chip register), UNREAD, VECTORS.
+- **Result:** 544 data bytes in 66 segments: GFX 208 bytes (5 segments: `$FD8B-$FDAA`, `$FDAF-$FDC1`, `$FDC6-$FDF9`, `$FE89-$FEEB`, `$FEEC-$FEF1`), COLOR 20 (`$FF2B-$FF39`, `$FF3C-$FF40`), PF 10 (six small ones), SND 8 (`$FFF1-$FFF8`: two 4-entry tables stored into the sound frequency registers), TBL 266 (37 segments; the largest 80 bytes at `$FE13-$FE62` read by nine instructions), UNREAD 26 (13 pieces), VECTORS 6 (`$FFFA-$FFFF`: NMI `$0000`, RESET `$F000`, IRQ/BRK `$0000`). 77 instructions read data; 24 of them end in a chip register.
+- **Not claimed:** what a TBL means in the game; where one shape ends and the next begins inside a GFX block; the last sprite pointer values are set by code and only the code (F9 onward) tells.
+- **Proof:** `pacman_tables.asm` assembles byte-identical to the ROM (same SHA-1 `0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1`); the rebuilt bytes replay BL-001 and BL-049 equal. The listing is local only.
+- **Reversible:** Yes.
+
 ### T-F3-1 — Hardware names in the listing (2026-10-26, Stage F3)
 
 - **What:** 178 operands now carry a standard hardware name (47 different registers, 51 equates): e.g. 28 uses of the wait-for-line register, 13 of the player-0 graphics register, 15 each of the playfield registers PF1 and PF2, the sound registers (AUDC/AUDF/AUDV, 16), the collision reads (CXM1P, CXP1FB, CXPPMM), the fire button (INPT4), the joystick and console switches (SWCHA, SWCHB) and the timer (TIM64T set, INTIM read). `STA $00,X` (a sweep over the whole page at the start) stays a number. No chip address was left without a name.

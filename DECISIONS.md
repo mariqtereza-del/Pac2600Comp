@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-25 — The start-up rewritten (2026-10-26, Stage F21.25)
+
+- **Piece:** `game::startUp` covers `$F000-$F052`: 128 chip-register writes of 0 (the 64 registers twice over their mirrors; the write to WSYNC is among them), the memory zeroed, GAME_SELECT 6, BONUS_TIMER $0C, ATTRACT_SHIFT and RNG_STATE $FF, NEW_GAME_SETUP, SCORE_P1 bytes $CB / $ED / $0F, PACMAN_Y $65, the four speed counters $0F, six chip writes (HMM1 $F0, HMBL $80, RESBL, RESM1, HMOVE, HMCLR) and GAME_FLAGS / LIVES 0. Then the frame start.
+- **Result:** 70 of 70 games identical; 70 calls (one per game) compared with the original (memory, chip writes, stack pointer, arrival address): 0 differences; identical together with F21.1-F21.24.
+- **Reversible:** Yes.
+
 ### T-F21-24 — The start of the next frame rewritten (2026-10-26, Stage F21.24)
 
 - **Piece:** `game::frameStart` covers `$F7D6-$F87A`: the vertical blank and sync on and the collision flags cleared (three chip writes), the sprite pictures from the cartridge tables, FRAME_COUNTER + 1, every 256 frames TICK256 + 1 and, unless it wraps, BONUS_TIMER - 1 with the flip of the item flag (on for 3 ticks, 2 with the difficulty bit, off for 18; F15), the title shift ATTRACT_SHIFT (never 0), the picture set-up values, the colour mask (colour / black and white, title shift), and three colour indices. It leaves X = 0 for the vertical-sync-off write at `$F87C`, which ends the frame.

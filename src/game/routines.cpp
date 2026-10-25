@@ -965,4 +965,28 @@ void frameStart(Ram& ram, const Cartridge& cart, const ConsoleInput& in, TiaChip
   at(ram, ram::COLOUR_SCORE_P2) = at(ram, ram::SCORE_COLOUR_P2);
 }
 
+// The start-up ($F000-$F052).
+void startUp(Ram& ram, TiaChip& chip) {
+  for (int a = 0; a < 0x80; ++a) chip.write(static_cast<uint8_t>(a & 0x3F), 0);    // $00-$7F: the chip registers and their mirrors
+  ram.fill(0);                                                                      // $80-$FF
+  at(ram, ram::GAME_SELECT) = 6;
+  at(ram, ram::BONUS_TIMER) = 12;
+  at(ram, ram::ATTRACT_SHIFT) = 0xFF;
+  at(ram, ram::RNG_STATE) = 0xFF;
+  newGameSetup(ram);
+  at(ram, ram::SCORE_P1_LO) = 0xCB;
+  at(ram, ram::PACMAN_Y) = 0xCB >> 1;
+  at(ram, ram::SCORE_P1_MID) = 0xED;
+  at(ram, ram::SCORE_P1_HI) = 0x0F;
+  for (uint8_t i = 1; i <= 4; ++i) at(ram, static_cast<uint8_t>(ram::SPEED_ACC0 + i)) = 0x0F;
+  chip.write(chip::HMM1, 0xF0);
+  chip.write(chip::HMBL, 0x80);
+  chip.write(chip::RESBL, 0x80);
+  chip.write(chip::RESM1, 0x80);
+  chip.write(chip::HMOVE, 0x80);
+  chip.write(chip::HMCLR, 0x80);
+  at(ram, ram::GAME_FLAGS) = 0;
+  at(ram, ram::LIVES) = 0;
+}
+
 }  // namespace game

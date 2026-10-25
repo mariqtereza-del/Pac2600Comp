@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **MAIN/start-up**: identical in 70 of 70 games; 70 calls compared with the original code, 0 different.
 - **MAIN/frame start**: identical in 70 of 70 games; 439680 calls compared with the original code, 0 different.
 - **MAIN/bottom logic**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
 - **MAIN/top logic**: identical in 70 of 70 games; 439610 calls compared with the original code, 0 different.
@@ -96,6 +97,7 @@
 
 | Stage | Part | Starts at | What |
 | --- | --- | --- | --- |
+| F21.25 | MAIN/start-up | $F000 | game::startUp ($F000-$F052): the power-on set-up; goes on at the frame start |
 | F21.24 | MAIN/frame start | $F7D6 | game::frameStart ($F7D6-$F87A): sync and blank on, sprite pictures from the cartridge tables, frame counter, bonus timer, colour mask; goes on at $F87C |
 | F21.23 | MAIN/bottom logic | $F4E7 | game::bottomLogic ($F4E7-$F7CE): pause and event timer, freeze set-up, collisions, wafers, new map, Pac-Man joystick and moves, sound; ends by going on at $F7D1 |
 | F21.22 | MAIN/top logic | $F87E | game::topLogic ($F87E-$F9A7): new game, game-number steps, difficulty bit, the ghost of the frame (three updates), the opening animations, the colours; ends by going on at $F07F |

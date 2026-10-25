@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.25', 'MAIN/start-up', 'start-up', 0xF000, 'game::startUp ($F000-$F052): the power-on set-up; goes on at the frame start'),
     ('F21.24', 'MAIN/frame start', 'frame-start', 0xF7D6, 'game::frameStart ($F7D6-$F87A): sync and blank on, sprite pictures from the cartridge tables, frame counter, bonus timer, colour mask; goes on at $F87C'),
     ('F21.23', 'MAIN/bottom logic', 'bottom-logic', 0xF4E7, 'game::bottomLogic ($F4E7-$F7CE): pause and event timer, freeze set-up, collisions, wafers, new map, Pac-Man joystick and moves, sound; ends by going on at $F7D1'),
     ('F21.22', 'MAIN/top logic', 'top-logic', 0xF87E, 'game::topLogic ($F87E-$F9A7): new game, game-number steps, difficulty bit, the ghost of the frame (three updates), the opening animations, the colours; ends by going on at $F07F'),

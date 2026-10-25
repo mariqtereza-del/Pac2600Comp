@@ -101,6 +101,16 @@ void soundEffectsNative(Machine& m, bool wrong = false) {
   m.rts();
 }
 
+// F21.25 The start-up ($F000-$F052): the machine starts here; the native piece clears the memory and the chip, sets the first values and goes on at the frame
+// start ($F7D6) with the stack pointer at $FF. Contract: stack pointer and arrival address; free stack bytes are ignored.
+void startUpNative(Machine& m) {
+  MachineChip chip(m, false);
+  withRam(m, [&](game::Ram& r) { game::startUp(r, chip); });
+  m.sp = 0xFF;
+  m.p = static_cast<uint8_t>((m.p | 0x04) & ~0x08);   // SEI, CLD
+  m.pc = 0xF7D6;
+}
+
 // F21.24 The start of the next frame ($F7D6-$F87A): arrives after the overscan wait, goes on at $F87C with X = 0 (the next instruction writes X to the vertical
 // sync). The colour / black-and-white switch is read from the machine. Contract: X, the stack pointer and the arrival address are compared; A, Y and the
 // flags are reloaded by the code at $F87C.
@@ -510,6 +520,14 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "start-up") {
+    Machine::Contract c;
+    c.deadStack = true;
+    c.regs = 16 | 32;
+    c.stopAt = 0xF7D6;
+    m.registerNative(0xF000, "START_UP (native)", [](Machine& mm) { startUpNative(mm); }, c);
+    return true;
+  }
   if (name == "frame-start") {
     Machine::Contract c;
     c.regs = 2 | 16 | 32;

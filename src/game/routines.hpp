@@ -177,7 +177,7 @@ class TiaChip {
 };
 using SoundChip = TiaChip;   // the sound routines see the same chip
 namespace chip {
-inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07, REFP1 = 0x0C, VSYNC = 0x00, VBLANK = 0x01, CXCLR = 0x2C;
+inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07, REFP1 = 0x0C, VSYNC = 0x00, VBLANK = 0x01, CXCLR = 0x2C, RESM1 = 0x13, RESBL = 0x14, HMM1 = 0x23, HMBL = 0x24, HMOVE = 0x2A, HMCLR = 0x2B;
 inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18, AUDV0 = 0x19, AUDV1 = 0x1A;
 }
 
@@ -249,5 +249,12 @@ bool bottomLogic(Ram& ram, const Cartridge& cart, const FrameInput& input, TiaCh
 // (never to 0); the picture set-up values; the colour mask from the colour / black-and-white switch and the title shift; three colour indices.
 // The code then goes on at $F87C (where the vertical sync is switched off: the frame boundary).
 void frameStart(Ram& ram, const Cartridge& cart, const ConsoleInput& input, TiaChip& chip);
+
+// F21.25  The start-up ($F000-$F052), when the console is switched on: the whole page $00-$FF is cleared (the 128 chip registers, written twice over their
+// mirrors, and the 128 memory bytes, the stack included); game number 6 (the power-on game), the bonus item's timer $0C, the title shift and the random
+// number $FF; NEW_GAME_SETUP; the score shows $CB, $ED, $0F (the blank pattern of the title screen) and Pac-Man's y is $65; the four speed counters start at $0F;
+// the bonus item's ball and missile are positioned (the chip writes HMM1, HMBL, RESBL, RESM1, HMOVE, HMCLR); the flags and the lives are 0.
+// The code then goes on at the frame start ($F7D6).
+void startUp(Ram& ram, TiaChip& chip);
 
 }  // namespace game

@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-6 — NEW_GAME_SETUP rewritten; the call check earns its keep (2026-10-26, Stage F21.6)
+
+- **Routine:** `game::newGameSetup`: SCORE_COLOUR_P2 = $09, SCORE_COLOUR = $0A, LIVES = 3, LEVEL_SPEED = ((GAME_SELECT - 2) and 6) + 4, then newMaze.
+- **Finding:** the first adapter left the carry flag as it was; the original ends with carry and overflow clear (its last arithmetic is CLC, ADC #4 on a small number). All 70 games were still identical in every frame, but the call-by-call check reported 142 differing calls. Fixed in the adapter. This is the case the check was built for (T-F21-1).
+- **Result:** 70 of 70 games identical; 1,006 calls compared with the original: 0 differences; identical together with F21.1-F21.5.
+- **Reversible:** Yes.
+
 ### T-F21-5 — NEW_MAZE and PLACE_OBJECTS rewritten (2026-10-26, Stage F21.5)
 
 - **Routines:** `game::placeObjects` (GAME_FLAGS bit 7 on, EVENT_TIMER = $3C, objects 0-4 at x = $4C, y = $1E, state 0, then Pac-Man y = $3C, state $80) and `game::newMaze` (wafer bytes $88-$97 = $FF except $8E = $7F and $8A = $FE, PILL_FLAGS = $3C, then placeObjects). Registered at both entry addresses; the fall-through into them from NEW_GAME_SETUP and NEW_MAZE is caught because the machine checks every instruction address.

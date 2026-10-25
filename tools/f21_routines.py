@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.6', 'NEW_GAME_SETUP', 'new-game-setup', 0xFBF4, 'game::newGameSetup: score colours, three lives, start level from the game number, then NEW_MAZE'),
     ('F21.5', 'NEW_MAZE', 'new-maze', 0xFC0C, 'game::newMaze: the wafer map filled (two places empty), pill flags $3C, then PLACE_OBJECTS'),
     ('F21.5', 'PLACE_OBJECTS', 'place-objects', 0xFC21, 'game::placeObjects: freeze on, timer $3C, Pac-Man and the ghosts at their start places'),
     ('F21.4', 'WRAP_TO_BOTTOM', 'wrap', 0xFD26, 'game::wrapToBottom: direction bits $30 and y = $51 (the opening in the bottom wall); registered together with WRAP_TO_TOP and the shared end WRAP_SET_Y'),

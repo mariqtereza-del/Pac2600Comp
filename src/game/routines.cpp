@@ -64,4 +64,13 @@ void newMaze(Ram& ram) {
   placeObjects(ram);
 }
 
+// NEW_GAME_SETUP ($FBF4).
+void newGameSetup(Ram& ram) {
+  at(ram, ram::SCORE_COLOUR_P2) = 0x09;
+  at(ram, ram::SCORE_COLOUR) = 0x0A;
+  at(ram, ram::LIVES) = 3;
+  at(ram, ram::LEVEL_SPEED) = static_cast<uint8_t>((((at(ram, ram::GAME_SELECT) - 2) & 6) + 4) & 0xFF);
+  newMaze(ram);
+}
+
 }  // namespace game

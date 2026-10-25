@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **NEW_GAME_SETUP**: identical in 70 of 70 games; 1006 calls compared with the original code, 0 different.
 - **NEW_MAZE**: identical in 70 of 70 games; 1026 calls compared with the original code, 0 different.
 - **PLACE_OBJECTS**: identical in 70 of 70 games; 1319 calls compared with the original code, 0 different.
 - **WRAP_TO_BOTTOM**: identical in 70 of 70 games; 40 calls compared with the original code, 0 different.
@@ -32,6 +33,7 @@
 | F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/routines.cpp: both scores and both lives to 0 |
 | F21.3 | `RNG_STEP` | $FBE0 | 20 | **done** | game::rngStep: the shift-register random number; its bit-mask table is 0x80 >> n (checked equal to the cartridge bytes) |
 | F21.5 | `NEW_MAZE` | $FC0C | 21 | **done** | game::newMaze: the wafer map filled (two places empty), pill flags $3C, then PLACE_OBJECTS |
+| F21.6 | `NEW_GAME_SETUP` | $FBF4 | 24 | **done** | game::newGameSetup: score colours, three lives, start level from the game number, then NEW_MAZE |
 | F21.5 | `PLACE_OBJECTS` | $FC21 | 36 | **done** | game::placeObjects: freeze on, timer $3C, Pac-Man and the ghosts at their start places |
 | - | `EXIT_F9E4` | $F9E4 | 1 | to do | a lone RTS: nothing to write |
 | - | `EXIT_FB5B` | $FB5B | 1 | to do | a lone RTS: nothing to write |
@@ -53,7 +55,6 @@
 | - | `TRY_COMMIT` | $FB44 | 23 | to do | drops the caller's return |
 | - | `TRY_LEFT` | $FB70 | 23 | to do |  |
 | - | `TRY_RIGHT` | $FB87 | 24 | to do |  |
-| - | `NEW_GAME_SETUP` | $FBF4 | 24 | to do |  |
 | - | `ADD_SCORE` | $FC45 | 35 | to do | needs the amount tables of the cartridge (F22) |
 | - | `PACMAN_KEEP_GOING` | $F793 | 39 | to do | drops the caller's return |
 | - | `LOCATE_OBJECT` | $FBAD | 51 | to do |  |

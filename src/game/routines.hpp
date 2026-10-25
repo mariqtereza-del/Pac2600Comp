@@ -41,4 +41,8 @@ void placeObjects(Ram& ram);
 // flags to $3C, and then does PLACE_OBJECTS (the original falls into it).
 void newMaze(Ram& ram);
 
+// F21.6  NEW_GAME_SETUP ($FBF4): the start of a game for the player in turn: score colours ($0A and $09), three lives, the start level from the game
+// number ((GAME_SELECT - 2) and 6) + 4 (F16), then NEW_MAZE (the original falls into it).
+void newGameSetup(Ram& ram);
+
 }  // namespace game

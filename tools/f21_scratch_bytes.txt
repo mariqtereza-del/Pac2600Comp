@@ -1,0 +1,12 @@
+# Stage F21.26: memory bytes that the picture code ($F07F-$F4E6) writes and nothing else depends on (address name); written by tools/f21_routines.py
+87 CELL_INDEX
+C9 CELL_ROW
+D2 TEMP_D2
+D3 TEMP_D3
+D4 TEMP_D4
+D5 TEMP_D5
+D6 TEMP_D6
+D8 SPRITE0_Y
+DA TEMP_DA
+E1 TEMP_E1
+E2 TEMP_E2

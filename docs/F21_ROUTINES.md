@@ -93,6 +93,14 @@
 | - | `KERNEL_LINE_P1` | $F053 | 20 | to do | writes only chip registers (picture): proved with the renderer (F23) |
 | - | `KERNEL_LINE_P0` | $F06A | 21 | to do | picture only (F23) |
 
+## What the picture code leaves in memory (F21.26)
+
+The picture code (`$F07F-$F4E6`, the two timer waits and the KERNEL_LINE routines) is the only original code still running in the tests. For the experiment it was replaced by **nothing** (it jumps straight to the bottom logic and draws nothing), everything else being the native pieces above. Result:
+
+- 11 memory bytes differ from the recordings in some frame: `$87 CELL_INDEX`, `$C9 CELL_ROW`, `$D2 TEMP_D2`, `$D3 TEMP_D3`, `$D4 TEMP_D4`, `$D5 TEMP_D5`, `$D6 TEMP_D6`, `$D8 SPRITE0_Y`, `$DA TEMP_DA`, `$E1 TEMP_E1`, `$E2 TEMP_E2`.
+- With exactly those bytes left out of the comparison, **70 of 70 games are identical in every frame**: nothing else in memory depends on what the picture code writes (it would show as a difference in a byte that is compared).
+- So these are **scratch bytes of the drawing**: the renderer of F23 does not have to reproduce them, and from now on the lockstep comparison may leave them out (`lockstep.exe --ignore <hex list>`; the list is in `tools\f21_scratch_bytes.txt`). The game logic only writes some of them itself before it reads them (for example the colour work bytes), which is why they are scratch.
+
 ### Parts of the main loop (`MAIN`) rewritten
 
 | Stage | Part | Starts at | What |

@@ -76,7 +76,7 @@ NOTES = {
 }
 
 
-def run(entry, pokes, natives, verify=True):
+def run(entry, pokes, natives, verify=True, extra=()):
     cmd = [str(EXE), str(ROM), str(ROOT / 'baseline' / (entry + '.inputs')), str(ROOT / 'reference' / 'baseline' / (entry + '.trace')),
            '--oracle', str(ROOT / 'reference' / 'f20' / ('oracle_%s.txt' % entry))]
     for p in pokes:
@@ -85,6 +85,7 @@ def run(entry, pokes, natives, verify=True):
         cmd += ['--native', n]
     if verify:
         cmd.append('--verify')
+    cmd += list(extra)
     r = subprocess.run(cmd, capture_output=True, text=True)
     return entry, r.returncode, r.stdout.strip().split('\n')
 
@@ -95,6 +96,27 @@ def calls(lines):
         if m:
             return int(m.group(1)), int(m.group(2))
     return 0, 0
+
+
+def picture_experiment(ex, items):
+    """F21.26: replace the picture code by nothing; which memory bytes then differ, and does anything else depend on them?"""
+    natives = sorted({d[2] for d in DONE}) + ['picture-skip']
+    first = list(ex.map(lambda it: run(it[0], it[1], natives, verify=False, extra=['--all']), items))
+    union = {}
+    differing_games = 0
+    for entry, rc, lines in first:
+        if rc != 0:
+            differing_games += 1
+        for l in lines:
+            if l.startswith('bytes that differ in some frame:'):
+                for tok in l.split(':', 1)[1].split():
+                    m = re.match(r'\$([0-9A-F]{2})\((\w+)\)x(\d+)', tok)
+                    if m:
+                        union[int(m.group(1), 16)] = m.group(2)
+    ignore = ','.join('%02X' % a for a in sorted(union))
+    second = list(ex.map(lambda it: run(it[0], it[1], natives, verify=False, extra=['--ignore', ignore]), items))
+    clean = [r for r in second if r[1] == 0]
+    return union, differing_games, len(clean), len(second)
 
 
 def main():
@@ -147,6 +169,14 @@ def main():
             problems.append('SOUND_EFFECTS fixture not found everywhere')
         if len(found_w) != len(used_w) or not used_w or not found_r:
             problems.append('fixtures not found everywhere')
+        union, differing_games, clean, total = picture_experiment(ex, items)
+    print('picture code replaced by nothing: %d memory bytes differ in some frame (%s); games that differ without ignoring them: %d of %d; with those bytes ignored: %d of %d games identical' % (
+        len(union), ', '.join('$%02X %s' % (a, n) for a, n in sorted(union.items())), differing_games, total, clean, total))
+    if clean != total or not union:
+        problems.append('the picture code leaves something else behind (or nothing)')
+    scratch = ROOT / 'tools' / 'f21_scratch_bytes.txt'
+    scratch.write_text('# Stage F21.26: memory bytes that the picture code ($F07F-$F4E6) writes and nothing else depends on (address name); written by tools/f21_routines.py\n'
+                       + ''.join('%02X %s\n' % (a, n) for a, n in sorted(union.items())), encoding='utf-8')
     rom = ROM.read_bytes()
     table_ok = list(rom[0xE6A:0xE72]) == [0x80 >> i for i in range(8)]
     print('bit-mask table at $FE6A equals 0x80 >> n:', table_ok)
@@ -163,11 +193,11 @@ def main():
     ok = not problems
     print('problems:', problems)
     print('result: %s' % ('OK' if ok else 'MISMATCH'))
-    write_doc(results, len(items), len(found_w), len(used_w), len(found_r), ok)
+    write_doc(results, len(items), len(found_w), len(used_w), len(found_r), ok, union, clean, total)
     return 0 if ok else 1
 
 
-def write_doc(results, n, found_w, used_w, found_r, ok):
+def write_doc(results, n, found_w, used_w, found_r, ok, union=None, clean=0, total=0):
     text = (ROOT / 'docs' / 'F8_ROUTINES.md').read_text(encoding='utf-8')
     block = text[text.index('## Routines'):text.index('## Data each routine')]
     rows = []
@@ -196,6 +226,12 @@ def write_doc(results, n, found_w, used_w, found_r, ok):
             d.append('| %s | `%s` | $%04X | %d | **done** | %s |' % (done[nm][0], nm, r[0], r[2], done[nm][4]))
         else:
             d.append('| - | `%s` | $%04X | %d | to do | %s |' % (nm, r[0], r[2], NOTES.get(nm, '')))
+    if union:
+        d += ['', '## What the picture code leaves in memory (F21.26)', '',
+              'The picture code (`$F07F-$F4E6`, the two timer waits and the KERNEL_LINE routines) is the only original code still running in the tests. For the experiment it was replaced by **nothing** (it jumps straight to the bottom logic and draws nothing), everything else being the native pieces above. Result:', '',
+              '- %d memory bytes differ from the recordings in some frame: %s.' % (len(union), ', '.join('`$%02X %s`' % (a, nm) for a, nm in sorted(union.items()))),
+              '- With exactly those bytes left out of the comparison, **%d of %d games are identical in every frame**: nothing else in memory depends on what the picture code writes (it would show as a difference in a byte that is compared).' % (clean, total),
+              '- So these are **scratch bytes of the drawing**: the renderer of F23 does not have to reproduce them, and from now on the lockstep comparison may leave them out (`lockstep.exe --ignore <hex list>`; the list is in `tools%sf21_scratch_bytes.txt`). The game logic only writes some of them itself before it reads them (for example the colour work bytes), which is why they are scratch.' % BS]
     names = {r[1] for r in rows}
     extra = [x for x in DONE if x[1] not in names]
     if extra:

@@ -65,6 +65,8 @@ int main(int argc, char** argv) {
   std::vector<std::array<int, 3>> pokes;
   std::vector<std::string> natives;
   bool all = false, verify = false;
+  std::vector<int> ignore;                      // --ignore: memory bytes ($80-$FF) left out of the frame comparison
+  std::array<long, 128> diffCount{};
   for (int i = 4; i < argc; ++i) {
     const std::string a = argv[i];
     if (a == "--oracle" && i + 1 < argc) {
@@ -79,6 +81,9 @@ int main(int argc, char** argv) {
       natives.push_back(argv[++i]);
     } else if (a == "--all") {
       all = true;
+    } else if (a == "--ignore" && i + 1 < argc) {
+      std::istringstream ls(argv[++i]);
+      for (std::string t; std::getline(ls, t, ',');) ignore.push_back(static_cast<int>(std::stoul(t, nullptr, 16)) - 0x80);
     } else if (a == "--verify") {
       verify = true;
     }
@@ -108,6 +113,11 @@ int main(int argc, char** argv) {
     std::string ours;
     char buf[3];
     for (int i = 0; i < 128; ++i) { std::snprintf(buf, sizeof buf, "%02x", m.ram()[i]); ours += buf; }
+    for (int i : ignore)
+      if (i >= 0 && i < 128) ours.replace(2 * i, 2, golden[f].substr(2 * i, 2));
+    if (all)
+      for (int i = 0; i < 128; ++i)
+        if (ours.compare(2 * i, 2, golden[f], 2 * i, 2) != 0 && !m.deadStackByte(i)) ++diffCount[i];
     if (m.liveStackMode()) {   // free stack bytes (below the stack pointer) are not game state: take the golden value for them
       for (int i = 0; i < 128; ++i)
         if (m.deadStackByte(i)) ours.replace(2 * i, 2, golden[f].substr(2 * i, 2));
@@ -143,6 +153,12 @@ int main(int argc, char** argv) {
   if (different == 0) {
     std::printf("result: ROUTINE CHECK FAILED (the frames are identical but a native routine differs from the original)\n");
     return 1;
+  }
+  if (all) {
+    std::printf("bytes that differ in some frame:");
+    for (int i = 0; i < 128; ++i)
+      if (diffCount[i]) std::printf(" $%02X(%s)x%ld", 0x80 + i, Machine::ramName(static_cast<uint8_t>(0x80 + i)), diffCount[i]);
+    std::printf("\n");
   }
   std::printf("result: DIFFERENT (%d of %d frames differ%s; first at frame %d)\n", different, total, all ? "" : ", stopped at the first", firstFrame);
   return 1;

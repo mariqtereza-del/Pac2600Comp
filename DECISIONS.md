@@ -134,6 +134,12 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-26 — The picture code writes only 11 scratch bytes (2026-10-26, Stage F21.26)
+
+- **Experiment:** every other piece native, the drawing code replaced by nothing (`picture-skip`). Bytes that differ from the recordings in some frame: `$87 CELL_INDEX`, `$C9 CELL_ROW` (counters of the maze rows), `$D2-$D6` (TEMP_D2..D6), `$D8 SPRITE0_Y`, `$DA TEMP_DA`, `$E1 TEMP_E1`, `$E2 TEMP_E2` (work bytes). The pictures' counters and pointers (`$DB-$E0`) do not differ, because the frame start sets them again before the frame ends.
+- **Result:** with exactly these 11 bytes left out of the comparison, all 70 games are identical in every frame (439,680): nothing that is compared depends on them. They are scratch bytes of the drawing; the list is in `tools/f21_scratch_bytes.txt` and `lockstep.exe --ignore` takes it. Several of them are also used by the native logic as work bytes (the native code writes TEMP_D2/D3/E1/E2 as the original does, since the memory comparison covered them while the drawing code still ran).
+- **Reversible:** Yes.
+
 ### T-F21-25 — The start-up rewritten (2026-10-26, Stage F21.25)
 
 - **Piece:** `game::startUp` covers `$F000-$F052`: 128 chip-register writes of 0 (the 64 registers twice over their mirrors; the write to WSYNC is among them), the memory zeroed, GAME_SELECT 6, BONUS_TIMER $0C, ATTRACT_SHIFT and RNG_STATE $FF, NEW_GAME_SETUP, SCORE_P1 bytes $CB / $ED / $0F, PACMAN_Y $65, the four speed counters $0F, six chip writes (HMM1 $F0, HMBL $80, RESBL, RESM1, HMOVE, HMCLR) and GAME_FLAGS / LIVES 0. Then the frame start.

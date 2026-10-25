@@ -101,6 +101,10 @@ void soundEffectsNative(Machine& m, bool wrong = false) {
   m.rts();
 }
 
+// F21.26 The picture code ($F07F-$F4E6) replaced by nothing, for an experiment only: it jumps straight to the bottom logic at $F4E7 and draws nothing. It is
+// not a rewrite and has no call check; the experiment shows which memory bytes the picture code writes and that nothing else depends on them.
+void pictureSkipNative(Machine& m) { m.pc = 0xF4E7; }
+
 // F21.25 The start-up ($F000-$F052): the machine starts here; the native piece clears the memory and the chip, sets the first values and goes on at the frame
 // start ($F7D6) with the stack pointer at $FF. Contract: stack pointer and arrival address; free stack bytes are ignored.
 void startUpNative(Machine& m) {
@@ -520,6 +524,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "picture-skip") { m.registerNative(0xF07F, "PICTURE (skipped for the experiment)", [](Machine& mm) { pictureSkipNative(mm); }); return true; }
   if (name == "start-up") {
     Machine::Contract c;
     c.deadStack = true;

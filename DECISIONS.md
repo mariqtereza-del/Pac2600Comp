@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-17 — SOUND_START rewritten (2026-10-26, Stage F21.17)
+
+- **Routine:** `game::soundStart`: refused if `TBL_FFE9[y]` and SOUND_ACTIVE share a bit (the value is left in A); else SOUND_ACTIVE = `TBL_FE6E[y]` and SOUND_TIMER = `TBL_FFED[y]` (cartridge tables by address).
+- **Result:** 70 of 70 games identical; 4,607 calls compared with the original (memory, registers, flags): 0 differences; identical together with F21.1-F21.16.
+- **Next:** the two routines that play the sounds write the sound chip, which the memory comparison does not see; F21.18 first adds the chip writes to the call check.
+- **Reversible:** Yes.
+
 ### T-F21-16 — GHOST_UPDATE rewritten (2026-10-26, Stage F21.16)
 
 - **Routine:** `game::ghostUpdate`: eyes on the pen row at x $58 turn left and move (SET_DIRECTION), at x $4C wait while the ghosts are scared or become a ghost again and turn right; an animating ghost (state bit 5) is left alone; otherwise `locateObject`, `ghostDecide`, and `moveObject` unless the decision set the animating bit.

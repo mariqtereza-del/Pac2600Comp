@@ -163,4 +163,9 @@ bool ghostDecide(Ram& ram, const Cartridge& cart, uint8_t object);
 // Otherwise: locate it, let it decide, and move it unless the decision put it into an opening. Returns false only for the never-run path of ghostDecide.
 bool ghostUpdate(Ram& ram, const Cartridge& cart, uint8_t object);
 
+// F21.17  SOUND_START ($FF43): starts sound effect number y (0 wafer, 1 bonus item, 2 power pill, 3 ghost eaten, F19) unless one that outranks it is playing.
+// The cartridge tables: $FFE9 (the sounds that block it, as bits of SOUND_ACTIVE), $FE6E (the bit it sets in SOUND_ACTIVE), $FFED (its length, into
+// SOUND_TIMER). Returns the value the original leaves in A: the blocking bits if it was refused, else the length.
+uint8_t soundStart(Ram& ram, const Cartridge& cart, uint8_t sound);
+
 }  // namespace game

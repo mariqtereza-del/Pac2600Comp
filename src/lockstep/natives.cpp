@@ -81,6 +81,18 @@ void moveNative(Machine& m) {
 //  turn back refused (ghosts): A = state bits, Y = direction, flags of the CMP with TBL_FE67, normal return;
 //  taken: Y = direction, A = the high byte of the return address that PLA PLA throws away, zero/negative from it, carry from the path, and the RTS
 //  that follows returns to the caller's caller.
+// F21.17 SOUND_START ($FF43): the sound number is in Y. The original leaves A = the blocking bits (refused) or the length, zero/negative from it; X, Y,
+// carry and overflow untouched.
+void soundStartNative(Machine& m) {
+  const game::Cartridge cart(m.romBytes());
+  uint8_t a = 0;
+  const uint8_t sound = m.y;
+  withRam(m, [&](game::Ram& r) { a = game::soundStart(r, cart, sound); });
+  m.a = a;
+  m.setZN(a);
+  m.rts();
+}
+
 // F21.16 GHOST_UPDATE ($F9AA): the object is in X. Contract: the callers (the top logic, three calls in a row) load A and Y afresh and use neither the
 // flags nor the stack bytes below the pointer; X is kept. X, the stack pointer and the return address are compared, with all live memory.
 void ghostUpdateNative(Machine& m) {
@@ -392,6 +404,7 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "sound-start") { m.registerNative(0xFF43, "SOUND_START (native)", [](Machine& mm) { soundStartNative(mm); }); return true; }
   if (name == "ghost-update") {
     Machine::Contract c;
     c.deadStack = true;

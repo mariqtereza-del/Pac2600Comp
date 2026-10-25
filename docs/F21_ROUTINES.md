@@ -12,6 +12,7 @@
 ## Result of this run: all checks clean
 
 - **CLEAR_SCORES**: identical in 70 of 70 games; 959 calls compared with the original code, 0 different.
+- **SOUND_START**: identical in 70 of 70 games; 4607 calls compared with the original code, 0 different.
 - **GHOST_UPDATE**: identical in 70 of 70 games; 1058724 calls compared with the original code, 0 different.
 - **GHOST_DECIDE**: identical in 70 of 70 games; 1036677 calls compared with the original code, 0 different.
 - **ANIMATE_OBJECT**: identical in 70 of 70 games; 2791 calls compared with the original code, 0 different.
@@ -52,6 +53,7 @@
 | F21.12 | `TRY_UP` | $FB36 | 14 | **done** | game::tryDirection (direction 3): may the object turn up here? Reads the maze wall table through game::Cartridge; if yes it sets the state and DROPS THE CALLER'S RETURN |
 | F21.2 | `SWAP_PLAYERS` | $FB9F | 14 | **done** | game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged |
 | F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/routines.cpp: both scores and both lives to 0 |
+| F21.17 | `SOUND_START` | $FF43 | 18 | **done** | game::soundStart: start a sound effect unless a higher-ranking one plays; three cartridge tables through game::Cartridge |
 | F21.13 | `TRY_PAIR_UD` | $FB05 | 20 | **done** | the vertical pair itself (inside the TRY_PAIR_1 rewrite; only reached from it) |
 | F21.13 | `TRY_PAIR_LR` | $FB22 | 20 | **done** | the horizontal pair itself (inside the TRY_PAIR_2 rewrite; only reached from it) |
 | F21.12 | `TRY_DOWN` | $FB5C | 20 | **done** | game::tryDirection (direction 2) |
@@ -75,7 +77,6 @@
 | - | `KERNEL_LINE_P1_P0` | $F067 | 3 | to do | picture only (F23) |
 | - | `SOUND_WRITE` | $FF8B | 8 | to do | sound chip only (F24) |
 | - | `CLEAR_GRAPHICS` | $F483 | 11 | to do | picture only (F23) |
-| - | `SOUND_START` | $FF43 | 18 | to do | needs ROM tables (F22) |
 | - | `KERNEL_LINE_P1` | $F053 | 20 | to do | writes only chip registers (picture): proved with the renderer (F23) |
 | - | `KERNEL_LINE_P0` | $F06A | 21 | to do | picture only (F23) |
 | - | `PACMAN_KEEP_GOING` | $F793 | 39 | to do | drops the caller's return |

@@ -418,4 +418,14 @@ bool ghostUpdate(Ram& ram, const Cartridge& cart, uint8_t object) {
   return true;
 }
 
+// SOUND_START ($FF43).
+uint8_t soundStart(Ram& ram, const Cartridge& cart, uint8_t sound) {
+  const uint8_t blocked = cart.at(0xFFE9 + sound) & at(ram, ram::SOUND_ACTIVE);
+  if (blocked != 0) return blocked;
+  at(ram, ram::SOUND_ACTIVE) = cart.at(0xFE6E + sound);
+  const uint8_t length = cart.at(0xFFED + sound);
+  at(ram, ram::SOUND_TIMER) = length;
+  return length;
+}
+
 }  // namespace game

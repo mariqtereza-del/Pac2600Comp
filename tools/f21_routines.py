@@ -24,6 +24,7 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.17', 'SOUND_START', 'sound-start', 0xFF43, 'game::soundStart: start a sound effect unless a higher-ranking one plays; three cartridge tables through game::Cartridge'),
     ('F21.16', 'GHOST_UPDATE', 'ghost-update', 0xF9AA, 'game::ghostUpdate: everything for one ghost in one frame (eyes at the pen, locate, decide, move); contract: X, stack pointer, return address and live memory'),
     ('F21.15', 'GHOST_DECIDE', 'ghost-decide', 0xFA26, 'game::ghostDecide: the ghost decision (aim, chase, scared, eyes, opening, random wandering) built from the rewritten TRY, TRY_PAIR, RNG and WRAP routines; contract: X, stack pointer, return address and live memory'),
     ('F21.14', 'ANIMATE_OBJECT', 'animate', 0xFC8B, 'game::animateObject: the opening animation of an object (waiting, down the outside, back into the maze, up) and the sprite scratch bytes; three small cartridge tables through game::Cartridge'),
@@ -57,7 +58,7 @@ NOTES = {
     'EXIT_F9E4': 'a lone RTS: nothing to write', 'EXIT_FB5B': 'a lone RTS: nothing to write', 'EXIT_FF93': 'a lone RTS: nothing to write',
     'WRAP_SET_Y': 'end of both WRAP routines: written with them',
     'SCORE_DIGITS': 'needs ROM tables (F22) and the picture',
-    'SOUND_START': 'needs ROM tables (F22)', 'SOUND_EFFECTS': 'needs ROM tables (F22); chip writes (F24)', 'SOUND_MUSIC': 'needs ROM tables (F22); chip writes (F24)',
+    'SOUND_EFFECTS': 'needs ROM tables (F22); chip writes (F24)', 'SOUND_MUSIC': 'needs ROM tables (F22); chip writes (F24)',
     'SET_DIRECTION': 'table TBL_FE63 (F22); falls into MOVE_OBJECT', 'MOVE_OBJECT': 'ends in the border tests; leaf',
     'GHOST_DECIDE': 'large; after the TRY_ routines', 'GHOST_UPDATE': 'after GHOST_DECIDE',
     'TRY_PAIR_1': 'drops the caller\'s return (rts twice)', 'TRY_PAIR_UD': 'drops the caller\'s return', 'TRY_PAIR_2': 'drops the caller\'s return',

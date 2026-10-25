@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F21-18 — SOUND_EFFECTS rewritten; chip writes become part of the call check (2026-10-26, Stage F21.18)
+
+- **Harness:** while a call is checked, `Machine` records the writes to chip registers (not WSYNC) of the original and of the native routine and compares the two lists in order. Routines without chip writes are unaffected (both lists are empty).
+- **Routine:** `game::soundEffects(ram, chip)`: ghost eaten (bit 0): control 4, pitch = timer and $1F, volume = pitch xor $0F; power pill and bonus item (bits 1, 2): $0D for all three; wafer (bit 3): control 9, pitch 9, volume = timer; TEMP_D3 = the control value; timer - 1; at 0 the effect ends and nothing is written. The chip is an interface (`game::SoundChip`), so the finished game can put its own sound generator behind it (F24).
+- **Result:** 70 of 70 games identical; 439,610 calls compared with the original (memory, registers, flags, chip writes): 0 differences; identical together with F21.1-F21.17. The fixture with one wrong chip value (memory untouched) is found in 67 of 67 games that start any effect.
+- **Reversible:** Yes.
+
 ### T-F21-17 — SOUND_START rewritten (2026-10-26, Stage F21.17)
 
 - **Routine:** `game::soundStart`: refused if `TBL_FFE9[y]` and SOUND_ACTIVE share a bit (the value is left in A); else SOUND_ACTIVE = `TBL_FE6E[y]` and SOUND_TIMER = `TBL_FFED[y]` (cartridge tables by address).

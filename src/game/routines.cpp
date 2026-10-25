@@ -428,4 +428,30 @@ uint8_t soundStart(Ram& ram, const Cartridge& cart, uint8_t sound) {
   return length;
 }
 
+// SOUND_EFFECTS ($FF55) and SOUND_WRITE ($FF8B).
+void soundEffects(Ram& ram, SoundChip& out) {
+  const uint8_t active = at(ram, ram::SOUND_ACTIVE);
+  uint8_t volume, pitch, control;
+  if (active & 0x01) {                                   // ghost eaten: a sliding tone
+    control = 4;
+    pitch = at(ram, ram::SOUND_TIMER) & 0x1F;
+    volume = pitch ^ 0x0F;
+  } else if (active & 0x06) {                            // power pill (bit 1) and bonus item (bit 2): the steady tone
+    control = pitch = volume = 0x0D;
+  } else if (active & 0x08) {                            // wafer
+    const uint8_t timer = at(ram, ram::SOUND_TIMER);
+    if (timer != 0) { control = 9; pitch = 9; volume = timer; }
+    else { control = pitch = volume = 0; }              // a timer of 0 cannot occur; the original then writes zeros
+  } else {
+    return;
+  }
+  at(ram, ram::TEMP_D3) = control;
+  uint8_t& timer = at(ram, ram::SOUND_TIMER);
+  timer = static_cast<uint8_t>(timer - 1);
+  if (timer == 0) { at(ram, ram::SOUND_ACTIVE) = 0; return; }
+  out.write(chip::AUDV0, volume);
+  out.write(chip::AUDC0, control);
+  out.write(chip::AUDF0, pitch);
+}
+
 }  // namespace game

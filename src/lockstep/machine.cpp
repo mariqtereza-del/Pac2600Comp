@@ -75,6 +75,7 @@ uint8_t Machine::riotRead(uint16_t addr) {
 
 void Machine::tiaWrite(uint16_t addr, uint8_t v) {
   const uint8_t reg = addr & 0x3F;
+  if (recordChip_ && reg != 0x02) chipWrites_.emplace_back(reg, v);
   if (reg == 0x00) {                                       // VSYNC: switching it off ends the frame
     if (vsyncOn_ && !(v & 2)) frameDone_ = true;
     vsyncOn_ = (v & 2) != 0;
@@ -300,8 +301,13 @@ void Machine::verifyNative(const Native& n) {
   ref.natives_.clear();
   ref.verify_ = false;
   ref.currentNative_ = nullptr;
+  ref.recordChip_ = true;
+  ref.chipWrites_.clear();
   const bool refOk = ref.runToReturn();
+  recordChip_ = true;
+  chipWrites_.clear();
   n.fn(*this);
+  recordChip_ = false;
   ++verifyCalls_;
   std::string why;
   if (!refOk) why = "the original routine did not return";
@@ -318,6 +324,16 @@ void Machine::verifyNative(const Native& n) {
       why = b;
     }
   };
+  if (why.empty() && ref.chipWrites_ != chipWrites_) {
+    char b[200];
+    size_t i = 0;
+    while (i < ref.chipWrites_.size() && i < chipWrites_.size() && ref.chipWrites_[i] == chipWrites_[i]) ++i;
+    if (i < ref.chipWrites_.size() && i < chipWrites_.size())
+      std::snprintf(b, sizeof b, "chip write %zu: original register $%02X = $%02X, native register $%02X = $%02X", i, ref.chipWrites_[i].first, ref.chipWrites_[i].second, chipWrites_[i].first, chipWrites_[i].second);
+    else
+      std::snprintf(b, sizeof b, "chip writes: original %zu, native %zu", ref.chipWrites_.size(), chipWrites_.size());
+    why = b;
+  }
   reg(1, "A", ref.a, a); reg(2, "X", ref.x, x); reg(4, "Y", ref.y, y); reg(16, "SP", ref.sp, sp);
   reg(32, "PC", ref.pc, pc); reg(8, "P (flags)", ref.p & 0xCF, p & 0xCF);
   if (!why.empty()) {

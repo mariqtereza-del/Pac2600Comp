@@ -81,6 +81,26 @@ void moveNative(Machine& m) {
 //  turn back refused (ghosts): A = state bits, Y = direction, flags of the CMP with TBL_FE67, normal return;
 //  taken: Y = direction, A = the high byte of the return address that PLA PLA throws away, zero/negative from it, carry from the path, and the RTS
 //  that follows returns to the caller's caller.
+// F21.18 SOUND_EFFECTS ($FF55) + SOUND_WRITE ($FF8B). The caller has X = 0 (channel 0). The writes go to the chip through Machine::write, where the call
+// check records and compares them. Contract: the one caller (the main loop) sets X afresh and does not use A, Y or the flags; the routine makes no calls,
+// so the stack is compared as it is. X, the stack pointer and the return address are compared.
+class MachineChip : public game::SoundChip {
+ public:
+  explicit MachineChip(Machine& m, bool wrong) : m_(m), wrong_(wrong) {}
+  void write(uint8_t reg, uint8_t value) override { m_.write(reg, (wrong_ && reg == game::chip::AUDF0) ? static_cast<uint8_t>(value + 1) : value); }
+
+ private:
+  Machine& m_;
+  bool wrong_;
+};
+
+void soundEffectsNative(Machine& m, bool wrong = false) {
+  if (m.x != 0) { m.fail(); return; }
+  MachineChip chip(m, wrong);
+  withRam(m, [&](game::Ram& r) { game::soundEffects(r, chip); });
+  m.rts();
+}
+
 // F21.17 SOUND_START ($FF43): the sound number is in Y. The original leaves A = the blocking bits (refused) or the length, zero/negative from it; X, Y,
 // carry and overflow untouched.
 void soundStartNative(Machine& m) {
@@ -404,6 +424,13 @@ bool registerNativeByName(Machine& m, const std::string& name) {
     return true;
   }
   if (name == "new-game-setup") { m.registerNative(0xFBF4, "NEW_GAME_SETUP (native)", [](Machine& mm) { placeNative(mm, 2); }); return true; }
+  if (name == "sound-effects" || name == "sound-effects-wrong") {
+    Machine::Contract c;
+    c.regs = 2 | 16 | 32;
+    const bool wrong = (name == "sound-effects-wrong");
+    m.registerNative(0xFF55, wrong ? "SOUND_EFFECTS (native, wrong on purpose)" : "SOUND_EFFECTS (native)", [wrong](Machine& mm) { soundEffectsNative(mm, wrong); }, c);
+    return true;
+  }
   if (name == "sound-start") { m.registerNative(0xFF43, "SOUND_START (native)", [](Machine& mm) { soundStartNative(mm); }); return true; }
   if (name == "ghost-update") {
     Machine::Contract c;

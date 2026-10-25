@@ -168,4 +168,21 @@ bool ghostUpdate(Ram& ram, const Cartridge& cart, uint8_t object);
 // SOUND_TIMER). Returns the value the original leaves in A: the blocking bits if it was refused, else the length.
 uint8_t soundStart(Ram& ram, const Cartridge& cart, uint8_t sound);
 
+// The sound chip as the game logic sees it: it is given register writes. In the finished game the sound generator of F24 stands behind it; in the
+// lockstep tool the writes go to the emulated chip (and are compared with the original's writes).
+class SoundChip {
+ public:
+  virtual ~SoundChip() = default;
+  virtual void write(uint8_t reg, uint8_t value) = 0;
+};
+namespace chip {
+inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18, AUDV0 = 0x19, AUDV1 = 0x1A;
+}
+
+// F21.18  SOUND_EFFECTS ($FF55) with its shared writer SOUND_WRITE ($FF8B): each frame, plays the sound effect that SOUND_START chose, on channel 0 (the
+// caller has X = 0). Ghost eaten: control 4, pitch = timer and $1F, volume = pitch xor $0F; power pill and bonus item: the steady tone $0D; wafer:
+// control 9, pitch 9, volume = timer. The timer goes down; when it reaches 0 nothing is written and the effect ends (SOUND_ACTIVE = 0). TEMP_D3 is the
+// scratch byte that holds the control value.
+void soundEffects(Ram& ram, SoundChip& chip);
+
 }  // namespace game

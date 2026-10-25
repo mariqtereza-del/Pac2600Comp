@@ -65,6 +65,9 @@ class Machine {
 
   const uint8_t* romBytes() const { return rom_; }
 
+  // The writes to the chip registers (TIA, except WSYNC) made while a call is being checked, in order: (register, value).
+  const std::vector<std::pair<uint8_t, uint8_t>>& chipWrites() const { return chipWrites_; }
+
   // ---- state ----
   const std::array<uint8_t, 128>& ram() const { return ram_; }
   std::array<uint8_t, 128>& ramMutable() { return ram_; }
@@ -103,6 +106,8 @@ class Machine {
   bool vsyncOn_ = false;
   bool failed_ = false;
   bool liveStack_ = false;
+  bool recordChip_ = false;
+  std::vector<std::pair<uint8_t, uint8_t>> chipWrites_;
   bool lastWasRts_ = false;
   bool verify_ = false;
   uint64_t verifyCalls_ = 0, verifyFailures_ = 0;

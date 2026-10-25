@@ -24,6 +24,8 @@ BS = chr(92)
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
     ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.18', 'SOUND_EFFECTS', 'sound-effects', 0xFF55, 'game::soundEffects: the sound effect of the frame on channel 0, written to a game::SoundChip; the call check now compares the writes to the sound chip'),
+    ('F21.18', 'SOUND_WRITE', 'sound-effects', 0xFF8B, 'the shared writer of the sound routines (inside soundEffects)'),
     ('F21.17', 'SOUND_START', 'sound-start', 0xFF43, 'game::soundStart: start a sound effect unless a higher-ranking one plays; three cartridge tables through game::Cartridge'),
     ('F21.16', 'GHOST_UPDATE', 'ghost-update', 0xF9AA, 'game::ghostUpdate: everything for one ghost in one frame (eyes at the pen, locate, decide, move); contract: X, stack pointer, return address and live memory'),
     ('F21.15', 'GHOST_DECIDE', 'ghost-decide', 0xFA26, 'game::ghostDecide: the ghost decision (aim, chase, scared, eyes, opening, random wandering) built from the rewritten TRY, TRY_PAIR, RNG and WRAP routines; contract: X, stack pointer, return address and live memory'),
@@ -58,7 +60,7 @@ NOTES = {
     'EXIT_F9E4': 'a lone RTS: nothing to write', 'EXIT_FB5B': 'a lone RTS: nothing to write', 'EXIT_FF93': 'a lone RTS: nothing to write',
     'WRAP_SET_Y': 'end of both WRAP routines: written with them',
     'SCORE_DIGITS': 'needs ROM tables (F22) and the picture',
-    'SOUND_EFFECTS': 'needs ROM tables (F22); chip writes (F24)', 'SOUND_MUSIC': 'needs ROM tables (F22); chip writes (F24)',
+    'SOUND_MUSIC': 'needs ROM tables (F22); chip writes (F24)',
     'SET_DIRECTION': 'table TBL_FE63 (F22); falls into MOVE_OBJECT', 'MOVE_OBJECT': 'ends in the border tests; leaf',
     'GHOST_DECIDE': 'large; after the TRY_ routines', 'GHOST_UPDATE': 'after GHOST_DECIDE',
     'TRY_PAIR_1': 'drops the caller\'s return (rts twice)', 'TRY_PAIR_UD': 'drops the caller\'s return', 'TRY_PAIR_2': 'drops the caller\'s return',
@@ -94,6 +96,7 @@ def main():
     items = f6.entries()
     problems = []
     results = {}
+    percall = {}
     with concurrent.futures.ThreadPoolExecutor(8) as ex:
         seen = set()
         for stage, name, native, entry, what in DONE:
@@ -105,6 +108,7 @@ def main():
             bad = [r for r in res if r[1] != 0]
             c = sum(calls(r[2])[0] for r in res)
             results[name] = (len(res) - len(bad), c)
+            percall[native] = {r[0]: calls(r[2])[0] for r in res}
             print('%s %s: %d games identical of %d, %d calls compared with the original, %d routine differences' % (
                 stage, name, len(res) - len(bad), len(res), c, sum(calls(r[2])[1] for r in res)))
             if bad:
@@ -128,6 +132,12 @@ def main():
         print('fixture GHOST_DECIDE wrong on purpose (a scratch byte): found in %d of %d games' % (len(found_g), len(used_g)))
         if len(found_g) != len(used_g) or not used_g:
             problems.append('GHOST_DECIDE fixture not found everywhere')
+        sw = list(ex.map(lambda it: run(it[0], it[1], ['sound-effects-wrong']), items))
+        found_s = [r for r in sw if r[1] == 1 and any('SOUND_EFFECTS (native, wrong on purpose)' in l for l in r[2])]
+        used_s = [r for r in sw if percall.get('sound-start', {}).get(r[0], 0) > 0]   # games in which a sound effect is started at all
+        print('fixture SOUND_EFFECTS wrong on purpose (one chip register value; memory untouched): found by the chip-write check in %d of %d games' % (len(found_s), len(used_s)))
+        if len(found_s) != len(used_s) or not used_s:
+            problems.append('SOUND_EFFECTS fixture not found everywhere')
         if len(found_w) != len(used_w) or not used_w or not found_r:
             problems.append('fixtures not found everywhere')
     rom = ROM.read_bytes()

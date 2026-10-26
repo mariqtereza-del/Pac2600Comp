@@ -53,6 +53,7 @@ struct Decider {
       pair(dir == 0 || dir == 1);                      // right and left chains use the vertical pair; up and down the horizontal pair
       turn(dir);                                       // the second straight-on try: marked "never run" for up and down in the listing
     }
+    // ORIGINAL: the last wander chain falls into code that no recording ever runs. Evidence: src\game\logic\ghosts.hpp (F21.15). Do not fix.
     if (!done) unsupported = true;                     // the code then falls into TRY_PAIR_1 itself: never run in the recordings
   }
 
@@ -87,6 +88,7 @@ bool ghostDecide(GameState& st, const Cartridge& cart, uint8_t object) {
   const uint8_t pacX = st.objX[0], pacY = st.objY[0];
   st.scratch[kTempD3] = pacX;
   st.scratch[kTempD2] = pacY;
+  // ORIGINAL: a scared ghost aims at a mirrored x but at Pac-Man's own y. Evidence: docs\F13_GHOSTS.md (F13). Do not fix.
   if (st.player[0].pillFlags & 0x80) {                           // scared: x mirrored, y still Pac-Man's own
     const uint8_t mirrored = static_cast<uint8_t>(~static_cast<uint8_t>(pacX + 0x60));
     st.scratch[kTempD3] = mirrored;

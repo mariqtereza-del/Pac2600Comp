@@ -16,7 +16,8 @@ void placeObjects(GameState& st);
 
 // F21.25  The start-up ($F000-$F052), when the console is switched on: the whole page $00-$FF is cleared (the 128 chip registers, written twice over their
 // mirrors, and the 128 memory bytes, the stack included); game number 6 (the power-on game), the bonus item's timer $0C, the title shift and the random
-// number $FF; NEW_GAME_SETUP; the score shows $CB, $ED, $0F (the blank pattern of the title screen) and Pac-Man's y is $65; the four speed counters start at $0F;
+// number $FF; NEW_GAME_SETUP; the score shows $CB, $ED, $0F (the blank pattern of the title screen) and Pac-Man's y is $65; the four speed counters
+// start at $0F;
 // the bonus item's ball and missile are positioned (the chip writes HMM1, HMBL, RESBL, RESM1, HMOVE, HMCLR); the flags and the lives are 0.
 // The code then goes on at the frame start ($F7D6).
 void startUp(GameState& st, TiaChip& chip);

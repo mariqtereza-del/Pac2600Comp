@@ -1,4 +1,5 @@
-// What Pac-Man and the ghosts share: where an object stands in the maze grid, moving it one pixel, setting its direction, asking whether it may turn, entering the openings.
+// What Pac-Man and the ghosts share: where an object stands in the maze grid, moving it one pixel, setting its direction, asking whether it may turn,
+// entering the openings.
 // (Stage G4.2: moved out of routines.hpp. The functions are the F21 rewrites of the original routines named in their comments.)
 #pragma once
 #include <cstdint>

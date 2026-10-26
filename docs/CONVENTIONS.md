@@ -37,18 +37,18 @@ A quirk is behaviour that a clean redesign would not have: an error, an odd orde
 - `RE_NOTES.md`, named in the first plan text, does not exist. The F-stage documents are the notes, and each is written by its proof tool, so they are better evidence than a second file that could drift. (T-G2-1)
 - **Fixing an `ORIGINAL:` quirk is a rule change** and needs the owner's approval (CLAUDE.md Rule 2). Preservation code never does it; a modern option would be a separate switch (Rule 3).
 
-Known quirks to tag when their code is moved in G4 (found by reading `routines.hpp` and the F-documents; the list is a start, not complete):
+Known quirks and where they are tagged (Stage G5: 8 of the 9 carry an `ORIGINAL:` comment; the list is a start, not complete):
 
 | Quirk | Where it lives | Evidence |
 | --- | --- | --- |
 | Scared ghosts aim at a mirrored x but at Pac-Man's own y | `ghostDecide` | `docs\F13_GHOSTS.md` |
-| The four TRY routines and the TRY_PAIR helpers drop their caller's return | `tryDirection`, `tryPair` | `docs\F8_ROUTINES.md` (column "Drops caller's return"), `src\game\routines.hpp` (F21.12) |
-| Only five score digits are shown; the hundred-thousands digit never | `scoreDigits` | `src\game\routines.hpp` (F21.21) |
-| One ghost per frame is drawn (flicker); its collision flag only on 4 frames of 8 | kernel, `collisions` | `docs\F18_KERNEL.md`, `docs\F12_COLLISIONS.md` |
+| The four TRY routines and the TRY_PAIR helpers drop their caller's return | `tryDirection`, `tryPair` | `docs\F8_ROUTINES.md` (column "Drops caller's return"), `src\game\logic\objects.hpp` (F21.12) |
+| Only five score digits are shown; the hundred-thousands digit never | `Kernel::scoreLine` | `DECISIONS.md` (T-F21-21) |
+| One ghost per frame is drawn (flicker); its collision flag only on 4 frames of 8 | `top.cpp`, `collisions.cpp` | `docs\F18_KERNEL.md`, `docs\F12_COLLISIONS.md` |
 | No extra life for a score; lives only at a new map | scoring | `docs\F15_SCORING.md` |
-| A ghost that wanders can fall into a path no recording ever runs (`ghostDecide` returns false) | `ghostDecide` | `src\game\routines.hpp` (F21.15) |
+| A ghost that wanders can fall into a path no recording ever runs (`ghostDecide` returns false) | `ghostDecide` | `src\game\logic\ghosts.hpp` (F21.15) |
 | The level changes only ghost speed and the chase timer; scared time does not depend on it | ghosts, flow | `docs\F16_LEVELS.md` |
-| The fire button works only about 500 frames after game over | flow | `DECISIONS.md` T-E6-1 |
+| The fire button works only about 500 frames after game over | not yet located in the code, so **not tagged** (G5) | `DECISIONS.md` T-E6-1 |
 
 ## 5. Code style
 

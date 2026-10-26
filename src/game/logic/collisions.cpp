@@ -78,6 +78,7 @@ bool ghostTouch(BottomContext& b) {
   const FrameInput& in = b.in;
   // L_F5D3: a ghost touched Pac-Man (checked in four frames out of eight)
   cy(3 + 2);
+  // ORIGINAL: a ghost touch counts in 4 frames out of 8, one ghost per frame. Evidence: docs\F12_COLLISIONS.md (F12). Do not fix.
   if (st.frameCounter & 4) cy(3 + 1);
   else {
     cy(2 + 3);

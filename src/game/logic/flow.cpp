@@ -65,7 +65,8 @@ bool eventTimerStep(BottomContext& b) {
         if (!(st.player[0].pillFlags & 0x80)) cy(3);
         else {
           cy(2);
-          if (st.player[0].pillFlags & 0x40) { cy(2 + 2 + 3 + 2 + 3 + 3); st.player[0].pillFlags &= 0xBF; timer = 0x20; flagsPart = false; }   // flashing part of the scare
+          // flashing part of the scare
+          if (st.player[0].pillFlags & 0x40) { cy(2 + 2 + 3 + 2 + 3 + 3); st.player[0].pillFlags &= 0xBF; timer = 0x20; flagsPart = false; }
           else { cy(3 + 2 + 3); st.player[0].pillFlags &= 0x7C; }                                                            // the scare is over
         }
         if (flagsPart) {                                  // L_F51A
@@ -111,6 +112,7 @@ bool eventTimerStep(BottomContext& b) {
   return false;
 }
 
+// ORIGINAL: the level changes only the ghosts' speed and chase timer. Evidence: docs\F16_LEVELS.md (F16). Do not fix.
 // L_F55B: while the game is frozen the ghosts' speed accumulators and chase timers are set up from the level.
 void frozenSpeedSetup(BottomContext& b) {
   GameState& st = b.st;

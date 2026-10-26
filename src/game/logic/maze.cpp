@@ -59,6 +59,7 @@ bool newMapCheck(GameState& st) {
   if (left != 0) { cy(3); return false; }
   cy(2);
   cy(3 + 2);
+  // ORIGINAL: a cleared map gives one life (at most 9); no score ever does. Evidence: docs\F15_SCORING.md (F15). Do not fix.
   if (st.player[0].lives == 9) cy(3); else { cy(2 + 5); st.player[0].lives = static_cast<uint8_t>(st.player[0].lives + 1); }
   cy(3 + 2);
   if (st.player[0].level == 0x0E) cy(3); else { cy(2 + 5); st.player[0].level = static_cast<uint8_t>(st.player[0].level + 1); }

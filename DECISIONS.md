@@ -134,6 +134,22 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G5-1 — `game::scoreDigits` is removed; the score line lives in the picture code (2026-10-26, Stage G5)
+
+- **Facts:** F21.21 rewrote SCORE_DIGITS as a stand-alone function that wrote to a chip without timing. F23.2 later rewrote the whole drawing code, including the score line with the exact cycle positions (`kernel_score.cpp`). Search shows `game::scoreDigits` has no caller in the game or the host, only the lockstep adapter. Two implementations of one thing confuse a reader.
+- **Choice:** remove the function, its adapter and its registration. The F21 ledger (`tools\f21_routines.py`) keeps the SCORE_DIGITS row as "not rewritten stand-alone" with a note that the picture code draws it (`f23_kernel` compares every chip write). The `ORIGINAL:` tag for the five digits moved to `kernel_score.cpp`.
+- **Not removed:** the other F21 routines. They are all still used by the game.
+- **Reversible:** Yes (Git).
+
+### T-G5-2 — Approved exceptions to the conventions; tags; the lockstep adapters split (2026-10-26, Stage G5)
+
+- **Choice:** the functions and lines listed in `docs\G5_LEFTOVERS.md` section 3 are kept, each with its reason, and are written into `tools\g2_conventions_check.py` (`EXCEPTIONS`). The conventions' file-length rule is met everywhere except the generated table; the function-length rule is met except for the exceptions; the line-length rule is met in `src\game`. `--strict` exits 0 on this basis (it is the Gate G check).
+- **Why:** the two `goto` machines are translations of the original's jumps; every cut would change the jumps in a place where the lockstep suite is the only guard, and the point of Phase G (a stranger can read it) is better served by the original's labels in the comments. The host test scripts and the game loop are Phase D code that works and is checked by the window tests.
+- **Tags:** 8 of the 9 quirks listed in `docs\CONVENTIONS.md` are tagged; the fire delay after game over has no located code and is not tagged.
+- **Lockstep adapters:** `natives.cpp` is split in three files plus a header (text unchanged, 3 intended differences).
+- **Owner:** nothing is needed; these are technical choices (D-008). If the owner wants a function cut anyway, the exception is deleted from the checker and the function becomes the next job.
+- **Reversible:** Yes (Git).
+
 ### T-G4-4 — The host program is split by what each part does (2026-10-26, Stage G4.7)
 
 - **Facts:** `main.cpp` was 1,601 lines: 45 items in one anonymous namespace (types, helpers, test modes) and `main()`. G1 sketched five parts (options, screen, pads, pacer, checks).

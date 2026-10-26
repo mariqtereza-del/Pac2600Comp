@@ -24,7 +24,8 @@ class TiaChip {
 using SoundChip = TiaChip;   // the sound routines see the same chip
 
 namespace chip {
-inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07, REFP1 = 0x0C, VSYNC = 0x00, VBLANK = 0x01, CXCLR = 0x2C, RESM1 = 0x13, RESBL = 0x14, HMM1 = 0x23, HMBL = 0x24, HMOVE = 0x2A, HMCLR = 0x2B;
+inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07, REFP1 = 0x0C, VSYNC = 0x00, VBLANK = 0x01;
+inline constexpr uint8_t CXCLR = 0x2C, RESM1 = 0x13, RESBL = 0x14, HMM1 = 0x23, HMBL = 0x24, HMOVE = 0x2A, HMCLR = 0x2B;
 inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18, AUDV0 = 0x19, AUDV1 = 0x1A;
 }
 

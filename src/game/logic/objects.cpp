@@ -110,6 +110,7 @@ Move setDirection(GameState& st, uint8_t object, uint8_t direction) {
   return moveObject(st, object);
 }
 
+// ORIGINAL: when a turn is allowed the routine also drops its caller's return. Evidence: docs\F8_ROUTINES.md (F8). Do not fix.
 // TRY_UP / TRY_DOWN / TRY_LEFT / TRY_RIGHT and TRY_COMMIT.
 TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uint8_t direction) {
   TryResult r{};

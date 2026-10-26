@@ -66,6 +66,7 @@ void Kernel::scoreLine() {
     // SCORE_DIGITS ($F3EE), called for player 1 (offset 4) and, in a two-player game, for player 2 (offset 5).
     auto scoreByte = [&](uint8_t y) { return st.score[y]; };
     auto scoreDigits = [&](uint8_t offset) {
+      // ORIGINAL: only five digits are shown (slots 8 to 0); the hundred-thousands digit is never read. Evidence: DECISIONS.md (T-F21-21). Do not fix.
       uint8_t slot = 8;
       uint8_t y = offset;
       uint8_t& seen = st.scratch[kTempE1];

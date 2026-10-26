@@ -78,6 +78,7 @@ bool topLogic(GameState& st, const Cartridge& cart, const ConsoleInput& in, TiaC
   const uint8_t pill = st.player[0].pillFlags;
   if (pill & 0x80) colour0 = (pill & 0x40) ? 4 : 5;
   st.colour[kColourSprite0] = colour0;
+  // ORIGINAL: one ghost is handled and drawn per frame, (FRAME_COUNTER and 3) + 1: the flicker. Evidence: docs\F18_KERNEL.md (F18). Do not fix.
   ++object;                                                  // 1-4: the ghost of this frame
   bool update;
   if (st.objState[object] & 0x08) {   // eyes: always updated, with another picture

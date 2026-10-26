@@ -1,4 +1,5 @@
-// The console of the finished game (Stage F26): the same class Emulator as in emulator.cpp, but made of our own code (src/game): the rebuilt game logic, the drawing
+// The console of the finished game (Stage F26): the same class Emulator as in emulator.cpp, but made of our own code (src/game): the rebuilt game
+// logic, the drawing
 // code, the video-chip model and the sound-chip model. No Stella, no 6502 and no original program code in it; the cartridge data is read through the data
 // loader after the fingerprint check. emulator.cpp (Stella) is kept only for the reference program pacman2600_ref, which the tests compare with.
 #include "emulator.hpp"
@@ -26,7 +27,8 @@ struct Emulator::Impl {
   // what the last frame made
   std::vector<std::int16_t> stereo;
   const std::array<std::uint8_t, game::TiaVideo::kWidth * game::TiaVideo::kHeight>* picture = nullptr;
-  std::array<std::uint32_t, game::TiaVideo::kWidth * game::TiaVideo::kHeight> glow{};   // the picture with the phosphor blend (what the screen shows when it is on)
+  // the picture with the phosphor blend (what the screen shows when it is on)
+  std::array<std::uint32_t, game::TiaVideo::kWidth * game::TiaVideo::kHeight> glow{};
   std::array<std::uint32_t, game::TiaVideo::kWidth * game::TiaVideo::kHeight> shown{};
 };
 
@@ -57,7 +59,8 @@ void Emulator::runFrame()
   in.console.leftDifficultyA = m.leftA;
   in.console.rightDifficultyA = m.rightA;
   in.console.colour = !m.blackWhite;
-  // Up and down together give down, left and right together give right: what the reference emulator did with such input, so that recordings replay the same (T-F25-1).
+  // Up and down together give down, left and right together give right: what the reference emulator did with such input, so that recordings replay
+  // the same (T-F25-1).
   bool u = m.up, d = m.down, l = m.left, r = m.right;
   if(u && d) u = false;
   if(l && r) l = false;

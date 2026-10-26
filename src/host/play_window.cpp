@@ -181,7 +181,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode == SDL_SCANCODE_F1) helpOn = !helpOn;
       if(e.type == SDL_EVENT_KEY_DOWN) keyboard.keyDown(e.key.scancode, e.key.repeat);
       if(e.type == SDL_EVENT_KEY_UP) keyboard.keyUp(e.key.scancode);
-      if(e.type == SDL_EVENT_WINDOW_FOCUS_LOST) { keyboard.releaseAll(); pads.setActive(false); }  // a key let go while another window had the focus must not stay held
+      // a key let go while another window had the focus must not stay held
+      if(e.type == SDL_EVENT_WINDOW_FOCUS_LOST) { keyboard.releaseAll(); pads.setActive(false); }
       if(e.type == SDL_EVENT_WINDOW_FOCUS_GAINED) pads.setActive(true);
       pads.handleEvent(e);
     }

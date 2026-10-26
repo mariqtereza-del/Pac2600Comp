@@ -2724,7 +2724,23 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G4_MOVES.md`, `DECISIONS.md` (T-G4-4), `ARCHITECTURE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G4.7: Split src\host\main.cpp into its parts`.
       - **Next stage:** G5 — Remove leftovers.
-5. **[Not started] G5 — Remove leftovers.** Duplicated logic, unused helpers, literal blocks (or your documented approval of each remaining one), and any dependency the game no longer needs.
+5. **[Done] G5 — Remove leftovers.** Duplicated logic, unused helpers, literal blocks (or your documented approval of each remaining one), and any dependency the game no longer needs.
+    - **G5 — Remove leftovers** *(expanded and done 2026-10-26)*
+      - **Objective:** after the moves, find and remove what is dead or duplicated, tag the quirks, and leave a written reason for everything long that stays.
+      - **Why it matters:** Gate G wants no unexplained oversize code, no unproved quirk and no needless dependency.
+      - **Prerequisites:** G4 Done (`faecee5`), clean tree.
+      - **What Claude Code will do:** scan `src` for functions without callers and for repeated code blocks; check for `LITERAL`/`TODO` markers; audit what the program links; remove `game::scoreDigits` (T-G5-1); add `ORIGINAL:` tags to the quirks that can be pinned to code; wrap long lines in `src\game`; split `src\lockstep\natives.cpp`; teach `tools\g2_conventions_check.py` the host's function style and an exception list; write `docs\G5_LEFTOVERS.md`, T-G5-1, T-G5-2.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** `python -I tools\g2_conventions_check.py --strict` exits 0; behaviour unchanged.
+      - **Verification:** the checker; text comparison of the `natives.cpp` split; both builds; the ten proofs; `f25_games --games 120`; `d10_replay_compare`; the binary of `pacman2600.exe` searched for Stella.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** removing a proof-era function touches the F21 ledger tool; the ledger keeps the row with a note.
+      - **Recovery:** return to `faecee5` (with your OK).
+      - **Documentation updates:** `docs\G5_LEFTOVERS.md`, `docs\CONVENTIONS.md`, `DECISIONS.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G5: Remove leftovers`.
+      - **Next stage:** G6 — "Stranger test".
 6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments.
 7. **[Not started] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.**
 

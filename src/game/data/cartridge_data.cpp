@@ -44,7 +44,8 @@ const char* describe(LoadStatus status) {
     case LoadStatus::Ok: return "The ROM is the expected Pac-Man (1981) Atari cartridge.";
     case LoadStatus::Unreadable: return "The ROM file could not be read.";
     case LoadStatus::WrongSize: return "The ROM file is not 4096 bytes long, so it is not this cartridge.";
-    case LoadStatus::UnknownFingerprint: return "The ROM file has the right size but a different fingerprint (SHA-1), so it is not this version of the cartridge.";
+    case LoadStatus::UnknownFingerprint: return "The ROM file has the right size but a different fingerprint (SHA-1), "
+                                         "so it is not this version of the cartridge.";
   }
   return "";
 }

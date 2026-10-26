@@ -68,7 +68,8 @@ void soundMusic(GameState& st, const Cartridge& cart, SoundChip& out) {
   if (flags & 0x08) {                                   // the start tune
     cy(2 + 3);   // BEQ not taken, LDA EVENT_TIMER
     uint8_t a = timer;
-    if (timer == 0) { cy(2 + 2 + 3 + 3); flags &= 0xF7; a = flags; }       // the tune ends; the note number is then taken from the flags themselves (as the original does)
+    // the tune ends; the note number is then taken from the flags themselves (as the original does)
+    if (timer == 0) { cy(2 + 2 + 3 + 3); flags &= 0xF7; a = flags; }
     else cy(3);
     const uint8_t note = (a >> 3) & 7;
     cy(6 + 2 + 2 + 2);   // LSR x3, AND, TAX, CPX

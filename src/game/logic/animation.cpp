@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "animation.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"
@@ -11,11 +12,11 @@ AnimResult animateObject(GameState& st, uint8_t object, uint8_t sprite) {
   uint8_t& state = st.objState[object];
   uint8_t& y = st.objY[object];
   uint8_t& spriteY = st.scratch[kSprite0Y + sprite];
-  if (!(state & 0x10)) {          // waiting: y counts down; at 0 the animation starts (y = $5B if bit 7 of the state is set, else 0)
+  if (!(state & kObjStepDue)) {          // waiting: y counts down; at 0 the animation starts (y = $5B if bit 7 of the state is set, else 0)
     y = static_cast<uint8_t>(y - 1);
     if (y != 0) { r.path = AnimPath::Counting; spriteY = 0x70; r.newY = y; r.stateAfter = state; return r; }
     y = (state & 0x80) ? 0x5B : 0x00;
-    state |= 0x10;
+    state |= kObjStepDue;
     r.path = AnimPath::CountDone;
     spriteY = 0x70;
     r.newY = y;
@@ -35,7 +36,7 @@ AnimResult animateObject(GameState& st, uint8_t object, uint8_t sprite) {
       r.path = AnimPath::SpriteY;
     } else {
       st.scratch[kSprite0Lines + sprite] = y;
-      r.tableByte = data::kScoreAmounts[7 + y];
+      r.tableByte = data::kScoreAmounts[data::kAnimPointerStepAt + y];
       r.ptrIndex = data::kAnimWhichPointer[sprite];
       uint8_t& ptr = st.scratch[kSprite0PtrLo + r.ptrIndex];
       r.ptrOld = ptr;

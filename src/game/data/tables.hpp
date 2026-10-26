@@ -38,6 +38,12 @@ struct Segment {
   uint16_t size;
   const uint8_t* bytes;
 };
+// Where the sub-tables start inside the joined tables, so that the code can say what it reads (the offsets are part of the original layout).
+inline constexpr std::size_t kWaferBitMaskAt = 0, kPillMaskAt = 2, kSoundBitAt = 4, kChaseTimerReloadAt = 5;   // inside kBitMasksAndReloads
+inline constexpr std::size_t kScoreAmountLowAt = 0, kScoreAmountMidAt = 6, kAnimPointerStepAt = 7;               // inside kScoreAmounts
+inline constexpr std::size_t kColourTvAt = 0, kColourBlackWhiteAt = 11;                                         // inside kColourTables
+inline constexpr std::size_t kPlayfieldFE0DAt = 1;                                                              // inside kPlayfieldFE0C
+
 extern const Segment kSegments[];
 extern const std::size_t kSegmentCount;
 

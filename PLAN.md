@@ -2789,7 +2789,22 @@ Reshape the verified native code so a stranger can read and mod it, without chan
     - **Documentation updates:** `docs\F22_LOADER.md` (written by its tool), `docs\EMBEDDED_DATA.md`, `DECISIONS.md` (T-G5c-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage G5c: The ROM becomes a check only`. **Next stage:** G6.
 
-6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments. **Moved after G5c (D-009): the explanation is tested on the final code.**
+6. **[Done] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments. **Moved after G5c (D-009): the explanation is tested on the final code.**
+    - **G6 — "Stranger test"** *(expanded 2026-10-26)*
+      - **Objective:** find out whether a reader who knows nothing of the project can learn, from the source alone, how the ghosts choose a direction and how scoring works; fix the names and comments where they cannot.
+      - **Why it matters:** Phase G is about readable source. The test is the only way to see whether it is.
+      - **Prerequisites:** G5c Done (`0324c20`), clean tree, the proofs green.
+      - **What Claude Code will do:** write the answer key from the proven documents (`docs\F13_GHOSTS.md`, `F15_SCORING.md`) before any test run; start two fresh read-only agents (one per question) that are told only the question and the folder, may read `src\game` and nothing else (no `docs`, `PLAN.md`, `DECISIONS.md`, no running of programs), and must cite file and line for every claim; grade each answer item by item against the key (right, vague, wrong, missing); for every item not right, improve the names or comments at the place in the code where the answer should have been found (comment and name changes only; no change of behaviour); repeat the test on the changed places with new agents; write `docs\G6_STRANGER_TEST.md`.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** every item of the key found right from the source alone; or, where not, the gap fixed and the second test right.
+      - **Verification:** the two answers and their grades are in `docs\G6_STRANGER_TEST.md`; after any edit both builds and the ten proofs say OK (the edits cannot change behaviour, but the proofs show it); `g2_conventions_check --strict` CLEAN.
+      - **Completion criteria:** the above; one commit.
+      - **Potential problems:** the agents may be shown project notes (`CLAUDE.md`) by the tool, which would give answers away: they are asked to say what each statement rests on and to cite the code, and the grading counts only what the code citations support.
+      - **Recovery:** comment and name edits only; return to `0324c20` (with the owner's OK).
+      - **Documentation updates:** `docs\G6_STRANGER_TEST.md`, `DECISIONS.md` (T-G6-1), `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G6: Stranger test`. **Next stage:** G7 — Gate G.
 7. **[Not started] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.** **D-009 adds:** the game builds and runs with no ROM input (only the start-up check reads the file); the embedded tables are exactly the ones listed in `docs\EMBEDDED_DATA.md` and contain no machine code; Rule 7 reads as the owner approved it.
 
 Guarding against "generic Pac-Man": no rule may be simplified to what arcade Pac-Man or a tutorial does. If cleaner code would change one byte of RAM or one pixel, the original behaviour wins and the code gets a comment instead.

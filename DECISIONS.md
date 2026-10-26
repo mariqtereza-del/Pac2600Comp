@@ -154,6 +154,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G6-1 — How the stranger test was done, and what it changed (2026-10-26, Stage G6)
+
+- **Method:** four fresh agents, two rounds, one pair per round, told only a question and the folder `src\game` (read-only, no docs, no running); answer key written before each round; every claim needed a file and line. Details and grades: `docs\G6_STRANGER_TEST.md`.
+- **Why agents and not a person:** the plan asks for "a fresh session, told nothing"; the owner is not a programmer and D-008 keeps people out of such checks. The agents belong to the same model family that wrote the code, so the test shows what a reader with no project knowledge can read from the source, not what every person finds easy; it is written down as such. The project notes may have been visible to them; their citations show they worked from the code.
+- **Result:** round 1 found 9 of 9 and 8 of 8 key items (two of the second set only partly); round 2, after the fixes, found 5 of 5 and 5 of 5. The fixes are comments, names, ten named offsets in `tables.hpp` and eight named bits in `state.hpp`; no behaviour changed (the proofs say so).
+- **Not changed:** the 6502 names in the original-address comments (`$FA26`, `TEMP_D2`) stay: they are the trail back to the proofs.
+- **Reversible:** Yes (Git).
+
 ### T-G5c-1 — The ROM is only a check; how the game was made independent of it (2026-10-26, Stage G5c)
 
 - **Choice:** the `Cartridge` view is gone. The 52 table reads of G5b were already `data::` calls; G5c removed the now empty `const Cartridge&` parameter from about 40 functions (a script, then the compiler for the 6 places it missed, among them a constructor where my replacement clipped the word "cartridge"). `game::Game` is built with no argument. `src\game\data\rom_check.hpp/.cpp` (`checkRom`, `checkRomFile`) answers yes only for 4,096 bytes with SHA-1 `0940fea7...6dbb1`, keeps nothing, and is linked into the window program only; `test_no_rom` and `lockstep_native` do not link it.

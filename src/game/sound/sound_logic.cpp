@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "sound_logic.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"
@@ -10,7 +11,7 @@ uint8_t soundStart(GameState& st, uint8_t sound) {
   const uint8_t blocked = data::kSoundBlockers[sound] & st.soundActive;
   if (blocked != 0) { cy(3 + 6); return blocked; }
   cy(2 + 4 + 3 + 4 + 3 + 6);
-  st.soundActive = data::kBitMasksAndReloads[4 + sound];
+  st.soundActive = data::kBitMasksAndReloads[data::kSoundBitAt + sound];
   const uint8_t length = data::kSoundLength[sound];
   st.soundTimer = length;
   return length;
@@ -91,7 +92,7 @@ void soundMusic(GameState& st, SoundChip& out) {
     return;
   }
   cy(3 + 3 + 2);   // BEQ taken, LDA PILL_FLAGS, ASL
-  if (!((st.player[0].pillFlags << 1) & 0x80)) { cy(3 + 6); return; }   // scared (first part): the sweep on channel 1
+  if (!(st.player[0].pillFlags & kPillScareFirstPart)) { cy(3 + 6); return; }   // scared (first part): the sweep on channel 1
   cy(2);
   st.scratch[kTempD3] = 4;
   const uint8_t pitch = (st.frameCounter >> 1) & 0x0F;

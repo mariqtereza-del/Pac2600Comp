@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "frame_start.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"

@@ -241,7 +241,7 @@ L_F271:
   A = st.cellRow;
   if (A == 0 || A == 6) {
     if (A == 6) --Y;
-    if (st.player[0].pillFlags & data::kBitMasksAndReloads[2 + Y]) st.scratch[kTempE2] = 0x02;
+    if (st.player[0].pillFlags & data::kBitMasksAndReloads[data::kPillMaskAt + Y]) st.scratch[kTempE2] = 0x02;
   }
   p1Line();
   b.adv(2);
@@ -272,7 +272,7 @@ L_F313:   // the lines of a row between its walls: the bonus item bits and the p
   st.scratch[kTempE1] = A;
   p0Line();
   Y = st.rowParity;
-  A = data::kPlayfieldFE0C[1 + Y];
+  A = data::kPlayfieldFE0C[data::kPlayfieldFE0DAt + Y];
   Y = st.cellRow;
   if (Y == 4) A = 0x40;
   st.scratch[kTempE3] = A;

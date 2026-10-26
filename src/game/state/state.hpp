@@ -13,7 +13,9 @@ struct PlayerBlock {
   uint8_t maze[16];      // the wafer map: one bit per wafer place, power pills included (F11)
   uint8_t lives;
   uint8_t level;         // changes only the ghosts' speed and chase timer (F16)
-  uint8_t pillFlags;     // bits 2-5: the power pills still there; bits 6-7: the scared ghosts' sweep and state (F11, F16)
+  uint8_t pillFlags;     // bits 0-1: ghosts eaten under the current pill (0-3); bits 2-5: the four power pills still on the map; bit 7: the ghosts are scared;
+                         // bit 6: the first part of the scare (the sweep sound plays; the flashing part follows with bit 7 alone); cleared when the
+                         // scare ends (F11, F16)
   uint8_t scoreColour;
 };
 
@@ -29,6 +31,16 @@ enum Scratch : uint8_t {
 
 // The six colour values the frame start works out for the picture, in the order of the original's memory.
 enum Colour : uint8_t { kColourBg, kColourMaze, kColourSprite0, kColourSprite1, kColourScoreP2, kColourScoreP1, kColourCount };
+
+// The bits of the state byte of an object (GameState::objState; the direction is in bits 7-6) and of the pill flags (PlayerBlock::pillFlags).
+inline constexpr uint8_t kObjMirrored = 0x01;          // Pac-Man only: his picture is mirrored
+inline constexpr uint8_t kObjEyes = 0x08;              // a ghost that was eaten, on its way back to the pen
+inline constexpr uint8_t kObjStepDue = 0x10;           // a step in the chosen direction is due (in an opening animation: the waiting is over)
+inline constexpr uint8_t kObjInOpening = 0x20;         // going through an opening in the top or bottom wall (Pac-Man: also dying)
+inline constexpr uint8_t kPillGhostsEaten = 0x03;      // bits 0-1: the number of ghosts eaten under the current pill (0-3)
+inline constexpr uint8_t kPillsOnMap = 0x3C;           // bits 2-5: the four power pills still on the map
+inline constexpr uint8_t kPillScareFirstPart = 0x40;   // the first part of the scare (the sweep sound plays); the flashing part follows with kPillScared alone
+inline constexpr uint8_t kPillScared = 0x80;           // the ghosts are scared
 
 // Object numbers: 0 is Pac-Man, 1-4 are the four ghosts (the arrays below are indexed by them).
 struct GameState {
@@ -46,14 +58,17 @@ struct GameState {
   uint8_t spriteX;           // the x of the sprite the picture code draws next
   uint8_t objX[5];
   uint8_t objY[5];
-  uint8_t objState[5];       // direction bits 7-6, step due bit 4, eyes bit 3, opening animation bit 5 (F10, F13)
+  uint8_t objState[5];       // bits 7-6: direction (0 right, 1 left, 2 down, 3 up); bit 5: in an opening (or, for Pac-Man, dying); bit 4: a step is due;
+                             // bit 3: eyes (a ghost that was eaten, on its way back to the pen); bit 0 of Pac-Man: his picture is mirrored (F10, F13)
   uint8_t speedAcc[5];       // the speed accumulators (F10)
   uint8_t ghostTimer[4];     // ghost 1-4 (index object - 1): the chase timers (F13)
 
   uint8_t cellRow;
   uint8_t rowParity;
   uint8_t rng;               // the game's only random number, a shift register (F14)
-  uint8_t score[6];          // index = 2 * part + player: low, middle, high byte of player 1 and 2, decimal (F15)
+  // index = 2 * part + player (part 0 low, 1 middle, 2 high byte; player 0 or 1), each byte two decimal digits (F15). On the title screen
+  uint8_t score[6];
+                             // the same bytes hold other values (the blank score pattern, the game number)
 
   uint8_t scratch[kScratchSize];
 

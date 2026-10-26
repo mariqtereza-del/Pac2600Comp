@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "collisions.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"
@@ -15,9 +16,9 @@ bool bonusOrPill(BottomContext& b) {
   cy(3 + 3 + 2);
   if (in.bonusTouched) {
     cy(2 + 2 + 6);
-    addScore(st, 6, 0);
+    addScore(st, 6, 0);   // amount number 6: the bonus item, 100 points
     cy(2 + 6);
-    soundStart(st, 1);
+    soundStart(st, 1);   // sound 1: the bonus item
     cy(3 + 2 + 3 + 2 + 3 + 3);
     st.gameFlags ^= 0x02;
     st.bonusTimer = 0x12;
@@ -25,15 +26,14 @@ bool bonusOrPill(BottomContext& b) {
     cy(3);
     // L_F591: a power pill (only on the four places, with the pill still there)
     cy(2 + 3 + 2);
-    uint8_t x = 0;
-    bool onPill = false;
+    uint8_t pillPlace = 0;   // which of the four power pill places Pac-Man stands on (0-3)
     const uint8_t py = st.objY[0], px = st.objX[0];
     bool toGhost = false;
     if (py == 0x05) cy(3);
     else {
       cy(2 + 2);
       if (py != 0x41) { cy(3); toGhost = true; }
-      else { cy(2 + 2); x = 1; }
+      else { cy(2 + 2); pillPlace = 1; }
     }
     if (!toGhost) {
       cy(3 + 2);
@@ -41,30 +41,28 @@ bool bonusOrPill(BottomContext& b) {
       else {
         cy(2 + 2);
         if (px != 0x94) { cy(3); toGhost = true; }
-        else { cy(2 + 2 + 2); x = static_cast<uint8_t>(x + 2); }
+        else { cy(2 + 2 + 2); pillPlace = static_cast<uint8_t>(pillPlace + 2); }
       }
       if (!toGhost) {
         cy(4 + 2 + 3);
-        onPill = true;
-        const uint8_t mask = data::kBitMasksAndReloads[2 + x];
-        if (!(st.player[0].pillFlags & mask)) { cy(3); onPill = false; }
+        const uint8_t mask = data::kBitMasksAndReloads[data::kPillMaskAt + pillPlace];   // this pill's bit in the pill flags (bits 2-5)
+        if (!(st.player[0].pillFlags & mask)) cy(3);   // the pill was eaten before
         else {
           cy(2 + 2 + 2 + 3 + 2 + 3 + 2 + 3 + 2);
-          st.player[0].pillFlags = static_cast<uint8_t>((st.player[0].pillFlags & ~mask) | 0xC0);
+          st.player[0].pillFlags = static_cast<uint8_t>((st.player[0].pillFlags & ~mask) | (kPillScared | kPillScareFirstPart));
           const bool difficulty = (st.gameFlags & 0x20) != 0;
           if (!difficulty) cy(3); else cy(2 + 2);
           st.eventTimer = difficulty ? 0x50 : 0xA0;
           cy(3 + 2 + 6);
-          addScore(st, 5, x);
+          addScore(st, 5, pillPlace);   // amount number 5: a power pill, 5 points (the last argument only keeps the original's register X)
           cy(2 + 6);
-          soundStart(st, 2);
+          soundStart(st, 2);   // sound 2: a power pill
           cy(3);
           pacmanMove(b);
           return true;
         }
       }
     }
-    (void)onPill;
   }
   return false;
 }
@@ -83,27 +81,29 @@ bool ghostTouch(BottomContext& b) {
     if (!in.ghostTouched) cy(3 + 1);
     else {
       cy(2 + 3 + 2 + 2 + 3);
-      const uint8_t x = st.frameCounter & 3;
-      uint8_t& ghost = st.objState[x + 1];
-      if (st.player[0].pillFlags & 0x80) {
+      const uint8_t ghostIndex = st.frameCounter & 3;   // the ghost of this frame (0-3), the only one that can touch Pac-Man now
+      uint8_t& ghost = st.objState[ghostIndex + 1];
+      if (st.player[0].pillFlags & kPillScared) {
         cy(2 + 4 + 2);
-        if (ghost & 0x08) cy(3 + 1);
+        if (ghost & kObjEyes) cy(3 + 1);
         else {
           cy(2 + 4 + 2 + 4 + 3 + 2 + 2 + 6);
-          ghost |= 0x08;
-          const uint8_t y = st.player[0].pillFlags & 3;
-          addScore(st, y, x);
+          ghost |= kObjEyes;
+          // The amount number 0-3 (20, 40, 80, 160 points) is the count of ghosts eaten under this pill: it lives in the pill flags (bits 0-1),
+          // goes up by one after each ghost (not beyond 3) and is cleared when the scare ends (flow.cpp).
+          const uint8_t ghostAmount = st.player[0].pillFlags & kPillGhostsEaten;
+          addScore(st, ghostAmount, ghostIndex);
           cy(2);
-          if (y == 3) cy(3 + 1);
+          if (ghostAmount == 3) cy(3 + 1);
           else { cy(2 + 5); st.player[0].pillFlags = static_cast<uint8_t>(st.player[0].pillFlags + 1); }
           cy(2 + 6);
-          soundStart(st, 3);
+          soundStart(st, 3);   // sound 3: a ghost eaten
           cy(2 + 3 + 3);
           st.eatPause = 0x9F;
         }
       } else {
         cy(3 + 1 + 4 + 2);
-        if (ghost & 0x08) cy(3);
+        if (ghost & kObjEyes) cy(3);
         else {                                              // Pac-Man is caught
           cy(2 + 2 + 3 + 3 + 2 + 3 + 3);
           st.gameFlags |= 0xC0;

@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "flow.hpp"
 #include "../state/cycles.hpp"
 #include "players.hpp"
@@ -60,12 +61,18 @@ bool eventTimerStep(BottomContext& b) {
       else {
         cy(2 + 3 + 3);
         bool flagsPart = true;
-        if (!(st.player[0].pillFlags & 0x80)) cy(3);
+        if (!(st.player[0].pillFlags & kPillScared)) cy(3);
         else {
           cy(2);
-          // flashing part of the scare
-          if (st.player[0].pillFlags & 0x40) { cy(2 + 2 + 3 + 2 + 3 + 3); st.player[0].pillFlags &= 0xBF; timer = 0x20; flagsPart = false; }
-          else { cy(3 + 2 + 3); st.player[0].pillFlags &= 0x7C; }                                                            // the scare is over
+          if (st.player[0].pillFlags & kPillScareFirstPart) {   // the first part of the scare is over: the flashing part follows
+            cy(2 + 2 + 3 + 2 + 3 + 3);
+            st.player[0].pillFlags &= static_cast<uint8_t>(~kPillScareFirstPart);
+            timer = 0x20;
+            flagsPart = false;
+          } else {   // the scare is over: the scared flag and the count of ghosts eaten (bits 0-1) are cleared
+            cy(3 + 2 + 3);
+            st.player[0].pillFlags &= static_cast<uint8_t>(~(kPillScared | kPillGhostsEaten));
+          }
         }
         if (flagsPart) {                                  // L_F51A
           cy(3 + 2);

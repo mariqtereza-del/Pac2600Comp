@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "objects.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"
@@ -68,7 +69,7 @@ Move moveObject(GameState& st, uint8_t object) {
   cy(2);
   mv.stepped = true;
   uint8_t& state = st.objState[object];
-  state &= 0xEF;
+  state &= static_cast<uint8_t>(~kObjStepDue);
   mv.vertical = (state & 0x80) != 0;
   mv.stepValue = (state & 0x40) ? 0xFF : 0x01;      // left and up count down, right and down count up
   cy(2 + 4 + 2 + 4 + 2);   // LDY #0, LDA, AND, STA, ROL
@@ -106,7 +107,7 @@ Move moveObject(GameState& st, uint8_t object) {
 Move setDirection(GameState& st, uint8_t object, uint8_t direction) {
   cy(4 + 2 + 4 + 4);   // LDA, AND, ORA, STA, then MOVE_OBJECT follows
   uint8_t& state = st.objState[object];
-  state = static_cast<uint8_t>((state & 0x3F) | (direction << 6) | 0x10);
+  state = static_cast<uint8_t>((state & 0x3F) | (direction << 6) | kObjStepDue);
   return moveObject(st, object);
 }
 
@@ -171,7 +172,7 @@ TryResult tryDirection(GameState& st, uint8_t object, uint8_t direction) {
     cy(2);
   }
   cy(4 + 2 + 4 + 4 + 4 + 4 + 6);   // LDA, AND, ORA, STA, PLA, PLA, RTS
-  state = static_cast<uint8_t>((state & 0x3F) | (direction << 6) | 0x10);
+  state = static_cast<uint8_t>((state & 0x3F) | (direction << 6) | kObjStepDue);
   r.exit = TryExit::Taken;
   return r;
 }

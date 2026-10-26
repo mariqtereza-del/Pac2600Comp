@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "pacman.hpp"
 #include "../state/cycles.hpp"
 #include "maze.hpp"
@@ -55,7 +56,7 @@ Flow joystickAndMove(BottomContext& b) {
         break;
       case L_F700:
         cy(2 + 3 + 3 + 2 + 3);
-        st.objState[0] |= 0x01;
+        st.objState[0] |= kObjMirrored;
         y = 1;
         at_ = L_F77B;
         break;
@@ -78,7 +79,7 @@ Flow joystickAndMove(BottomContext& b) {
         break;
       case L_F71B:
         cy(2 + 3 + 3 + 2 + 3);
-        st.objState[0] &= 0xFE;
+        st.objState[0] &= static_cast<uint8_t>(~kObjMirrored);
         y = 0;
         at_ = L_F77B;
         break;
@@ -215,7 +216,7 @@ void pacmanBottom(BottomContext& b) {
   if (joy == 0) cy(3);
   else { cy(2 + 2 + 3); st.tick256 = 0; }
   cy(3 + 2);
-  if (st.objState[0] & 0x20) {                                   // in an opening: only a turn round
+  if (st.objState[0] & kObjInOpening) {                                   // in an opening: only a turn round
     cy(2);
     cy(3 + 2);
     const bool up = (joy & 1) != 0, down = (joy & 2) != 0;
@@ -233,7 +234,7 @@ void pacmanBottom(BottomContext& b) {
     }
     if (toL644) {                                          // L_F644
       cy(2);
-      if (st.objState[0] & 0x10) { cy(3 + 2 + 3); st.objState[0] ^= 0x80; cy(3 + 3); }
+      if (st.objState[0] & kObjStepDue) { cy(3 + 2 + 3); st.objState[0] ^= 0x80; cy(3 + 3); }
       else {
         cy(2 + 2 + 3 + 2 + 3 + 2 + 3 + 3);
         st.objY[0] = static_cast<uint8_t>((0x3F ^ st.objY[0]) & 0x3F);

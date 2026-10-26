@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "top.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"
@@ -81,7 +82,7 @@ bool topLogic(GameState& st, const ConsoleInput& in, TiaChip& chip) {
   // ORIGINAL: one ghost is handled and drawn per frame, (FRAME_COUNTER and 3) + 1: the flicker. Evidence: docs\F18_KERNEL.md (F18). Do not fix.
   ++object;                                                  // 1-4: the ghost of this frame
   bool update;
-  if (st.objState[object] & 0x08) {   // eyes: always updated, with another picture
+  if (st.objState[object] & kObjEyes) {   // eyes: always updated, with another picture
     st.scratch[kSprite0PtrLo] = 0xC6;
     update = true;
   } else {
@@ -93,11 +94,12 @@ bool topLogic(GameState& st, const ConsoleInput& in, TiaChip& chip) {
   }
   st.spriteX = st.objX[object];
   st.scratch[kSprite0Y] = static_cast<uint8_t>(st.objY[object] + 0x0B);
-  if (st.objState[object] & 0x20) animateObject(st, object, 0);
-  if (st.objState[0] & 0x20) animateObject(st, 0, 1);
+  if (st.objState[object] & kObjInOpening) animateObject(st, object, 0);
+  if (st.objState[0] & kObjInOpening) animateObject(st, 0, 1);
   // the six colour values: the colour table of the cartridge ($FF2B; $FF36 when the mask says black and white), the title shift, the mask
   const bool colourTv = (st.colourMask & 0x80) != 0;
-  const std::size_t table = colourTv ? 0 : 11;   // the black-and-white colours follow the colour ones in the same table (11 bytes later)
+  // the black-and-white colours follow the colour ones in the same table (11 bytes later)
+  const std::size_t table = colourTv ? data::kColourTvAt : data::kColourBlackWhiteAt;
   st.scratch[kTempD3] = 0xFF;
   st.scratch[kTempD2] = colourTv ? 0x2B : 0x36;
   for (int x = 5; x >= 0; --x) {

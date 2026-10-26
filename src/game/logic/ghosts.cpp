@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "ghosts.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"
@@ -16,7 +17,8 @@ uint8_t rngStep(GameState& st) {
   return static_cast<uint8_t>((0x80 >> (next & 7)) & next);
 }
 
-// GHOST_DECIDE ($FA26).
+// GHOST_DECIDE ($FA26): first the helper that holds the state of one decision (what the ghost aims at, which turns were tried); the decision itself
+// is ghostDecide below.
 namespace {
 
 struct Decider {
@@ -72,15 +74,16 @@ struct Decider {
 bool ghostDecide(GameState& st, uint8_t object) {
   Decider g{st, object};
   if ((st.xOffset | st.yOffset) != 0) return true;
-  if (g.state() & 0x10) return true;
+  if (g.state() & kObjStepDue) return true;
   if (st.attractShift != 0) { g.wander(); return !g.unsupported; }
-  if (g.state() & 0x08) {                                          // eyes: back to the pen door
+  if (g.state() & kObjEyes) {                                          // eyes: back to the pen door
     st.scratch[kTempD3] = 0x58;
     st.scratch[kTempD2] = 0x1F;
     g.chase(0x58, 0x1F);
     return !g.unsupported;
   }
   if (g.x() == 0x4C && (st.rng & 0x0F) == 0) {    // the middle column: sometimes into the opening
+    // the ghost goes into the opening in the top or bottom wall (wrapToTop / wrapToBottom, objects.hpp)
     if (g.y() == 0x00) { wrapToTop(st, object); return true; }
     if (g.y() == 0x46) { wrapToBottom(st, object); return true; }
   }
@@ -88,7 +91,7 @@ bool ghostDecide(GameState& st, uint8_t object) {
   st.scratch[kTempD3] = pacX;
   st.scratch[kTempD2] = pacY;
   // ORIGINAL: a scared ghost aims at a mirrored x but at Pac-Man's own y. Evidence: docs\F13_GHOSTS.md (F13). Do not fix.
-  if (st.player[0].pillFlags & 0x80) {                           // scared: x mirrored, y still Pac-Man's own
+  if (st.player[0].pillFlags & kPillScared) {                           // scared: x mirrored, y still Pac-Man's own
     const uint8_t mirrored = static_cast<uint8_t>(~static_cast<uint8_t>(pacX + 0x60));
     st.scratch[kTempD3] = mirrored;
     g.chase(mirrored, pacY);
@@ -97,7 +100,7 @@ bool ghostDecide(GameState& st, uint8_t object) {
   uint8_t& timer = st.ghostTimer[object - 1];
   timer = static_cast<uint8_t>(timer - 1);
   if (timer != 0) { g.chase(pacX, pacY); return !g.unsupported; }
-  timer = data::kBitMasksAndReloads[5 + (st.player[0].level >> 1)];
+  timer = data::kBitMasksAndReloads[data::kChaseTimerReloadAt + (st.player[0].level >> 1)];
   if ((object >> 1) & 1) timer = static_cast<uint8_t>(timer + 1);
   g.wander();
   return !g.unsupported;
@@ -106,20 +109,20 @@ bool ghostDecide(GameState& st, uint8_t object) {
 // GHOST_UPDATE ($F9AA).
 bool ghostUpdate(GameState& st, uint8_t object) {
   uint8_t& state = st.objState[object];
-  if ((state & 0x08) && st.objY[object] == 0x1E) {
+  if ((state & kObjEyes) && st.objY[object] == 0x1E) {
     const uint8_t x = st.objX[object];
     if (x == 0x58) { setDirection(st, object, 1); return true; }                 // at the pen door: left, and move
     if (x == 0x4C) {                                                              // above the pen
-      if (st.player[0].pillFlags & 0x80) return true;                           // scared: wait
+      if (st.player[0].pillFlags & kPillScared) return true;                           // scared: wait
       state &= 0xF7;                                                              // a ghost again
       setDirection(st, object, 0);
       return true;
     }
   }
-  if (state & 0x20) return true;                                                  // in an opening animation
+  if (state & kObjInOpening) return true;                                                  // in an opening animation
   locateObject(st, object);
   if (!ghostDecide(st, object)) return false;
-  if (!(state & 0x20)) moveObject(st, object);
+  if (!(state & kObjInOpening)) moveObject(st, object);
   return true;
 }
 

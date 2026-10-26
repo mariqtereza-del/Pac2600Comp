@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "scoring.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"
@@ -28,9 +29,9 @@ Bcd addScore(GameState& st, uint8_t amount, uint8_t callerX) {
   uint8_t& lo = st.score[player];
   uint8_t& mid = st.score[player + 2];
   uint8_t& hi = st.score[player + 4];
-  const Bcd a = bcdAdd(lo, data::kScoreAmounts[amount], false);
+  const Bcd a = bcdAdd(lo, data::kScoreAmounts[data::kScoreAmountLowAt + amount], false);
   lo = a.value;
-  const Bcd b = bcdAdd(mid, data::kScoreAmounts[6 + amount], a.carry);
+  const Bcd b = bcdAdd(mid, data::kScoreAmounts[data::kScoreAmountMidAt + amount], a.carry);
   mid = b.value;
   const Bcd c = bcdAdd(hi, 0, b.carry);
   hi = c.value;

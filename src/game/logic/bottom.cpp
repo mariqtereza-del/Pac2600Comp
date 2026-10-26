@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "bottom.hpp"
 #include "collisions.hpp"
 #include "flow.hpp"
@@ -32,7 +33,7 @@ void finishFrame(BottomContext& b) {
   GameState& st = b.st;
   TiaChip& chip = b.chip;
   cy(3 + 2);
-  if (!(st.objState[0] & 0x01)) cy(3);
+  if (!(st.objState[0] & kObjMirrored)) cy(3);
   else { cy(2 + 2 + 3); chip.write(chip::REFP1, 0x08); }
   playSounds(b);
 }

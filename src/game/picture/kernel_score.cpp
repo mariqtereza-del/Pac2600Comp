@@ -164,8 +164,8 @@ void Kernel::scoreLine() {
     A = st.colour[kColourScoreP1];
     b.adv(2 + 3 + 3 + 6);   // LDY #4, LDA, STA TEMP_D2, JSR
     st.scratch[kTempD2] = A;
-    scoreDigits(4);
-    A = st.playerMode;
+    scoreDigits(4);   // 4 = the index in score[] of the high byte of player 1's score; the digits are read downwards from there (score[4], [2], [0])
+    A = st.playerMode;   // bit 6 = two players: shifted left it becomes the sign bit, so player 2's score is drawn only in a two-player game
     b.adv(3 + 2);
     A = static_cast<uint8_t>(A << 1);
     if (!negative(A)) b.adv(3);
@@ -175,7 +175,7 @@ void Kernel::scoreLine() {
       A = st.colour[kColourScoreP2];
       st.scratch[kTempD2] = A;
       b.adv(2 + 3 + 3 + 6);
-      scoreDigits(5);
+      scoreDigits(5);   // 5 = the high byte of player 2's score (score[5], [3], [1])
     }
   }
   b.adv(2);   // LDA #0

@@ -1,3 +1,4 @@
+// Reading tip: cy(n) counts processor cycles of the original (sound timing, state/cycles.hpp); the rules of the game are everything else.
 #include "maze.hpp"
 #include "../data/tables.hpp"
 #include "../state/cycles.hpp"
@@ -13,7 +14,7 @@ void newMaze(GameState& st) {
   for (uint8_t i = 0; i < 16; ++i) st.player[0].maze[i] = 0xFF;
   st.player[0].maze[6] = 0x7F;
   st.player[0].maze[2] = 0xFE;
-  st.player[0].pillFlags = 0x3C;
+  st.player[0].pillFlags = kPillsOnMap;
   placeObjects(st);
 }
 
@@ -38,7 +39,7 @@ void eatWafer(GameState& st) {
   cy(2 + 2 + 3 + 2 + 2 + 4 + 2 + 2 + 2 + 2 + 4 + 2 + 4);   // LSR, TAX, LDA CELL_ROW, ROL, TAY, LDA, TAY, TXA, AND, TAX, LDA, TAX, AND
   const uint8_t index = t >> 2;
   const uint8_t byte = data::kWaferByteIndex[(st.cellRow << 1) | ((t >> 1) & 1)];
-  const uint8_t mask = data::kBitMasksAndReloads[index & 7];
+  const uint8_t mask = data::kBitMasksAndReloads[data::kWaferBitMaskAt + (index & 7)];
   uint8_t& maze = st.player[0].maze[byte];
   if (!(maze & mask)) { cy(3); return; }
   cy(2);
@@ -52,7 +53,7 @@ void eatWafer(GameState& st) {
 // L_F6AA: the new map when nothing is left; returns true if the map was refilled (the original then goes on at L_F7BA)
 bool newMapCheck(GameState& st) {
   cy(2 + 3 + 2);
-  uint8_t left = st.player[0].pillFlags & 0x3C;
+  uint8_t left = st.player[0].pillFlags & kPillsOnMap;
   for (uint8_t i = 0; i < 16; ++i) left |= st.player[0].maze[i];
   cy(16 * 6 + 15 * 3 + 2);   // sixteen passes: ORA, DEX, BPL (taken fifteen times)
   cy(2);   // TAX

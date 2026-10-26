@@ -2656,7 +2656,23 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G4_MOVES.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G4.3: Move the status line and the sound logic`.
       - **Next stage:** G4.4.
-        4. **[Not started] G4.4 — `logic\ghosts`, `pacman`, `collisions`, `flow`** (the `Bottom` struct is cut here).
+        4. **[Done] G4.4 — `logic\ghosts`, `pacman`, `collisions`, `flow`** (the `Bottom` struct is cut here; see the entry below).
+    - **G4.4 — Move ghosts, Pac-Man, collisions and flow; cut the `Bottom` struct** *(expanded and done 2026-10-26)*
+      - **Objective:** `routines.cpp` keeps only the top logic and the frame start; the bottom logic's 480-line struct becomes functions in `logic\`.
+      - **Why it matters:** this is the biggest block of the game's rules; each part gets a file named for what it does.
+      - **Prerequisites:** G4.3 Done (`a84b198`), clean tree.
+      - **What Claude Code will do:** a script (`g44_move.py` in the scratch folder) cuts the struct into `playSounds`/`finishFrame`/`bottomLogic` (`bottom.cpp`), `eventTimerStep`/`frozenSpeedSetup`/`placeObjects`/`startUp` (`flow.cpp`), `bonusOrPill`/`ghostTouch` (`collisions.cpp`), `pacmanBottom`/`pacmanMove`/`joystickAndMove`/`pacmanKeepGoing` (`pacman.cpp`), `eatWafer`/`newMapCheck` (`maze.cpp`), `rngStep`/`ghostDecide`/`ghostUpdate` (`ghosts.cpp`); `ConsoleInput`/`FrameInput` to `inputs.hpp`. The code text is moved as it is (every `cy()` stays in its place); the only new piece is `pacmanMove`, the end that Pac-Man's walk and the power pill both had as a copy.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** behaviour and sound timing unchanged.
+      - **Verification:** both builds; the ten proofs say OK (`f24_sound` is the one that would catch a moved or lost `cy()`); `f25_games --games 120` and `d10_replay_compare` before G4.5 ends.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** `joystickAndMove` is still 150 lines (the original's state machine over the labels L_F6DD to L_F781); G5.
+      - **Recovery:** return to `a84b198` (with your OK).
+      - **Documentation updates:** `docs\G4_MOVES.md`, `DECISIONS.md` (T-G4-2), `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G4.4: Move ghosts, Pac-Man, collisions and flow`.
+      - **Next stage:** G4.5.
         5. **[Not started] G4.5 — `logic\bottom`, `top`, `frame_start`;** `routines.*` deleted; full long suite.
         6. **[Not started] G4.6 — `picture\kernel_*`** (cut `drawPicture` along the F18 stages).
         7. **[Not started] G4.7 — `src\host` split** (`options`, `screen`, `pads`, `pacer`, `checks`); window, sound and pad checks.

@@ -1,7 +1,9 @@
 #include "maze.hpp"
 #include "../data/rom_tables.hpp"
 #include "../state/cycles.hpp"
-#include "../routines.hpp"
+#include "flow.hpp"
+#include "scoring.hpp"
+#include "../sound/sound_logic.hpp"
 
 namespace game {
 
@@ -13,6 +15,57 @@ void newMaze(GameState& st) {
   st.player[0].maze[2] = 0xFE;
   st.player[0].pillFlags = 0x3C;
   placeObjects(st);
+}
+
+
+// L_F666 (Pac-Man not in an opening): he eats the wafer under him, if there is one.
+void eatWafer(GameState& st, const Cartridge& cart) {
+  cy(3);
+  if (st.yOffset != 0) { cy(3); return; }
+  cy(2 + 3 + 4);
+  uint8_t cell = st.cellIndex;
+  uint8_t t = mazeWall(cart, cell);
+  cy(3 + 2);
+  if (st.objX[0] == 0x4C) cy(3);
+  else {
+    cy(2 + 3);
+    if (!(st.objState[0] & 0x80)) cy(3);
+    else { cy(2 + 2 + 4); t |= mazeWall(cart, static_cast<uint8_t>(cell + 1)); }
+  }
+  cy(2);   // LSR
+  if (!(t & 1)) { cy(3); return; }
+  cy(2);
+  cy(2 + 2 + 3 + 2 + 2 + 4 + 2 + 2 + 2 + 2 + 4 + 2 + 4);   // LSR, TAX, LDA CELL_ROW, ROL, TAY, LDA, TAY, TXA, AND, TAX, LDA, TAX, AND
+  const uint8_t index = t >> 2;
+  const uint8_t byte = cart.at(rom::kWaferByteIndex + ((st.cellRow << 1) | ((t >> 1) & 1)));
+  const uint8_t mask = cart.at(rom::kWaferBitMask + (index & 7));
+  uint8_t& maze = st.player[0].maze[byte];
+  if (!(maze & mask)) { cy(3); return; }
+  cy(2);
+  cy(2 + 2 + 4 + 5 + 2 + 6);   // TXA, EOR, AND, STA, LDY #4, JSR ADD_SCORE
+  maze &= static_cast<uint8_t>(~mask);
+  addScore(st, cart, 4, mask);                            // the original keeps the mask in X: TEMP_E1 gets it
+  cy(2 + 6);
+  soundStart(st, cart, 0);
+}
+
+// L_F6AA: the new map when nothing is left; returns true if the map was refilled (the original then goes on at L_F7BA)
+bool newMapCheck(GameState& st) {
+  cy(2 + 3 + 2);
+  uint8_t left = st.player[0].pillFlags & 0x3C;
+  for (uint8_t i = 0; i < 16; ++i) left |= st.player[0].maze[i];
+  cy(16 * 6 + 15 * 3 + 2);   // sixteen passes: ORA, DEX, BPL (taken fifteen times)
+  cy(2);   // TAX
+  if (left != 0) { cy(3); return false; }
+  cy(2);
+  cy(3 + 2);
+  if (st.player[0].lives == 9) cy(3); else { cy(2 + 5); st.player[0].lives = static_cast<uint8_t>(st.player[0].lives + 1); }
+  cy(3 + 2);
+  if (st.player[0].level == 0x0E) cy(3); else { cy(2 + 5); st.player[0].level = static_cast<uint8_t>(st.player[0].level + 1); }
+  cy(6);
+  newMaze(st);
+  cy(3);
+  return true;
 }
 
 }  // namespace game

@@ -37,3 +37,18 @@ Evidence (final build, 2026-10-26): `tools\build_lockstep.cmd` and `tools\build_
 | `sound\sound_logic` | `soundStart`, `soundEffects`, `soundMusic` | 30 / 104 |
 
 `routines.cpp` 1,007 to 827 lines, `routines.hpp` 131 to 101. Same method as G4.2 (script, text unchanged). Still in `routines.*`: `rngStep`, `placeObjects`, `ghostDecide`, `ghostUpdate`, `pacmanKeepGoing`, `topLogic`, `bottomLogic`, `frameStart`, `startUp`, `ConsoleInput`, `FrameInput`.
+
+## G4.4 — ghosts, Pac-Man, collisions, flow (2026-10-26)
+
+| File (`src\game\logic\`) | What is in it | Lines (hpp/cpp) |
+| --- | --- | --- |
+| `ghosts` | `rngStep`, `ghostDecide` (with its `Decider`), `ghostUpdate` | 32 / 125 |
+| `flow` | `placeObjects`, `startUp`, `eventTimerStep`, `frozenSpeedSetup` | 28 / 127 |
+| `collisions` | `bonusOrPill`, `ghostTouch` | 16 / 120 |
+| `pacman` | `pacmanKeepGoing`, `pacmanBottom`, `pacmanMove`, `joystickAndMove` | 24 / 254 |
+| `bottom` | `bottomLogic`, `playSounds`, `finishFrame`, `BottomContext` | 32 / 65 |
+| `maze` (added) | `eatWafer`, `newMapCheck`, `mazeWall` | 23 / 71 |
+| `src\game\inputs.hpp` | `ConsoleInput`, `FrameInput` | 25 |
+
+`routines.cpp` 827 to 161 lines (top logic and frame start remain), `routines.hpp` 101 to 46. Reasons and the one new function: T-G4-2.
+Evidence: both builds OK; the ten proofs `problems: []`, `result: OK`; `f25_games --games 120`: 120 new games (2,400,000 frames) and the 70 recorded games identical in memory, picture and sound, `result: OK`; `d10_replay_compare`: 350,460 key frames, 0 differences.

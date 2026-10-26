@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "../data/cartridge.hpp"
+#include "../data/rom_tables.hpp"
 #include "../state/state.hpp"
 
 namespace game {
@@ -11,5 +12,12 @@ namespace game {
 // F21.5  NEW_MAZE ($FC0C): fills the wafer map of the player in turn (all 126 wafers and the 4 power pills; two places stay empty), sets the pill
 // flags to $3C, and then does PLACE_OBJECTS (the original falls into it).
 void newMaze(GameState& st);
+
+// L_F666: Pac-Man eats the wafer under him (adds the score and starts the sound), if there is one.
+void eatWafer(GameState& st, const Cartridge& cart);
+// L_F6AA: when nothing is left on the map: one more life (at most 9), the next level (at most $0E), a fresh maze. True if the map was refilled.
+bool newMapCheck(GameState& st);
+// The wall table of the maze (one byte per cell: bit 7 side wall, bit 6 up allowed, bit 5 down allowed, F10) at cell index i.
+inline uint8_t mazeWall(const Cartridge& cart, unsigned i) { return cart.at(rom::kMazeWalls + (i & 0xFF)); }
 
 }  // namespace game

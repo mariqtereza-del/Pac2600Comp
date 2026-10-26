@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G4-2 — How the bottom logic is cut (2026-10-26, Stage G4.4)
+
+- **Facts:** the bottom logic was one struct `Bottom` with seven methods that returned early into `finish()` / `sounds()`; `run()` alone was 186 lines.
+- **Choice:** the parts are free functions on a small `BottomContext` (state, cartridge, frame input, chip). A part that can end the frame early returns `true` (`eventTimerStep`, `bonusOrPill`, `ghostTouch`); `bottomLogic` (in `bottom.cpp`) calls them in the original order and does `playSounds`. The wafer eating and the new-map check went to `maze`, the sound-and-mirror ending (`finishFrame`, `playSounds`) stays with `bottom`. The power pill and Pac-Man's walk had the same ending written twice (new-map check, stick, keep going, move, finish); it is `pacmanMove` now, called from both places in the same order, so the cycle counts are the same.
+- **Not changed:** any `cy()` call, any comment about the original. The member helpers `flags()`, `pill()`, `state()`, `wall()` became their field names and `mazeWall(cart, i)`.
+- **Differs from G1:** `ConsoleInput` and `FrameInput` are in `src\game\inputs.hpp`, not in `game.hpp` (the logic headers need them and `game.hpp` includes the logic headers).
+- **Reversible:** Yes (Git).
+
 ### T-G4-1 — G4 is split into seven sub-stages; G4.1 moves the data and state parts (2026-10-26, Stage G4.1)
 
 - **Facts:** G4 means moving about 30 functions, the 610-line `drawPicture` and the 1,601-line `main.cpp`. The proof suite takes about 40 minutes (the 120-game run alone about 27). One stage per session (CLAUDE.md).

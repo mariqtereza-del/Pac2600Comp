@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F24-2 — The bottom logic counts the original's processor cycles; the whole native game now equals the emulator in memory, picture and sound (2026-10-26, Stage F24.2)
+
+- **Choice:** the bottom logic was rewritten along the listing (it had been a restructured version) and every instruction's cycles are counted along the path taken, with `cy(n)` calls (`gCycles`, a thread-local counter in `routines.hpp`); the routines it calls count theirs (JSR is counted by the caller, RTS by the callee). `tools/f24_cycles.py` prints the listing with the cycles, the extra cycle of a taken branch across a page and the possible extra cycle of an indexed read. Counting from the listing by hand was preferred to copying measured times: the 439,680 frames of the recordings then check it.
+- **How the time is used:** `drawPicture` returns the scanline and colour clock after its last write; `Game` tells the chip (`timeBase`); every write of the bottom logic (sound and `REFP1`) is at that time + 3 colour clocks per counted cycle. The Select step of the top logic (silences the sound at line 1) is counted from the end of the sync (`writeAtCycle`).
+- **Result:** 70 of 70 games, 439,680 frames: memory (all but the stack), picture and sound identical; with every bottom-logic write one cycle late the sound differs in 67 games, so the cycle counts are exact for every path the recordings run.
+- **Also:** the source scan of F22 now looks for runs of 8 equal numbers with at least 4 different values (small cycle numbers had made a run of 6 match by chance); its control still finds copied data.
+- **Reversible:** Yes.
+
 ### T-F24-1 — F24 is split in two; the sound-chip model is proved on its own first (2026-10-26, Stage F24.1)
 
 - **Plan change (Rule 12):** F24.1 the sound-chip model (timed writes to samples); F24.2 the timing of the game's sound writes. The game writes the sound registers in the bottom logic, whose length varies by several lines (zeroing of the volumes at line 223 to 245 in the recorded games); a sample is made twice a line, so the line of those writes decides which samples change. Getting it exactly right means counting the processor cycles of the bottom logic, as was done for the drawing code.

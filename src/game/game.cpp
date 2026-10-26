@@ -21,8 +21,8 @@ bool Game::runFrame(const FrameInputs& in, TiaChip& chip) {
   }
   chip.position(kTopLogicLine);
   if (!topLogic(ram_, cart_, in.console, chip)) return false;
-  drawPicture(ram_, cart_, 16, picture_ ? *picture_ : nullSink);   // lines 0-33 are blank, the maze from line 35, the score and the life markers below it (F18)
-  chip.position(kBottomLogicLine);
+  const PictureEnd end = drawPicture(ram_, cart_, 16, picture_ ? *picture_ : nullSink);   // lines 0-33 are blank, the maze from line 35, the score and the life markers below it (F18)
+  chip.timeBase(end.line, end.clock);
   FrameInput flags = in.frame;
   if (picture_) picture_->collisions(flags.ghostTouched, flags.bonusTouched);   // the picture tells; otherwise the platform's flags are used
   if (!bottomLogic(ram_, cart_, flags, chip)) return false;

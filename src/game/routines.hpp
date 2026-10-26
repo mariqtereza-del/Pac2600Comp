@@ -14,6 +14,11 @@ namespace game {
 
 using Ram = std::array<uint8_t, 128>;
 
+// The processor cycles the original code needs, counted along the path the rewritten routines take (Stage F24.2). Only the bottom logic of the frame
+// uses the count: its sound writes happen at an exact moment (cycles x 3 colour clocks after the end of the drawing code), which decides the samples.
+inline thread_local long gCycles = 0;
+inline void cy(int cycles) { gCycles += cycles; }
+
 // The data of the cartridge (maze, amounts, shapes, sounds) is never part of this source: the routines read it by its address in the original
 // program ($F000-$FFFF) through this view, which the data loader (F22) fills from the player's own ROM after checking its fingerprint.
 class Cartridge {
@@ -177,6 +182,12 @@ class TiaChip {
   // Where in the picture the following writes happen: a scanline number (the logic code has no exact timing), or -1 for the power-on set-up. Only a
   // video renderer cares; the default does nothing.
   virtual void position(int /*line*/) {}
+  // From now on the writes follow the processor cycle count (gCycles, reset to 0 now) from this scanline and colour clock: the bottom logic of the frame,
+  // whose length varies and decides the moment of its sound writes. Ended by the next position().
+  virtual void timeBase(int /*line*/, int /*clock*/) {}
+  // A write at an exact moment of the top logic: this many processor cycles after the write that switched the vertical sync off (the Select step of the
+  // title screen silences the sound there). The default is an ordinary write.
+  virtual void writeAtCycle(long /*cycles*/, uint8_t reg, uint8_t value) { write(reg, value); }
 };
 using SoundChip = TiaChip;   // the sound routines see the same chip
 namespace chip {

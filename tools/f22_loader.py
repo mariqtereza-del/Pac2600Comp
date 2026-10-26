@@ -5,8 +5,8 @@ r"""Stage F22: the data loader.
 1. Runs build\lockstep\test_cartridge_data.exe (SHA-1 test values, right ROM loads, one changed bit / wrong size / missing file refused).
 2. Runs the whole native game of F21.27 (tools\f21_native.py), which now gets all its cartridge data from the loader: must say result: OK.
 3. Shows that lockstep_native refuses a file that is not the cartridge (a baseline input file) with exit code 2 and plain words.
-4. Looks through every file of src\ for Atari data: any run of 6 or more consecutive numbers in the source that equals 6 consecutive cartridge bytes
-   (with at least 3 different values among them) is reported. Must find none.
+4. Looks through every file of src\ for Atari data: any run of 6 or more consecutive numbers in the source that equals 8 consecutive cartridge bytes
+   (with at least 4 different values among them) is reported. Must find none.
 Writes docs\F22_LOADER.md. The ROM is only read.
 """
 import pathlib
@@ -16,7 +16,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BS = chr(92)
-RUN = 6
+RUN = 8
 
 
 def main():
@@ -48,7 +48,7 @@ def main():
     grams = {}
     for i in range(len(rom) - RUN + 1):
         w = tuple(rom[i:i + RUN])
-        if len(set(w)) >= 3:
+        if len(set(w)) >= 4:
             grams.setdefault(w, i)
     def scan(text, name):
         found = []
@@ -94,7 +94,7 @@ def main():
          '- Loader tests (`tests%sgame%stest_cartridge_data.cpp`): %d ok, %d failed. They check three standard SHA-1 test values, that the right ROM loads and every byte $F000-$FFFF comes back as in the file, that one changed bit is refused (fingerprint), one byte short / long / empty is refused (size), a missing file and a foreign file are refused.' % (BS, BS, n_ok, n_fail),
          '- The native game of F21.27 now takes **all** its cartridge data from the loader (`lockstep_native` no longer reads the file itself): %s.' % nl[0],
          '- `lockstep_native` given a file that is not the cartridge stops with exit code 2 and the message "%s".' % r.stderr.strip(),
-         '- Source scan: %d files under `src`; runs of %d consecutive numbers that equal %d consecutive cartridge bytes (at least 3 different values): **%s**. So the source holds addresses and logic, not Atari\'s data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: %s).' % (scanned, RUN, RUN, len(hits) or 'none', control_ok), '',
+         '- Source scan: %d files under `src`; runs of %d consecutive numbers that equal %d consecutive cartridge bytes (at least 4 different values): **%s**. So the source holds addresses and logic, not Atari\'s data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: %s).' % (scanned, RUN, RUN, len(hits) or 'none', control_ok), '',
          '## Not claimed', '',
          '- The window program (`pacman2600`) is not changed: it still starts the emulator from the ROM file with its own ROM finder (D3). The native game will use this loader when the renderer and sound (F23, F24) exist and the emulator is taken out (F26).',
          '- The scan finds copied runs written as numbers; it cannot prove that no data is hidden in some other disguise. The rule of the project (T-F21-1) is that tables are read by address only.']

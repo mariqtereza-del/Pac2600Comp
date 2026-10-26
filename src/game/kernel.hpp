@@ -29,8 +29,14 @@ class TimedChip {
   virtual bool collisions(bool& /*ghostTouched*/, bool& /*bonusTouched*/) { return false; }
 };
 
+// Where the beam is when the drawing code ends (the bottom logic of the original follows at once).
+struct PictureEnd {
+  int line;
+  int clock;
+};
+
 // Draws one picture. `startLine` is the scanline on which the original code starts (it follows the top logic, whose length varies a little; the
 // maze itself always starts on line 34, so only the set-up writes before that depend on it).
-void drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip& chip);
+PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip& chip);
 
 }  // namespace game

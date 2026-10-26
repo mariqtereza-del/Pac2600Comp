@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
       if (ls >> f >> b) changes.emplace_back(f, b);
     }
   }
-  std::vector<std::string> golden, goldenPicture;
+  std::vector<std::string> golden, goldenPicture, goldenSound;
   {
     std::ifstream in(argv[3]);
     if (!in) { std::fprintf(stderr, "cannot read %s\n", argv[3]); return 2; }
@@ -56,14 +56,14 @@ int main(int argc, char** argv) {
       std::vector<std::string> cells;
       std::istringstream ls(line);
       for (std::string c; std::getline(ls, c, ',');) cells.push_back(c);
-      if (cells.size() >= 6) { golden.push_back(cells[5]); goldenPicture.push_back(cells[3]); }
+      if (cells.size() >= 6) { golden.push_back(cells[5]); goldenPicture.push_back(cells[3]); goldenSound.push_back(cells[4]); }
     }
   }
   std::map<int, std::pair<bool, bool>> oracle;
   std::vector<std::array<int, 3>> pokes;
   std::vector<int> ignore;
-  bool all = false, pictures = false;
-  int saveFrame = -1, traceFrame = -1;
+  bool all = false, pictures = false, sound = false;
+  int saveFrame = -1, traceFrame = -1, skew = 0;
   std::string saveFile;
   for (int i = 4; i < argc; ++i) {
     const std::string a = argv[i];
@@ -83,6 +83,10 @@ int main(int argc, char** argv) {
       traceFrame = std::atoi(argv[++i]);
     } else if (a == "--pictures") {
       pictures = true;
+    } else if (a == "--skew" && i + 1 < argc) {   // a control: every write of the bottom logic this many cycles late
+      skew = std::atoi(argv[++i]);
+    } else if (a == "--sound") {   // with --pictures: the fingerprint of the sound handed over after each frame is compared too
+      sound = true;
     } else if (a == "--save-picture" && i + 1 < argc) {   // <frame>:<file>: saves that frame's picture (228 x 160 colour bytes) for looking at
       const std::string v = argv[++i];
       saveFrame = std::atoi(v.c_str());
@@ -98,7 +102,8 @@ int main(int argc, char** argv) {
   game::Renderer renderer;   // with --pictures: the drawing code and the video-chip model make every frame's picture, compared by fingerprint
   game::TiaChip& chip = pictures ? static_cast<game::TiaChip&>(renderer) : static_cast<game::TiaChip&>(nullChip);
   if (pictures) g.setPicture(&renderer);
-  int picturesDifferent = 0, firstPicture = -1;
+  renderer.skewCycles = skew;
+  int picturesDifferent = 0, firstPicture = -1, soundDifferent = 0, firstSound = -1;
   const int total = std::min<int>(frames > 0 ? frames : static_cast<int>(golden.size()), static_cast<int>(golden.size()));
   unsigned bits = 0;
   size_t next = 0;
@@ -133,6 +138,15 @@ int main(int argc, char** argv) {
       char hex[20];
       std::snprintf(hex, sizeof hex, "%016llx", static_cast<unsigned long long>(h));
       if (f == saveFrame) { std::ofstream sf(saveFile, std::ios::binary); sf.write(reinterpret_cast<const char*>(px.data()), static_cast<std::streamsize>(px.size())); }
+      if (sound) {
+        uint64_t sh = 1469598103934665603ULL;
+        for (int16_t v : renderer.sound())
+          for (int rep = 0; rep < 2; ++rep)   // mono: left and right are the same
+            for (int b = 0; b < 2; ++b) { sh ^= static_cast<uint8_t>((static_cast<uint16_t>(v) >> (8 * b)) & 0xFF); sh *= 1099511628211ULL; }
+        char shex[20];
+        std::snprintf(shex, sizeof shex, "%016llx", static_cast<unsigned long long>(sh));
+        if (goldenSound[f] != shex && soundDifferent++ == 0) { firstSound = f; std::printf("first sound difference: frame %d, golden %s, ours %s\n", f, goldenSound[f].c_str(), shex); }
+      }
       if (f > 0 && goldenPicture[f] != hex) {   // frame 0 is the partial first picture after power-on
         if (picturesDifferent++ == 0) { firstPicture = f; std::printf("first picture difference: frame %d, golden %s, ours %s\n", f, goldenPicture[f].c_str(), hex); }
       }
@@ -165,7 +179,12 @@ int main(int argc, char** argv) {
     if (picturesDifferent) std::printf(", first at frame %d", firstPicture);
     std::printf(")\n");
   }
-  if (different == 0 && picturesDifferent == 0) {
+  if (sound) {
+    std::printf("sound: %s (%d of %d frames differ", soundDifferent ? "DIFFERENT" : "IDENTICAL", soundDifferent, total);
+    if (soundDifferent) std::printf(", first at frame %d", firstSound);
+    std::printf(")\n");
+  }
+  if (different == 0 && picturesDifferent == 0 && soundDifferent == 0) {
     std::printf("result: IDENTICAL (%d frames)\n", total);
     return 0;
   }

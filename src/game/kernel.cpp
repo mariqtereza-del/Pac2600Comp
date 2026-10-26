@@ -32,7 +32,7 @@ struct Beam {
 
 }  // namespace
 
-void drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip& chip) {
+PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip& chip) {
   Beam b{chip, startLine};
   uint8_t A = 0, X = 0, Y = 0;
   auto M = [&](uint8_t addr) -> uint8_t& { return at(ram, addr); };
@@ -640,6 +640,7 @@ L_F360:   // the last row is done: the bottom wall, then the score
     b.w(0xF4E3, PF1, X, 3);
     b.w(0xF4E5, PF2, X, 3);
   }
+  return {b.line, b.clock};
 }
 
 }  // namespace game

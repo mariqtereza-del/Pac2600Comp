@@ -4,6 +4,7 @@
 #pragma once
 #include "kernel.hpp"
 #include "routines.hpp"
+#include "tia_audio.hpp"
 #include "tia_video.hpp"
 
 namespace game {
@@ -13,6 +14,8 @@ class Renderer : public TiaChip, public TimedChip {
   // The logic parts' writes (TiaChip): placed at the line given by position().
   void write(uint8_t reg, uint8_t value) override;
   void position(int line) override;
+  void timeBase(int line, int clock) override;
+  void writeAtCycle(long cycles, uint8_t reg, uint8_t value) override;
   // The drawing code's writes (TimedChip).
   void write(const ChipWrite& w) override;
   bool collisions(bool& ghostTouched, bool& bonusTouched) override {
@@ -21,16 +24,24 @@ class Renderer : public TiaChip, public TimedChip {
     bonusTouched = video_.missile1TouchedPlayer1() && video_.ballTouchedPlayer1();
     return true;
   }
+  int skewCycles = 0;   // for tests only: added to the cycle count of every write of the bottom logic (a control: the sound must then differ)
   bool trace = false;   // for looking at differences: prints every write to the standard output
 
   // Closes the picture of the frame just played and returns it (228 rows of 160 colour values).
   const std::array<uint8_t, TiaVideo::kWidth * TiaVideo::kHeight>& finishPicture() {
     video_.endPicture();
+    audio_.endFrame(frames_++ == 0 ? TiaAudio::kFirstFrameLines : TiaAudio::kLines);
     return video_.picture();
   }
+  // The sound handed over after the frame just played (call after finishPicture): whole fragments of 524 mono samples, none after the first frame.
+  const std::vector<int16_t>& sound() const { return audio_.output(); }
 
  private:
   TiaVideo video_;
+  TiaAudio audio_;
+  long frames_ = 0;
+  bool timed_ = false;     // the writes follow the cycle count of the bottom logic from (baseLine_, baseClock_)
+  int baseLine_ = 0, baseClock_ = 0;
   int line_ = 0;
   bool powerOn_ = false;
 };

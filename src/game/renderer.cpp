@@ -5,9 +5,16 @@
 namespace game {
 
 void Renderer::write(uint8_t reg, uint8_t value) {
-  if (trace) std::printf("  logic write line %d reg $%02X value $%02X%s\n", line_, reg, value, powerOn_ ? " (power-on, dropped)" : "");
   if (powerOn_) return;   // the power-on clearing changes nothing (the chip starts cleared); the places of the ball and missile 1 come with position()
-  video_.write(line_, 0, reg, value);
+  int line = line_, clock = 0;
+  if (timed_) {   // the bottom logic: its time is the processor cycles counted since the end of the drawing code
+    const long t = baseClock_ + 3 * (gCycles + skewCycles);
+    line = baseLine_ + static_cast<int>(t / TiaVideo::kClocks);
+    clock = static_cast<int>(t % TiaVideo::kClocks);
+  }
+  if (trace) std::printf("  logic write line %d clock %d reg $%02X value $%02X\n", line, clock, reg, value);
+  video_.write(line, clock, reg, value);
+  audio_.write(line, clock, reg, value);
 }
 
 void Renderer::write(const ChipWrite& w) {
@@ -15,7 +22,22 @@ void Renderer::write(const ChipWrite& w) {
   video_.write(w.line, w.clock, w.reg, w.value);
 }
 
+void Renderer::writeAtCycle(long cycles, uint8_t reg, uint8_t value) {
+  const long t = 15 + 3 * cycles;   // the vertical sync is switched off by a write that ends at colour clock 15 of line 0
+  const int line = static_cast<int>(t / TiaVideo::kClocks), clock = static_cast<int>(t % TiaVideo::kClocks);
+  if (trace) std::printf("  logic write line %d clock %d reg $%02X value $%02X\n", line, clock, reg, value);
+  video_.write(line, clock, reg, value);
+  audio_.write(line, clock, reg, value);
+}
+
+void Renderer::timeBase(int line, int clock) {
+  timed_ = true;
+  baseLine_ = line;
+  baseClock_ = clock;
+}
+
 void Renderer::position(int line) {
+  timed_ = false;
   if (line >= 0) {
     powerOn_ = false;
     line_ = line;

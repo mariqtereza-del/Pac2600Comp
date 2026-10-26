@@ -118,11 +118,16 @@ int main(int argc, char** argv) {
     in.console.leftDifficultyA = (bits & 128) != 0;
     in.console.rightDifficultyA = (bits & 256) != 0;
     in.console.colour = !(bits & 512);
+    // The reference emulator drops up when up and down are pressed together and left when left and right are (found in Stage F25 by reading SWCHA in
+    // random games; a real joystick cannot do it). The game gets what the emulator gave it.
+    unsigned dirs = bits & 15;
+    if ((dirs & 3) == 3) dirs &= ~1u;
+    if ((dirs & 12) == 12) dirs &= ~4u;
     uint8_t swcha = 0xFF;
-    if (bits & 1) swcha &= ~0x10;
-    if (bits & 2) swcha &= ~0x20;
-    if (bits & 4) swcha &= ~0x40;
-    if (bits & 8) swcha &= ~0x80;
+    if (dirs & 1) swcha &= ~0x10;
+    if (dirs & 2) swcha &= ~0x20;
+    if (dirs & 4) swcha &= ~0x40;
+    if (dirs & 8) swcha &= ~0x80;
     in.frame.swcha = swcha;
     auto o = oracle.find(f);
     in.frame.bonusTouched = o != oracle.end() && o->second.first;
@@ -132,7 +137,7 @@ int main(int argc, char** argv) {
     renderer.trace = (f == traceFrame);
     if (!g.runFrame(in, chip)) { std::printf("frame %d: the game met the one path of the original that no recording runs\n", f); return 1; }
     if (pictures) {
-      const auto& px = renderer.finishPicture();
+      const auto& px = renderer.finishPicture(g.lastFrameLines());
       uint64_t h = 1469598103934665603ULL;   // the fingerprint of the whole project
       for (uint8_t v : px) { h ^= v; h *= 1099511628211ULL; }
       char hex[20];

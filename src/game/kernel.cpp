@@ -32,7 +32,7 @@ struct Beam {
 
 }  // namespace
 
-PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip& chip) {
+PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip& chip, int kernelStartLine) {
   Beam b{chip, startLine};
   uint8_t A = 0, X = 0, Y = 0;
   auto M = [&](uint8_t addr) -> uint8_t& { return at(ram, addr); };
@@ -117,7 +117,7 @@ PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip
   X = 7;
 
   // ---- PART 4 ($F0CA): the picture. The timer holds the program until line 34. ----
-  b.line = 34;
+  b.line = kernelStartLine;
   b.clock = 0;
   A = 0;
   b.w(0xF0CC, VBLANK, Y, 3);

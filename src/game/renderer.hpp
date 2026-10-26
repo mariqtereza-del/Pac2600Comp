@@ -28,9 +28,10 @@ class Renderer : public TiaChip, public TimedChip {
   bool trace = false;   // for looking at differences: prints every write to the standard output
 
   // Closes the picture of the frame just played and returns it (228 rows of 160 colour values).
-  const std::array<uint8_t, TiaVideo::kWidth * TiaVideo::kHeight>& finishPicture() {
+  // `lines` is the number of scanlines the frame had (Game::lastFrameLines()).
+  const std::array<uint8_t, TiaVideo::kWidth * TiaVideo::kHeight>& finishPicture(int lines = TiaAudio::kLines) {
     video_.endPicture();
-    audio_.endFrame(frames_++ == 0 ? TiaAudio::kFirstFrameLines : TiaAudio::kLines);
+    audio_.endFrame(lines);
     return video_.picture();
   }
   // The sound handed over after the frame just played (call after finishPicture): whole fragments of 524 mono samples, none after the first frame.

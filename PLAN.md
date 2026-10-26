@@ -2504,7 +2504,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Documentation updates:** `docs\F24_SOUND.md`, `DECISIONS.md` (T-F24-2), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`, `tools\f22_loader.py` (scan threshold).
       - **Git checkpoint:** `Stage F24.2: The timing of the sound writes`.
       - **Next stage:** F25 — Whole-game lockstep.
-25. **[Not started] F25 — Whole-game lockstep.** All golden traces identical in RAM, picture and sound. Anything not identical is either fixed or entered in `DISCREPANCIES.md` with cause and impact, for your review.
+25. **[Done] F25 — Whole-game lockstep.** All golden traces identical in RAM, picture and sound. Anything not identical is either fixed or entered in `DISCREPANCIES.md` with cause and impact, for your review. *(expanded and done 2026-10-26 below; nothing was left over: both differences found were fixed or belong to the test input, see T-F25-1)*
+    - **F25 — Whole-game lockstep** *(expanded and done 2026-10-26)*
+      - **Objective:** the finished native game plays 120 new games with seeded random input and the 70 recorded games and equals the emulator in memory, picture and sound after every frame.
+      - **Why it matters:** the recordings are only 70 games; random games run paths of the original that no recording runs, and any wrong cycle count, missed rule or timing detail shows up as a difference.
+      - **Prerequisites:** F24 Done (`d8091bd`).
+      - **What Claude Code will do:** `tools\f25_games.py` makes the input files `reference\f25\R-nnn.inputs` from fixed seeds in five kinds (play, two players, switches, title screen, chaotic) and the golden traces with the program that has the emulator inside; runs `lockstep_native --pictures --sound` over all of them and the 70 recordings; writes `docs\F25_LOCKSTEP.md`. Differences found are explained and fixed (the frame-start line, the input rule of the reference emulator).
+      - **What I must do / Exact instructions / Required input:** nothing.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** every frame of every game identical.
+      - **Verification:** `python -I tools\f25_games.py rom\pacman.a26 --games 120` says `result: OK` (120 new games, 2,400,000 frames, and the 70 recorded games, 439,680 frames: memory, picture and sound identical; the new games had 1,245,463 frames of play, 423,179 with two players, 183,187 with the bonus item showing, 1,543 deaths, up to level 10).
+      - **Completion criteria:** all of the above.
+      - **Potential problems:** the second player never moves (no right-joystick input in the recordings); random play seldom reaches high levels.
+      - **Recovery:** edits and new files; undo by returning to `d8091bd` (with your OK).
+      - **Documentation updates:** `docs\F25_LOCKSTEP.md`, `DECISIONS.md` (T-F25-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F25: Whole-game lockstep`.
+      - **Next stage:** F26 — Gate F: emulator out.
 26. **[Not started] F26 — Gate F: emulator out.** The game build no longer contains Stella; it lives on only in the test tool. The gate rests on lockstep: every golden trace and every random-input run identical in memory, picture and sound; you may also play a full game, but nothing waits for it. Tag `0.5.0-native`.
 
 #### When a routine is hard to understand

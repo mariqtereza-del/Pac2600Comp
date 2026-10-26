@@ -154,6 +154,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-H2-1 — How the module unit tests were made (2026-10-26, Stage H2)
+
+- **Choice:** one program, `tests\game\test_game_modules.cpp`, built with the same game sources as `test_no_rom` and no ROM code; it takes no argument. Expected values are worked out from the rules written in the headers and the F-stage documents, never by running the code and copying the answer.
+- **Two of my expectations were wrong at first and the rule documents corrected me:** a step is refused *to* x = 2 (so from x = 3), and the random number has a lead-in step and never returns to $FF (period 127 after it, F14). The code was right; the tests were changed to the documented rules.
+- **Not covered here:** ghost decisions, collisions, sounds and the top and bottom logic as units. They are covered by the lockstep proofs, which need the ROM; writing stand-alone tests for them would need hand-built situations and is left to a later stage if wanted (listed in `TESTING.md`).
+- **Reversible:** Yes (Git).
+
 ### T-H1-1 — TESTING.md and how it is kept complete (2026-10-26, Stage H1)
 
 - **Choice:** one page, `TESTING.md`, in the project top level, with measured times and a ROM column; `tools\h1_testing_check.py` fails if any test program or any script in `tools\` is missing from it, so a new test cannot be forgotten.

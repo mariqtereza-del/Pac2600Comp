@@ -19,3 +19,5 @@ add_executable(test_tables ../../tests/game/test_tables.cpp ../game/data/tables.
 get_target_property(NOROM_SRCS lockstep_native SOURCES)
 list(REMOVE_ITEM NOROM_SRCS native_main.cpp)
 add_executable(test_no_rom ../../tests/game/test_no_rom.cpp ${NOROM_SRCS})
+# Stage H2: unit tests of the game modules with made-up states (no ROM, no recording).
+add_executable(test_game_modules ../../tests/game/test_game_modules.cpp ${NOROM_SRCS})

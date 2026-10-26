@@ -2860,7 +2860,22 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
       - **Recovery:** documents and one script; revert the commit (with the owner's OK).
       - **Documentation updates:** `TESTING.md`, `DECISIONS.md` (T-H1-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage H1: TESTING.md`. **Next stage:** H2 (unit tests per module).
-2. **[Not started] H2 — Unit tests per module** (maze lookups, score table, speed tables, ROM loader, scaling maths).
+2. **[Done] H2 — Unit tests per module** (maze lookups, score table, speed tables, ROM loader, scaling maths).
+    - **H2 - Unit tests per module** *(expanded 2026-10-26)*
+      - **Objective:** a small test for each rule module of the game that needs no ROM and no recording, and a map of which test covers which module (maze lookups, score table, speed tables, ROM loader, scaling maths).
+      - **Why it matters:** the lockstep proofs say the game equals the original but need the ROM; these tests run anywhere (H4) and name the broken rule when one breaks.
+      - **Prerequisites:** H1 Done (`4269bef`), clean tree.
+      - **What Claude Code will do:** write `tests\game\test_game_modules.cpp` (score and decimal carry, object location in the grid, movement and its borders, directions, the openings, turns, new maze and wafers, new map, players and start level, ghost speed seeds, the random number, the start-up) with expected values worked out from the written rules; add it to the lockstep build; name the tests that already cover the ROM loader (`test_rom_check`, `test_rom_finder`) and the scaling maths (`test_layout`); list it in `TESTING.md`.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** `test_game_modules` says `result: OK` with no ROM argument.
+      - **Verification:** the test run, `h1_testing_check.py`, the lockstep proofs still green (only the build file changed).
+      - **Completion criteria:** every module in the list has a test or a named covering test; expectations come from the rules, not from copying the code.
+      - **Potential problems:** a test written wrongly fails; the cause is found in the written rule (two such cases in this stage) before anything is changed.
+      - **Recovery:** new files and one build line; revert the commit.
+      - **Documentation updates:** `TESTING.md`, `DECISIONS.md` (T-H2-1), `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage H2: Unit tests per module`. **Next stage:** H3 (the two test commands).
 3. **[Not started] H3 — Two test commands.** `tools\test_quick.ps1` (unit tests + 5 key traces, a few minutes) after every stage; `tools\test_full.ps1` (everything) at gates and before releases. This keeps each session short, as you asked.
 4. **[Not started] H4 — ROM-free test set for GitHub.** The subset that runs without the ROM, so the public repository can check itself automatically on every change. **D-009:** after G5c this set also contains whole-game runs (they need no ROM, only stored fingerprints).
 5. **[Not started] H5 — Clean-build and release checks.** A fresh copy built following only `BUILDING.md`; the release zip scanned for ROM files.

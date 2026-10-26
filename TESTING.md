@@ -18,6 +18,7 @@ The project's own game needs no ROM to run (D-009). Most proofs compare the game
 | `test_tia_video` | run by `f23_tia.py` | the video-chip model against stored emulator pictures | needs `reference\f23` | inside f23_tia |
 | `test_tia_audio` | run by `f24_audio.py` | the sound-chip model against stored sound | needs `reference\f24` | inside f24_audio |
 | `test_kernel` | run by `f23_kernel.py` | the drawing code gives the emulator's chip writes | needs the ROM and `reference\f23` | inside f23_kernel |
+| `test_game_modules` | `build\lockstep\test_game_modules.exe` | 83 checks of the rules, with made-up states and values worked out from the written rules (not copied from the code): decimal score and carry, ghost and wafer points, player in turn; object location in the grid; movement, its borders and speed seeds; directions and the openings; turns; new maze (126 wafers, 4 pills, start places); new map (one life, next level, caps); players, start level, score colours; the random number (lead-in, period 127, never 0); the start-up | **no ROM** | under 1 s |
 | `test_controls` | `build\host\test_controls.exe` | keyboard and pad rules: 119 checks | **no ROM** | under 1 s |
 | `test_layout` | `build\host\test_layout.exe` | where the picture goes in every window mode: 231 checks | **no ROM** | under 1 s |
 | `test_inputlog` | `build\host\test_inputlog.exe <existing scratch folder>` | recording and replay file format: 25 checks (22 without a folder) | **no ROM** | under 1 s |
@@ -68,6 +69,21 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 | `g5a_data_list.py`, `g5b_make_tables.py`, `g5c_make_fingerprints.py` | generators of the table list, `tables.cpp` and the fingerprint files; they rewrite files, so not run as tests | needs the ROM | not timed |
 | `f20_gen_tables.py`, `f23_dump.py`, `f24_dump.py`, `f24_cycles.py`, `f26_palette.py` | generators and helpers of the proofs above | needs the ROM | not timed |
 | `tools\make_release.ps1`, `tools\make_checkpoint.ps1` | release and backup scripts (the release scan refuses ROM-like files) | no ROM | not run in H1 |
+
+## Which test covers which module (Stage H2)
+
+| Module or subject | Covered by |
+| --- | --- |
+| maze lookups: wall table, new maze, wafers, new map | `test_game_modules`, `test_tables` (the table bytes) |
+| score table and decimal scoring | `test_game_modules` |
+| speed tables and seeds, movement | `test_game_modules` |
+| turns, directions, openings | `test_game_modules` |
+| random number | `test_game_modules` |
+| players, start level, start-up | `test_game_modules` |
+| ROM loader and check | `test_rom_check`, `test_rom_finder` |
+| scaling maths and picture layout | `test_layout` |
+| video chip, sound chip, drawing code | `test_tia_video`, `test_tia_audio`, `test_kernel` (through the proofs) |
+| ghost decisions, collisions, sounds, the bottom and top logic | the proofs of section 2 and the findings checks of section 3 (they need the ROM); no stand-alone unit test yet |
 
 ## What is not tested
 

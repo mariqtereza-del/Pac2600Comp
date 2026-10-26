@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G4-3 — The picture code is a class with the processor registers as members (2026-10-26, Stage G4.6)
+
+- **Facts:** `drawPicture` was one 610-line function whose lambdas and the registers `A`, `X`, `Y` are shared by all its parts; the maze part is a loop of `goto` labels.
+- **Choice:** `kernel::Kernel` (`src\game\picture\kernel_internal.hpp`) holds the state, the cartridge, the beam, `A`, `X`, `Y` and the helper functions (`fetch0`, `fetch1`, `ptr`, `crossing`, `p1Line`, `p0Line`, `p1p0Line`); five member functions are the parts in the original's order. The code text is unchanged, so the names stay the original's (`A`, `X`, `Y`, `L_F0F4`) and a reader can compare with the listing. `kernel.hpp` and `drawPicture` are unchanged for the rest of the game.
+- **Not moved (yet):** `kernel.hpp`, `renderer.*` and `tia_video.*` stay in `src\game` to keep this stage to one change; G1 draws them in `picture\`, which G5 or a later stage may do.
+- **Reversible:** Yes (Git).
+
 ### T-G4-2 — How the bottom logic is cut (2026-10-26, Stage G4.4)
 
 - **Facts:** the bottom logic was one struct `Bottom` with seven methods that returned early into `finish()` / `sounds()`; `run()` alone was 186 lines.

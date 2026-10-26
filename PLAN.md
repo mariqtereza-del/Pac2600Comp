@@ -2690,7 +2690,23 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G4_MOVES.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G4.5: Move the top logic and the frame start; remove routines.*`.
       - **Next stage:** G4.6.
-        6. **[Not started] G4.6 — `picture\kernel_*`** (cut `drawPicture` along the F18 stages).
+        6. **[Done] G4.6 — `picture\kernel_*`** (cut `drawPicture` along the F18 stages; see the entry below).
+    - **G4.6 — Cut the picture code into `picture\kernel_*`** *(expanded and done 2026-10-26)*
+      - **Objective:** `kernel.cpp` (646 lines, one 610-line function) becomes four small files; `drawPicture` keeps its place and its signature.
+      - **Why it matters:** the picture code is the biggest single function; the cut points follow the original's own parts.
+      - **Prerequisites:** G4.5 Done (`1c9cc93`), clean tree.
+      - **What Claude Code will do:** read the code and find the seams (setup; PART 2 sprite positions; PART 4 the maze rows as a `goto` machine whose only exit is `goto L_F360`; the bottom wall; the score line; the life markers). The registers `A`, `X`, `Y`, the beam and the small helper lambdas become members of `kernel::Kernel` (`kernel_internal.hpp`); each part is a member function in `kernel_positions.cpp`, `kernel_maze.cpp`, `kernel_score.cpp` with its text unchanged; `drawPicture` (now 16 lines) calls them in order. The single changed line: `goto L_F360;` is `return;` (the label's code is the next function).
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** every timed chip write equal to before.
+      - **Verification:** both builds; the ten proofs (`f23_kernel` compares every chip write in 8,266 frames, `f23_pictures` every picture); `f25_games --games 120`; `d10_replay_compare`.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** `mazeRows` is still one 289-line function: it is the original's loop over the labels L_F0F4 to L_F360 and cannot be cut at a label without changing the jumps; G5.
+      - **Recovery:** return to `1c9cc93` (with your OK).
+      - **Documentation updates:** `docs\G4_MOVES.md`, `DECISIONS.md` (T-G4-3), `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G4.6: Cut the picture code into picture\kernel_*`.
+      - **Next stage:** G4.7.
         7. **[Not started] G4.7 — `src\host` split** (`options`, `screen`, `pads`, `pacer`, `checks`); window, sound and pad checks.
 5. **[Not started] G5 — Remove leftovers.** Duplicated logic, unused helpers, literal blocks (or your documented approval of each remaining one), and any dependency the game no longer needs.
 6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments.

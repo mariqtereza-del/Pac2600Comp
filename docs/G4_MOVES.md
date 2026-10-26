@@ -62,3 +62,16 @@ Evidence: both builds OK; the ten proofs `problems: []`, `result: OK`; `f25_game
 
 `routines.cpp` and `routines.hpp` are deleted (`git rm`, the owner allowed it for G4). `game.hpp`, `kernel.hpp`, `renderer.hpp`, `renderer.cpp`, `kernel.cpp` and the lockstep adapters now include the headers they use. After G4.5 `src\game` has no file over 400 lines except `kernel.cpp` (646, G4.6); `pacman.cpp` is the largest logic file (254).
 Evidence: both builds OK; the ten proofs `problems: []`, `result: OK`; 128 of 128 layout checks; `f25_games --games 120` (2,400,000 new frames + 70 recorded games) `result: OK`; `d10_replay_compare` 350,460 key frames, 0 differences.
+
+## G4.6 — the picture code (2026-10-26)
+
+| File (`src\game\`) | What is in it | Lines |
+| --- | --- | --- |
+| `kernel.cpp` | `drawPicture`: builds a `kernel::Kernel` and runs the five parts | 16 (was 646) |
+| `picture\kernel_internal.hpp` | register names, `Beam`, class `Kernel` with the shared helpers | 88 |
+| `picture\kernel_positions.cpp` | `positions()`: PART 2, the sprite and missile positions | 62 |
+| `picture\kernel_maze.cpp` | `mazeRows()`: PART 4, the picture row by row | 299 |
+| `picture\kernel_score.cpp` | `bottomWall()`, `scoreLine()`, `lifeMarkers()` | 249 |
+
+The only changed line of code: `goto L_F360;` in `mazeRows()` is `return;` (the code at L_F360 is `bottomWall()`, reached only by that jump). T-G4-3.
+Evidence: both builds OK; `f23_kernel` (every timed chip write in 8,266 sampled frames) and the other nine proofs `problems: []`, `result: OK`; 128 of 128 layout checks; `f25_games --games 120` `result: OK`; `d10_replay_compare` 350,460 key frames, 0 differences.

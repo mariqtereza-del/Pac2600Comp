@@ -25,22 +25,22 @@ bool Game::runFrame(const FrameInputs& in, TiaChip& chip) {
     chip.position(kPowerOn);
     startUp(state_, chip);
     chip.position(kFrameStartLine);
-    frameStart(state_, cart_, in.console, chip);
+    frameStart(state_, in.console, chip);
     shift_ = frameStartRanLong(in.console) ? 1 : 0;
     lastLines_ = 43;   // from power-on to the first vertical sync
     started_ = true;
     return true;
   }
   chip.position(kTopLogicLine);
-  if (!topLogic(state_, cart_, in.console, chip)) return false;
+  if (!topLogic(state_, in.console, chip)) return false;
   // lines 0-33 are blank, the maze from line 35, the score and the life markers below it (F18)
-  const PictureEnd end = drawPicture(state_, cart_, 16 - shift_, picture_ ? *picture_ : nullSink, 34 - shift_);
+  const PictureEnd end = drawPicture(state_, 16 - shift_, picture_ ? *picture_ : nullSink, 34 - shift_);
   chip.timeBase(end.line, end.clock);
   FrameInput flags = in.frame;
   if (picture_) picture_->collisions(flags.ghostTouched, flags.bonusTouched);   // the picture tells; otherwise the platform's flags are used
-  if (!bottomLogic(state_, cart_, flags, chip)) return false;
+  if (!bottomLogic(state_, flags, chip)) return false;
   chip.position(kFrameStartLine - shift_);
-  frameStart(state_, cart_, in.console, chip);
+  frameStart(state_, in.console, chip);
   const int extra = frameStartRanLong(in.console) ? 1 : 0;
   lastLines_ = 262 + extra - shift_;
   shift_ = extra;

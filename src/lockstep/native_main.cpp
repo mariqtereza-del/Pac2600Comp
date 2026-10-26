@@ -1,5 +1,5 @@
 // lockstep_native: runs a recorded game with the finished native game code only (src/game: no 6502 core, no original program code) and compares the 128 memory
-// bytes with the golden trace after every frame (Stage F21.27). The ROM is read only to give the game its cartridge data by address.
+// bytes with the golden trace after every frame (Stage F21.27). The ROM file is not read (since G5c the game needs none).
 //
 // Usage: lockstep_native <rom> <inputs_file> <trace_file> [--oracle <file>] [--poke <frame>:<hex addr>:<hex value>]... [--ignore <hex list>] [--all]
 //   The stack bytes $F6-$FF are always left out (the original leaves old return addresses there; the native game has no stack) and so are the bytes of --ignore
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "../game/data/cartridge_data.hpp"
+#include "../game/data/tables.hpp"
 #include "../game/game.hpp"
 #include "../game/renderer.hpp"
 #include "../testsupport/state_bytes.hpp"
@@ -28,7 +28,7 @@ static struct ReadsWriter {
     if (gReadsFile.empty()) return;
     std::ofstream out(gReadsFile);
     for (int a = 0; a < 4096; ++a)
-      if (game::gCartridgeReads[a]) out << std::hex << (0xF000 + a) << std::dec << ' ' << game::gCartridgeReads[a] << "\n";
+      if (game::data::gTableReads[a]) out << std::hex << (0xF000 + a) << std::dec << ' ' << game::data::gTableReads[a] << "\n";
   }
 } gReadsWriter;
 #endif
@@ -43,9 +43,7 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "usage: lockstep_native <rom> <inputs> <trace> [--oracle f] [--poke f:a:v]... [--ignore hex,hex] [--all]\n");
     return 2;
   }
-  game::CartridgeData data;  // the data loader (F22): size and fingerprint are checked, the game gets a private copy
-  const game::LoadStatus loaded = data.loadFile(argv[1]);
-  if (loaded != game::LoadStatus::Ok) { std::fprintf(stderr, "%s\n", game::describe(loaded)); return 2; }
+  // argv[1] (the ROM) is not read any more: the game has all its data in tables.hpp (G5c, D-009). The argument stays so that the tools keep their call.
   int frames = 0;
   std::vector<std::pair<int, unsigned>> changes;
   {
@@ -112,8 +110,7 @@ int main(int argc, char** argv) {
   }
   for (int a = 0xF6; a <= 0xFF; ++a) ignore.push_back(a - 0x80);
 
-  const game::Cartridge cart = data.view();
-  game::Game g(cart);
+  game::Game g;
   NullChip nullChip;
   game::Renderer renderer;   // with --pictures: the drawing code and the video-chip model make every frame's picture, compared by fingerprint
   game::TiaChip& chip = pictures ? static_cast<game::TiaChip&>(renderer) : static_cast<game::TiaChip&>(nullChip);

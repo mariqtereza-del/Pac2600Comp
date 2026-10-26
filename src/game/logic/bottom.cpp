@@ -16,7 +16,6 @@ namespace game {
 // L_F7C3: the volumes are silenced, then the sound effects (channel 0) and the long sounds (channel 1 for the sweep)
 void playSounds(BottomContext& b) {
   GameState& st = b.st;
-  const Cartridge& cart = b.cart;
   TiaChip& chip = b.chip;
   cy(2 + 3);
   chip.write(chip::AUDV0, 0);
@@ -25,7 +24,7 @@ void playSounds(BottomContext& b) {
   cy(6);
   soundEffects(st, chip);
   cy(2 + 6);
-  soundMusic(st, cart, chip);
+  soundMusic(st, chip);
 }
 
 // L_F7BA: the mirror bit of Pac-Man's picture, then the sounds
@@ -38,9 +37,9 @@ void finishFrame(BottomContext& b) {
   playSounds(b);
 }
 
-bool bottomLogic(GameState& st, const Cartridge& cart, const FrameInput& input, TiaChip& chip) {
+bool bottomLogic(GameState& st, const FrameInput& input, TiaChip& chip) {
   gCycles = 0;   // the writes to the chip are timed by the cycles counted from here (the end of the drawing code)
-  BottomContext b{st, cart, input, chip};
+  BottomContext b{st, input, chip};
   cy(3);                                                 // LDX ATTRACT_SHIFT
   if (st.attractShift != 0) { cy(3 + 3); playSounds(b); return true; }   // the title screen: sound only
   cy(2 + 6);

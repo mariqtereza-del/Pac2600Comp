@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 
-#include "../../src/game/data/cartridge_data.hpp"
 #include "../../src/game/kernel.hpp"
 #include "../../src/testsupport/state_bytes.hpp"
 
@@ -40,9 +39,7 @@ static std::map<int, std::array<uint8_t, 128>> readDumps(const std::string& path
 
 int main(int argc, char** argv) {
   if (argc < 3) { std::fprintf(stderr, "usage: test_kernel <rom> <f23 dir> [--game BL-nnn]... [--show N]\n"); return 2; }
-  game::CartridgeData data;
-  if (data.loadFile(argv[1]) != game::LoadStatus::Ok) { std::fprintf(stderr, "the ROM is not accepted\n"); return 2; }
-  const game::Cartridge cart = data.view();
+  // argv[1] (the ROM) is not read: the drawing code needs none (G5c). The argument stays so that the tools keep their call.
   const std::string dir = argv[2];
   std::vector<std::string> games;
   int show = 4, shift = 0;   // --shift N adds N to every colour clock of ours first (a control: the test must then fail)
@@ -82,7 +79,7 @@ int main(int argc, char** argv) {
       Recorder rec;
       int startLine = 16;
       for (const auto& w : exp->second) if (w.site == 0xF083) { startLine = w.line; break; }
-      game::drawPicture(state, cart, startLine, rec);
+      game::drawPicture(state, startLine, rec);
       bytes = testsupport::toBytes(state);
       for (auto& w : rec.writes) w.clock += shift;
       writesChecked += static_cast<long>(exp->second.size());

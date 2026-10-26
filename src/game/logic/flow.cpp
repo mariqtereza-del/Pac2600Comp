@@ -49,7 +49,6 @@ bool eventTimerStep(BottomContext& b) {
   cy(3);
   uint8_t& timer = st.eventTimer;            // L_F4F7: the event timer runs every second frame
   cy(3);
-  bool skipToF573 = false;
   if (timer == 0) cy(3 + 1);
   else {
     cy(2 + 3 + 2);

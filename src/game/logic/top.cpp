@@ -51,7 +51,7 @@ void startGame(GameState& st) {            // F890: a new game
 
 }  // namespace
 
-bool topLogic(GameState& st, const Cartridge& cart, const ConsoleInput& in, TiaChip& chip) {
+bool topLogic(GameState& st, const ConsoleInput& in, TiaChip& chip) {
   st.colour[kColourScoreP1] = st.player[0].scoreColour;
   const bool start = (st.attractShift != 0 && in.fire) || in.reset;
   if (start) {
@@ -89,12 +89,12 @@ bool topLogic(GameState& st, const Cartridge& cart, const ConsoleInput& in, TiaC
   }
   if (update && !(st.gameFlags & 0x80)) {
     for (int i = 0; i < 3; ++i)
-      if (!ghostUpdate(st, cart, object)) return false;
+      if (!ghostUpdate(st, object)) return false;
   }
   st.spriteX = st.objX[object];
   st.scratch[kSprite0Y] = static_cast<uint8_t>(st.objY[object] + 0x0B);
-  if (st.objState[object] & 0x20) animateObject(st, cart, object, 0);
-  if (st.objState[0] & 0x20) animateObject(st, cart, 0, 1);
+  if (st.objState[object] & 0x20) animateObject(st, object, 0);
+  if (st.objState[0] & 0x20) animateObject(st, 0, 1);
   // the six colour values: the colour table of the cartridge ($FF2B; $FF36 when the mask says black and white), the title shift, the mask
   const bool colourTv = (st.colourMask & 0x80) != 0;
   const std::size_t table = colourTv ? 0 : 11;   // the black-and-white colours follow the colour ones in the same table (11 bytes later)

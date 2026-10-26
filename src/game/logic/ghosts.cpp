@@ -21,7 +21,6 @@ namespace {
 
 struct Decider {
   GameState& st;
-  const Cartridge& cart;
   uint8_t n;
   bool done = false;      // a turn was taken (or the opening entered): the decision is over
   bool unsupported = false;
@@ -32,12 +31,12 @@ struct Decider {
 
   void turn(uint8_t direction) {
     if (done) return;
-    if (tryDirection(st, cart, n, direction).exit == TryExit::Taken) done = true;
+    if (tryDirection(st, n, direction).exit == TryExit::Taken) done = true;
   }
   void pair(bool vertical) {
     if (done) return;
     const uint8_t r = rngStep(st);
-    if (tryPair(st, cart, n, vertical, r == 0).taken) done = true;
+    if (tryPair(st, n, vertical, r == 0).taken) done = true;
   }
   bool rngIsZero() { return rngStep(st) == 0; }
 
@@ -70,8 +69,8 @@ struct Decider {
 
 }  // namespace
 
-bool ghostDecide(GameState& st, const Cartridge& cart, uint8_t object) {
-  Decider g{st, cart, object};
+bool ghostDecide(GameState& st, uint8_t object) {
+  Decider g{st, object};
   if ((st.xOffset | st.yOffset) != 0) return true;
   if (g.state() & 0x10) return true;
   if (st.attractShift != 0) { g.wander(); return !g.unsupported; }
@@ -105,7 +104,7 @@ bool ghostDecide(GameState& st, const Cartridge& cart, uint8_t object) {
 }
 
 // GHOST_UPDATE ($F9AA).
-bool ghostUpdate(GameState& st, const Cartridge& cart, uint8_t object) {
+bool ghostUpdate(GameState& st, uint8_t object) {
   uint8_t& state = st.objState[object];
   if ((state & 0x08) && st.objY[object] == 0x1E) {
     const uint8_t x = st.objX[object];
@@ -119,7 +118,7 @@ bool ghostUpdate(GameState& st, const Cartridge& cart, uint8_t object) {
   }
   if (state & 0x20) return true;                                                  // in an opening animation
   locateObject(st, object);
-  if (!ghostDecide(st, cart, object)) return false;
+  if (!ghostDecide(st, object)) return false;
   if (!(state & 0x20)) moveObject(st, object);
   return true;
 }

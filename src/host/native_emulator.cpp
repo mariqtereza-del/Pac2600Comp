@@ -1,22 +1,20 @@
 // The console of the finished game (Stage F26): the same class Emulator as in emulator.cpp, but made of our own code (src/game): the rebuilt game
 // logic, the drawing
-// code, the video-chip model and the sound-chip model. No Stella, no 6502 and no original program code in it; the cartridge data is read through the data
-// loader after the fingerprint check. emulator.cpp (Stella) is kept only for the reference program pacman2600_ref, which the tests compare with.
+// code, the video-chip model and the sound-chip model. No Stella, no 6502 and no original program code in it; the cartridge file is only checked (size and
+// fingerprint) before the game is made; the game has all its data inside. emulator.cpp (Stella) is kept only for the reference program pacman2600_ref, which the tests compare with.
 #include "emulator.hpp"
 
 #include <algorithm>
 #include <array>
 #include <optional>
 
-#include "../game/data/cartridge_data.hpp"
+#include "../game/data/rom_check.hpp"
 #include "../game/game.hpp"
 #include "../game/renderer.hpp"
 #include "ntsc_palette.hpp"
 #include "../testsupport/state_bytes.hpp"
 
 struct Emulator::Impl {
-  game::CartridgeData data;
-  std::optional<game::Cartridge> cart;
   std::unique_ptr<game::Game> game;
   game::Renderer renderer;
   // the inputs
@@ -38,10 +36,10 @@ Emulator::~Emulator() = default;
 
 std::string Emulator::load(const std::string&, const std::vector<std::uint8_t>& romBytes)
 {
-  const game::LoadStatus status = impl_->data.load(romBytes.data(), romBytes.size());
-  if(status != game::LoadStatus::Ok) return game::describe(status);
-  impl_->cart.emplace(impl_->data.view());
-  impl_->game = std::make_unique<game::Game>(*impl_->cart);
+  // The ROM is only a check (D-009): the game is not made unless the player has the right cartridge file. No byte of it reaches the game.
+  const game::RomStatus status = game::checkRom(romBytes.data(), romBytes.size());
+  if(status != game::RomStatus::Ok) return game::describe(status);
+  impl_->game = std::make_unique<game::Game>();
   impl_->game->setPicture(&impl_->renderer);
   return {};
 }

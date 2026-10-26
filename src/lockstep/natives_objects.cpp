@@ -63,9 +63,8 @@ void moveNative(Machine& m) {
 // leaves A = 8, X = the pointer index (0 or 2), carry and overflow of the pointer addition; carry is that of the last CMP, or unchanged while waiting.
 void animateNative(Machine& m) {
   const uint8_t object = m.x, sprite = m.y;
-  const game::Cartridge cart(m.romBytes());
   game::AnimResult r{};
-  withRam(m, [&](game::GameState& ram) { r = game::animateObject(ram, cart, object, sprite); });
+  withRam(m, [&](game::GameState& ram) { r = game::animateObject(ram, object, sprite); });
   auto carry = [&](bool c) { m.p = static_cast<uint8_t>((m.p & ~0x01) | (c ? 1 : 0)); };
   auto finish = [&](uint8_t a) { m.a = a; m.setZN(a); };
   switch (r.path) {
@@ -170,9 +169,8 @@ void dropCallerAndReturn(Machine& m) {
 void tryNative(Machine& m, uint8_t dir) {
   const uint8_t object = m.x;
   const uint8_t stateBefore = m.read(static_cast<uint16_t>(0xBB + object));
-  const game::Cartridge cart(m.romBytes());
   game::TryResult r{};
-  withRam(m, [&](game::GameState& ram) { r = game::tryDirection(ram, cart, object, dir); });
+  withRam(m, [&](game::GameState& ram) { r = game::tryDirection(ram, object, dir); });
   if (tryRegisters(m, dir, r, object, stateBefore)) dropCallerAndReturn(m);
   else m.rts();
 }
@@ -187,9 +185,8 @@ void pairNative(Machine& m, bool vertical) {
   const bool zero = (m.p & 0x02) != 0;
   const uint8_t object = m.x;
   const uint8_t stateBefore = m.read(static_cast<uint16_t>(0xBB + object));
-  const game::Cartridge cart(m.romBytes());
   game::PairResult pr{};
-  withRam(m, [&](game::GameState& ram) { pr = game::tryPair(ram, cart, object, vertical, zero); });
+  withRam(m, [&](game::GameState& ram) { pr = game::tryPair(ram, object, vertical, zero); });
   // The original pushes return addresses with its JSRs and leaves them in the stack bytes (part of the compared memory): the address after the JSR
   // into TRY_PAIR_UD / TRY_PAIR_LR at the top, and under it the address after the JSR into each TRY routine that was run (the last one stays).
   const uint16_t sp0 = m.sp;
@@ -212,10 +209,9 @@ void pairNative(Machine& m, bool vertical) {
 // F21.11 LIVES_MARKERS ($FC68): the number of lives is in X, the offset (0 or 3) in Y. The original leaves A = the last cartridge byte (zero/negative from it),
 // X and Y untouched, carry untouched.
 void livesMarkersNative(Machine& m) {
-  const game::Cartridge cart(m.romBytes());
   uint8_t last = 0;
   const uint8_t lives = m.x, offset = m.y;
-  withRam(m, [&](game::GameState& r) { last = game::livesMarkers(r, cart, lives, offset); });
+  withRam(m, [&](game::GameState& r) { last = game::livesMarkers(r, lives, offset); });
   m.a = last;
   m.setZN(last);
   m.rts();
@@ -225,9 +221,8 @@ void livesMarkersNative(Machine& m) {
 // scratch byte, which sets zero/negative from X), Y untouched, decimal flag clear, carry and overflow from the last decimal ADC #0.
 void addScoreNative(Machine& m) {
   const uint8_t callerX = m.x;
-  const game::Cartridge cart(m.romBytes());
   game::Bcd last{};
-  withRam(m, [&](game::GameState& r) { last = game::addScore(r, cart, m.y, callerX); });
+  withRam(m, [&](game::GameState& r) { last = game::addScore(r, m.y, callerX); });
   m.a = last.value;
   m.p = static_cast<uint8_t>((m.p & ~(0x08 | 0x41)) | (last.carry ? 0x01 : 0) | (last.overflow ? 0x40 : 0));
   m.setZN(callerX);

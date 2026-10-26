@@ -8,6 +8,11 @@
 
 namespace game::data {
 
+#ifdef PACMAN_COUNT_CARTRIDGE_READS
+// Test tool only (Stage G5a): a count of the reads of every original address (build lockstep_native_reads, tools/g5a_data_list.py). Never defined in the game.
+inline unsigned long long gTableReads[4096] = {};
+#endif
+
 [[noreturn]] void tableIndexError(const char* table, std::size_t size, std::size_t index);
 uint8_t byAddress(uint16_t address);
 
@@ -17,6 +22,9 @@ struct Table {
   static constexpr std::size_t size() { return N; }
   uint8_t operator[](std::size_t index) const {
     if (index >= N) tableIndexError(name, N, index);
+#ifdef PACMAN_COUNT_CARTRIDGE_READS
+    ++gTableReads[(address + index) & 0xFFF];
+#endif
     return bytes[index];
   }
   const char* name;

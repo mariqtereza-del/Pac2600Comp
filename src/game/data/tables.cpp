@@ -208,7 +208,12 @@ uint8_t byAddress(uint16_t address) {
     const Segment& s = kSegments[mid];
     if (address < s.address) high = mid;
     else if (address >= s.address + s.size) low = mid + 1;
-    else return s.bytes[address - s.address];
+    else {
+#ifdef PACMAN_COUNT_CARTRIDGE_READS
+      ++gTableReads[address & 0xFFF];
+#endif
+      return s.bytes[address - s.address];
+    }
   }
   std::fprintf(stderr, "address $%04X is not inside any table\n", address);
   std::abort();

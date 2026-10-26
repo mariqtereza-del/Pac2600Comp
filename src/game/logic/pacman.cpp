@@ -12,7 +12,6 @@ enum class Flow { Finish, KeepGoing };
 // L_F6CE: the pressed directions (up 1, down 2, left 4, right 8; the TEMP_D2 copy is what the original works on)
 Flow joystickAndMove(BottomContext& b) {
   GameState& st = b.st;
-  const Cartridge& cart = b.cart;
   uint8_t a = st.joyDirection, y = 0;
   bool carry = false;
   cy(2 + 3 + 3);
@@ -174,7 +173,7 @@ Flow joystickAndMove(BottomContext& b) {
 }  // namespace
 
 // PACMAN_KEEP_GOING ($F793).
-KeepGoing pacmanKeepGoing(GameState& st, const Cartridge& cart) {
+KeepGoing pacmanKeepGoing(GameState& st) {
   cy(3 + 3);   // LDA, ORA
   if ((st.yOffset | st.xOffset) != 0) { cy(2 + 6); return KeepGoing::NotOnCell; }
   cy(3 + 4 + 2);   // BEQ taken, LDA OBJ_STATE,X, ROL
@@ -186,7 +185,7 @@ KeepGoing pacmanKeepGoing(GameState& st, const Cartridge& cart) {
     case 2: cy(3 + 3 + 6); break;
     default: cy(3 + 2 + 6); break;
   }
-  const bool taken = tryDirection(st, cart, 0, direction).exit == TryExit::Taken;
+  const bool taken = tryDirection(st, 0, direction).exit == TryExit::Taken;
   if (!taken) cy((direction == 2 ? 0 : 3) + 4 + 4);   // JMP L_F7B8 (not after the last case), PLA, PLA: the caller is left too
   return taken ? KeepGoing::Moved : KeepGoing::Stands;
 }
@@ -194,11 +193,10 @@ KeepGoing pacmanKeepGoing(GameState& st, const Cartridge& cart) {
 // The end shared by Pac-Man in the maze and by the power pill: the new map when nothing is left, the stick, his move; then the end of the frame.
 void pacmanMove(BottomContext& b) {
   GameState& st = b.st;
-  const Cartridge& cart = b.cart;
   if (newMapCheck(st)) return finishFrame(b);
   if (joystickAndMove(b) == Flow::KeepGoing) {
     cy(6);
-    if (pacmanKeepGoing(st, cart) != KeepGoing::Stands) { cy(6); moveObject(st, 0); cy(3); }
+    if (pacmanKeepGoing(st) != KeepGoing::Stands) { cy(6); moveObject(st, 0); cy(3); }
   }
   finishFrame(b);
 }
@@ -206,7 +204,6 @@ void pacmanMove(BottomContext& b) {
 // L_F61E: the joystick, Pac-Man in an opening or in the maze
 void pacmanBottom(BottomContext& b) {
   GameState& st = b.st;
-  const Cartridge& cart = b.cart;
   const FrameInput& in = b.in;
   cy(4 + 3);
   uint8_t joy = in.swcha;
@@ -247,7 +244,7 @@ void pacmanBottom(BottomContext& b) {
     return finishFrame(b);
   }
   cy(3);
-  eatWafer(st, cart);
+  eatWafer(st);
   pacmanMove(b);
 }
 

@@ -1,11 +1,10 @@
 // The whole game as one object (Stage F21.27): the 128 bytes of state and the frame function that runs one frame of the original's logic, with no 6502
 // and no original code. The platform gives it the console and joystick state of the frame and the two collision flags, and a chip to write to; the
-// cartridge data is read by address through game::Cartridge. The drawing code (F23.2) runs in every frame between the two logics and hands its
-// timed chip writes to the picture sink, if one is set (the video-chip model of F23.1 turns them into the picture).
+// data tables are part of the program (data/tables.hpp); the game needs no ROM at all. The drawing code (F23.2) runs in every frame between the two
+// logics and hands its timed chip writes to the picture sink, if one is set (the video-chip model of F23.1 turns them into the picture).
 #pragma once
 #include "kernel.hpp"
 #include "chips.hpp"
-#include "data/cartridge.hpp"
 #include "inputs.hpp"
 #include "logic/bottom.hpp"
 #include "logic/flow.hpp"
@@ -27,7 +26,7 @@ struct FrameInputs {
 
 class Game {
  public:
-  explicit Game(const Cartridge& cart) : cart_(cart) {}
+  Game() = default;
 
   // One frame. The first frame is the power-on set-up and the frame start; every later frame is the top logic, the bottom logic (the picture is drawn
   // between them by the renderer) and the frame start. Returns false if the game met the one path of the original that no recording ever runs.
@@ -44,7 +43,6 @@ class Game {
 
  private:
   bool frameStartRanLong(const ConsoleInput& console) const;
-  const Cartridge& cart_;
   GameState state_{};
   bool started_ = false;
   TimedChip* picture_ = nullptr;

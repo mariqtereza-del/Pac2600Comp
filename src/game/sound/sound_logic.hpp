@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "../chips.hpp"
-#include "../data/cartridge.hpp"
 #include "../state/state.hpp"
 
 namespace game {
@@ -12,7 +11,7 @@ namespace game {
 // F21.17  SOUND_START ($FF43): starts sound effect number y (0 wafer, 1 bonus item, 2 power pill, 3 ghost eaten, F19) unless one that outranks it is playing.
 // The cartridge tables: $FFE9 (the sounds that block it, as bits of SOUND_ACTIVE), $FE6E (the bit it sets in SOUND_ACTIVE), $FFED (its length, into
 // SOUND_TIMER). Returns the value the original leaves in A: the blocking bits if it was refused, else the length.
-uint8_t soundStart(GameState& st, const Cartridge& cart, uint8_t sound);
+uint8_t soundStart(GameState& st, uint8_t sound);
 
 // F21.18  SOUND_EFFECTS ($FF55) with its shared writer SOUND_WRITE ($FF8B): each frame, plays the sound effect that SOUND_START chose, on channel 0 (the
 // caller has X = 0). Ghost eaten: control 4, pitch = timer and $1F, volume = pitch xor $0F; power pill and bonus item: the steady tone $0D; wafer:
@@ -25,6 +24,6 @@ void soundEffects(GameState& st, SoundChip& chip);
 // for both channels from the cartridge tables $FFF1 / $FFF5, control 4, volume 8, silent for 4-7; the scared-ghost sweep (PILL_FLAGS bit 6): channel 1,
 // control 4, pitch = (FRAME_COUNTER / 2) and $0F, volume = (pitch xor $0F) / 2. The caller has X = 1 (channel 1) for the sweep. TEMP_D3 holds the sweep's
 // control value.
-void soundMusic(GameState& st, const Cartridge& cart, SoundChip& chip);
+void soundMusic(GameState& st, SoundChip& chip);
 
 }  // namespace game

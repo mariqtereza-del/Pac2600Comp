@@ -3,7 +3,6 @@
 #pragma once
 #include <cstdint>
 
-#include "../data/cartridge.hpp"
 #include "../state/state.hpp"
 
 namespace game {
@@ -17,6 +16,6 @@ struct Bcd {
   bool carry;
   bool overflow;
 };
-Bcd addScore(GameState& st, const Cartridge& cart, uint8_t amount, uint8_t callerX);
+Bcd addScore(GameState& st, uint8_t amount, uint8_t callerX);
 
 }  // namespace game

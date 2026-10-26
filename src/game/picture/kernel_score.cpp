@@ -192,7 +192,7 @@ void Kernel::lifeMarkers() {
       b.adv(6 + 2);
       if (lives == 0) b.adv(3); else b.adv(2 + 2);
       b.adv(5 + 4 + 5 + 4 + 5 + 6);
-      livesMarkers(st, cart, lives, offset);
+      livesMarkers(st, lives, offset);
     };
     A = 0;
     Y = 0;

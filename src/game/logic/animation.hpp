@@ -3,7 +3,6 @@
 #pragma once
 #include <cstdint>
 
-#include "../data/cartridge.hpp"
 #include "../state/state.hpp"
 
 namespace game {
@@ -23,6 +22,6 @@ struct AnimResult {
   uint8_t ptrOld;      // the picture pointer byte before (SpritePtr only)
   uint8_t ptrIndex;    // which pointer (0 or 2: SPRITE_PTR + index) (SpritePtr only)
 };
-AnimResult animateObject(GameState& st, const Cartridge& cart, uint8_t object, uint8_t sprite);
+AnimResult animateObject(GameState& st, uint8_t object, uint8_t sprite);
 
 }  // namespace game

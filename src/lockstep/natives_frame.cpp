@@ -32,8 +32,7 @@ void frameStartNative(Machine& m) {
   game::ConsoleInput in;
   in.colour = (m.read(0x282) & 0x08) != 0;
   MachineChip chip(m, false);
-  const game::Cartridge cart(m.romBytes());
-  withRam(m, [&](game::GameState& r) { game::frameStart(r, cart, in, chip); });
+  withRam(m, [&](game::GameState& r) { game::frameStart(r, in, chip); });
   m.x = 0;
   m.pc = 0xF87C;
 }
@@ -47,9 +46,8 @@ void bottomLogicNative(Machine& m) {
   in.bonusTouched = (m.read(0x31) & m.read(0x33) & 0x40) != 0;
   in.ghostTouched = (m.read(0x37) & 0x80) != 0;
   MachineChip chip(m, false);
-  const game::Cartridge cart(m.romBytes());
   bool ok = true;
-  withRam(m, [&](game::GameState& r) { ok = game::bottomLogic(r, cart, in, chip); });
+  withRam(m, [&](game::GameState& r) { ok = game::bottomLogic(r, in, chip); });
   if (!ok) { m.fail(); return; }
   m.pc = 0xF7D1;
 }
@@ -66,9 +64,8 @@ void topLogicNative(Machine& m) {
   in.leftDifficultyA = (swchb & 0x40) != 0;
   in.rightDifficultyA = (swchb & 0x80) != 0;
   MachineChip chip(m, false);
-  const game::Cartridge cart(m.romBytes());
   bool ok = true;
-  withRam(m, [&](game::GameState& r) { ok = game::topLogic(r, cart, in, chip); });
+  withRam(m, [&](game::GameState& r) { ok = game::topLogic(r, in, chip); });
   if (!ok) { m.fail(); return; }
   m.pc = 0xF07F;
 }
@@ -78,9 +75,8 @@ void topLogicNative(Machine& m) {
 // setting the program counter. Contract: X (kept), stack pointer, return address / arrival address; the registers A, Y and the flags are loaded afresh
 // by both continuations; free stack bytes are not compared.
 void keepGoingNative(Machine& m) {
-  const game::Cartridge cart(m.romBytes());
   game::KeepGoing r = game::KeepGoing::NotOnCell;
-  withRam(m, [&](game::GameState& ram) { r = game::pacmanKeepGoing(ram, cart); });
+  withRam(m, [&](game::GameState& ram) { r = game::pacmanKeepGoing(ram); });
   if (r == game::KeepGoing::Stands) {
     m.sp = static_cast<uint8_t>(m.sp + 2);
     m.pc = 0xF7BA;
@@ -95,18 +91,16 @@ void soundMusicNative(Machine& m) {
   const bool sweep = !(m.read(0xE7) & 0x48) && ((m.read(0x9A) << 1) & 0x80);
   if (sweep && m.x != 1) { m.fail(); return; }
   MachineChip chip(m, false);
-  const game::Cartridge cart(m.romBytes());
-  withRam(m, [&](game::GameState& r) { game::soundMusic(r, cart, chip); });
+  withRam(m, [&](game::GameState& r) { game::soundMusic(r, chip); });
   m.rts();
 }
 
 // F21.17 SOUND_START ($FF43): the sound number is in Y. The original leaves A = the blocking bits (refused) or the length, zero/negative from it; X, Y,
 // carry and overflow untouched.
 void soundStartNative(Machine& m) {
-  const game::Cartridge cart(m.romBytes());
   uint8_t a = 0;
   const uint8_t sound = m.y;
-  withRam(m, [&](game::GameState& r) { a = game::soundStart(r, cart, sound); });
+  withRam(m, [&](game::GameState& r) { a = game::soundStart(r, sound); });
   m.a = a;
   m.setZN(a);
   m.rts();
@@ -116,9 +110,8 @@ void soundStartNative(Machine& m) {
 // flags nor the stack bytes below the pointer; X is kept. X, the stack pointer and the return address are compared, with all live memory.
 void ghostUpdateNative(Machine& m) {
   const uint8_t object = m.x;
-  const game::Cartridge cart(m.romBytes());
   bool ok = true;
-  withRam(m, [&](game::GameState& r) { ok = game::ghostUpdate(r, cart, object); });
+  withRam(m, [&](game::GameState& r) { ok = game::ghostUpdate(r, object); });
   if (!ok) { m.fail(); return; }
   m.rts();
 }
@@ -129,10 +122,9 @@ void ghostUpdateNative(Machine& m) {
 // compared. Everything else (memory above the stack pointer, the live stack) must be identical.
 void ghostDecideNative(Machine& m, bool wrong) {
   const uint8_t object = m.x;
-  const game::Cartridge cart(m.romBytes());
   bool ok = true;
   withRam(m, [&](game::GameState& r) {
-    ok = game::ghostDecide(r, cart, object);
+    ok = game::ghostDecide(r, object);
     if (wrong) r.scratch[game::kTempD2] += 1;   // test fixture: a small mistake in a scratch byte
   });
   if (!ok) { m.fail(); return; }

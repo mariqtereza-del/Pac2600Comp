@@ -3,7 +3,6 @@
 #pragma once
 #include <cstdint>
 
-#include "../data/cartridge.hpp"
 #include "../data/tables.hpp"
 #include "../state/state.hpp"
 
@@ -14,7 +13,7 @@ namespace game {
 void newMaze(GameState& st);
 
 // L_F666: Pac-Man eats the wafer under him (adds the score and starts the sound), if there is one.
-void eatWafer(GameState& st, const Cartridge& cart);
+void eatWafer(GameState& st);
 // L_F6AA: when nothing is left on the map: one more life (at most 9), the next level (at most $0E), a fresh maze. True if the map was refilled.
 bool newMapCheck(GameState& st);
 // The wall table of the maze (one byte per cell: bit 7 side wall, bit 6 up allowed, bit 5 down allowed, F10) at cell index i.

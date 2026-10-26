@@ -2773,11 +2773,21 @@ Reshape the verified native code so a stranger can read and mod it, without chan
     - **Documentation updates:** `docs\EMBEDDED_DATA.md`, `docs\F22_LOADER.md` (written by its tool), `DECISIONS.md` (T-G5b-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage G5b: The tables become part of the program`. **Next stage:** G5c.
 
-**[Not started] G5c — The ROM becomes a check only (an indirect DRM)** *(D-009).*
+**[Done 2026-10-26] G5c — The ROM becomes a check only (an indirect DRM)** *(D-009; expanded 2026-10-26).*
     - **Objective:** the game is built and run without any cartridge input; the ROM file is still required at start-up, but only to check it. That check is the DRM: without a legal dump (right size and SHA-1) the program does not start.
-    - **What Claude Code will do:** `game::Game` takes no `Cartridge`; `CartridgeData` becomes `RomCheck` (size and SHA-1, a yes or no with the plain message of F22/D3); the host asks for the ROM, runs the check and starts the game without passing a byte; the lockstep tool, which still needs the ROM as the reference, keeps its own loader; a new test runs the game for 600 frames in a program that never opens a ROM and equals the stored picture fingerprints.
-    - **Verification:** the same proofs; the new no-ROM test; `pacman2600.exe` given the right file (starts) and a wrong file (refuses, plain message).
-    - **Completion criteria:** all of the above; one commit; H4 can now include whole-game tests. **Next stage:** G6.
+    - **Why it matters:** this is the owner's D-009 in effect: the game needs no ROM file, the release carries all game data, and the ROM only stops people without a legal dump.
+    - **Prerequisites:** G5b Done (`a8030b0`), clean tree, the owner's OK to replace the three cartridge files (asked and given).
+    - **What Claude Code will do:** remove the `Cartridge` parameter from every function of `src\game` (a script, then the compiler for the rest); `game::Game` takes none; replace `cartridge.hpp` and `cartridge_data.*` by `rom_check.hpp/.cpp` (`checkRom`, `checkRomFile`: yes or no, keeps nothing) and `test_cartridge_data.cpp` by `test_rom_check.cpp`; the host's native emulator checks the file and only then makes the game; `lockstep_native` and `test_kernel` stop reading the ROM; the read counter of G5a moves into the tables (test build only); a new program `test_no_rom` (no ROM code linked) plays recorded inputs and compares the picture and sound fingerprints of every frame with files in `tests\game\data` made from the reference emulator (`tools\g5c_make_fingerprints.py`, tracked: hashes of output only); `tools\f22_loader.py` checks it all.
+    - **What I must do:** nothing (the file approval is given).
+    - **Exact instructions / Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the same memory, pictures and sound as before in every game; the game runs without the ROM; the window program refuses a wrong file.
+    - **Verification:** `test_rom_check`, `test_tables`, `test_no_rom` (BL-001 700 frames, BL-035 3,000 frames), `f22_loader` (including `lockstep_native` given a ROM path that does not exist, and `pacman2600 --headless` given a wrong file: exit 4, no picture), the ten proofs, `f25_games --games 120`, `d10_replay_compare`, the host checks of both programs, `g2_conventions_check --strict`.
+    - **Completion criteria:** all of the above; one commit.
+    - **Potential problems:** a signature missed by the script shows as a compile error; the check is only a file check (size and fingerprint), not strong protection (D-009 knows it).
+    - **Recovery:** return to `a8030b0` (with the owner's OK).
+    - **Documentation updates:** `docs\F22_LOADER.md` (written by its tool), `docs\EMBEDDED_DATA.md`, `DECISIONS.md` (T-G5c-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage G5c: The ROM becomes a check only`. **Next stage:** G6.
 
 6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments. **Moved after G5c (D-009): the explanation is tested on the final code.**
 7. **[Not started] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.** **D-009 adds:** the game builds and runs with no ROM input (only the start-up check reads the file); the embedded tables are exactly the ones listed in `docs\EMBEDDED_DATA.md` and contain no machine code; Rule 7 reads as the owner approved it.

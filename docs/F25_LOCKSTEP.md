@@ -22,4 +22,4 @@ What the new games reached (counted in the golden traces): 1245463 frames of pla
 
 - The right joystick and the right fire button are not in the recordings of this project, so the second player of a two-player game never moves.
 - Random play seldom reaches the later levels or the bonus item; those are covered by the long recorded games (the bot of E7).
-- Time: 1452.0 s of work for all runs.
+- Time: 1569.3 s of work for all runs.

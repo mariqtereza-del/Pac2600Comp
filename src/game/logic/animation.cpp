@@ -6,7 +6,7 @@
 namespace game {
 
 // ANIMATE_OBJECT ($FC8B).
-AnimResult animateObject(GameState& st, const Cartridge& cart, uint8_t object, uint8_t sprite) {
+AnimResult animateObject(GameState& st, uint8_t object, uint8_t sprite) {
   AnimResult r{};
   uint8_t& state = st.objState[object];
   uint8_t& y = st.objY[object];

@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "../chips.hpp"
-#include "../data/cartridge.hpp"
 #include "../inputs.hpp"
 #include "../state/state.hpp"
 
@@ -16,6 +15,6 @@ namespace game {
 // frames TICK256 goes up and, unless it wraps, the bonus item's timer is counted (F15); on the title screen ATTRACT_SHIFT goes up whenever FRAME_COUNTER wraps
 // (never to 0); the picture set-up values; the colour mask from the colour / black-and-white switch and the title shift; three colour indices.
 // The code then goes on at $F87C (where the vertical sync is switched off: the frame boundary).
-void frameStart(GameState& st, const Cartridge& cart, const ConsoleInput& input, TiaChip& chip);
+void frameStart(GameState& st, const ConsoleInput& input, TiaChip& chip);
 
 }  // namespace game

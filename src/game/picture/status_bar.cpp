@@ -5,7 +5,7 @@
 namespace game {
 
 // LIVES_MARKERS ($FC68).
-uint8_t livesMarkers(GameState& st, const Cartridge& cart, uint8_t lives, uint8_t offset) {
+uint8_t livesMarkers(GameState& st, uint8_t lives, uint8_t offset) {
   st.scratch[kTempD2 + offset] = lives == 0 ? 0 : 0x40;
   st.scratch[kTempD3 + offset] = data::kLivesMarkerPf1[lives];
   const uint8_t last = data::kLivesMarkerPf2[lives];

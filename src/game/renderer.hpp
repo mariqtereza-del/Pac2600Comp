@@ -4,7 +4,6 @@
 #pragma once
 #include "kernel.hpp"
 #include "chips.hpp"
-#include "data/cartridge.hpp"
 #include "state/state.hpp"
 #include "tia_audio.hpp"
 #include "tia_video.hpp"

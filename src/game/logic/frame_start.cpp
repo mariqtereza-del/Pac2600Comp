@@ -5,7 +5,7 @@
 namespace game {
 
 // The start of the next frame ($F7D6-$F87A).
-void frameStart(GameState& st, const Cartridge& cart, const ConsoleInput& in, TiaChip& chip) {
+void frameStart(GameState& st, const ConsoleInput& in, TiaChip& chip) {
   chip.write(chip::VBLANK, 3);
   chip.write(chip::VSYNC, 3);
   chip.write(chip::CXCLR, 3);

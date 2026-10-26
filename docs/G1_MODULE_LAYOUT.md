@@ -27,8 +27,8 @@ The size limit planned for Phase G is about 400 lines a file. Four files break i
 src\game\
   game.hpp / game.cpp          the frame: top logic, drawing, bottom logic, frame start (exists, stays)
   data\
-    cartridge.hpp              the Cartridge view class (moved out of routines.hpp)
-    cartridge_data.*           the loader that checks size and SHA-1 (exists)
+    rom_check.*                the ROM check: size and SHA-1, keeps nothing (G5c; replaces cartridge.hpp and cartridge_data.*)
+    tables.*                   the game's data tables, generated (G5b)
     rom_tables.hpp             NEW: named addresses of the cartridge tables (maze walls $FE13,
                                score amounts $FF06, speeds $FE6F ...) instead of raw numbers in the code
   state\

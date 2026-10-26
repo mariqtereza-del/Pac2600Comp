@@ -112,7 +112,7 @@ Move setDirection(GameState& st, uint8_t object, uint8_t direction) {
 
 // ORIGINAL: when a turn is allowed the routine also drops its caller's return. Evidence: docs\F8_ROUTINES.md (F8). Do not fix.
 // TRY_UP / TRY_DOWN / TRY_LEFT / TRY_RIGHT and TRY_COMMIT.
-TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uint8_t direction) {
+TryResult tryDirection(GameState& st, uint8_t object, uint8_t direction) {
   TryResult r{};
   r.row = st.cellRow;
   r.cell = st.cellIndex;
@@ -177,16 +177,16 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
 }
 
 // TRY_PAIR_UD / TRY_PAIR_LR (the choice of order is made from the random step's result by TRY_PAIR_1 / TRY_PAIR_2).
-PairResult tryPair(GameState& st, const Cartridge& cart, uint8_t object, bool vertical, bool rngResultIsZero) {
+PairResult tryPair(GameState& st, uint8_t object, bool vertical, bool rngResultIsZero) {
   PairResult p{};
   const uint8_t low = vertical ? 3 : 1;   // up / left
   const uint8_t high = vertical ? 2 : 0;  // down / right
   p.dir[0] = rngResultIsZero ? low : high;
   p.dir[1] = rngResultIsZero ? high : low;
-  p.res[0] = tryDirection(st, cart, object, p.dir[0]);
+  p.res[0] = tryDirection(st, object, p.dir[0]);
   p.count = 1;
   if (p.res[0].exit == TryExit::Taken) { p.taken = true; return p; }
-  p.res[1] = tryDirection(st, cart, object, p.dir[1]);
+  p.res[1] = tryDirection(st, object, p.dir[1]);
   p.count = 2;
   p.taken = p.res[1].exit == TryExit::Taken;
   return p;

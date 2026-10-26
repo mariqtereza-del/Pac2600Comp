@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "../chips.hpp"
-#include "../data/cartridge.hpp"
 #include "../state/state.hpp"
 
 namespace game {
@@ -21,12 +20,12 @@ uint8_t rngStep(GameState& st);
 // and 3) and wander. Aiming: x first (right if the target x is bigger, left if smaller), then y (down if smaller, else up); the first allowed turn
 // ends the decision. Wandering: a chain of random steps, see the code. Writes TEMP_D2 / TEMP_D3 (target y / x) as the original does.
 // Returns false only for the path the listing marks as never run (a ghost that falls out of the last wander chain into TRY_PAIR_1's code).
-bool ghostDecide(GameState& st, const Cartridge& cart, uint8_t object);
+bool ghostDecide(GameState& st, uint8_t object);
 
 // F21.16  GHOST_UPDATE ($F9AA): everything for one ghost (object n, 1-4) in one frame; the top logic calls it three times in a row for the same ghost
 // (F13). Eyes (state bit 3) on the pen row (y $1E): at the pen door (x $58) they turn left and move on; above the pen (x $4C) they wait while the ghosts
 // are scared, otherwise they become a ghost again (bit 3 cleared), turn right and move on. A ghost in an opening animation (bit 5) does nothing here.
 // Otherwise: locate it, let it decide, and move it unless the decision put it into an opening. Returns false only for the never-run path of ghostDecide.
-bool ghostUpdate(GameState& st, const Cartridge& cart, uint8_t object);
+bool ghostUpdate(GameState& st, uint8_t object);
 
 }  // namespace game

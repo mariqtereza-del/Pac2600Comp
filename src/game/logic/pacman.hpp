@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "../chips.hpp"
-#include "../data/cartridge.hpp"
 #include "../state/state.hpp"
 #include "bottom.hpp"
 
@@ -15,7 +14,7 @@ namespace game {
 // (Moved: the routine returns and the main loop moves him); if a wall is in the way (Stands) the routine drops its caller's return and the main loop
 // goes on at $F7BA without moving him: he stands still.
 enum class KeepGoing { NotOnCell, Moved, Stands };
-KeepGoing pacmanKeepGoing(GameState& st, const Cartridge& cart);
+KeepGoing pacmanKeepGoing(GameState& st);
 
 // L_F61E (F21.23): Pac-Man's part of the frame; pacmanMove is the end it shares with the power pill.
 void pacmanBottom(BottomContext& b);

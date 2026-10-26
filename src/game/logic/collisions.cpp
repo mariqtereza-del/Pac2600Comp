@@ -10,15 +10,14 @@ namespace game {
 // L_F573: the bonus item, then a power pill. Returns true when the pill took over the rest of the frame (Pac-Man moved, frame finished).
 bool bonusOrPill(BottomContext& b) {
   GameState& st = b.st;
-  const Cartridge& cart = b.cart;
   const FrameInput& in = b.in;
   // L_F573: the bonus item
   cy(3 + 3 + 2);
   if (in.bonusTouched) {
     cy(2 + 2 + 6);
-    addScore(st, cart, 6, 0);
+    addScore(st, 6, 0);
     cy(2 + 6);
-    soundStart(st, cart, 1);
+    soundStart(st, 1);
     cy(3 + 2 + 3 + 2 + 3 + 3);
     st.gameFlags ^= 0x02;
     st.bonusTimer = 0x12;
@@ -56,9 +55,9 @@ bool bonusOrPill(BottomContext& b) {
           if (!difficulty) cy(3); else cy(2 + 2);
           st.eventTimer = difficulty ? 0x50 : 0xA0;
           cy(3 + 2 + 6);
-          addScore(st, cart, 5, x);
+          addScore(st, 5, x);
           cy(2 + 6);
-          soundStart(st, cart, 2);
+          soundStart(st, 2);
           cy(3);
           pacmanMove(b);
           return true;
@@ -74,7 +73,6 @@ bool bonusOrPill(BottomContext& b) {
 // when he is caught (frame finished).
 bool ghostTouch(BottomContext& b) {
   GameState& st = b.st;
-  const Cartridge& cart = b.cart;
   const FrameInput& in = b.in;
   // L_F5D3: a ghost touched Pac-Man (checked in four frames out of eight)
   cy(3 + 2);
@@ -94,12 +92,12 @@ bool ghostTouch(BottomContext& b) {
           cy(2 + 4 + 2 + 4 + 3 + 2 + 2 + 6);
           ghost |= 0x08;
           const uint8_t y = st.player[0].pillFlags & 3;
-          addScore(st, cart, y, x);
+          addScore(st, y, x);
           cy(2);
           if (y == 3) cy(3 + 1);
           else { cy(2 + 5); st.player[0].pillFlags = static_cast<uint8_t>(st.player[0].pillFlags + 1); }
           cy(2 + 6);
-          soundStart(st, cart, 3);
+          soundStart(st, 3);
           cy(2 + 3 + 3);
           st.eatPause = 0x9F;
         }

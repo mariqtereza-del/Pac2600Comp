@@ -5,7 +5,7 @@
 namespace game {
 
 // SOUND_START ($FF43).
-uint8_t soundStart(GameState& st, const Cartridge& cart, uint8_t sound) {
+uint8_t soundStart(GameState& st, uint8_t sound) {
   cy(4 + 3);   // LDA, AND
   const uint8_t blocked = data::kSoundBlockers[sound] & st.soundActive;
   if (blocked != 0) { cy(3 + 6); return blocked; }
@@ -50,7 +50,7 @@ void soundEffects(GameState& st, SoundChip& out) {
 }
 
 // SOUND_MUSIC ($FF94).
-void soundMusic(GameState& st, const Cartridge& cart, SoundChip& out) {
+void soundMusic(GameState& st, SoundChip& out) {
   uint8_t& flags = st.gameFlags;
   const uint8_t timer = st.eventTimer;
   cy(2 + 3);   // LDA #8, BIT GAME_FLAGS

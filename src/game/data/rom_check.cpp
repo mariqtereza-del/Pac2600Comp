@@ -1,6 +1,7 @@
-#include "cartridge_data.hpp"
+// The fopen of the standard library is fine here: the file is opened for reading only.
+#define _CRT_SECURE_NO_WARNINGS
+#include "rom_check.hpp"
 
-#include <algorithm>
 #include <cstdio>
 #include <vector>
 
@@ -39,40 +40,34 @@ std::string sha1Hex(const uint8_t* data, std::size_t size) {
   return std::string(out, 40);
 }
 
-const char* describe(LoadStatus status) {
+const char* describe(RomStatus status) {
   switch (status) {
-    case LoadStatus::Ok: return "The ROM is the expected Pac-Man (1981) Atari cartridge.";
-    case LoadStatus::Unreadable: return "The ROM file could not be read.";
-    case LoadStatus::WrongSize: return "The ROM file is not 4096 bytes long, so it is not this cartridge.";
-    case LoadStatus::UnknownFingerprint: return "The ROM file has the right size but a different fingerprint (SHA-1), "
+    case RomStatus::Ok: return "The ROM is the expected Pac-Man (1981) Atari cartridge.";
+    case RomStatus::Unreadable: return "The ROM file could not be read.";
+    case RomStatus::WrongSize: return "The ROM file is not 4096 bytes long, so it is not this cartridge.";
+    case RomStatus::UnknownFingerprint: return "The ROM file has the right size but a different fingerprint (SHA-1), "
                                          "so it is not this version of the cartridge.";
   }
   return "";
 }
 
-LoadStatus CartridgeData::load(const uint8_t* bytes, std::size_t size) {
-  loaded_ = false;
-  bytes_.fill(0);
-  if (size != kCartridgeSize) return LoadStatus::WrongSize;
-  if (sha1Hex(bytes, size) != kCartridgeSha1) return LoadStatus::UnknownFingerprint;
-  std::copy(bytes, bytes + size, bytes_.begin());
-  loaded_ = true;
-  return LoadStatus::Ok;
+RomStatus checkRom(const uint8_t* bytes, std::size_t size) {
+  if (size != kRomSize) return RomStatus::WrongSize;
+  if (sha1Hex(bytes, size) != kRomSha1) return RomStatus::UnknownFingerprint;
+  return RomStatus::Ok;
 }
 
-LoadStatus CartridgeData::loadFile(const std::string& path) {
-  loaded_ = false;
-  bytes_.fill(0);
+RomStatus checkRomFile(const std::string& path) {
   std::FILE* f = std::fopen(path.c_str(), "rb");
-  if (!f) return LoadStatus::Unreadable;
+  if (!f) return RomStatus::Unreadable;
   std::vector<uint8_t> buf;
   uint8_t chunk[4096];
   std::size_t n;
-  while ((n = std::fread(chunk, 1, sizeof chunk, f)) > 0 && buf.size() <= kCartridgeSize) buf.insert(buf.end(), chunk, chunk + n);
+  while ((n = std::fread(chunk, 1, sizeof chunk, f)) > 0 && buf.size() <= kRomSize) buf.insert(buf.end(), chunk, chunk + n);
   const bool bad = std::ferror(f) != 0;
   std::fclose(f);
-  if (bad) return LoadStatus::Unreadable;
-  return load(buf.data(), buf.size());
+  if (bad) return RomStatus::Unreadable;
+  return checkRom(buf.data(), buf.size());
 }
 
 }  // namespace game

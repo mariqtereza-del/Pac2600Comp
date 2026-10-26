@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "../chips.hpp"
-#include "../data/cartridge.hpp"
 #include "../state/state.hpp"
 #include "bottom.hpp"
 

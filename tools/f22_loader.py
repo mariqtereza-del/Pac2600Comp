@@ -2,11 +2,13 @@ r"""Stage F22: the data loader.
 
   python -I tools\f22_loader.py <rom>      (after tools\build_lockstep.cmd, tools\f20_lockstep.py and tools\f21_routines.py)
 
-1. Runs build\lockstep\test_cartridge_data.exe (SHA-1 test values, right ROM loads, one changed bit / wrong size / missing file refused).
-2. Runs the whole native game of F21.27 (tools\f21_native.py), which now gets all its cartridge data from the loader: must say result: OK.
-3. Shows that lockstep_native refuses a file that is not the cartridge (a baseline input file) with exit code 2 and plain words.
+1. Runs build\lockstep\test_rom_check.exe (SHA-1 test values; the right ROM is accepted, one changed bit / wrong size / missing file refused; nothing is kept).
+2. Runs the whole native game of F21.27 (tools\f21_native.py): must say result: OK. Since G5c it reads no ROM.
+3. G5c (D-009): lockstep_native is given a ROM path that does not exist and must still end IDENTICAL; build\lockstep\test_no_rom.exe (a program
+   with no ROM code in it) must reproduce the recorded pictures and sounds of tests\game\data; the window program must refuse a wrong ROM file
+   (exit 4, no picture) and accept the right one.
 4. Looks through every file of src\ for Atari data: any run of 6 or more consecutive numbers in the source that equals 8 consecutive cartridge bytes
-   (with at least 4 different values among them) is reported. Must find none.
+   (with at least 4 different values among them) is reported. Allowed only in src\game\data\tables.cpp and only inside the listed tables.
 Writes docs\F22_LOADER.md. The ROM is only read.
 """
 import pathlib
@@ -24,26 +26,46 @@ def main():
     rom = rom_path.read_bytes()
     problems = []
 
-    t = subprocess.run([str(ROOT / 'build' / 'lockstep' / 'test_cartridge_data.exe'), str(rom_path)], capture_output=True, text=True)
+    t = subprocess.run([str(ROOT / 'build' / 'lockstep' / 'test_rom_check.exe'), str(rom_path)], capture_output=True, text=True)
     lines = t.stdout.strip().split('\n')
     n_ok = sum(1 for l in lines if l.startswith('ok'))
     n_fail = sum(1 for l in lines if l.startswith('FAIL'))
-    print('loader tests: %d ok, %d failed, exit %d' % (n_ok, n_fail, t.returncode))
+    print('ROM check tests: %d ok, %d failed, exit %d' % (n_ok, n_fail, t.returncode))
     if t.returncode != 0 or n_fail or not lines[-1].endswith('OK'):
-        problems.append('loader tests: ' + ' | '.join(l for l in lines if l.startswith('FAIL')))
+        problems.append('ROM check tests: ' + ' | '.join(l for l in lines if l.startswith('FAIL')))
 
     n = subprocess.run([sys.executable, '-I', str(ROOT / 'tools' / 'f21_native.py'), str(rom_path)], capture_output=True, text=True)
     nl = n.stdout.strip().split('\n')
-    print('native game through the loader:', nl[0])
+    print('native game:', nl[0])
     if n.returncode != 0 or not nl[-1].endswith('OK'):
         problems.append('f21_native: ' + nl[-1])
 
-    bad_file = ROOT / 'baseline' / 'BL-001.inputs'
-    r = subprocess.run([str(ROOT / 'build' / 'lockstep' / 'lockstep_native.exe'), str(bad_file), str(bad_file), str(bad_file)], capture_output=True, text=True)
-    refused = r.returncode == 2 and 'not 4096 bytes' in r.stderr
-    print('lockstep_native given a file that is not the cartridge: exit %d, message "%s"' % (r.returncode, r.stderr.strip()))
-    if not refused:
-        problems.append('a wrong file was not refused')
+    # G5c: no ROM is read by the game
+    r = subprocess.run([str(ROOT / 'build' / 'lockstep' / 'lockstep_native.exe'), str(ROOT / 'no' / 'such' / 'rom.a26'), str(ROOT / 'baseline' / 'BL-001.inputs'),
+                        str(ROOT / 'reference' / 'baseline' / 'BL-001.trace'), '--oracle', str(ROOT / 'reference' / 'f20' / 'oracle_BL-001.txt')], capture_output=True, text=True)
+    no_path = r.returncode == 0 and 'result: IDENTICAL' in r.stdout
+    print('lockstep_native given a ROM path that does not exist: exit %d, %s' % (r.returncode, r.stdout.strip().split('\n')[-1]))
+    if not no_path:
+        problems.append('the game needed the ROM path')
+    norom = []
+    for name, frames in (('BL-001', 700), ('BL-035', 3000)):
+        x = subprocess.run([str(ROOT / 'build' / 'lockstep' / 'test_no_rom.exe'), str(ROOT / 'baseline' / (name + '.inputs')),
+                            str(ROOT / 'tests' / 'game' / 'data' / (name + '.fingerprints.txt'))], capture_output=True, text=True)
+        last = x.stdout.strip().split('\n')[-1]
+        norom.append('%s: %s' % (name, last))
+        if x.returncode != 0 or 'result: IDENTICAL (%d frames)' % frames not in last:
+            problems.append('test_no_rom %s: %s' % (name, last))
+    print('test_no_rom (a program without any ROM code):', '; '.join(norom))
+    exe = ROOT / 'build' / 'host' / 'pacman2600.exe'
+    scratch = ROOT / 'build' / 'host' / 'g5c_scratch'
+    scratch.mkdir(exist_ok=True)
+    wrong = subprocess.run([str(exe), '--headless', str(scratch / 'wrong.png'), str(ROOT / 'baseline' / 'BL-001.inputs'), '--frames', '5', '--save-frame', '3', '--settings', str(scratch / 'a.ini')], capture_output=True, text=True)
+    right = subprocess.run([str(exe), '--headless', str(scratch / 'right.png'), str(rom_path), '--frames', '5', '--save-frame', '3', '--settings', str(scratch / 'b.ini')], capture_output=True, text=True)
+    refuses = wrong.returncode == 4 and not (scratch / 'wrong.png').exists()
+    accepts = right.returncode == 0 and (scratch / 'right.png').exists()
+    print('window program given a wrong file: exit %d, no picture: %s; given the right ROM: exit %d, picture: %s' % (wrong.returncode, refuses, right.returncode, accepts))
+    if not (refuses and accepts):
+        problems.append('the window program did not refuse a wrong ROM or did not accept the right one')
 
     grams = {}
     for i in range(len(rom) - RUN + 1):
@@ -102,15 +124,16 @@ def main():
     print('problems:', problems)
     ok = not problems
     print('result: %s' % ('OK' if ok else 'MISMATCH'))
-    d = ['# Stage F22: the data loader (2026-10-26)', '',
-         '`src%sgame%sdata%scartridge_data.hpp/.cpp`: `game::CartridgeData` takes the player\'s own ROM file (`loadFile`) or a buffer (`load`), refuses it unless it is exactly 4096 bytes **and** its SHA-1 fingerprint is the expected one (`0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1`), and keeps a private copy. `view()` gives the `game::Cartridge` that the game reads by address. After a refusal the object holds nothing (all zero), so a wrong file can never be played by accident. The loader has its own small SHA-1 so the game code does not depend on the window program; the file is only opened for reading.' % (BS, BS, BS), '',
+    d = ['# Stage F22, updated in G5c: the ROM check (2026-10-26)', '',
+         '`src%sgame%sdata%srom_check.hpp/.cpp`: `game::checkRom` and `checkRomFile` take the player\'s own ROM and say yes only if it is exactly 4096 bytes **and** its SHA-1 fingerprint is the expected one (`0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1`). The check keeps nothing and hands nothing to the game: since G5c (D-009) the game has all its data in `tables.cpp` and reads no ROM. The check is the indirect copy protection of the project: the window program does not start the game without the right file, so nobody without a legal dump can play with it. The check has its own small SHA-1 so the game code does not depend on the window program; the file is only opened for reading.' % (BS, BS, BS), '',
          '## Result: %s' % ('OK' if ok else 'MISMATCH'), '',
-         '- Loader tests (`tests%sgame%stest_cartridge_data.cpp`): %d ok, %d failed. They check three standard SHA-1 test values, that the right ROM loads and every byte $F000-$FFFF comes back as in the file, that one changed bit is refused (fingerprint), one byte short / long / empty is refused (size), a missing file and a foreign file are refused.' % (BS, BS, n_ok, n_fail),
-         '- The native game of F21.27 now takes **all** its cartridge data from the loader (`lockstep_native` no longer reads the file itself): %s.' % nl[0],
-         '- `lockstep_native` given a file that is not the cartridge stops with exit code 2 and the message "%s".' % r.stderr.strip(),
-         '- Source scan: %d files under `src`; runs of %d consecutive numbers that equal %d consecutive cartridge bytes (at least 4 different values): **%s** outside `src\game\data\tables.cpp`. Since G5b (D-009, Rule 7 as reworded) that one file holds the game\'s data tables (%d tables, %d bytes), and every run found in it lies inside a listed table (%d runs, %d stray). Everywhere else the source holds addresses and logic, not Atari\'s data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: %s).' % (scanned, RUN, RUN, len(hits) or 'none', len(ranges), sum(hi - lo for lo, hi in ranges), len(table_hits), len(stray), control_ok), '',
+         '- ROM check tests (`tests%sgame%stest_rom_check.cpp`): %d ok, %d failed. They check three standard SHA-1 test values, that the right ROM is accepted, that one changed bit is refused (fingerprint), one byte short / long / empty is refused (size), a missing file and a foreign file are refused.' % (BS, BS, n_ok, n_fail),
+         '- The native game of F21.27 (memory, picture and sound of every recorded game): %s.' % nl[0],
+         '- **The game needs no ROM:** `lockstep_native` given a ROM path that does not exist ends IDENTICAL (%s). `test_no_rom`, a program with no ROM code in it, reproduces the recorded pictures and sounds of the fingerprint files in `tests%sgame%sdata` (%s).' % (no_path, BS, BS, '; '.join(norom)),
+         '- **The window program is the gate:** a wrong file is refused (exit 4, no picture): %s; the right ROM is accepted (exit 0, picture): %s.' % (refuses, accepts),
+         '- Source scan: %d files under `src`; runs of %d consecutive numbers that equal %d consecutive cartridge bytes (at least 4 different values): **%s** outside `src/game/data/tables.cpp`. Since G5b (D-009, Rule 7 as reworded) that one file holds the game\'s data tables (%d tables, %d bytes), and every run found in it lies inside a listed table (%d runs, %d stray). Everywhere else the source holds addresses and logic, not Atari\'s data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: %s).' % (scanned, RUN, RUN, len(hits) or 'none', len(ranges), sum(hi - lo for lo, hi in ranges), len(table_hits), len(stray), control_ok), '',
          '## Not claimed', '',
-         '- The window program (`pacman2600`) is not changed: it still starts the emulator from the ROM file with its own ROM finder (D3). The native game will use this loader when the renderer and sound (F23, F24) exist and the emulator is taken out (F26).',
+         '- The check is a simple one (size and fingerprint of a file). It keeps honest users honest; it is not strong protection against someone who wants to defeat it, and it was not meant to be (D-009).',
          '- The scan finds copied runs written as numbers; it cannot prove that no data is hidden in some other disguise. The rule of the project (T-F21-1) is that tables are read by address only.']
     (ROOT / 'docs' / 'F22_LOADER.md').write_text('\n'.join(d) + '\n', encoding='utf-8')
     return 0 if ok else 1

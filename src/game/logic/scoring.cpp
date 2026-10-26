@@ -20,7 +20,7 @@ Bcd bcdAdd(uint8_t a, uint8_t b, bool carryIn) {
 }  // namespace
 
 // ADD_SCORE ($FC45).
-Bcd addScore(GameState& st, const Cartridge& cart, uint8_t amount, uint8_t callerX) {
+Bcd addScore(GameState& st, uint8_t amount, uint8_t callerX) {
   st.scratch[kTempE1] = callerX;
   const uint8_t player = (st.playerMode & 0x80) ? 1 : 0;
   cy(3 + 2 + 3 + (player ? 2 + 2 : 3));   // STX, LDX #0, LDA, BPL (INX when player two)

@@ -19,7 +19,7 @@ void newMaze(GameState& st) {
 
 
 // L_F666 (Pac-Man not in an opening): he eats the wafer under him, if there is one.
-void eatWafer(GameState& st, const Cartridge& cart) {
+void eatWafer(GameState& st) {
   cy(3);
   if (st.yOffset != 0) { cy(3); return; }
   cy(2 + 3 + 4);
@@ -44,9 +44,9 @@ void eatWafer(GameState& st, const Cartridge& cart) {
   cy(2);
   cy(2 + 2 + 4 + 5 + 2 + 6);   // TXA, EOR, AND, STA, LDY #4, JSR ADD_SCORE
   maze &= static_cast<uint8_t>(~mask);
-  addScore(st, cart, 4, mask);                            // the original keeps the mask in X: TEMP_E1 gets it
+  addScore(st, 4, mask);                            // the original keeps the mask in X: TEMP_E1 gets it
   cy(2 + 6);
-  soundStart(st, cart, 0);
+  soundStart(st, 0);
 }
 
 // L_F6AA: the new map when nothing is left; returns true if the map was refilled (the original then goes on at L_F7BA)

@@ -3,8 +3,8 @@
 
 namespace game {
 
-PictureEnd drawPicture(GameState& st, const Cartridge& cart, int startLine, TimedChip& chip, int kernelStartLine) {
-  kernel::Kernel k{st, cart, chip, startLine, kernelStartLine};
+PictureEnd drawPicture(GameState& st, int startLine, TimedChip& chip, int kernelStartLine) {
+  kernel::Kernel k{st, chip, startLine, kernelStartLine};
   k.positions();
   k.mazeRows();
   k.bottomWall();

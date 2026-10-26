@@ -4,7 +4,6 @@
 #include <cstdint>
 
 #include "../chips.hpp"
-#include "../data/cartridge.hpp"
 #include "../inputs.hpp"
 #include "../state/state.hpp"
 
@@ -16,6 +15,6 @@ namespace game {
 // frozen or paused; the picture set-up values SPRITE_X and SPRITE0_Y; the opening animations of that ghost and of Pac-Man; the six colour values made
 // from the colour table of the cartridge ($FF2B, or $FF36 for black and white), the title-screen shift and the colour mask; COLUP1 and COLUP0.
 // The code then goes on with the drawing code at $F07F. Returns false if ghostDecide met the never-run path.
-bool topLogic(GameState& st, const Cartridge& cart, const ConsoleInput& input, TiaChip& chip);
+bool topLogic(GameState& st, const ConsoleInput& input, TiaChip& chip);
 
 }  // namespace game

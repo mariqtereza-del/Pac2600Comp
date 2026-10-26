@@ -5,7 +5,6 @@
 #include <cstdint>
 
 #include "../chips.hpp"
-#include "../data/cartridge.hpp"
 #include "../data/tables.hpp"
 #include "../kernel.hpp"
 #include "../state/state.hpp"
@@ -41,8 +40,8 @@ struct Beam {
 
 class Kernel {
  public:
-  Kernel(GameState& state, const Cartridge& cartridge, TimedChip& chip, int startLine, int kernelStart)
-      : st(state), cart(cartridge), b{chip, startLine}, kernelStartLine(kernelStart) {}
+  Kernel(GameState& state, TimedChip& chip, int startLine, int kernelStart)
+      : st(state), b{chip, startLine}, kernelStartLine(kernelStart) {}
 
   // The parts, in the order the original runs them.
   void positions();     // PART 2 ($F07F): the positions of the sprites and of the power-pill missile, on the lines before the picture
@@ -54,7 +53,6 @@ class Kernel {
 
  private:
   GameState& st;
-  const Cartridge& cart;
   Beam b;
   int kernelStartLine;
   uint8_t A = 0, X = 0, Y = 0;

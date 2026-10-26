@@ -83,7 +83,7 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 | `d14_side_by_side` | see CLAUDE.md | the same input in Stella's own script runner and in our program gives the same fingerprints and pictures | not timed |
 | `c3_report`, `c4_report`, `c5_report`, `c6_experiments`, `c7_captures`, `raw_to_png`, `a4_structure` | see `docs\` | Phase A-C measuring and reporting tools; read the reference emulator's output | not timed |
 | host checks (`--self-check`, `--find-rom`, `--headless`, `--layout-check`, `--fullscreen-check`, `--audio-check`, `--pad-check`, `--keys-replay`, `--help-check`, unit tests) for both programs | the script of Stage G4.7 | window, sound device, pad and key layers work in both programs | 118 s, `fail=0` |
-| `tools\d16_gate_check.ps1` | see CLAUDE.md | a release zip unpacked in a new folder passes 31 checks | not run in H1 (no release) |
+| `tools\d16_gate_check.ps1` | see CLAUDE.md | a release zip unpacked in a new folder passes 33 checks (run in H5 on the zip made in a clean copy: `-Zip <that zip> -Work out\gate-h5`; it also needs the local `recordings\` and `build\stella_probe`, so run it from the real project, not from a clean copy) | needs the ROM (by path) | not timed |
 
 ## 5. Repository and rule checks
 
@@ -94,7 +94,12 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 | `h1_testing_check.py` | this page lists every test | no ROM | under 1 s |
 | `g5a_data_list.py`, `g5b_make_tables.py`, `g5c_make_fingerprints.py` | generators of the table list, `tables.cpp` and the fingerprint files; they rewrite files, so not run as tests | needs the ROM | not timed |
 | `f20_gen_tables.py`, `f23_dump.py`, `f24_dump.py`, `f24_cycles.py`, `f26_palette.py` | generators and helpers of the proofs above | needs the ROM | not timed |
-| `tools\make_release.ps1`, `tools\make_checkpoint.ps1` | release and backup scripts (the release scan refuses ROM-like files) | no ROM | not run in H1 |
+| `tools\make_release.ps1`, `tools\make_checkpoint.ps1` | release and backup scripts (the release scan refuses ROM-like files; `make_release.ps1 -TestScan` proves the scan on invented zips, 6 cases) | no ROM | `-TestScan` 2 s; the release in the clean copy about 1 minute |
+| `h5_zip_code_scan.py <zip> rom\pacman.a26` | looks inside a release zip and the source zip in it for any of the 3,368 eight-byte runs of cartridge program code (raw and as `0x..` numbers) and for the ROM itself; a zip holding one such run is refused (control) | needs the ROM and `reference\f6` | under 1 minute |
+
+## The clean-build check (Stage H5)
+
+Done by hand in H5, following `BUILDING.md`: (1) copy the files that would be committed into a new folder `build\clean_build\<time>` (no `rom\`, `reference\`, `build\`, `out\`), run `git init` and `git add -A` there; (2) `tools\build_lockstep.cmd` and `tools\build_host.cmd` there (10 s and 71 s); (3) `tools\test_public.ps1` there (16 of 16); (4) `pacman2600.exe --self-check`; (5) `git commit` there, `tools\make_release.ps1 -TestScan` and `tools\make_release.ps1` (scan of 3,381 files clean); (6) `h5_zip_code_scan.py` on the zip; (7) `d16_gate_check.ps1` from the real project on that zip. What a clean copy cannot run: anything that needs the ROM, `reference\`, `recordings\` or the Stella-based tools in `build\stella_probe` (the lockstep proofs, the gate check's last two steps).
 
 ## Which test covers which module (Stage H2)
 
@@ -115,7 +120,7 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 
 - **Real hardware.** There is no real console or capture card. The assumption, written down on purpose: **Stella 7.0 is accurate for this game.** The original behaviour is whatever Stella's core does with the ROM; where it is known to differ from a 1981 NTSC console (speed, sound rate, power-on memory) the project follows the console (D-004, `DISCREPANCIES.md`).
 - **A person playing.** Never required (D-008).
-- **Performance on other machines**, and a **clean build from the README steps** (planned: H5, H6).
+- **Performance on other machines** (planned: H6). The **clean build from `BUILDING.md`** was done once in H5 (by hand, see above), not on a second PC, not on a different compiler version, and not on GitHub.
 - `tools\test_quick.ps1` and `tools\test_full.ps1` (planned: H3).
 
 ## Totals, as measured in H1

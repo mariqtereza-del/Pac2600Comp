@@ -2908,7 +2908,22 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
       - **Recovery:** new files only; revert the commit.
       - **Documentation updates:** `TESTING.md`, `CLAUDE.md`, `DECISIONS.md` (T-H4-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage H4: ROM-free test set`. **Next stage:** H5 (clean-build and release checks).
-5. **[Not started] H5 — Clean-build and release checks.** A fresh copy built following only `BUILDING.md`; the release zip scanned for ROM files.
+5. **[Done] H5 — Clean-build and release checks.** A fresh copy built following only `BUILDING.md`; the release zip scanned for ROM files.
+    - **H5 - Clean-build and release checks** *(expanded 2026-10-27)*
+      - **Objective:** prove that a stranger with only the committed files and `BUILDING.md` can build the game and the tests, and that the release zip built from those files holds no ROM and no cartridge code and still runs.
+      - **Why it matters:** until now every build ran in the folder where it grew up (old build folders, the ROM, `reference\`). A forgotten file or a hidden dependency would only show on someone else's PC. `BUILDING.md` does not exist yet (the release zip carries a five-line `BUILDING.txt`).
+      - **Prerequisites:** H4 Done (`62f3ab2`), clean tree. Visual Studio Build Tools already installed (nothing is installed or downloaded).
+      - **What Claude Code will do:** (1) write `BUILDING.md` (needs, steps, test commands, release, what is not in the repository); (2) copy exactly the files that would be committed into a NEW folder `build\clean_build\<time>` (no `rom\`, no `reference\`, no old `build\`, own Git repository); (3) follow `BUILDING.md` there word for word: build the tests, build the program, run `test_public.ps1`; (4) in that copy make the release zip with `tools\make_release.ps1`, read its scan report, check the zip's list of files myself, run the scan self-test; (5) run `tools\d16_gate_check.ps1` on that zip, giving the ROM by path only; (6) fix what the clean build shows (documents or scripts only) and record it.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** the clean copy builds from `BUILDING.md` alone; `test_public.ps1` says `result: OK` there; the zip scan finds nothing; the gate check on the zip says `result=OK`.
+      - **Verification:** logs of each command in the clean copy, the zip's file list, the scan report, the gate-check report; then `test_quick.ps1` in the real project.
+      - **Completion criteria:** all four expected results shown with output; every difference found between "works here" and "works in a clean copy" fixed or recorded.
+      - **Potential problems:** a file the build needs is ignored by Git or only exists locally (the clean copy shows it); the release script is fixed at version 0.1.0 (Phase J); the clean build takes several minutes (SDL3 and Stella are compiled).
+      - **Recovery:** new folders only under `build\` (ignored by Git, nothing deleted); documents and scripts revert with Git.
+      - **Documentation updates:** `BUILDING.md` (new), `TESTING.md`, `DECISIONS.md` (T-H5-1), `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage H5: Clean-build and release checks`. **Next stage:** H6 (performance and pacing checks).
 6. **[Not started] H6 — Performance and pacing checks.** Frame-time log on your 180 Hz screen and with the monitor set to 60 Hz; any frame-rate dependence is a failure.
 7. **[Not started] H7 — Gate H: freeze the preservation suite.** `tests\preservation\` is locked: its traces can be added to, never edited. Every later change must pass it.
 

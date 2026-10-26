@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G2-1 — Conventions; the evidence for `ORIGINAL:` tags is the F-stage documents (2026-10-26, Stage G2)
+
+- **Facts:** the plan asked for a link to an `RE_NOTES.md` entry. That file does not exist; the findings of Phase F are in `docs\F<n>_*.md`, each written by the tool that proves it, and in `DECISIONS.md`.
+- **Choice:** the tag form is `// ORIGINAL: <what>. Evidence: docs\F13_GHOSTS.md (F13). Do not fix.` The path must exist (checked). No `RE_NOTES.md` is created, because a second copy of the findings could drift from the proofs. Other rules in `docs\CONVENTIONS.md`: names, 400 lines per file, about 80 per function, 160 characters per line (soft), what-and-why comment on every function, cycle counts never moved.
+- **Measured today** (`python -I tools\g2_conventions_check.py`, report only): 5 files over 400 lines, 7 functions over 80 lines (the biggest: `drawPicture` 610), 46 lines over 160 characters, 0 `ORIGINAL:` tags yet (they are added when the code moves, G4). `--strict` is for Gate G.
+- **Reversible:** Yes.
+
 ### T-G1-1 — The module layout of the native game (2026-10-26, Stage G1)
 
 - **Facts:** `routines.cpp` has 1,329 lines (28 unrelated things; the bottom logic alone is one 480-line struct), `kernel.cpp` 646, `main.cpp` 1,601; the limit planned for Phase G is about 400 lines.

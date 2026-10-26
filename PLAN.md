@@ -2567,7 +2567,24 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G1_MODULE_LAYOUT.md`, `DECISIONS.md` (T-G1-1), `PROJECT_STATUS.md`, `PLAN.md`, `docs\GLOSSARY.md`.
       - **Git checkpoint:** `Stage G1: Choose the module layout from the real game`.
       - **Next stage:** G2 — Coding and comment conventions.
-2. **[Not started] G2 — Coding and comment conventions.** `docs\CONVENTIONS.md`: plain names (`ghostLeavesHouse()`, not `sub_F3A2()`), no file over ~400 lines, every function starting with a one-line "what and why", every original-behaviour quirk tagged `// ORIGINAL:` with a link to its `RE_NOTES.md` entry.
+2. **[Done] G2 — Coding and comment conventions.** `docs\CONVENTIONS.md`: plain names (`ghostLeavesHouse()`, not `sub_F3A2()`), no file over ~400 lines, every function starting with a one-line "what and why", every original-behaviour quirk tagged `// ORIGINAL:` with a link to its evidence (the F-stage document; T-G2-1: there is no `RE_NOTES.md`).
+    - **G2 — Coding and comment conventions** *(expanded and done 2026-10-26)*
+      - **Objective:** write the rules every later source file follows, and a tool that measures them.
+      - **Why it matters:** G3-G7 move and rename code; without written rules each move would be judged by taste.
+      - **Prerequisites:** G1 Done (`5eafc5d`), working tree clean.
+      - **What Claude Code will do:** write `docs\CONVENTIONS.md` (names, size limits, comment rules, the `ORIGINAL:` tag with a table of nine known quirks, code style, checking) and `tools\g2_conventions_check.py`; record T-G2-1. No source change.
+      - **What I must do:** nothing.
+      - **Exact instructions:** none.
+      - **Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** a conventions document that matches how the code is written now, and a checker that reports today's findings.
+      - **Verification:** the checker runs and reports (5 files over the limit, 7 long functions, 46 long lines, 0 tags); `--strict` exits 1 today; the tag's evidence pattern tested on three sample lines; every document cited in the quirk table checked by search to say what is claimed (three wrong citations found and corrected).
+      - **Completion criteria:** the above, one commit, `git status` shows only documents and one tool.
+      - **Potential problems:** the nine quirks are a start; G4 adds more as code is read.
+      - **Recovery:** documents and one script; undo by returning to `5eafc5d` (with your OK).
+      - **Documentation updates:** `docs\CONVENTIONS.md`, `DECISIONS.md` (T-G2-1), `PROJECT_STATUS.md`, `PLAN.md`, `docs\GLOSSARY.md`.
+      - **Git checkpoint:** `Stage G2: Coding and comment conventions`.
+      - **Next stage:** G3 — Separate the state from its memory layout.
 3. **[Not started] G3 — Separate the state from its memory layout.** In Phase F the game state copied the original 128-byte layout so lockstep could compare it directly. Now give it named fields, and move the byte-for-byte mapping into the test tool only.
 4. **[Not started] G4 — Move code into the G1 modules,** one module per session, lockstep green after each.
 5. **[Not started] G5 — Remove leftovers.** Duplicated logic, unused helpers, literal blocks (or your documented approval of each remaining one), and any dependency the game no longer needs.

@@ -114,6 +114,8 @@ function Add-QuickSteps {
   Py 'g2_conventions --strict' 'g2_conventions_check.py' @('--strict') -Must 'result: CLEAN'
   Py 'g7_gate_check' 'g7_gate_check.py' @($rom)
   Py 'h1_testing_check' 'h1_testing_check.py'
+  Py 'h7_preservation_check' 'h7_preservation_check.py'
+  Py 'h7_preservation drill' 'h7_preservation_check.py' @('--drill', (Join-Path (Scratch 'h7_drill') 'run')) -Must 'drill result: OK'
   # proofs against the original (the short ones)
   foreach ($t in @('f10_pacman', 'f11_maze', 'f13_ghosts', 'f14_random', 'f15_scoring', 'f16_levels', 'f17_states')) { Py $t ($t + '.py') @($rom) }
   Py 'f18_kernel --cached' 'f18_kernel.py' @($rom, '--cached')
@@ -139,6 +141,7 @@ function Add-PublicSteps {
   Py 'g2_conventions --strict' 'g2_conventions_check.py' @('--strict') -Must 'result: CLEAN'
   Py 'g7_gate_check --no-rom' 'g7_gate_check.py' @('--no-rom')
   Py 'h1_testing_check' 'h1_testing_check.py'
+  Py 'h7_preservation_check' 'h7_preservation_check.py'
 }
 
 function Finish-Tests([string]$Kind) {

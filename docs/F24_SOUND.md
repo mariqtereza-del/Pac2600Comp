@@ -4,7 +4,7 @@ The sound registers are written at the end of the bottom logic, whose length var
 
 ## Result: sound identical
 
-- **70 of 70 recorded games, 439680 frames: memory (all but the stack bytes), the picture and the sound identical to the emulator's in every frame**, with no emulator, no 6502 and no recorded answers in the program. 237.3 s of work.
+- **70 of 70 recorded games, 439680 frames: memory (all but the stack bytes), the picture and the sound identical to the emulator's in every frame**, with no emulator, no 6502 and no recorded answers in the program. 240.4 s of work.
 - Control: with every write of the bottom logic one processor cycle late, the sound differs in 67 of 70 games (60014 frames in all), so the test can tell and the counted cycles are exact.
 
 ## Not claimed

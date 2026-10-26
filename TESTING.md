@@ -14,8 +14,8 @@ Run from the project folder in PowerShell. Neither builds in the quick case; bot
 
 | Command | Use it | What it runs | Time |
 | --- | --- | --- | --- |
-| `powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_quick.ps1` (uses `test_common.ps1`) | after every stage | the unit tests of sections 1, the rule checks of section 5, the short proofs (f10, f11, f13 to f17, f18 and f19 with `--cached`, f20 to f24 short ones) and five key game traces (BL-001, BL-035, BL-044, BL-067, BL-070) | 103 s (33 steps) |
-| `powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_full.ps1 [-SkipBuild] [-Slow]` | at gates, before a release | builds both programs, the quick set, then f12, f21_routines, f23_tia, f23_pictures, f23_collisions, f24_sound, f25_games (120 random + 70 recorded), the key replay, all 70 baseline games and the host checks (`tools\host_checks.sh`, needs Git's bash; windows open briefly). `-Slow` adds the full f18 and f19 | 1,590 s = 26.5 min (46 steps; measured in H3; all 70 baseline games 370 s) |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_quick.ps1` (uses `test_common.ps1`) | after every stage | the unit tests of sections 1, the rule checks of section 5, the short proofs (f10, f11, f13 to f17, f18 and f19 with `--cached`, f20 to f24 short ones) and five key game traces (BL-001, BL-035, BL-044, BL-067, BL-070) | 155 s (35 steps; 103 s and 33 steps before H7 added the preservation check and its drill) |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_full.ps1 [-SkipBuild] [-Slow]` | at gates, before a release | builds both programs, the quick set, then f12, f21_routines, f23_tia, f23_pictures, f23_collisions, f24_sound, f25_games (120 random + 70 recorded), the key replay, all 70 baseline games and the host checks (`tools\host_checks.sh`, needs Git's bash; windows open briefly). `-Slow` adds the full f18 and f19 | 1,704 s = 28 min (48 steps; measured in H7; 1,590 s and 46 steps in H3; all 70 baseline games 403 s) |
 
 The five key traces use five different inputs: BL-046 and BL-049 replay the same input file as BL-035 (the bot route) and give the identical trace, so they add nothing as a second trace.
 
@@ -31,6 +31,7 @@ The five key traces use five different inputs: BL-046 and BL-049 replay the same
 | `g2_conventions_check --strict` | file, function and line limits; `ORIGINAL:` tags |
 | `g7_gate_check --no-rom` | no ROM or archive in Git; only the start-up check opens a file; Rule 7 text; no markers; architecture complete (checks 2 and 3 of the gate need the ROM and are skipped, and the output says so) |
 | `h1_testing_check` | this page lists every test and tool |
+| `h7_preservation_check` | the frozen preservation files (`tests\preservation\MANIFEST.txt`) are present and unchanged; the manifest only grew; where Git and the tag `1.0.0-preservation` exist, the frozen files equal the tag's (otherwise those two checks are skipped and the output says so) |
 
 Not in the public set: the lockstep proofs, `test_rom_check`, the comparison of the tables with the cartridge, the scan for cartridge code (all need the ROM), and the host program tests (`test_controls`, `test_layout` and the others need SDL built; planned for H5). The fingerprint files (`tests\game\data\BL-nnn.fingerprints.txt`, made by `tools\g5c_make_fingerprints.py` from the reference traces) hold hashes of the output only. The workflow file has never run on GitHub (nothing is pushed); whether the build script finds the compiler there is untested.
 
@@ -92,6 +93,7 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 | `g2_conventions_check.py --strict` | file, function and line limits; every `ORIGINAL:` tag links to evidence | no ROM | under 1 s |
 | `g7_gate_check.py` | no ROM or cartridge code in Git or the program; tables equal the list; Rule 7 text; architecture complete (`--no-rom`: the six checks that need no ROM) | ROM optional | 2 s |
 | `h1_testing_check.py` | this page lists every test | no ROM | under 1 s |
+| `h7_preservation_check.py [--add] [--drill <new folder>]` (Stage H7) | the preservation suite is frozen (see `tests\preservation\README.md`): 151 listed files (70 baseline entries, 70 input files, 11 fingerprint files) unchanged, the manifest only grows, the 142 files that exist at the tag `1.0.0-preservation` equal it, new files are reported. `--drill` damages copies in a scratch Git repository six ways (edit, edit with the manifest, delete, shorten the manifest, add an unlisted file, then `--add`) and each must be caught | no ROM | check 5 s; the drill 39 s (measured in H7) |
 | `g5a_data_list.py`, `g5b_make_tables.py`, `g5c_make_fingerprints.py` | generators of the table list, `tables.cpp` and the fingerprint files; they rewrite files, so not run as tests | needs the ROM | not timed |
 | `f20_gen_tables.py`, `f23_dump.py`, `f24_dump.py`, `f24_cycles.py`, `f26_palette.py` | generators and helpers of the proofs above | needs the ROM | not timed |
 | `tools\make_release.ps1`, `tools\make_checkpoint.ps1` | release and backup scripts (the release scan refuses ROM-like files; `make_release.ps1 -TestScan` proves the scan on invented zips, 6 cases) | no ROM | `-TestScan` 2 s; the release in the clean copy about 1 minute |

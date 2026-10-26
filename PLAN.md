@@ -2940,7 +2940,22 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
       - **Recovery:** the code change is a measuring log and one test switch; revert the commit.
       - **Documentation updates:** `docs\PERFORMANCE.md` (new), `TESTING.md`, `CLAUDE.md`, `DECISIONS.md` (T-H6-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage H6: Performance and pacing checks`. **Next stage:** H7 (Gate H).
-7. **[Not started] H7 — Gate H: freeze the preservation suite.** `tests\preservation\` is locked: its traces can be added to, never edited. Every later change must pass it.
+7. **[Done] H7 — Gate H: freeze the preservation suite.** `tests\preservation\` is locked: its traces can be added to, never edited. Every later change must pass it.
+    - **H7 - Gate H: freeze the preservation suite** *(expanded 2026-10-27)*
+      - **Objective:** lock the files that define "the game still does what the original does" so that a later change (Phase I modernization) cannot quietly edit them, and pass Gate H.
+      - **Why it matters:** the proofs only mean something if the recordings and expected fingerprints they compare against cannot be altered to make a change pass.
+      - **Prerequisites:** H6 Done (`a63da2d`), clean tree, tag `1.0.0-preservation` present, programs built.
+      - **What Claude Code will do:** create `tests\preservation\` with `MANIFEST.txt` (SHA-256, size and path of every frozen file: the 70 baseline entries and input files in `baseline\`, the 11 fingerprint files in `tests\game\data\`) and `README.md` (the rule); write `tools\h7_preservation_check.py` (every listed file present and unchanged; the manifest only grows; frozen files equal the tag `1.0.0-preservation` where the tag has them; unlisted new files are reported, never accepted silently; `--add` appends new files, never changes a line); add it to `test_quick`, `test_public` and `TESTING.md`; run `test_quick`, `test_public`, `test_full` and a tamper drill on scratch copies; write `docs\GATE_H.md`.
+      - **What I must do:** nothing. No file is moved (the files stay where the proofs read them; the manifest points at them).
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** the checker says `result: OK`; a deliberately edited, deleted or manifest-shortened copy makes it say FAILED; `test_quick`, `test_public` and `test_full` say `result: OK`.
+      - **Verification:** the three test commands, the tamper drill, `git diff 1.0.0-preservation -- baseline` empty.
+      - **Completion criteria:** all Gate H items in `docs\GATE_H.md` PASS with output shown.
+      - **Potential problems:** the freeze is a check, not a lock: someone can edit the manifest together with a file; the append-only check against Git catches that only for committed history (stated in the README). `test_full` takes about 26 minutes.
+      - **Recovery:** new files and test steps only; revert the commit.
+      - **Documentation updates:** `docs\GATE_H.md` (new), `tests\preservation\README.md` (new), `TESTING.md`, `CLAUDE.md`, `DECISIONS.md` (T-H7-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage H7: Gate H, preservation suite frozen`. **Next stage:** I1 (Phase I status report).
 
 ### Phase I — Modernization discussion (4 stages, then one stage per approved feature)
 

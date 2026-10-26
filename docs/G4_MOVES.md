@@ -16,3 +16,15 @@ One section per sub-stage. Plan and reasons: `PLAN.md` (G4), T-G4-1. Layout: `do
 Paths updated in: both `CMakeLists.txt`, `native_emulator.cpp`, `native_main.cpp`, `src\testsupport`, `tests\game`, `tools\g3_state_layout.py`, `tools\f21_routines.py`, `tools\f22_loader.py` (texts they print).
 
 Evidence (final build, 2026-10-26): `tools\build_lockstep.cmd` and `tools\build_host.cmd` BUILD OK; `g3_state_layout.py` 128 of 128; `f21_native`, `f21_routines`, `f22_loader`, `f20_lockstep`, `f23_kernel`, `f23_tia`, `f23_pictures`, `f23_collisions`, `f24_audio`, `f24_sound` each `problems: []`, `result: OK`. `f25_games --games 120` and `d10_replay_compare` are run before the last sub-stage and at the end of G4 (nothing in G4.1 touches game logic: names, includes and file places only).
+
+## G4.2 — leaf logic (2026-10-26)
+
+| Module (`src\game\logic\`) | Functions | Lines (hpp/cpp) |
+| --- | --- | --- |
+| `players` | `clearScores`, `swapPlayers`, `newGameSetup` | 21 / 32 |
+| `maze` | `newMaze` | 14 / 18 |
+| `objects` | `locateObject`, `moveObject`, `setDirection`, `tryDirection`, `tryPair`, `wrapToBottom`, `wrapToTop` | 74 / 194 |
+| `animation` | `animateObject` | 27 / 89 |
+| `scoring` | `addScore` (with `bcdAdd`) | 21 / 40 |
+
+`routines.cpp` 1,329 to 1,007 lines, `routines.hpp` 274 to 131. Moved by script (text unchanged, original order), then the build lists in `src\lockstep\CMakeLists.txt` and `src\host\CMakeLists.txt` got the five files. One real change: `swapPlayers` is `std::swap(st.player[0], st.player[1])`; the cycle count line is unchanged. Still in `routines.*`: `rngStep`, `placeObjects` (to `flow`, G4.4), the ghost, sound, status-line, Pac-Man, top, bottom and frame-start code.

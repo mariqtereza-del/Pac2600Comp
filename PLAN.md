@@ -2622,7 +2622,23 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Next stage:** G5 — Remove leftovers.
       - **Sub-stages:**
         1. **[Done] G4.1 — `data\` and `state\`:** `Cartridge`, `rom_tables.hpp` (49 raw table addresses named), `cartridge_data.*`, `state.hpp`, `cycles.hpp`, `chips.hpp` out of `routines.hpp`.
-        2. **[Not started] G4.2 — leaf logic:** `logic\players`, `objects`, `animation`, `scoring`, `maze`.
+        2. **[Done] G4.2 — leaf logic:** `logic\players`, `objects`, `animation`, `scoring`, `maze` (see the entry below).
+    - **G4.2 — Move the leaf logic** *(expanded and done 2026-10-26)*
+      - **Objective:** `players`, `maze`, `objects`, `animation`, `scoring` become files in `src\game\logic\`.
+      - **Why it matters:** 323 lines of `routines.cpp` and 107 of `routines.hpp` leave it; each file does one job.
+      - **Prerequisites:** G4.1 Done (`94169f4`), clean tree.
+      - **What Claude Code will do:** a script slices each function with its comment out of `routines.*` into `logic\<module>.hpp/.cpp` (same text, same order); `swapPlayers` now swaps the two `PlayerBlock`s (G3 had left a 20-byte loop over the 16-byte `maze` array: it worked by layout, but was out of range); the CMake lists get the five files.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** behaviour unchanged.
+      - **Verification:** both builds; the ten proofs (`f21_native`, `f21_routines`, `f22_loader`, `f20_lockstep`, `f23_kernel`, `f23_tia`, `f23_pictures`, `f23_collisions`, `f24_audio`, `f24_sound`) say OK.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** `newMaze` still calls `placeObjects`, which stays in `routines.hpp` until G4.4 (flow); `logic\maze.cpp` includes `routines.hpp` for it until then.
+      - **Recovery:** return to `94169f4` (with your OK).
+      - **Documentation updates:** `docs\G4_MOVES.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G4.2: Move the leaf logic into logic\`.
+      - **Next stage:** G4.3.
         3. **[Not started] G4.3 — `picture\status_bar`, `sound\sound_logic`.**
         4. **[Not started] G4.4 — `logic\ghosts`, `pacman`, `collisions`, `flow`** (the `Bottom` struct is cut here).
         5. **[Not started] G4.5 — `logic\bottom`, `top`, `frame_start`;** `routines.*` deleted; full long suite.

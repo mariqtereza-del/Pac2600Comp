@@ -8,6 +8,17 @@ Every automated test and proof of the project, what it proves, the command, and 
 
 The project's own game needs no ROM to run (D-009). Most proofs compare the game with the **original**, which only exists as the player's ROM, run in the reference program (`pacman2600_ref.exe`, Stella inside). Those tests need the ROM and the local folder `reference\` (traces made from it, never in Git). They run on the owner's PC only. Tests marked **no ROM** run from files in Git and can run on a public build machine (the H4 set).
 
+## The two test commands (Stage H3)
+
+Run from the project folder in PowerShell. Neither builds in the quick case; both print PASS/FAIL per step and end with `result: OK` or `result: FAILED` (exit code 0 / 1; 2 = cannot run because the ROM, `reference\` or Python is missing). Every step keeps its full output in `build\test_runs\<time>-<kind>\logs` (a new folder every run; nothing is deleted).
+
+| Command | Use it | What it runs | Time |
+| --- | --- | --- | --- |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_quick.ps1` (uses `test_common.ps1`) | after every stage | the unit tests of sections 1, the rule checks of section 5, the short proofs (f10, f11, f13 to f17, f18 and f19 with `--cached`, f20 to f24 short ones) and five key game traces (BL-001, BL-035, BL-044, BL-067, BL-070) | 103 s (33 steps) |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_full.ps1 [-SkipBuild] [-Slow]` | at gates, before a release | builds both programs, the quick set, then f12, f21_routines, f23_tia, f23_pictures, f23_collisions, f24_sound, f25_games (120 random + 70 recorded), the key replay, all 70 baseline games and the host checks (`tools\host_checks.sh`, needs Git's bash; windows open briefly). `-Slow` adds the full f18 and f19 | 1,590 s = 26.5 min (46 steps; measured in H3; all 70 baseline games 370 s) |
+
+The five key traces use five different inputs: BL-046 and BL-049 replay the same input file as BL-035 (the bot route) and give the identical trace, so they add nothing as a second trace.
+
 ## 1. Unit tests (small, made-up or fixed data)
 
 | Test | Command | What it proves | ROM | Time |
@@ -52,7 +63,7 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 
 | Test | Command | What it proves | Time |
 | --- | --- | --- | --- |
-| `baseline.py check` | `python -I tools\baseline.py check rom\pacman.a26 BL-nnn` | a fresh trace of one of the 70 recorded games equals the stored SHA-256 (run with the reference program only) | BL-001 under 1 s, BL-049 8 s; all 70 not timed |
+| `baseline.py check` | `python -I tools\baseline.py check rom\pacman.a26 BL-nnn` | a fresh trace of one of the 70 recorded games equals the stored SHA-256 (run with the reference program only) | BL-001 under 1 s, BL-049 8 s; all 70 games 370 s (in the full command) |
 | `e2_entries`, `e3_entries`, `e4_entries`, `e5_entries`, `e6_entries`, `e7_entries`, `e8_entries` | `python -I tools\eN_entries.py rom\pacman.a26` | remake the baseline entries BL-002 to BL-070 from the traces (they overwrite the entry texts: run only on purpose) | not timed |
 | `d14_side_by_side` | see CLAUDE.md | the same input in Stella's own script runner and in our program gives the same fingerprints and pictures | not timed |
 | `c3_report`, `c4_report`, `c5_report`, `c6_experiments`, `c7_captures`, `raw_to_png`, `a4_structure` | see `docs\` | Phase A-C measuring and reporting tools; read the reference emulator's output | not timed |

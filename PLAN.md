@@ -2876,7 +2876,22 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
       - **Recovery:** new files and one build line; revert the commit.
       - **Documentation updates:** `TESTING.md`, `DECISIONS.md` (T-H2-1), `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage H2: Unit tests per module`. **Next stage:** H3 (the two test commands).
-3. **[Not started] H3 — Two test commands.** `tools\test_quick.ps1` (unit tests + 5 key traces, a few minutes) after every stage; `tools\test_full.ps1` (everything) at gates and before releases. This keeps each session short, as you asked.
+3. **[Done] H3 — Two test commands.** `tools\test_quick.ps1` (unit tests + 5 key traces, a few minutes) after every stage; `tools\test_full.ps1` (everything) at gates and before releases. This keeps each session short, as you asked.
+    - **H3 - Two test commands** *(expanded 2026-10-26)*
+      - **Objective:** `tools\test_quick.ps1` (a few minutes, after every stage) and `tools\test_full.ps1` (everything, at gates and before releases), each printing PASS/FAIL per step and one final `result:` line.
+      - **Why it matters:** every later stage can prove "nothing broke" with one command instead of a list; this keeps sessions short.
+      - **Prerequisites:** H2 Done (`0665b76`), clean tree, both build scripts already run.
+      - **What Claude Code will do:** write `tools\test_common.ps1` (one step runner: timeout, exit code, required and forbidden text, a log per step in a new folder `build\test_runs`), `test_quick.ps1`, `test_full.ps1` and move the host-program check script into `tools\host_checks.sh`; run both; compare the times with `TESTING.md`; show that a deliberately failing step makes the command say FAILED.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** quick says `result: OK` in a few minutes; full says `result: OK`.
+      - **Verification:** the two runs, a failure drill, `h1_testing_check.py`.
+      - **Completion criteria:** both commands run end to end on this PC; failures are reported and give a non-zero exit code; nothing is deleted; no file outside the project is written.
+      - **Potential problems:** the host checks need Git's bash; a missing ROM or `reference\` folder stops the run with a plain message (exit 2).
+      - **Recovery:** new scripts only; revert the commit.
+      - **Documentation updates:** `TESTING.md`, `CLAUDE.md`, `DECISIONS.md` (T-H3-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage H3: Two test commands`. **Next stage:** H4 (ROM-free test set).
 4. **[Not started] H4 — ROM-free test set for GitHub.** The subset that runs without the ROM, so the public repository can check itself automatically on every change. **D-009:** after G5c this set also contains whole-game runs (they need no ROM, only stored fingerprints).
 5. **[Not started] H5 — Clean-build and release checks.** A fresh copy built following only `BUILDING.md`; the release zip scanned for ROM files.
 6. **[Not started] H6 — Performance and pacing checks.** Frame-time log on your 180 Hz screen and with the monitor set to 60 Hz; any frame-rate dependence is a failure.

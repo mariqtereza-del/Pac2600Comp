@@ -14,7 +14,7 @@ for p in (ROOT / 'tests').rglob('test_*.cpp'):
     names.add(p.stem)
 for p in (ROOT / 'tools').glob('*.py'):
     names.add(p.stem)
-for p in (ROOT / 'tools').glob('*.ps1'):
+for p in list((ROOT / 'tools').glob('*.ps1')) + list((ROOT / 'tools').glob('*.sh')):
     names.add(p.stem)
 missing = sorted(n for n in names if n not in page)
 for n in missing:

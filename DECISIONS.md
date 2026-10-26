@@ -154,6 +154,16 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-H3-1 — The two test commands (2026-10-26, Stage H3)
+
+- **Choice:** PowerShell scripts, as the plan names them: `tools\test_quick.ps1` and `tools\test_full.ps1`, sharing `tools\test_common.ps1`. Each step is one program or proof run as a child process with a time limit; it passes only if the exit code is 0 and, where the tool prints a verdict, the verdict text is there (and no forbidden text, for example `DIFFERS`). Every step keeps its full output in a new folder under `build\test_runs`; nothing is deleted or overwritten. A missing ROM, `reference\` or Python gives a plain message and exit 2, never a pass.
+- **Quick set (103 s, 33 steps):** all unit tests, the rule checks, the short proofs and five baseline games with five different inputs. It does not build (the build scripts are the owner's or the stage's job); the full command builds first.
+- **Full set (26 minutes, 46 steps):** the quick set plus the long proofs, all 70 baseline games and the host checks (`tools\host_checks.sh`, the G4.7 script moved into the project; needs Git's bash, found next to `git.exe`). The full f18 and f19 (about 15 minutes) are behind `-Slow` because their `--cached` forms cover the same ground between gates.
+- **Finding:** BL-035, BL-046 and BL-049 use the same input file, so their traces are identical by design; the quick set therefore uses BL-001, BL-035, BL-044, BL-067 and BL-070.
+- **First run honest:** the first quick run said FAILED because the new scripts were not yet listed in `TESTING.md` (`h1_testing_check`). That is the runner working; the page was updated and the run repeated.
+- **Side effect:** the proof tools rewrite their running time in some `docs\` files; the scripts print a note about it.
+- **Reversible:** Yes (Git).
+
 ### T-H2-1 — How the module unit tests were made (2026-10-26, Stage H2)
 
 - **Choice:** one program, `tests\game\test_game_modules.cpp`, built with the same game sources as `test_no_rom` and no ROM code; it takes no argument. Expected values are worked out from the rules written in the headers and the F-stage documents, never by running the code and copying the answer.

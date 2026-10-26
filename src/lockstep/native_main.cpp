@@ -20,6 +20,19 @@
 #include "../game/renderer.hpp"
 #include "../testsupport/state_bytes.hpp"
 
+// --cart-reads <file> (only in the build lockstep_native_reads, Stage G5a): at the end, one line per cartridge address that was read: "<hex address> <times>".
+static std::string gReadsFile;
+#ifdef PACMAN_COUNT_CARTRIDGE_READS
+static struct ReadsWriter {
+  ~ReadsWriter() {
+    if (gReadsFile.empty()) return;
+    std::ofstream out(gReadsFile);
+    for (int a = 0; a < 4096; ++a)
+      if (game::gCartridgeReads[a]) out << std::hex << (0xF000 + a) << std::dec << ' ' << game::gCartridgeReads[a] << "\n";
+  }
+} gReadsWriter;
+#endif
+
 class NullChip : public game::TiaChip {
  public:
   void write(uint8_t, uint8_t) override {}
@@ -78,6 +91,8 @@ int main(int argc, char** argv) {
     } else if (a == "--ignore" && i + 1 < argc) {
       std::istringstream ls(argv[++i]);
       for (std::string t; std::getline(ls, t, ',');) ignore.push_back(static_cast<int>(std::stoul(t, nullptr, 16)) - 0x80);
+    } else if (a == "--cart-reads" && i + 1 < argc) {
+      gReadsFile = argv[++i];
     } else if (a == "--all") {
       all = true;
     } else if (a == "--trace-frame" && i + 1 < argc) {

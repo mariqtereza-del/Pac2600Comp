@@ -2741,9 +2741,9 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G5_LEFTOVERS.md`, `docs\CONVENTIONS.md`, `DECISIONS.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G5: Remove leftovers`.
       - **Next stage:** G6 — "Stranger test".
-**[Not started] G5a — The data the game needs, and the Rule 7 wording** *(added 2026-10-26, D-009; the owner's instruction: the game needs no ROM file, the ROM is only a security check).*
+**[Work done 2026-10-26; waiting for the owner's approval of the Rule 7 wording] G5a — The data the game needs, and the Rule 7 wording** *(added 2026-10-26, D-009; the owner's instruction: the game needs no ROM file, the ROM is only a security check).*
     - **Objective:** decide exactly what cartridge data the program will carry and how Rule 7 reads afterwards.
-    - **Why it matters:** the game reads about 515 bytes of the cartridge today. Moving them into the program removes the need for the ROM file but touches Rule 7 (ROM never in the repository or release), which only the owner can change.
+    - **Why it matters:** the game reads 504 bytes in 48 tables (measured in G5a, docs\EMBEDDED_DATA.md) of the cartridge today. Moving them into the program removes the need for the ROM file but touches Rule 7 (ROM never in the repository or release), which only the owner can change.
     - **Prerequisites:** G5 Done (`04e1f5f`), D-009 recorded.
     - **What Claude Code will do:** list every cartridge byte the game reads (from the F4 map and a read counter in the test tool run over all 70 recorded and 120 random games), table by table, with name, size, use and evidence; confirm that no machine code is among them; write `docs\EMBEDDED_DATA.md` (the list, the totals, what the ROM check still does, what changes in F22, H4 and the release); draft the new wording of Rule 7 (for example: the original file and the cartridge's program code are never in the repository or the release; the data tables listed in `docs\EMBEDDED_DATA.md` may be part of the program). No cartridge byte is written into any file that Git tracks in this stage; a byte-level list stays under `reference\` (local only).
     - **What I must do:** read the drafted wording and answer yes, no or change it (a rule-required approval, allowed by D-008).

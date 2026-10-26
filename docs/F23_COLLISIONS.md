@@ -4,7 +4,7 @@ The game decides whether a ghost caught Pac-Man and whether he took the bonus it
 
 ## Result: identical
 
-- **70 of 70 recorded games, 439680 frames, with no oracle at all: all 128 memory bytes (but the stack) and the picture identical in every frame.** 230.6 s of work.
+- **70 of 70 recorded games, 439680 frames, with no oracle at all: all 128 memory bytes (but the stack) and the picture identical in every frame.** 261.6 s of work.
 - Control: without the flags (and without pictures) 52 of 70 games fail, so the flags matter and the test can tell.
 - For scale, the oracle files list 203264 frames; the bonus flag is set in 18 and the ghost flag in 667 of them.
 

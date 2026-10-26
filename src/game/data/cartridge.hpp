@@ -6,10 +6,21 @@
 
 namespace game {
 
+#ifdef PACMAN_COUNT_CARTRIDGE_READS
+// Test tool only (Stage G5a): the build lockstep_native_reads counts every read of the cartridge by address, to list the data the game really uses.
+// The game's own builds never define this.
+inline unsigned long long gCartridgeReads[4096] = {};
+#endif
+
 class Cartridge {
  public:
   explicit Cartridge(const uint8_t* bytes4k) : bytes_(bytes4k) {}
-  uint8_t at(uint16_t address) const { return bytes_[address & 0x0FFF]; }
+  uint8_t at(uint16_t address) const {
+#ifdef PACMAN_COUNT_CARTRIDGE_READS
+    ++gCartridgeReads[address & 0x0FFF];
+#endif
+    return bytes_[address & 0x0FFF];
+  }
 
  private:
   const uint8_t* bytes_;

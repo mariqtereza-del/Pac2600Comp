@@ -2844,7 +2844,22 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
 
 #### The stages
 
-1. **[Not started] H1 — `TESTING.md`.** Lists every test, what it proves, how long it takes, and whether it needs the ROM.
+1. **[Done] H1 — `TESTING.md`.** Lists every test, what it proves, how long it takes, and whether it needs the ROM.
+    - **H1 - TESTING.md** *(expanded 2026-10-26)*
+      - **Objective:** one page, `TESTING.md`, that lists every automated test and proof of the project: what it proves, the command, how long it takes (measured), and whether it needs the ROM.
+      - **Why it matters:** H2-H7 build the quick and full test commands and the ROM-free set from this list; without it a test can be forgotten or mis-described.
+      - **Prerequisites:** G7 Done (`a242e6e`), clean tree, programs built.
+      - **What Claude Code will do:** run every test once and time it (nothing changes except proof documents that record their own time); write `TESTING.md` with a table per kind (unit tests, proofs against the original, whole-game checks, window checks, repository checks), a column for the ROM and one for quick/full; state the assumption about real hardware; list what is NOT tested; add `tools\h1_testing_check.py` that fails if a `tools\f*_*.py`/`g*_*.py` proof or a test program is missing from the page.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** `TESTING.md` exists, every time in it was measured in this stage, the checker says `result: OK`.
+      - **Verification:** `python -I tools\h1_testing_check.py` and the timing log.
+      - **Completion criteria:** all tests listed; times measured; the real-hardware assumption written down.
+      - **Potential problems:** a test that fails stops the stage and is reported.
+      - **Recovery:** documents and one script; revert the commit (with the owner's OK).
+      - **Documentation updates:** `TESTING.md`, `DECISIONS.md` (T-H1-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage H1: TESTING.md`. **Next stage:** H2 (unit tests per module).
 2. **[Not started] H2 — Unit tests per module** (maze lookups, score table, speed tables, ROM loader, scaling maths).
 3. **[Not started] H3 — Two test commands.** `tools\test_quick.ps1` (unit tests + 5 key traces, a few minutes) after every stage; `tools\test_full.ps1` (everything) at gates and before releases. This keeps each session short, as you asked.
 4. **[Not started] H4 — ROM-free test set for GitHub.** The subset that runs without the ROM, so the public repository can check itself automatically on every change. **D-009:** after G5c this set also contains whole-game runs (they need no ROM, only stored fingerprints).

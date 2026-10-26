@@ -154,6 +154,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-H1-1 — TESTING.md and how it is kept complete (2026-10-26, Stage H1)
+
+- **Choice:** one page, `TESTING.md`, in the project top level, with measured times and a ROM column; `tools\h1_testing_check.py` fails if any test program or any script in `tools\` is missing from it, so a new test cannot be forgotten.
+- **Times:** each test was run once in this stage. Slow or state-changing tools (the E-stage entry makers, `f6_coverage`, full `f18`/`f19`, `d14`) were not run and are marked "not timed" (Rule 4).
+- **Real hardware:** not tested; the assumption "Stella 7.0 is accurate for this game" is written on the page, with the places where the project follows the console instead (D-004).
+- **Finding:** `test_inputlog` needs an existing scratch folder; without it two checks fail falsely (25 checks with, 22 without). Written on the page.
+- **Side effect:** the proof tools rewrite the time they took in several proof documents; only those numbers changed.
+- **Reversible:** Yes (Git).
+
 ### T-G7-1 — Gate G and the preservation tag (2026-10-26, Stage G7)
 
 - **Choice:** the gate items that no earlier proof covers are checked by one script, `tools\g7_gate_check.py` (9 checks, see `docs\GATE_G.md`); the others are the proofs of F and G run again on the final code. `ARCHITECTURE.md` was rewritten (it still described the Phase D plan) and the script checks that it names every source file.

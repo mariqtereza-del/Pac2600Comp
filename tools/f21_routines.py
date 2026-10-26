@@ -23,7 +23,7 @@ BS = chr(92)
 
 # stage, F8 name, native name, entry, one-line description of what was written
 DONE = [
-    ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/routines.cpp: both scores and both lives to 0'),
+    ('F21.1', 'CLEAR_SCORES', 'clear-scores', 0xFC7D, 'game::clearScores in src/game/logic/players.cpp: both scores and both lives to 0'),
     ('F21.25', 'MAIN/start-up', 'start-up', 0xF000, 'game::startUp ($F000-$F052): the power-on set-up; goes on at the frame start'),
     ('F21.24', 'MAIN/frame start', 'frame-start', 0xF7D6, 'game::frameStart ($F7D6-$F87A): sync and blank on, sprite pictures from the cartridge tables, frame counter, bonus timer, colour mask; goes on at $F87C'),
     ('F21.23', 'MAIN/bottom logic', 'bottom-logic', 0xF4E7, 'game::bottomLogic ($F4E7-$F7CE): pause and event timer, freeze set-up, collisions, wafers, new map, Pac-Man joystick and moves, sound; ends by going on at $F7D1'),
@@ -209,7 +209,7 @@ def write_doc(results, n, found_w, used_w, found_r, ok, union=None, clean=0, tot
     d = ['# Stage F21: the routine ledger (2026-10-26)', '',
          '`python -I tools%sf21_routines.py rom%spacman.a26` checks every rewritten routine and writes this ledger. **F21 is not one session: it is one routine per session** (F21.1, F21.2, ...). This document is the list, kept up to date by each session.' % (BS, BS), '',
          '## How a routine is rewritten (the protocol)', '',
-         '1. The routine is written as a C++ function in `src%sgame%sroutines.cpp`, working on the game state (`game::GameState`, `src%sgame%sstate%sstate.hpp`: named fields in the order of the 128 memory bytes of the original; the F7 address names are only in `src%stestsupport`). No ROM data and no emulator code is allowed there; things the original reads from the cartridge come later through the data loader (F22).' % ((BS,) * 6),
+         '1. The routine is written as a C++ function in `src%sgame%slogic%s*.cpp` (one file per job, G1 layout), working on the game state (`game::GameState`, `src%sgame%sstate%sstate.hpp`: named fields in the order of the 128 memory bytes of the original; the F7 address names are only in `src%stestsupport`). No ROM data and no emulator code is allowed there; things the original reads from the cartridge come later through the data loader (F22).' % ((BS,) * 7),
          '2. An adapter in `src%slockstep%snatives.cpp` registers it under the entry address of the original and reproduces what the original leaves in the registers and flags (the callers may depend on them).' % (BS, BS),
          '3. `lockstep.exe ... --native <name> --verify` runs all recorded games with the native routine in place of the original. It checks (a) all 128 bytes after every frame and (b) at every call, the native results against the original code run on a copy (memory, `A`, `X`, `Y`, stack pointer, return address, flags). Both must be clean in all 70 games.',
          '4. Only then is the routine marked done here and in `PLAN.md`, and the stage is committed. Fixtures that are wrong on purpose prove the checks bite.', '',

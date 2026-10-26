@@ -4,7 +4,7 @@
 
 ## How a routine is rewritten (the protocol)
 
-1. The routine is written as a C++ function in `src\game\routines.cpp`, working on the game state (`game::GameState`, `src\game\state\state.hpp`: named fields in the order of the 128 memory bytes of the original; the F7 address names are only in `src\testsupport`). No ROM data and no emulator code is allowed there; things the original reads from the cartridge come later through the data loader (F22).
+1. The routine is written as a C++ function in `src\game\logic\*.cpp` (one file per job, G1 layout), working on the game state (`game::GameState`, `src\game\state\state.hpp`: named fields in the order of the 128 memory bytes of the original; the F7 address names are only in `src\testsupport`). No ROM data and no emulator code is allowed there; things the original reads from the cartridge come later through the data loader (F22).
 2. An adapter in `src\lockstep\natives.cpp` registers it under the entry address of the original and reproduces what the original leaves in the registers and flags (the callers may depend on them).
 3. `lockstep.exe ... --native <name> --verify` runs all recorded games with the native routine in place of the original. It checks (a) all 128 bytes after every frame and (b) at every call, the native results against the original code run on a copy (memory, `A`, `X`, `Y`, stack pointer, return address, flags). Both must be clean in all 70 games.
 4. Only then is the routine marked done here and in `PLAN.md`, and the stage is committed. Fixtures that are wrong on purpose prove the checks bite.
@@ -62,7 +62,7 @@
 | F21.4 | `WRAP_TO_BOTTOM` | $FD26 | 12 | **done** | game::wrapToBottom: direction bits $30 and y = $51 (the opening in the bottom wall); registered together with WRAP_TO_TOP and the shared end WRAP_SET_Y |
 | F21.12 | `TRY_UP` | $FB36 | 14 | **done** | game::tryDirection (direction 3): may the object turn up here? Reads the maze wall table through game::Cartridge; if yes it sets the state and DROPS THE CALLER'S RETURN |
 | F21.2 | `SWAP_PLAYERS` | $FB9F | 14 | **done** | game::swapPlayers: the 20-byte player blocks $88-$9B and $9C-$AF exchanged |
-| F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/routines.cpp: both scores and both lives to 0 |
+| F21.1 | `CLEAR_SCORES` | $FC7D | 14 | **done** | game::clearScores in src/game/logic/players.cpp: both scores and both lives to 0 |
 | F21.17 | `SOUND_START` | $FF43 | 18 | **done** | game::soundStart: start a sound effect unless a higher-ranking one plays; three cartridge tables through game::Cartridge |
 | F21.13 | `TRY_PAIR_UD` | $FB05 | 20 | **done** | the vertical pair itself (inside the TRY_PAIR_1 rewrite; only reached from it) |
 | F21.13 | `TRY_PAIR_LR` | $FB22 | 20 | **done** | the horizontal pair itself (inside the TRY_PAIR_2 rewrite; only reached from it) |

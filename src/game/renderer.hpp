@@ -3,7 +3,9 @@
 // model of F23.1. After each game frame, finishPicture() closes the picture and gives it.
 #pragma once
 #include "kernel.hpp"
-#include "routines.hpp"
+#include "chips.hpp"
+#include "data/cartridge.hpp"
+#include "state/state.hpp"
 #include "tia_audio.hpp"
 #include "tia_video.hpp"
 

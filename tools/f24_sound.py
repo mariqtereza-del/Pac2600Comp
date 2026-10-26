@@ -5,7 +5,7 @@ r"""Stage F24.2: the native game's sound, frame by frame.
 Runs build\lockstep\lockstep_native.exe --pictures --sound over all 70 baseline games: the native game (logic, drawing code, video-chip model, collision
 flags, sound-chip model; no 6502, no emulator, no original code) plays the recorded inputs; after every frame the 128 memory bytes (all but the stack bytes),
 the fingerprint of the picture and the fingerprint of the sound handed over are compared with the golden trace. The sound writes of the game's bottom logic
-are placed at the moment given by the processor cycles of the original code (counted along the path taken, src\game\routines.cpp). Control: every such write
+are placed at the moment given by the processor cycles of the original code (counted along the path taken, src\game\logic\bottom.cpp). Control: every such write
 one cycle late must change the sound. Writes docs\F24_SOUND.md. The ROM is only read.
 """
 import concurrent.futures

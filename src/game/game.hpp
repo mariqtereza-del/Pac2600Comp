@@ -4,7 +4,15 @@
 // timed chip writes to the picture sink, if one is set (the video-chip model of F23.1 turns them into the picture).
 #pragma once
 #include "kernel.hpp"
-#include "routines.hpp"
+#include "chips.hpp"
+#include "data/cartridge.hpp"
+#include "inputs.hpp"
+#include "logic/bottom.hpp"
+#include "logic/flow.hpp"
+#include "logic/frame_start.hpp"
+#include "logic/top.hpp"
+#include "state/cycles.hpp"
+#include "state/state.hpp"
 
 namespace game {
 

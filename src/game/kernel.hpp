@@ -6,7 +6,9 @@
 #pragma once
 #include <cstdint>
 
-#include "routines.hpp"
+#include "chips.hpp"
+#include "data/cartridge.hpp"
+#include "state/state.hpp"
 
 namespace game {
 

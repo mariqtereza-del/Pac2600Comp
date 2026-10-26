@@ -1,6 +1,22 @@
 #include "natives.hpp"
 
-#include "../game/routines.hpp"
+#include "../game/logic/players.hpp"
+#include "../game/logic/maze.hpp"
+#include "../game/logic/objects.hpp"
+#include "../game/logic/animation.hpp"
+#include "../game/logic/scoring.hpp"
+#include "../game/logic/ghosts.hpp"
+#include "../game/logic/flow.hpp"
+#include "../game/logic/collisions.hpp"
+#include "../game/logic/pacman.hpp"
+#include "../game/logic/bottom.hpp"
+#include "../game/logic/top.hpp"
+#include "../game/logic/frame_start.hpp"
+#include "../game/picture/status_bar.hpp"
+#include "../game/sound/sound_logic.hpp"
+#include "../game/chips.hpp"
+#include "../game/inputs.hpp"
+#include "../game/state/cycles.hpp"
 #include "../testsupport/state_bytes.hpp"
 
 namespace lockstep {

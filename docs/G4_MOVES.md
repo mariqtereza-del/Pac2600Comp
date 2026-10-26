@@ -52,3 +52,13 @@ Evidence (final build, 2026-10-26): `tools\build_lockstep.cmd` and `tools\build_
 
 `routines.cpp` 827 to 161 lines (top logic and frame start remain), `routines.hpp` 101 to 46. Reasons and the one new function: T-G4-2.
 Evidence: both builds OK; the ten proofs `problems: []`, `result: OK`; `f25_games --games 120`: 120 new games (2,400,000 frames) and the 70 recorded games identical in memory, picture and sound, `result: OK`; `d10_replay_compare`: 350,460 key frames, 0 differences.
+
+## G4.5 — top logic, frame start, routines.* removed (2026-10-26)
+
+| File (`src\game\logic\`) | What is in it | Lines (hpp/cpp) |
+| --- | --- | --- |
+| `top` | `topLogic` with its helper functions | 21 / 111 |
+| `frame_start` | `frameStart` | 21 / 62 |
+
+`routines.cpp` and `routines.hpp` are deleted (`git rm`, the owner allowed it for G4). `game.hpp`, `kernel.hpp`, `renderer.hpp`, `renderer.cpp`, `kernel.cpp` and the lockstep adapters now include the headers they use. After G4.5 `src\game` has no file over 400 lines except `kernel.cpp` (646, G4.6); `pacman.cpp` is the largest logic file (254).
+Evidence: both builds OK; the ten proofs `problems: []`, `result: OK`; 128 of 128 layout checks; `f25_games --games 120` (2,400,000 new frames + 70 recorded games) `result: OK`; `d10_replay_compare` 350,460 key frames, 0 differences.

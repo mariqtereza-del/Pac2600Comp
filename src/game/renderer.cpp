@@ -1,4 +1,5 @@
 #include "renderer.hpp"
+#include "state/cycles.hpp"
 
 #include <cstdio>
 

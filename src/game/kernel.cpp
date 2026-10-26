@@ -1,5 +1,6 @@
 #include "kernel.hpp"
 #include "data/rom_tables.hpp"
+#include "picture/status_bar.hpp"
 
 namespace game {
 

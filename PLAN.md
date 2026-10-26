@@ -2673,7 +2673,23 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G4_MOVES.md`, `DECISIONS.md` (T-G4-2), `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G4.4: Move ghosts, Pac-Man, collisions and flow`.
       - **Next stage:** G4.5.
-        5. **[Not started] G4.5 — `logic\bottom`, `top`, `frame_start`;** `routines.*` deleted; full long suite.
+        5. **[Done] G4.5 — `logic\top`, `frame_start`;** `routines.*` deleted; full long suite (see the entry below).
+    - **G4.5 — Move the top logic and the frame start; delete `routines.*`** *(expanded and done 2026-10-26)*
+      - **Objective:** `topLogic` to `logic\top`, `frameStart` to `logic\frame_start`; `routines.cpp` and `routines.hpp` removed; every file includes what it uses.
+      - **Why it matters:** the old catch-all is gone; a reader finds each piece by its name.
+      - **Prerequisites:** G4.4 Done (`7eb6630`), owner's OK to remove `routines.*` (given in G4.1).
+      - **What Claude Code will do:** the same script method; `git rm` of the two emptied files; explicit includes in `game.hpp`, `kernel.hpp`, `renderer.hpp`, `renderer.cpp`, `kernel.cpp` and the lockstep adapters; both CMake lists; texts in `tools\f21_routines.py`, `f24_sound.py`, `CLAUDE.md`.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** behaviour unchanged; no `routines.*` anywhere in `src`.
+      - **Verification:** both builds; the ten proofs; `f25_games --games 120`; `d10_replay_compare`.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** hidden includes (two found: `kernel.cpp` needed the status bar, `renderer.cpp` the cycle counter).
+      - **Recovery:** return to `7eb6630` (with your OK).
+      - **Documentation updates:** `docs\G4_MOVES.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G4.5: Move the top logic and the frame start; remove routines.*`.
+      - **Next stage:** G4.6.
         6. **[Not started] G4.6 — `picture\kernel_*`** (cut `drawPicture` along the F18 stages).
         7. **[Not started] G4.7 — `src\host` split** (`options`, `screen`, `pads`, `pacer`, `checks`); window, sound and pad checks.
 5. **[Not started] G5 — Remove leftovers.** Duplicated logic, unused helpers, literal blocks (or your documented approval of each remaining one), and any dependency the game no longer needs.

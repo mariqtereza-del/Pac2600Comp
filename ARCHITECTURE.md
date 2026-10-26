@@ -1,95 +1,103 @@
-# Architecture (Stage D1, 2026-10-24)
+# Architecture (rewritten in Stage G7, 2026-10-26)
 
-What the program is made of, who wrote each part, and what changes in Phase 2. It describes the **plan**; each part is marked with the stage that builds it. Facts about the game come from `docs\` (measured), not from memory.
+How the finished preservation program is put together. The first version of this page (Stage D1) described a Phase D plan: a window around the Stella emulator core. That plan was carried out, and then in Phases F and G the emulator was replaced by our own game code, proved identical to the original frame by frame. This page describes what exists now.
 
-## 1. The three parts of the Phase 1 program
+## 1. Two programs, one game
 
-| Part | Whose code | What it does | Where it lives |
-| --- | --- | --- | --- |
-| **Host** | Ours (new, Phase D) | Window, fullscreen, correct picture shape, sound output, keyboard and pad, frame pacing, ROM finding, recording of inputs | `src\host\` |
-| **Emulation core** | Stella team, GPL v2 (vendored, never edited) | Pretends to be the 2600's chips: the 6507 processor, the TIA (picture and sound) and the RIOT (RAM, timer, switches, joystick ports) | `third_party\stella\src\` |
-| **The game** | Atari, 1982 (the player's own ROM) | Every rule, picture and sound. Never inside our repository or release | `rom\pacman.a26` locally |
+| Program | What is inside | Used for |
+| --- | --- | --- |
+| `pacman2600.exe` | window, sound, controls, **our own game code** (`src\game`). No emulator, no cartridge code. | what a player runs |
+| `pacman2600_ref.exe` | the same program with the Stella 7.0 emulator core running the original ROM instead of our game | the REFERENCE: golden traces are made with it; never shipped |
 
-The program is honestly an **emulator front-end**: our code for everything around the game, emulation for the game itself.
+Both are built together by `tools\build_host.cmd`. The ROM is not an input of the game. At start-up the program asks for the player's own ROM file and checks only its size (4,096 bytes) and SHA-1 (D-009). A wrong or missing file means the program refuses to start. The game then runs from its own tables.
 
-## 2. How the parts connect
+## 2. The modules
 
 ```
- keyboard / pad  -->  Host input  -->  switches + joystick events
-                                              |
- your .a26 file  -->  Host ROM loader --> Stella core (6507 + TIA + RIOT) runs the ROM
-                                              |
-              one call per game frame ("run a frame")
-                                              |
-        picture (160 x 228 indexed pixels)  +  audio samples  +  128 bytes of RAM
-                 |                                  |                      |
-        Host renderer (SDL3)               Host sound (SDL3)       tests and recordings only
+                         +--------------------------------------------------+
+                         |  src\host   the Windows program                  |
+                         |  main - options - rom_choice - rom_finder        |
+                         |  play_window - headless - window_checks - pads   |
+                         |  screen - layout - window_tracker - windowstate  |
+                         |  audio - pacer - controls - inputlog - trace     |
+                         |  settings - common - ntsc_palette                |
+                         |  native_emulator (our game)  emulator (Stella,   |
+                         |  reference program only)                         |
+                         +----------------------+---------------------------+
+                                                | one call per frame: Game::runFrame(inputs, chip)
+                                                v
+ +-----------------------------------------------------------------------------------------------+
+ |  src\game   the game                                                                           |
+ |                                                                                               |
+ |   game            runs one frame:  top logic -> drawing code -> bottom logic -> frame start   |
+ |                                                                                               |
+ |   logic\   the rules                       picture\ + kernel   the drawing code               |
+ |     top  bottom  frame_start                 kernel (drawPicture)  kernel_internal            |
+ |     pacman  ghosts  objects  animation       kernel_positions  kernel_maze  kernel_score      |
+ |     maze  scoring  collisions  flow          status_bar                                       |
+ |     players                                                                                   |
+ |   sound\sound_logic   which sound plays when                                                  |
+ |                                                                                               |
+ |   renderer   turns the drawing code's timed writes into the picture (tia_video)               |
+ |   tia_video  the video chip's behaviour:  writes in, 160 x 228 picture out                    |
+ |   tia_audio  the sound chip's behaviour:  writes in, samples out                              |
+ |   chips      the interfaces the game talks to      inputs   what the game is told each frame  |
+ |                                                                                               |
+ |   state\  state (the 128 bytes of the original, as named fields)   cycles (cy(n) bookkeeping) |
+ |   data\   tables (508 bytes, 34 tables, generated)     rom_check (size and SHA-1, nothing else)|
+ +-----------------------------------------------------------------------------------------------+
 ```
 
-- **Link style (T-D1-1):** the host links Stella's core as a static library (`stella_core`, built by `third_party\CMakeLists.txt`) and calls Stella's own libretro wrapper class `StellaLIBRETRO` directly. The measuring tools of Phase C already work this way. The `stella_libretro.dll` also builds, but is not needed.
-- **What the wrapper gives us** (the probes in `tools\stella_probe` already use these): load a ROM from memory (`setROM`), create the console, run one frame (`runFrame`), read the picture (`tia.frameBuffer()`, 160 wide), set joystick and switch events (`setInputEvent`), and read the 128 bytes of RAM (`m6532().getRAM()`). Saving and loading emulator state is used by `stella_bot`.
-- **One direction only:** the host tells the core what the player does and asks for a frame. The core never calls into host code.
+**The one-way rule.** A box may use the boxes below it and never those above: `data` and `state` use nothing of the game; `logic`, `sound_logic` and `picture` use `state` and `data`; `game` uses the logic and the drawing code; `renderer`, `tia_video` and `tia_audio` are the chip models that receive the writes; the host calls `game` and the chip models and knows nothing of the rules inside. Only `rom_check.cpp` opens a file (`tools\g7_gate_check.py` checks that).
 
-## 3. File by file (planned)
+## 3. What happens in one frame
 
-| File or folder | Owner | Stage | Job |
-| --- | --- | --- | --- |
-| `src\host\main.cpp` | Ours | D2 (built) | Starts SDL3, chooses what to run from the command line, makes the window, closes cleanly (G4.7: since then only `main()`; the parts are `options`, `rom_choice`, `screen`, `pads`, `pacer`, `window_tracker`, `window_checks`, `play_window`, `headless` and `common.hpp`, see `docs\G4_MOVES.md`). Also `src\host\CMakeLists.txt` and `tools\build_host.cmd` |
-| `src\host\rom_finder.*` | Ours | D3 (built) | Finds the ROM (command line, saved path, `roms` folder, file dialog) and checks size and SHA-1 `0940fea7…dbb1`. Tests: `tests\host\test_rom_finder.cpp` |
-| `src\host\emulator.*` | Ours | D4 (built) | Thin wrapper around `StellaLIBRETRO`: load, run frame, picture, RAM, state. The only host file that includes Stella headers |
-| `src\host\layout.*` | Ours | D6 (built) | Where the picture goes in the window: pixel shape (Stella's 19:10 for this ROM), Sharp / Fill / TV frame. Tests: `tests\host\test_layout.cpp` |
-| `src\host\settings.*` | Ours | D7 (built) | Reads and writes single `key=value` lines of `settings.ini`, keeping the other lines. Used by `rom_finder` and `windowstate` |
-| `src\host\windowstate.*` | Ours | D7 (built) | The remembered window (position, size, fullscreen) and its safety correction for monitors. Tests: `tests\host\test_windowstate.cpp` |
-| `src\host\audio.*` | Ours | D8 (built) | Plays the emulator's sound through one SDL audio stream with a 4-frame cushion; counts shortages, drops and padding. D9: the `Pacer` in `main.cpp` starts game frames from a timer steered by the sound queue |
-| `src\host\controls.*` | Ours | D10 (built) | The key table, the keyboard state (what keys add up to, opposite directions cancel, release on focus loss) the rules for the PS4 pad (stick, buttons, merge with the keyboard) and the text of the F1 list. The `Pads` class in `main.cpp` opens and reads the real pads (D11). Tests: `tests\host\test_controls.cpp` |
-| `src\host\inputlog.*` | Ours | D13 (built) | The input recording file: format, recorder, reader (the ROM's SHA-1 and the number of frames in the header, one line per change of input). No window code. Used by `--record` and `--replay` in `main.cpp`. |
-| `src\host\trace.*` | Ours | E1 (built) | The frame trace file (one line per frame: input, switches, picture and sound fingerprints, 128 memory bytes) and the fingerprint function. No emulator code. Written by `--trace` in `main.cpp`; used by `tools\baseline.py` and, in Phase F, by the lockstep tool. |
-| `src\host\video.*` | Ours | D5-D7 (D5-D6: drawn from `main.cpp` for now) | Palette to colours, picture to window, correct shape (12:7 to be confirmed), whole-number scaling, fullscreen |
-| `src\host\audio.*` | Ours | D8 | Core audio samples to an SDL3 audio stream with a small steady buffer |
-| `src\host\pacing.*` | Ours | D9 | Advances the game at its own measured rate, not the monitor's (60.000 Hz vs 59.923 Hz is decided in D9) |
-| `src\host\input.*` | Ours | D10-D12 | Keyboard, PS4 pad, Select/Reset, difficulty and Colour/B&W switches |
-| `src\host\recorder.*` | Ours | D13 | Records every frame's input to an `.inputs` file and plays it back; picture fingerprint per frame |
-| `tools\stella_probe\*.cpp` | Ours | C3-C7 | Measuring tools (already exist). Reused by tests |
-| `third_party\SDL3\` | SDL team, zlib licence | B7 | Window, sound, controllers (vendored, never edited) |
-| `third_party\stella\` | Stella team, GPL v2 | B7 | The emulation core (vendored, never edited; build-time fixes only in `third_party\CMakeLists.txt`, T-B7-4) |
-| `rom\`, `*.a26` | Atari | A3 | **Never** committed, packaged or published (Rule 7) |
+`Game::runFrame(inputs, chip)` (`game.cpp`), 262 scanlines of the original:
 
-Stella parts that matter most (all under `third_party\stella\src\`): `emucore\M6502.cxx` (processor), `emucore\tia\TIA.cxx` and its Player, Missile, Ball, Playfield and Audio files (picture and sound), `emucore\M6532.cxx` (RAM, timer, ports), `emucore\Cart4K.cxx` (the plain 4 KB cartridge this game is), and `os\libretro\StellaLIBRETRO.*` (the wrapper we call).
+1. **Top logic** (`top`): reads the joystick and switches, moves Pac-Man (`pacman`) and the ghosts (`ghosts`, `objects`, `animation`), starts or ends a game (`flow`, `players`).
+2. **Drawing code** (`kernel`, `kernel_positions`, `kernel_maze`, `kernel_score`, `status_bar`): the original draws the picture line by line by writing to the video chip at exact moments. `drawPicture` makes the same timed writes from the state and the tables.
+3. **Chip models**: `renderer` hands those writes to `tia_video`, which gives the 160 x 228 picture and the collision flags; the sound writes of the game go through `tia_audio`, which gives the samples.
+4. **Bottom logic** (`bottom`, `collisions`, `scoring`, `maze`, `sound_logic`): reads the collision flags, eats wafers and ghosts, adds score, starts sounds, handles the timers (`flow`).
+5. **Frame start** (`frame_start`): the next frame's counters and the video sync.
 
-## 4. Who decides what, in Phase 1
+The functions are not in the order of the 6502 code. The order of every step that touches state or chip is the original's. The `cy(n)` calls (`cycles`) count the original's processor cycles along the path taken, because the sound writes must happen at the right moment inside the frame. Reading a rule, ignore them.
 
-| Behaviour | Decided by | Evidence |
-| --- | --- | --- |
-| Rules, score, ghosts' behaviour, mazes, difficulty, bonus item, game variations | **The ROM** | `docs\CONTROLS.md`, `docs\CAPTURES.md` |
-| 262 lines per frame, 19,912 CPU cycles per frame, drawn lines 34-222, 160 columns | **The ROM**, counted by the core | `docs\DISPLAY.md`, `docs\TIMING.md` |
-| The three sounds (start tune, scoring blip, death) as TIA register writes | **The ROM** | `docs\SOUND.md` |
-| What those register writes become as samples and pixels | **The Stella core** | `docs\SOUND.md` (audio format), `docs\DISPLAY.md` |
-| Frame rate shown (60.000 vs 59.923 Hz) | **The host** (choice in D9) | `docs\TIMING.md` |
-| Window, scaling, fullscreen, controls mapping, volume | **The host** | D5-D12 |
-| Phosphor blending of flicker | **The host** (choice in D6) | `docs\DISPLAY.md` |
+## 4. The state and the tables
 
-Nothing in the host may change a game rule (Rule 2). Host features that alter the experience are modern features and stay switchable and separate (Rule 3).
+- `state` holds the original's 128 bytes of memory as named fields (`GameState`): exactly the original's layout, because the proofs compare it byte for byte after every frame. The names, bit meanings (`kObj...`, `kPill...`) and the two player blocks are described in the header.
+- `tables` (generated by `tools\g5b_make_tables.py`) holds the 34 tables (508 bytes) of maze, shapes, colours, sounds, speeds and scores. It is the list in `docs\EMBEDDED_DATA.md`, and Rule 7 allows exactly these bytes. No program code of the cartridge is in the program, the repository or a release. A read outside a table stops the program with a message.
+- `rom_check` is the only code that reads a ROM file, to check size and SHA-1 (an indirect copy protection: no legal dump, no start).
 
-## 5. What Phase 2 replaces
+## 5. The host program
 
-| Today (Phase 1) | Phase 2 | Stays |
-| --- | --- | --- |
-| Stella core runs the ROM | Native C++ game logic (`src\game\`), written from the reverse-engineered ROM (Phases F-G) | The whole host |
-| Stella's TIA draws the picture | A native renderer producing the same pixels | Window, scaling, fullscreen |
-| Stella's TIA makes the sound | A native TIA-style sound generator producing the same samples | Audio output |
-| The ROM supplies the game | The player's ROM is still read at start-up for maze shape, sprites, colours and sound tables, so our code contains logic only, not Atari's art | ROM finder and checks |
-| - | Lockstep tests: original (core) and rewrite run on the same recorded inputs, comparing the 128 RAM bytes, picture and sound each frame | The Phase 1 build as a separate test tool and reference forever |
+| Part | Job |
+| --- | --- |
+| `main`, `options` | command line, what to run |
+| `rom_choice`, `rom_finder` | find the player's ROM and run the check (D3, D-009) |
+| `play_window`, `screen`, `layout`, `window_tracker`, `windowstate`, `settings` | the window, the picture modes, fullscreen, remembered position, `settings.ini` |
+| `audio`, `pacer` | sound output; the game runs at the console's 59.9227 frames a second, steered by the sound card |
+| `controls`, `pads`, `inputlog` | keyboard, game pad, recordings and replays |
+| `headless`, `window_checks`, `trace` | window-less runs and the self-checks used by the tests; the per-frame trace |
+| `native_emulator` | the adapter between the host and `game::Game` |
+| `emulator` | the same adapter over Stella (reference program only) |
+| `common`, `ntsc_palette` | shared helpers; the colour table made by `tools\f26_palette.py` |
 
-When every recorded frame matches, the core is removed from the release build. It remains in the test tool. Until then the program is the emulator front-end described above.
+## 6. The test side
 
-## 6. Licences in short
+| Where | What |
+| --- | --- |
+| `src\lockstep` | the lockstep tool: runs the original 6502 code and our game side by side and compares all 128 bytes, the picture and the sound after every frame (`lockstep.exe`, `lockstep_native.exe`) |
+| `src\testsupport` | the original's address names and the byte conversion of the state, used only by tests |
+| `tests\game`, `tests\host` | unit tests (tables, ROM check, chip models, drawing code, controls, layout, recordings, window state); `tests\game\data` holds fingerprint files that let a test replay whole games with no ROM |
+| `tools` | the proof scripts of every stage (`f..._*.py`, `g..._*.py`), build scripts, the gate checks |
+| `baseline` | the 70 recorded games (inputs and descriptions; the traces stay local) |
 
-- Our code: licence chosen at J1.
-- SDL3: zlib, free to use.
-- Stella: GPL v2. Any release containing it must also offer complete source under the GPL (`docs\DEPENDENCIES.md`). The native build later will not contain Stella.
+The proofs run against the REFERENCE program and the local ROM; they are test tools and are never part of a release.
 
-## 7. Not decided yet
+## 7. Licences in short
 
-- Default scaling mode (Gate D). The pixel shape is settled in D6: Stella's own 19:10 for this ROM (T-D6-1); 12:7 stays selectable.
-- Pacing rate (D9) and flicker presentation (D6).
-- Whether the `.inputs` format is shared with the test tools' script format (D13).
+SDL3 (zlib) is in `third_party` and linked into the window program. Stella 7.0 (GPL-2.0-or-later) is in `third_party` and linked only into the reference program; the release holds the source (see `docs\DEPENDENCIES.md`). The Microsoft runtime files in a release come from the Visual Studio Build Tools. Our own code carries the project's licence.
+
+## 8. Where the details are
+
+`docs\GATE_G.md` (the gate checklist), `docs\EMBEDDED_DATA.md` (the tables), `docs\CONVENTIONS.md` (the rules for the source), `docs\F20_LOCKSTEP.md` and `docs\F25_LOCKSTEP.md` (the proofs), `docs\G1_MODULE_LAYOUT.md` (why the modules are cut this way), `DECISIONS.md` (every choice), `docs\GLOSSARY.md` (terms).

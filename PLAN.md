@@ -2805,7 +2805,22 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Recovery:** comment and name edits only; return to `0324c20` (with the owner's OK).
       - **Documentation updates:** `docs\G6_STRANGER_TEST.md`, `DECISIONS.md` (T-G6-1), `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G6: Stranger test`. **Next stage:** G7 — Gate G.
-7. **[Not started] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.** **D-009 adds:** the game builds and runs with no ROM input (only the start-up check reads the file); the embedded tables are exactly the ones listed in `docs\EMBEDDED_DATA.md` and contain no machine code; Rule 7 reads as the owner approved it.
+7. **[Done] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.** **D-009 adds:** the game builds and runs with no ROM input (only the start-up check reads the file); the embedded tables are exactly the ones listed in `docs\EMBEDDED_DATA.md` and contain no machine code; Rule 7 reads as the owner approved it.
+    - **G7 — Gate G** *(expanded 2026-10-26)*
+      - **Objective:** check that Phase G is complete and tag the 1.0.0 preservation build: the permanent baseline that modern features may never alter.
+      - **Why it matters:** Phase H (tests) and Phase I (new features) build on this; the tag is what "unchanged original behaviour" means from here on.
+      - **Prerequisites:** G6 Done (`83bcf22`), clean tree.
+      - **What Claude Code will do:** rewrite `ARCHITECTURE.md` (it still describes the Phase D emulator front-end) for the finished program, with a diagram of the modules and a check that every source module is named in it; write `tools\g7_gate_check.py` (the checks that are not already a proof: no ROM or reference file in Git, the embedded tables equal the list in `docs\EMBEDDED_DATA.md` and are all data, a byte scan of `pacman2600.exe` for cartridge code, the Rule 7 text equals the owner's approved text, no `LITERAL`/`TODO` marker, the game runs without a ROM path, the architecture names every module); run the whole suite on the final code; write `docs\GATE_G.md`; commit; tag `1.0.0-preservation` (local; nothing is pushed).
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** every item of `docs\GATE_G.md` PASS.
+      - **Verification:** `python -I tools\g7_gate_check.py rom\pacman.a26` says `result: OK`; both builds; `test_rom_check`, `test_tables`, `test_no_rom`; the ten proofs; `f25_games --games 120`; `d10_replay_compare`; the host checks of both programs; `g2_conventions_check --strict`; `git fsck`.
+      - **Completion criteria:** all items PASS; one commit; the tag exists and points at it.
+      - **Potential problems:** an item that fails stops the gate: the tag is not made and the failure is reported.
+      - **Recovery:** documents and one script; return to `83bcf22` (with the owner's OK); a tag can be deleted (with the owner's OK).
+      - **Documentation updates:** `docs\GATE_G.md`, `ARCHITECTURE.md`, `DECISIONS.md` (T-G7-1), `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G7: Gate G` and the tag `1.0.0-preservation`. **Next stage:** H1 (Phase H, automated testing).
 
 Guarding against "generic Pac-Man": no rule may be simplified to what arcade Pac-Man or a tutorial does. If cleaner code would change one byte of RAM or one pixel, the original behaviour wins and the code gets a comment instead.
 

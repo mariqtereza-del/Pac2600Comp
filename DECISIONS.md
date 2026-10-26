@@ -154,6 +154,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G7-1 — Gate G and the preservation tag (2026-10-26, Stage G7)
+
+- **Choice:** the gate items that no earlier proof covers are checked by one script, `tools\g7_gate_check.py` (9 checks, see `docs\GATE_G.md`); the others are the proofs of F and G run again on the final code. `ARCHITECTURE.md` was rewritten (it still described the Phase D plan) and the script checks that it names every source file.
+- **Why a byte scan:** D-009 and Rule 7 forbid the cartridge's program code in Git or a release. The scan looks for 3,368 windows of 8 code bytes (code per the F6 map, outside the tables, 4 or more different values) in the program and in the tracked files. It cannot prove absence in every disguise; the limit is written in `docs\GATE_G.md`.
+- **Vendored files:** archives under `third_party\` (for example a macOS template in Stella's source) are upstream files, byte-identical to their releases; the check skips their file ending but still tests their size and SHA-1 against the ROM.
+- **The tag:** `1.0.0-preservation`, annotated, local only (nothing pushed), on the Stage G7 commit. From here modern features go in separate code, off by default; the behaviour at this tag is the reference.
+- **Reversible:** Yes (a tag can be deleted with the owner's OK).
+
 ### T-G6-1 — How the stranger test was done, and what it changed (2026-10-26, Stage G6)
 
 - **Method:** four fresh agents, two rounds, one pair per round, told only a question and the folder `src\game` (read-only, no docs, no running); answer key written before each round; every claim needed a file and line. Details and grades: `docs\G6_STRANGER_TEST.md`.

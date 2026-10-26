@@ -31,3 +31,6 @@ __pycache__/
 
 # Your own input recordings (tools\record_inputs.cmd).
 /recordings/
+
+# Claude Code personal settings (sound hooks)
+.claude/settings.local.json

@@ -51,10 +51,26 @@ target_link_libraries(audio PUBLIC SDL3::SDL3)
 add_library(emulator STATIC emulator.cpp)
 target_link_libraries(emulator PUBLIC stella_core)
 
+# The game itself (Stage F26): the rebuilt logic, the drawing code and the chip models of src/game, with no Stella and no 6502.
+add_library(game_native STATIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/../game/routines.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/game.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/kernel.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../game/tia_video.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/tia_audio.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/renderer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../game/cartridge_data.cpp)
+target_compile_options(game_native PRIVATE /W4 /permissive-)
+add_library(emulator_native STATIC native_emulator.cpp)
+target_compile_options(emulator_native PRIVATE /W4 /permissive-)
+target_link_libraries(emulator_native PUBLIC game_native)
+
 # WIN32 = a normal windowed program (no console window when double-clicked).
+# pacman2600 is the game: it plays with the rebuilt game (emulator_native) and contains no Stella.
 add_executable(pacman2600 WIN32 main.cpp)
 target_compile_options(pacman2600 PRIVATE /W4 /permissive-)
-target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator layout windowstate audio controls inputlog trace)
+target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator_native layout windowstate audio controls inputlog trace)
+
+# pacman2600_ref is the same program with Stella inside: the REFERENCE the tests compare with (golden traces are made with it). It is not part of a release.
+add_executable(pacman2600_ref WIN32 main.cpp)
+target_compile_options(pacman2600_ref PRIVATE /W4 /permissive-)
+target_link_libraries(pacman2600_ref PRIVATE SDL3::SDL3 rom_finder emulator layout windowstate audio controls inputlog trace)
 
 # Tests for the ROM finder (Stage D3): build/host/test_rom_finder.exe <scratch folder> <rom copy>
 add_executable(test_rom_finder ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_rom_finder.cpp)

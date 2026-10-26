@@ -16,7 +16,7 @@ import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-EXE = pathlib.Path(__import__('os').environ.get('PACMAN_EXE') or ROOT / 'build' / 'host' / 'pacman2600.exe')
+EXE = pathlib.Path(__import__('os').environ.get('PACMAN_EXE') or ROOT / 'build' / 'host' / 'pacman2600_ref.exe')
 BASE = ROOT / 'baseline'
 OUT = ROOT / 'reference' / 'baseline'
 

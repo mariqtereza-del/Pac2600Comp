@@ -62,7 +62,7 @@ def scratch_trace(bits, pokes, tag):
             out.append('%d %d' % (f, b))
             prev = b
     ins.write_text('\n'.join(out) + '\n')
-    args = [str(e2.ROOT / 'build' / 'host' / 'pacman2600.exe'), '--headless', str(e2.OUT / (tag + '.png')), str(e2.ROM), '--replay', str(ins),
+    args = [str(e2.ROOT / 'build' / 'host' / 'pacman2600_ref.exe'), '--headless', str(e2.OUT / (tag + '.png')), str(e2.ROM), '--replay', str(ins),
             '--trace', str(e2.OUT / (tag + '.trace')), '--settings', str(e2.OUT / (tag + '.ini'))]
     for p in pokes:
         args += ['--poke', p]

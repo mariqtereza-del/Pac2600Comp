@@ -176,8 +176,8 @@ $readme = @"
 PAC-MAN FOR PC (Atari 2600 version)   version $Version
 =====================================================
 
-This program plays the Atari 2600 game Pac-Man (1981) on your PC. It runs the game with the same
-emulation code as the Stella emulator, at the speed of a real 1981 NTSC console (59.92 pictures a second),
+This program plays the Atari 2600 game Pac-Man (1981) on your PC. It runs the game with its own rebuilt
+game code (proved identical to the original game, picture and sound, frame for frame, against the Stella emulator), at the speed of a real 1981 NTSC console (59.92 pictures a second),
 and it shows the picture in the right shape (12:7 pixels) with a black border, scaled to your screen.
 
 THE GAME IS NOT INCLUDED. You need your own copy of the game file (a 4096-byte "Pac-Man (1981) (Atari).a26").
@@ -218,8 +218,8 @@ FILES THE PROGRAM WRITES
   settings.ini next to pacman2600.exe: the path of your game file, the window place and size, the three switches, the soft glow.
 
 LICENCES AND SOURCE
-  This program contains the emulation code of Stella 7.0 (GNU General Public License version 2) and uses SDL 3.4.18
-  (zlib licence). Because of the GPL, this program is distributed under the GNU General Public License version 2:
+  This program contains no emulator, but its picture colours are the colour table of Stella 7.0 (GNU General Public License version 2)
+  and it uses SDL 3.4.18 (zlib licence). Because of the GPL, this program is distributed under the GNU General Public License version 2:
   see licences\Stella-License.txt. The complete source code of this program, with Stella and SDL, is in
       source\PacMan2600-$Version-source.zip     (how to build it: source\BUILDING.txt)
   The three Microsoft runtime files (msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll) are Microsoft's

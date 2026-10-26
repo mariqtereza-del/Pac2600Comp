@@ -134,6 +134,21 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-F26-1 — Two programs: the game without Stella, and the reference with it (2026-10-26, Stage F26)
+
+- **Choice:** `src\host\main.cpp` is built twice from the same source. `pacman2600.exe` is linked with `emulator_native` (`native_emulator.cpp`: class `Emulator` made of `src\game`: game logic, drawing code, video-chip and sound-chip models, data loader) and contains no Stella (a scan of the file for `Stella`, `libretro`, `M6502`, `TIA`, `Cartridge4K` finds none; 300 KB against 3 MB). `pacman2600_ref.exe` is linked with the old `emulator` (Stella) and is the REFERENCE: the tools that make golden traces use it (`toolsaseline.py`, `f25_games.py`, `f18_kernel.py`, `e5_entries.py`, `e8_entries.py`); the tools that test the game use `pacman2600.exe` (`d10_replay_compare.py`, `d14_side_by_side.py`, the gate check).
+- **Why:** a test that makes its own answers with the program under test proves nothing. Rule 9: the working reference stays buildable. One source file for both keeps the window, sound, keys and pad exactly the same.
+- **Memory:** the native game has no stack and no scratch bytes, so its trace differs from a golden trace in those 11 + 10 bytes by design (T-F21-27); `baseline.py check` therefore stays on the reference program, and the native game is compared field by field (picture, sound, all other memory).
+- **Reversible:** Yes.
+
+### T-F26-2 — The colours: Stella's table after its own adjustment (2026-10-26, Stage F26)
+
+- **Finding:** the first native build used the raw table of Stella's standard NTSC palette; the saved pictures differed from the reference in 12 colours (for example `000094` against `00008a`). Stella adjusts every palette before showing it (`PaletteHandler::adjustedPalette`: gamma 1.1333 with its default settings; the hue/saturation step is an identity).
+- **Choice:** `tools26_palette.py` computes the 128 colours the same way, in float arithmetic, and writes `src\host
+tsc_palette.hpp`. The colours are values, not Atari data; because they come from Stella's GPL source the licence notice stays in the release.
+- **Result:** saved pictures of four games (BL-001, BL-046, BL-057, BL-070), with and without soft glow, are pixel-identical to the reference's; the bot route (9,800 frames, 10 whole pictures) has 0 differences.
+- **Reversible:** Yes.
+
 ### T-F25-1 — Two findings of the random games: the long frame start, and the emulator's input rule (2026-10-26, Stage F25)
 
 - **The long frame start (a real property of the original, now in the game):** in a game with black and white switched on while the title screen is showing, the frame start ($F83D-$F878) takes one cycle more than usual and the strobe of the wait for the end of the line falls on the first cycle of the next line, so the wait lasts a whole extra line: that frame has 263 lines (the vertical sync ends a line later) and in the next frame everything counted from the sync is one line earlier (the picture starts on line 33, its frame has 261 lines). `game::Game` now tracks it (`shift_`, `lastFrameLines()`); the drawing code takes the kernel start line as a parameter; the sound model gets the real number of lines of each frame. Found because the random `switches` games turned black and white on during the title screen (the 70 recordings never did).

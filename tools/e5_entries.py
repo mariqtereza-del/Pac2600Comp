@@ -20,7 +20,7 @@ import e2_entries as e2  # noqa: E402
 import e3_entries as e3  # noqa: E402
 
 LEFT, RIGHT, UP, DOWN = e3.LEFT, e3.RIGHT, e3.UP, e3.DOWN
-EXE = e2.ROOT / 'build' / 'host' / 'pacman2600.exe'
+EXE = e2.ROOT / 'build' / 'host' / 'pacman2600_ref.exe'
 
 
 def bcd(x):

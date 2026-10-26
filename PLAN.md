@@ -2520,7 +2520,22 @@ Findings are recorded the moment they are made, with the address, the evidence a
       - **Documentation updates:** `docs\F25_LOCKSTEP.md`, `DECISIONS.md` (T-F25-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage F25: Whole-game lockstep`.
       - **Next stage:** F26 — Gate F: emulator out.
-26. **[Not started] F26 — Gate F: emulator out.** The game build no longer contains Stella; it lives on only in the test tool. The gate rests on lockstep: every golden trace and every random-input run identical in memory, picture and sound; you may also play a full game, but nothing waits for it. Tag `0.5.0-native`.
+26. **[Done] F26 — Gate F: emulator out.** The game build no longer contains Stella; it lives on only in the test tool. The gate rests on lockstep: every golden trace and every random-input run identical in memory, picture and sound; you may also play a full game, but nothing waits for it. Tag `0.5.0-native`.
+    - **F26 — Gate F: emulator out** *(expanded and done 2026-10-26)*
+      - **Objective:** the program you play (`pacman2600.exe`) runs on our own game code and contains no Stella; Stella stays only in `pacman2600_ref.exe`, the reference the tests compare with; Gate F is checked and tagged.
+      - **Why it matters:** F21 to F25 proved the native game equal to the emulator in a test tool; this stage makes the real program use it, so the original 6502 program and Stella are no longer needed to play.
+      - **Prerequisites:** F25 Done (`8167404`).
+      - **What Claude Code will do:** `src\host\native_emulator.cpp` (class `Emulator` made of `src\game`), `src\host\ntsc_palette.hpp` (written by `tools\f26_palette.py` from Stella's palette table with Stella's own adjustment), `src\host\CMakeLists.txt` (targets `pacman2600` native and `pacman2600_ref` with Stella); tools that make golden traces use the reference build; checks: the 70 recorded games and 350,460 recorded key frames against the native program, side-by-side with Stella's script runner, pictures colour for colour, no Stella in the binary, window, fullscreen, sound and pad checks, the whole-game lockstep again; `docs\GATE_F.md`; release README and `CLAUDE.md` updated.
+      - **What I must do / Exact instructions / Required input:** nothing (an optional look at the game in the window is offered, never required, D-008).
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** the native program equals the reference in every frame's picture and sound fingerprint and in the memory that is game state.
+      - **Verification:** see `docs\GATE_F.md`.
+      - **Completion criteria:** every item of `docs\GATE_F.md` PASS; one commit; tag `0.5.0-native` (the tag is local; nothing is pushed).
+      - **Potential problems:** the picture colours are now ours (a table computed from Stella's colour values, T-F26-2); the stack and 10 scratch bytes of memory are not kept by the native game, so traces that include them differ by design (T-F26-1).
+      - **Recovery:** edits and new files; undo by returning to `8167404` (with your OK).
+      - **Documentation updates:** `docs\GATE_F.md`, `DECISIONS.md` (T-F26-1, T-F26-2), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage F26: Gate F: emulator out`.
+      - **Next stage:** G1 — Choose the module layout from the real game.
 
 #### When a routine is hard to understand
 

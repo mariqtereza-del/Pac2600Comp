@@ -29,7 +29,7 @@ import f12_collisions as f12  # noqa: E402
 BS = chr(92)
 OUT = ROOT / 'reference' / 'f18'
 EXE = ROOT / 'build' / 'stella_probe' / 'stella_coverage.exe'
-HOST = ROOT / 'build' / 'host' / 'pacman2600.exe'
+HOST = ROOT / 'build' / 'host' / 'pacman2600_ref.exe'
 START, STOP = 0xF07F, 0xF4E7
 NAMES = {0x01: 'VBLANK', 0x04: 'NUSIZ0', 0x05: 'NUSIZ1', 0x06: 'COLUP0', 0x07: 'COLUP1', 0x08: 'COLUPF', 0x09: 'COLUBK', 0x0A: 'CTRLPF',
          0x0B: 'REFP0', 0x0C: 'REFP1', 0x0D: 'PF0', 0x0E: 'PF1', 0x0F: 'PF2', 0x10: 'RESP0', 0x11: 'RESP1', 0x12: 'RESM0', 0x13: 'RESM1',

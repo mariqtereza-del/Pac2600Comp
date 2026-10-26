@@ -25,7 +25,7 @@ import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'reference' / 'f25'
-HOST = ROOT / 'build' / 'host' / 'pacman2600.exe'
+HOST = ROOT / 'build' / 'host' / 'pacman2600_ref.exe'
 NATIVE = ROOT / 'build' / 'lockstep' / 'lockstep_native.exe'
 BS = chr(92)
 UP, DOWN, LEFT, RIGHT, FIRE, SELECT, RESET, LDIFF, RDIFF, BW = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512

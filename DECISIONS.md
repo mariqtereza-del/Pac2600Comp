@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G1-1 — The module layout of the native game (2026-10-26, Stage G1)
+
+- **Facts:** `routines.cpp` has 1,329 lines (28 unrelated things; the bottom logic alone is one 480-line struct), `kernel.cpp` 646, `main.cpp` 1,601; the limit planned for Phase G is about 400 lines.
+- **Choice:** `src\game` is cut into `data\`, `state\`, `logic\` (players, maze, objects, animation, pacman, ghosts, collisions, scoring, flow, frame_start, bottom, top), `sound\`, `picture\`; `main.cpp` into options, screen, pads, pacer, checks (tracker if shared). Every current function has a named home. Dependencies point one way: data and state, logic, frame, platform. The `cy()` cycle counts move with their code and are never reordered. Full table and the order of the moves: `docs\G1_MODULE_LAYOUT.md`.
+- **Why decided here and not asked:** the plan (G1) asked the owner to approve the layout. It is a technical choice with no effect on the game, and D-008 keeps the owner out of such choices; every later stage proves it changes nothing (lockstep after each move). The owner may still ask for a different layout; only file names change.
+- **Proof:** a script found all 29 functions of `routines.hpp` and `kernel.hpp` in the table of the document. No code was changed in G1.
+- **Reversible:** Yes (a document only).
+
 ### T-F26-1 — Two programs: the game without Stella, and the reference with it (2026-10-26, Stage F26)
 
 - **Choice:** `src\host\main.cpp` is built twice from the same source. `pacman2600.exe` is linked with `emulator_native` (`native_emulator.cpp`: class `Emulator` made of `src\game`: game logic, drawing code, video-chip and sound-chip models, data loader) and contains no Stella (a scan of the file for `Stella`, `libretro`, `M6502`, `TIA`, `Cartridge4K` finds none; 300 KB against 3 MB). `pacman2600_ref.exe` is linked with the old `emulator` (Stella) and is the REFERENCE: the tools that make golden traces use it (`toolsaseline.py`, `f25_games.py`, `f18_kernel.py`, `e5_entries.py`, `e8_entries.py`); the tools that test the game use `pacman2600.exe` (`d10_replay_compare.py`, `d14_side_by_side.py`, the gate check).

@@ -2549,7 +2549,24 @@ Findings are recorded the moment they are made, with the address, the evidence a
 
 Reshape the verified native code so a stranger can read and mod it, without changing a single frame of output. The lockstep suite runs after every change in this phase; any red result means the change is undone.
 
-1. **[Not started] G1 — Choose the module layout from the real game.** Claude Code proposes files based on what Phase F found (likely along the lines of game state, maze, player, ghosts, scoring, game flow, renderer, sound, ROM data, platform). It explains each in one sentence; you approve or ask questions. Recorded as D-0xx in `DECISIONS.md`.
+1. **[Done] G1 — Choose the module layout from the real game.** Claude Code proposes files based on what Phase F found (likely along the lines of game state, maze, player, ghosts, scoring, game flow, renderer, sound, ROM data, platform). It explains each in one sentence; recorded as T-G1-1 in `DECISIONS.md` (decided by Claude Code, not an owner approval: a technical choice with no effect on the game, D-008; the owner may still ask for changes).
+    - **G1 — Choose the module layout from the real game** *(expanded and done 2026-10-26)*
+      - **Objective:** decide which file each piece of the working native game will live in, from the code as it is.
+      - **Why it matters:** `routines.cpp` (1,329 lines), `kernel.cpp` (646) and `main.cpp` (1,601) are too big to read; G2-G7 need one agreed target.
+      - **Prerequisites:** F26 Done, Gate F passed (`eb3155f`), working tree clean.
+      - **What Claude Code will do:** measure file sizes, read the structure of `routines.cpp`, `kernel.cpp`, `main.cpp`; write `docs\G1_MODULE_LAYOUT.md`; record T-G1-1. No source code changes.
+      - **What I must do:** nothing (you may read the layout and ask for changes).
+      - **Exact instructions:** none.
+      - **Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** a folder tree, a table giving every current function a new home, the order of the moves, and the new `src\host` split.
+      - **Verification:** script: all 29 functions declared in `routines.hpp` and `kernel.hpp` appear in the table; quoted line counts equal `wc -l`; `git status` shows only documents changed.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** the cut lines inside the kernel and the `Bottom` struct are only known when the code is moved (G4); the document says so.
+      - **Recovery:** documents only; undo by returning to `eb3155f` (with your OK).
+      - **Documentation updates:** `docs\G1_MODULE_LAYOUT.md`, `DECISIONS.md` (T-G1-1), `PROJECT_STATUS.md`, `PLAN.md`, `docs\GLOSSARY.md`.
+      - **Git checkpoint:** `Stage G1: Choose the module layout from the real game`.
+      - **Next stage:** G2 — Coding and comment conventions.
 2. **[Not started] G2 — Coding and comment conventions.** `docs\CONVENTIONS.md`: plain names (`ghostLeavesHouse()`, not `sub_F3A2()`), no file over ~400 lines, every function starting with a one-line "what and why", every original-behaviour quirk tagged `// ORIGINAL:` with a link to its `RE_NOTES.md` entry.
 3. **[Not started] G3 — Separate the state from its memory layout.** In Phase F the game state copied the original 128-byte layout so lockstep could compare it directly. Now give it named fields, and move the byte-for-byte mapping into the test tool only.
 4. **[Not started] G4 — Move code into the G1 modules,** one module per session, lockstep green after each.

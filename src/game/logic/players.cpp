@@ -1,6 +1,5 @@
 #include "players.hpp"
 #include <utility>
-#include "../data/rom_tables.hpp"
 #include "../state/cycles.hpp"
 #include "maze.hpp"
 

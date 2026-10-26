@@ -50,7 +50,7 @@ Flow joystickAndMove(BottomContext& b) {
         if (st.posCode == 0xF9) { cy(3 + 1); at_ = L_F725; break; }
         cy(2 + 2 + 4);
         --y;
-        if (mazeWall(cart, y) & 0x80) { cy(3); at_ = L_F725; break; }
+        if (mazeWall(y) & 0x80) { cy(3); at_ = L_F725; break; }
         cy(2);
         at_ = L_F700;
         break;
@@ -73,7 +73,7 @@ Flow joystickAndMove(BottomContext& b) {
       case L_F714:
         cy(2 + 2 + 4);
         y = static_cast<uint8_t>(y + 2);
-        if (mazeWall(cart, y) & 0x80) { cy(3); at_ = L_F725; break; }
+        if (mazeWall(y) & 0x80) { cy(3); at_ = L_F725; break; }
         cy(2);
         at_ = L_F71B;
         break;
@@ -134,7 +134,7 @@ Flow joystickAndMove(BottomContext& b) {
       case L_F766:
         cy(3 + 4);
         y = st.cellIndex;
-        a = mazeWall(cart, y);
+        a = mazeWall(y);
         if (!carry) { cy(3); at_ = L_F775; break; }
         cy(2 + 2);
         if (!(a & 0x40)) { cy(3); at_ = L_F781; break; }

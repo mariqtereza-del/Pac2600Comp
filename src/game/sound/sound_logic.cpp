@@ -1,5 +1,5 @@
 #include "sound_logic.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 
 namespace game {
@@ -7,11 +7,11 @@ namespace game {
 // SOUND_START ($FF43).
 uint8_t soundStart(GameState& st, const Cartridge& cart, uint8_t sound) {
   cy(4 + 3);   // LDA, AND
-  const uint8_t blocked = cart.at(rom::kSoundBlockers + sound) & st.soundActive;
+  const uint8_t blocked = data::kSoundBlockers[sound] & st.soundActive;
   if (blocked != 0) { cy(3 + 6); return blocked; }
   cy(2 + 4 + 3 + 4 + 3 + 6);
-  st.soundActive = cart.at(rom::kSoundBit + sound);
-  const uint8_t length = cart.at(rom::kSoundLength + sound);
+  st.soundActive = data::kBitMasksAndReloads[4 + sound];
+  const uint8_t length = data::kSoundLength[sound];
   st.soundTimer = length;
   return length;
 }
@@ -76,9 +76,9 @@ void soundMusic(GameState& st, const Cartridge& cart, SoundChip& out) {
     if (note >= 4) { cy(3 + 6); return; }
     cy(2);
     cy(4 + 3);
-    out.write(chip::AUDF0, cart.at(rom::kStartTuneA + note));
+    out.write(chip::AUDF0, data::kStartTuneA[note]);
     cy(4 + 3);
-    out.write(chip::AUDF1, cart.at(rom::kStartTuneB + note));
+    out.write(chip::AUDF1, data::kStartTuneB[note]);
     cy(2 + 3);
     out.write(chip::AUDC0, 4);
     cy(3);

@@ -1,5 +1,5 @@
 #include "ghosts.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 #include "objects.hpp"
 
@@ -98,7 +98,7 @@ bool ghostDecide(GameState& st, const Cartridge& cart, uint8_t object) {
   uint8_t& timer = st.ghostTimer[object - 1];
   timer = static_cast<uint8_t>(timer - 1);
   if (timer != 0) { g.chase(pacX, pacY); return !g.unsupported; }
-  timer = cart.at(rom::kChaseTimerReload + (st.player[0].level >> 1));
+  timer = data::kBitMasksAndReloads[5 + (st.player[0].level >> 1)];
   if ((object >> 1) & 1) timer = static_cast<uint8_t>(timer + 1);
   g.wander();
   return !g.unsupported;

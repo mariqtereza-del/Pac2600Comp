@@ -1,5 +1,5 @@
 #include "collisions.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 #include "pacman.hpp"
 #include "scoring.hpp"
@@ -47,7 +47,7 @@ bool bonusOrPill(BottomContext& b) {
       if (!toGhost) {
         cy(4 + 2 + 3);
         onPill = true;
-        const uint8_t mask = cart.at(rom::kPillMask + x);
+        const uint8_t mask = data::kBitMasksAndReloads[2 + x];
         if (!(st.player[0].pillFlags & mask)) { cy(3); onPill = false; }
         else {
           cy(2 + 2 + 2 + 3 + 2 + 3 + 2 + 3 + 2);

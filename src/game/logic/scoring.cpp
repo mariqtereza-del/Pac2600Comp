@@ -1,5 +1,5 @@
 #include "scoring.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 
 namespace game {
@@ -28,9 +28,9 @@ Bcd addScore(GameState& st, const Cartridge& cart, uint8_t amount, uint8_t calle
   uint8_t& lo = st.score[player];
   uint8_t& mid = st.score[player + 2];
   uint8_t& hi = st.score[player + 4];
-  const Bcd a = bcdAdd(lo, cart.at(rom::kScoreAmountLow + amount), false);
+  const Bcd a = bcdAdd(lo, data::kScoreAmounts[amount], false);
   lo = a.value;
-  const Bcd b = bcdAdd(mid, cart.at(rom::kScoreAmountMid + amount), a.carry);
+  const Bcd b = bcdAdd(mid, data::kScoreAmounts[6 + amount], a.carry);
   mid = b.value;
   const Bcd c = bcdAdd(hi, 0, b.carry);
   hi = c.value;

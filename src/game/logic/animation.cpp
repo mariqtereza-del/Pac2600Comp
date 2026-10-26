@@ -1,5 +1,5 @@
 #include "animation.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 #include "objects.hpp"
 
@@ -35,8 +35,8 @@ AnimResult animateObject(GameState& st, const Cartridge& cart, uint8_t object, u
       r.path = AnimPath::SpriteY;
     } else {
       st.scratch[kSprite0Lines + sprite] = y;
-      r.tableByte = cart.at(rom::kAnimPointerStep + y);
-      r.ptrIndex = cart.at(rom::kAnimWhichPointer + sprite);
+      r.tableByte = data::kScoreAmounts[7 + y];
+      r.ptrIndex = data::kAnimWhichPointer[sprite];
       uint8_t& ptr = st.scratch[kSprite0PtrLo + r.ptrIndex];
       r.ptrOld = ptr;
       ptr = static_cast<uint8_t>(ptr + r.tableByte);
@@ -51,7 +51,7 @@ AnimResult animateObject(GameState& st, const Cartridge& cart, uint8_t object, u
       r.newY = y;
       if (y != 0x5B) { spriteY = y; r.path = AnimPath::RightStep; r.stateAfter = state; return r; }
       state = static_cast<uint8_t>((state & 0x0F) | 0x60);
-      y = cart.at(rom::kAnimNextY + sprite);
+      y = data::kAnimNextY[sprite];
       spriteY = 0x70;
       r.path = AnimPath::RightEnd;
       r.stateAfter = state;
@@ -74,7 +74,7 @@ AnimResult animateObject(GameState& st, const Cartridge& cart, uint8_t object, u
       y = static_cast<uint8_t>(y - 1);
       if (y & 0x80) {
         state = static_cast<uint8_t>((state & 0x0F) | 0xA0);
-        y = cart.at(rom::kAnimNextY + sprite);
+        y = data::kAnimNextY[sprite];
         spriteY = 0x70;
         r.path = AnimPath::UpEnd;
         r.newY = y;

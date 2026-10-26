@@ -1,5 +1,5 @@
 #include "maze.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 #include "flow.hpp"
 #include "scoring.hpp"
@@ -24,21 +24,21 @@ void eatWafer(GameState& st, const Cartridge& cart) {
   if (st.yOffset != 0) { cy(3); return; }
   cy(2 + 3 + 4);
   uint8_t cell = st.cellIndex;
-  uint8_t t = mazeWall(cart, cell);
+  uint8_t t = mazeWall(cell);
   cy(3 + 2);
   if (st.objX[0] == 0x4C) cy(3);
   else {
     cy(2 + 3);
     if (!(st.objState[0] & 0x80)) cy(3);
-    else { cy(2 + 2 + 4); t |= mazeWall(cart, static_cast<uint8_t>(cell + 1)); }
+    else { cy(2 + 2 + 4); t |= mazeWall(static_cast<uint8_t>(cell + 1)); }
   }
   cy(2);   // LSR
   if (!(t & 1)) { cy(3); return; }
   cy(2);
   cy(2 + 2 + 3 + 2 + 2 + 4 + 2 + 2 + 2 + 2 + 4 + 2 + 4);   // LSR, TAX, LDA CELL_ROW, ROL, TAY, LDA, TAY, TXA, AND, TAX, LDA, TAX, AND
   const uint8_t index = t >> 2;
-  const uint8_t byte = cart.at(rom::kWaferByteIndex + ((st.cellRow << 1) | ((t >> 1) & 1)));
-  const uint8_t mask = cart.at(rom::kWaferBitMask + (index & 7));
+  const uint8_t byte = data::kWaferByteIndex[(st.cellRow << 1) | ((t >> 1) & 1)];
+  const uint8_t mask = data::kBitMasksAndReloads[index & 7];
   uint8_t& maze = st.player[0].maze[byte];
   if (!(maze & mask)) { cy(3); return; }
   cy(2);

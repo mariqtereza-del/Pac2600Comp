@@ -5,9 +5,9 @@
 ## Result: OK
 
 - Loader tests (`tests\game\test_cartridge_data.cpp`): 16 ok, 0 failed. They check three standard SHA-1 test values, that the right ROM loads and every byte $F000-$FFFF comes back as in the file, that one changed bit is refused (fingerprint), one byte short / long / empty is refused (size), a missing file and a foreign file are refused.
-- The native game of F21.27 now takes **all** its cartridge data from the loader (`lockstep_native` no longer reads the file itself): native game, scratch and stack bytes left out: 70 of 70 games identical, 439680 frames, 9.7 s of work.
+- The native game of F21.27 now takes **all** its cartridge data from the loader (`lockstep_native` no longer reads the file itself): native game, scratch and stack bytes left out: 70 of 70 games identical, 439680 frames, 9.4 s of work.
 - `lockstep_native` given a file that is not the cartridge stops with exit code 2 and the message "The ROM file is not 4096 bytes long, so it is not this cartridge.".
-- Source scan: 107 files under `src`; runs of 8 consecutive numbers that equal 8 consecutive cartridge bytes (at least 4 different values): **none**. So the source holds addresses and logic, not Atari's data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: True).
+- Source scan: 109 files under `src`; runs of 8 consecutive numbers that equal 8 consecutive cartridge bytes (at least 4 different values): **none** outside `src\game\data	ables.cpp`. Since G5b (D-009, Rule 7 as reworded) that one file holds the game's data tables (34 tables, 508 bytes), and every run found in it lies inside a listed table (299 runs, 0 stray). Everywhere else the source holds addresses and logic, not Atari's data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: True).
 
 ## Not claimed
 

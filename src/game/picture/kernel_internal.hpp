@@ -6,6 +6,7 @@
 
 #include "../chips.hpp"
 #include "../data/cartridge.hpp"
+#include "../data/tables.hpp"
 #include "../kernel.hpp"
 #include "../state/state.hpp"
 
@@ -69,14 +70,14 @@ class Kernel {
     A = 0;
     if (!negative(X - st.scratch[kSprite0Y])) {
       Y = st.scratch[kSprite0Lines];
-      if (!negative(Y)) { A = cart.at(static_cast<uint16_t>(ptr(kSprite0PtrLo) + Y)); --Y; st.scratch[kSprite0Lines] = Y; }
+      if (!negative(Y)) { A = data::byAddress(static_cast<uint16_t>(ptr(kSprite0PtrLo) + Y)); --Y; st.scratch[kSprite0Lines] = Y; }
     }
   }
   void fetch1() {
     A = 0;
     if (!negative(X - st.scratch[kSprite1Y])) {
       Y = st.scratch[kSprite1Lines];
-      if (!negative(Y)) { A = cart.at(static_cast<uint16_t>(ptr(kSprite1PtrLo) + Y)); --Y; st.scratch[kSprite1Lines] = Y; }
+      if (!negative(Y)) { A = data::byAddress(static_cast<uint16_t>(ptr(kSprite1PtrLo) + Y)); --Y; st.scratch[kSprite1Lines] = Y; }
     }
   }
   // KERNEL_LINE_P1 ($F053), KERNEL_LINE_P0 ($F06A) and KERNEL_LINE_P1_P0 ($F067): one line for a sprite, ending with the return (6 cycles).

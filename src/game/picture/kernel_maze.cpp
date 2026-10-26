@@ -1,6 +1,6 @@
 // (Stage G4.6: cut out of kernel.cpp; the code is the F23.2 translation of the original's drawing code, text unchanged.)
 #include "kernel_internal.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 
 namespace game::kernel {
 
@@ -44,33 +44,33 @@ L_F0F4:   // the line after the start of a pair of maze lines: the second sprite
   if (Y == 0) goto L_F176;
   Y = st.cellIndex;
   A = st.player[0].maze[Y] & 0x0F;
-  A = cart.at(static_cast<uint16_t>(rom::kMazeRowFD47 + A));
+  A = data::kMazeRowFD47[A];
   st.scratch[kTempD4] = A;
   p0Line();
   b.adv(2);
   b.w(0xF11E, ENAM0, 0, 3);
   Y = st.cellIndex;
   A = (st.player[0].maze[Y] >> 4) & 0x07;
-  st.scratch[kTempD3] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD3F + A));
+  st.scratch[kTempD3] = data::kMazeRowFD3F[A];
   p1Line();
   Y = st.cellIndex;
   st.scratch[kTempD2] = (st.player[0].maze[Y] & 0x80) ? 0x50 : 0x10;
   A = st.player[0].maze[Y + 4] & 0x07;
-  st.scratch[kTempD7] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD63 + A));
+  st.scratch[kTempD7] = data::kMazeRowFD63[A];
   p0Line();
   Y = st.cellIndex;
   A = st.player[0].maze[Y + 4] >> 3;
   st.scratch[kTempD5] = A;
-  st.scratch[kTempD6] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD5B + (A & 0x07)));
+  st.scratch[kTempD6] = data::kMazeRowFD5B[A & 0x07];
   p1Line();
   A = (st.scratch[kTempD5] >> 3) & 0x03;
-  st.scratch[kTempD5] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD57 + A));
+  st.scratch[kTempD5] = data::kMazeRowFD57[A];
   goto L_F1F4;
 
 L_F176:
   Y = st.cellIndex;
   A = st.player[0].maze[Y + 8] & 0x07;
-  st.scratch[kTempD4] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD7B + A));
+  st.scratch[kTempD4] = data::kMazeRowFD7B[A];
   p0Line();
   b.adv(2);
   b.w(0xF188, ENAM0, 0, 3);
@@ -79,23 +79,23 @@ L_F176:
   b.w(0xF18C, ENABL, A, 3);
   Y = st.cellIndex;
   A = (st.player[0].maze[Y + 8] >> 3) & 0x0F;
-  st.scratch[kTempD3] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD6B + A));
+  st.scratch[kTempD3] = data::kMazeRowFD6B[A];
   p1Line();
   Y = st.cellIndex;
   st.scratch[kTempD2] = (st.player[0].maze[Y + 8] & 0x80) ? 0x50 : 0x10;
   A = st.player[0].maze[Y + 12] & 0x07;
-  st.scratch[kTempD7] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD63 + A));
+  st.scratch[kTempD7] = data::kMazeRowFD63[A];
   p0Line();
   Y = st.cellIndex;
   A = st.player[0].maze[Y + 12] >> 3;
   st.scratch[kTempD5] = A;
-  st.scratch[kTempD6] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD83 + (A & 0x07)));
+  st.scratch[kTempD6] = data::kMazeRowFD83[A & 0x07];
   p1Line();
   A = st.scratch[kTempE1];
   b.adv(3);
   b.w(0xF1D5, ENAM1, A, 3);
   A = st.scratch[kTempD5] >> 3;
-  st.scratch[kTempD5] = cart.at(static_cast<uint16_t>(rom::kMazeRowFD47 + A));
+  st.scratch[kTempD5] = data::kMazeRowFD47[A];
   goto L_F1F4;
 
 L_F1F4:   // the wall and wafer bit patterns of the two halves of the row are written on this and the next line
@@ -137,7 +137,7 @@ L_F1F4:   // the wall and wafer bit patterns of the two halves of the row are wr
   b.adv(3);
   b.w(0xF23F, PF2, A, 3);
   b.adv(5 + crossing(kSprite0PtrLo, Y));
-  A = cart.at(static_cast<uint16_t>(ptr(kSprite0PtrLo) + Y));
+  A = data::byAddress(static_cast<uint16_t>(ptr(kSprite0PtrLo) + Y));
   --Y;
   st.scratch[kSprite0Lines] = Y;
   b.adv(2 + 3);
@@ -192,7 +192,7 @@ L_F246:
   b.adv(3);
   b.w(0xF26A, PF2, A, 3);
   b.adv(5 + crossing(kSprite1PtrLo, Y));
-  A = cart.at(static_cast<uint16_t>(ptr(kSprite1PtrLo) + Y));
+  A = data::byAddress(static_cast<uint16_t>(ptr(kSprite1PtrLo) + Y));
   --Y;
   st.scratch[kSprite1Lines] = Y;
   b.adv(2 + 3);
@@ -211,10 +211,10 @@ L_F271:
   b.adv(3);   // JMP
   Y = st.rowParity;
   b.adv(3);
-  A = cart.at(static_cast<uint16_t>(rom::kPlayfieldFE0A + Y));
+  A = data::kPlayfieldFE0A[Y];
   b.adv(4);
   b.w(0xF28C, PF0, A, 3);
-  A = cart.at(static_cast<uint16_t>(rom::kPlayfieldFE0C + Y));
+  A = data::kPlayfieldFE0C[Y];
   b.adv(4);
   b.w(0xF291, PF1, A, 3);
   b.adv(2);
@@ -241,7 +241,7 @@ L_F271:
   A = st.cellRow;
   if (A == 0 || A == 6) {
     if (A == 6) --Y;
-    if (st.player[0].pillFlags & cart.at(static_cast<uint16_t>(rom::kPillMask + Y))) st.scratch[kTempE2] = 0x02;
+    if (st.player[0].pillFlags & data::kBitMasksAndReloads[2 + Y]) st.scratch[kTempE2] = 0x02;
   }
   p1Line();
   b.adv(2);
@@ -254,13 +254,13 @@ L_F271:
   p0Line();
   Y = st.rowParity;
   b.adv(3);
-  A = cart.at(static_cast<uint16_t>(rom::kPlayfieldFF41 + Y));
+  A = data::kPlayfieldFF41[Y];
   b.adv(4);
   b.w(0xF307, PF0, A, 3);
-  A = cart.at(static_cast<uint16_t>(rom::kPlayfieldFE0F + Y));
+  A = data::kPlayfieldFE0F[Y];
   b.adv(4);
   b.w(0xF30C, PF1, A, 3);
-  A = cart.at(static_cast<uint16_t>(rom::kPlayfieldFE11 + Y));
+  A = data::kPlayfieldFE11[Y];
   b.adv(4);
   b.w(0xF311, PF2, A, 3);
 
@@ -272,7 +272,7 @@ L_F313:   // the lines of a row between its walls: the bonus item bits and the p
   st.scratch[kTempE1] = A;
   p0Line();
   Y = st.rowParity;
-  A = cart.at(static_cast<uint16_t>(rom::kPlayfieldFE0D + Y));
+  A = data::kPlayfieldFE0C[1 + Y];
   Y = st.cellRow;
   if (Y == 4) A = 0x40;
   st.scratch[kTempE3] = A;
@@ -284,10 +284,10 @@ L_F313:   // the lines of a row between its walls: the bonus item bits and the p
   Y = st.rowParity;
   b.adv(3);
   b.w(0xF34D, GRP0, A, 3);
-  A = cart.at(static_cast<uint16_t>(rom::kPlayfieldFE0A + Y));
+  A = data::kPlayfieldFE0A[Y];
   b.adv(4);
   b.w(0xF352, PF0, A, 3);
-  A = cart.at(static_cast<uint16_t>(rom::kPlayfieldFE0C + Y));
+  A = data::kPlayfieldFE0C[Y];
   b.adv(4);
   b.w(0xF357, PF1, A, 3);
   A = st.scratch[kTempE3];

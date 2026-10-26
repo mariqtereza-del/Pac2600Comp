@@ -1,6 +1,6 @@
 // (Stage G4.6: cut out of kernel.cpp; the code is the F23.2 translation of the original's drawing code, text unchanged.)
 #include "kernel_internal.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "status_bar.hpp"
 
 namespace game::kernel {
@@ -78,7 +78,7 @@ void Kernel::scoreLine() {
         b.adv(3);
         if (seen != 0) b.adv(3); else { b.adv(2); digit = 10; b.adv(2); }
         b.adv(4 + (digit >= 10 ? 1 : 0));   // the shapes from number 10 on are on the next page: one more cycle
-        return cart.at(static_cast<uint16_t>(rom::kDigitPointerLow + digit));
+        return data::kDigitPointerLow[digit];
       };
       bool low = true;   // the first step is the low nibble (L_F422), then high nibble, low nibble, ...
       for (;;) {
@@ -128,7 +128,7 @@ void Kernel::scoreLine() {
         b.wsync();
         auto shapeByte = [&](uint8_t pointerLo) {
           b.adv(5 + crossing(pointerLo, row));
-          return cart.at(static_cast<uint16_t>(ptr(pointerLo) + row));
+          return data::byAddress(static_cast<uint16_t>(ptr(pointerLo) + row));
         };
         A = shapeByte(kSprite0PtrLo);
         b.w(0xF465, GRP1, A, 3);

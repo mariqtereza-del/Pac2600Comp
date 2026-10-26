@@ -1,5 +1,5 @@
 #include "objects.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 
 namespace game {
@@ -121,7 +121,7 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
       cy(3);
       if (r.row == 0) { cy(3 + 6); r.exit = TryExit::AtEdge; return r; }
       cy(2 + 3 + 4 + 2);
-      r.tableByte = cart.at(rom::kMazeWalls + r.cell);
+      r.tableByte = data::kMazeWalls[r.cell];
       if (!(r.tableByte & 0x40)) { cy(3 + 6); r.exit = TryExit::Wall; return r; }
       cy(2 + 2);
       break;
@@ -129,7 +129,7 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
       cy(3 + 2);
       if (r.row == 7) { cy(3 + 6); r.exit = TryExit::AtEdge; return r; }
       cy(2 + 3 + 4 + 2 + 2);
-      r.tableByte = cart.at(rom::kMazeWalls + r.cell);
+      r.tableByte = data::kMazeWalls[r.cell];
       if (!(r.tableByte & 0x20)) { cy(3 + 6); r.exit = TryExit::Wall; return r; }
       cy(2 + 2 + 3);
       break;
@@ -142,7 +142,7 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
         cy(2);
       }
       cy(2 + 4);
-      r.tableByte = cart.at(rom::kMazeWalls + static_cast<uint8_t>(r.cell - 1));
+      r.tableByte = data::kMazeWalls[static_cast<uint8_t>(r.cell - 1)];
       if (r.tableByte & 0x80) { cy(3 + 6); r.exit = TryExit::Wall; return r; }
       cy(2 + 2 + 3);
       break;
@@ -155,7 +155,7 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
         cy(2);
       }
       cy(2 + 2 + 4);
-      r.tableByte = cart.at(rom::kMazeWalls + static_cast<uint8_t>(r.cell + 2));
+      r.tableByte = data::kMazeWalls[static_cast<uint8_t>(r.cell + 2)];
       if (r.tableByte & 0x80) { cy(3 + 6); r.exit = TryExit::Wall; return r; }
       cy(2 + 2 + 3);
       break;

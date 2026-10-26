@@ -2757,12 +2757,21 @@ Reshape the verified native code so a stranger can read and mod it, without chan
     - **Documentation updates:** `docs\EMBEDDED_DATA.md`, `DECISIONS.md`, `CLAUDE.md` (Rule 7, after approval), `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage G5a: The data the game needs`. **Next stage:** G5b.
 
-**[Not started] G5b — The tables become part of the program** *(D-009; the owner approved the Rule 7 wording on 2026-10-26: the data is part of the program and the release).*
-    - **Objective:** the data lives in named arrays in `src\game\data\`; no game code reads the cartridge by address any more.
-    - **What Claude Code will do:** a tool (`tools\g5b_make_tables.py`) reads the local ROM once and writes `src\game\data\tables.hpp/.cpp` (generated, each table with its name, use and evidence, no code bytes); code that said `cart.at(rom::kMazeWalls + i)` says `data::kMazeWalls[i]`; the shape and digit tables the picture code reaches through pointers become arrays and index values; `game::Cartridge` and `rom_tables.hpp` are removed; each table is checked equal to the ROM by the tool and by a test.
-    - **Verification:** the ten proofs, `f25_games --games 120` and `d10_replay_compare` identical to before; the F22 source scan is replaced by a check that the only cartridge bytes in the source are the listed tables.
-    - **Completion criteria:** all of the above; one commit. **Recovery:** return to the commit before (with the owner's OK); the tables stay in history.
-    - **Next stage:** G5c.
+**[Done 2026-10-26] G5b — The tables become part of the program** *(D-009; the owner approved the Rule 7 wording on 2026-10-26: the data is part of the program and the release).* *(expanded 2026-10-26)*
+    - **Objective:** the 508 bytes in 34 tables (504 bytes read, 48 F4 segments, joined where the original reads them as one table; 4 unread bytes lie between) that the game reads live in named arrays in `src\game\data\tables.hpp/.cpp`; no game code reads the cartridge by address any more.
+    - **Why it matters:** this is the step that makes the game independent of the ROM file (D-009). It also makes every use of a table readable (`data::kMazeWalls[cell]` instead of `cart.at(0xFE13 + cell)`).
+    - **Prerequisites:** G5a Done (`5f856c3`), Rule 7 reworded, clean tree, `reference\g5a\reads\` (the read counts of G5a, local).
+    - **What Claude Code will do:** `tools\g5b_make_tables.py` reads the local ROM once and writes `tables.hpp/.cpp` for exactly the 48 carried tables (generated: each table with its name, original address range, size and use; a checked index operator that stops the program on an out-of-range read; `data::byAddress` for the six places that reach the shapes through a pointer kept in the game state; no table outside the 48, no program code). The tool first checks every carried byte against the F6 code and data map (it must be data) and against the G5a read counts. A script rewrites the 47 named uses and the 6 pointer uses; `rom_tables.hpp` is removed (the names live in `tables.hpp`). `test_tables` compares every embedded byte with the ROM. The `Cartridge` parameter stays in the function signatures until G5c.
+    - **What I must do:** nothing (the approval is given).
+    - **Exact instructions / Required input:** none.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** the game produces the same memory, pictures and sound as before in every recorded and random game; the only cartridge bytes in Git are the listed tables.
+    - **Verification:** `python -I tools\g5b_make_tables.py rom\pacman.a26` says `result: OK` (34 tables, 508 bytes, all data, none code, all read); `build\lockstep\test_tables.exe rom\pacman.a26` says `result: OK` (every embedded byte equals the ROM byte at its address); both builds; the ten proofs, `f25_games --games 120` and `d10_replay_compare` identical to before (an out-of-range table read would stop the program, so they also prove no read leaves its table); `tools\f22_loader.py` says OK with its source scan now allowing only the listed tables; `tools\g2_conventions_check.py --strict` is CLEAN.
+    - **Completion criteria:** all of the above; one commit; `docs\EMBEDDED_DATA.md` updated.
+    - **Potential problems:** a table index larger than its table (the original would silently read the next table) shows as a stopped program in a proof, not as a wrong picture; the colour switch uses two tables in one segment (offsets 0 and 11); the checked operator costs a little time per read.
+    - **Recovery:** return to `5f856c3` (with the owner's OK); the tables stay in history.
+    - **Documentation updates:** `docs\EMBEDDED_DATA.md`, `docs\F22_LOADER.md` (written by its tool), `DECISIONS.md` (T-G5b-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage G5b: The tables become part of the program`. **Next stage:** G5c.
 
 **[Not started] G5c — The ROM becomes a check only (an indirect DRM)** *(D-009).*
     - **Objective:** the game is built and run without any cartridge input; the ROM file is still required at start-up, but only to check it. That check is the DRM: without a legal dump (right size and SHA-1) the program does not start.

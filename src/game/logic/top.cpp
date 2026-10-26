@@ -1,5 +1,5 @@
 #include "top.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 #include "animation.hpp"
 #include "ghosts.hpp"
@@ -97,12 +97,12 @@ bool topLogic(GameState& st, const Cartridge& cart, const ConsoleInput& in, TiaC
   if (st.objState[0] & 0x20) animateObject(st, cart, 0, 1);
   // the six colour values: the colour table of the cartridge ($FF2B; $FF36 when the mask says black and white), the title shift, the mask
   const bool colourTv = (st.colourMask & 0x80) != 0;
-  const uint16_t table = colourTv ? rom::kColourTableTv : rom::kColourTableBlackWhite;
+  const std::size_t table = colourTv ? 0 : 11;   // the black-and-white colours follow the colour ones in the same table (11 bytes later)
   st.scratch[kTempD3] = 0xFF;
   st.scratch[kTempD2] = colourTv ? 0x2B : 0x36;
   for (int x = 5; x >= 0; --x) {
     uint8_t& entry = st.colour[kColourBg + x];
-    entry = (cart.at(static_cast<uint16_t>(table + entry)) ^ st.attractShift) & st.colourMask;
+    entry = (data::kColourTables[table + entry] ^ st.attractShift) & st.colourMask;
   }
   chip.write(chip::COLUP1, st.colour[kColourSprite1]);
   chip.write(chip::COLUP0, st.colour[kColourSprite0]);

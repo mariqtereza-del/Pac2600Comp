@@ -73,13 +73,27 @@ def main():
     if not control_ok:
         problems.append('the scan did not find its own control data')
     hits = []
+    table_hits = []
     scanned = 0
     for p in sorted((ROOT / 'src').rglob('*')):
         if not p.is_file() or p.suffix not in ('.cpp', '.hpp', '.h', '.c', '.txt', '.md', '.cmake'):
             continue
         scanned += 1
-        hits += scan(p.read_text(encoding='utf-8', errors='replace'), str(p.relative_to(ROOT)))
-    print('source scan: %d files in src, runs of %d cartridge bytes found in the source: %s' % (scanned, RUN, len(hits) or 'none'))
+        rel = str(p.relative_to(ROOT)).replace(chr(92), '/')
+        found = scan(p.read_text(encoding='utf-8', errors='replace'), rel)
+        if rel == 'src/game/data/tables.cpp':   # since G5b (D-009) the game's data tables are allowed here, and only here
+            table_hits += found
+        else:
+            hits += found
+    print('source scan: %d files in src, runs of %d cartridge bytes found in the source outside src/game/data/tables.cpp: %s' % (scanned, RUN, len(hits) or 'none'))
+    tables_text = (ROOT / 'src' / 'game' / 'data' / 'tables.cpp').read_text(encoding='utf-8')
+    ranges = [(int(a, 16), int(a, 16) + int(n)) for a, n in re.findall(r'\{"\w+", 0x([0-9A-F]{4}), (\d+),', tables_text)]
+    def inside(a):
+        return any(lo <= a < hi for lo, hi in ranges)
+    stray = [h for h in table_hits if not (inside(int(h.rsplit('$', 1)[1], 16)) and inside(int(h.rsplit('$', 1)[1], 16) + RUN - 1))]
+    print('tables file: %d tables listed, %d bytes; %d runs of cartridge bytes found in it, %d of them not inside a listed table' % (len(ranges), sum(hi - lo for lo, hi in ranges), len(table_hits), len(stray)))
+    if stray or not ranges:
+        problems.append('cartridge bytes in tables.cpp outside the listed tables: %d' % len(stray))
     for h in hits[:10]:
         print('  ', h)
     if hits:
@@ -94,7 +108,7 @@ def main():
          '- Loader tests (`tests%sgame%stest_cartridge_data.cpp`): %d ok, %d failed. They check three standard SHA-1 test values, that the right ROM loads and every byte $F000-$FFFF comes back as in the file, that one changed bit is refused (fingerprint), one byte short / long / empty is refused (size), a missing file and a foreign file are refused.' % (BS, BS, n_ok, n_fail),
          '- The native game of F21.27 now takes **all** its cartridge data from the loader (`lockstep_native` no longer reads the file itself): %s.' % nl[0],
          '- `lockstep_native` given a file that is not the cartridge stops with exit code 2 and the message "%s".' % r.stderr.strip(),
-         '- Source scan: %d files under `src`; runs of %d consecutive numbers that equal %d consecutive cartridge bytes (at least 4 different values): **%s**. So the source holds addresses and logic, not Atari\'s data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: %s).' % (scanned, RUN, RUN, len(hits) or 'none', control_ok), '',
+         '- Source scan: %d files under `src`; runs of %d consecutive numbers that equal %d consecutive cartridge bytes (at least 4 different values): **%s** outside `src\game\data\tables.cpp`. Since G5b (D-009, Rule 7 as reworded) that one file holds the game\'s data tables (%d tables, %d bytes), and every run found in it lies inside a listed table (%d runs, %d stray). Everywhere else the source holds addresses and logic, not Atari\'s data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: %s).' % (scanned, RUN, RUN, len(hits) or 'none', len(ranges), sum(hi - lo for lo, hi in ranges), len(table_hits), len(stray), control_ok), '',
          '## Not claimed', '',
          '- The window program (`pacman2600`) is not changed: it still starts the emulator from the ROM file with its own ROM finder (D3). The native game will use this loader when the renderer and sound (F23, F24) exist and the emulator is taken out (F26).',
          '- The scan finds copied runs written as numbers; it cannot prove that no data is hidden in some other disguise. The rule of the project (T-F21-1) is that tables are read by address only.']

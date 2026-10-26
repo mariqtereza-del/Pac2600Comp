@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "../data/cartridge.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/state.hpp"
 
 namespace game {
@@ -18,6 +18,6 @@ void eatWafer(GameState& st, const Cartridge& cart);
 // L_F6AA: when nothing is left on the map: one more life (at most 9), the next level (at most $0E), a fresh maze. True if the map was refilled.
 bool newMapCheck(GameState& st);
 // The wall table of the maze (one byte per cell: bit 7 side wall, bit 6 up allowed, bit 5 down allowed, F10) at cell index i.
-inline uint8_t mazeWall(const Cartridge& cart, unsigned i) { return cart.at(rom::kMazeWalls + (i & 0xFF)); }
+inline uint8_t mazeWall(unsigned i) { return data::kMazeWalls[i & 0xFF]; }
 
 }  // namespace game

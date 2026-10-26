@@ -85,3 +85,46 @@ Before: *The original ROM must never be included in the public repository or exe
 Now (in `CLAUDE.md`): *The original ROM file, and the cartridge's program code, must never be included in the public repository or executable release. The game data it needs (the tables listed in `docs\EMBEDDED_DATA.md`) is part of the program and is included with the release: the game reads no game data from the ROM. The ROM exists only as an indirect form of DRM. The program requires the player to have a legal dump of the original game and checks it (size and SHA-1) before it starts, so that nobody without a legal dump can play it with this project.*
 
 The owner's words: the ROM is an indirect DRM, preventing anyone without a legal dump from playing with this project; no game data is read from the ROM; it is all included with the release.
+
+## The tables as they are in the program (Stage G5b)
+
+Written by `python -I tools\g5b_make_tables.py rom\pacman.a26` (run after `tools\g5a_data_list.py`). **This is the list Rule 7 refers to:** the 34 tables in `src\game\data\tables.cpp`, 508 bytes, all data (the F6 map calls 502 of the bytes data and 6 untouched; none is program code). Eight of them join several of the tables above, because the original reads them as one (found by the survey of G5b); that also brings in 5 bytes that no game reads, lying between read bytes.
+
+| Source name | Original address range | Size | What it holds |
+| --- | --- | --- | --- |
+| `kMazeRowFD3F` | $FD3F-$FD46 | 8 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kMazeRowFD47` | $FD47-$FD56 | 16 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kMazeRowFD57` | $FD57-$FD5A | 4 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kMazeRowFD5B` | $FD5B-$FD62 | 8 | picture tables of the maze rows, 8 entries |
+| `kMazeRowFD63` | $FD63-$FD6A | 8 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kMazeRowFD6B` | $FD6B-$FD7A | 16 | picture tables of the maze rows, 16 entries |
+| `kMazeRowFD7B` | $FD7B-$FD82 | 8 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kMazeRowFD83` | $FD83-$FD8A | 8 | picture tables of the maze rows, 8 entries |
+| `kGfxFD8B` | $FD8B-$FDAA | 32 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kGhostPictures` | $FDAB-$FDAE | 4 | ghost pictures (kGhostPictures) |
+| `kGfxFDAF` | $FDAF-$FDC1 | 19 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kPacmanPictures` | $FDC2-$FDC5 | 4 | Pac-Man pictures (kPacmanPictures) |
+| `kGfxFDC6` | $FDC6-$FDF9 | 52 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kPacmanDyingPictures` | $FDFA-$FE09 | 16 | dying Pac-Man pictures (kPacmanDyingPictures) |
+| `kPlayfieldFE0A` | $FE0A-$FE0B | 2 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kPlayfieldFE0C` | $FE0C-$FE0E | 3 | playfield patterns |
+| `kPlayfieldFE0F` | $FE0F-$FE10 | 2 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kPlayfieldFE11` | $FE11-$FE12 | 2 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kMazeWalls` | $FE13-$FE62 | 80 | maze wall table (kMazeWalls) |
+| `kBitMasksAndReloads` | $FE6A-$FE75 | 12 | bit masks (wafers, power pills, sound effects) and the chase timer reload values of the ghosts |
+| `kWaferByteIndex` | $FE79-$FE88 | 16 | wafer byte index (kWaferByteIndex) |
+| `kGfxFE89` | $FE89-$FEEB | 99 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kLivesMarkerPf2` | $FEEC-$FEF3 | 8 | life-marker playfield, second row |
+| `kDigitPointerLow` | $FEF6-$FF05 | 16 | score digit pointers (kDigitPointerLow) |
+| `kScoreAmounts` | $FF06-$FF12 | 13 | score amounts (low and middle bytes) and the animation pointer steps |
+| `kAnimWhichPointer` | $FF19-$FF1A | 2 | animation pointer choice (kAnimWhichPointer) |
+| `kLivesMarkerPf1` | $FF1B-$FF22 | 8 | life-marker playfield, first (kLivesMarkerPf1) |
+| `kAnimNextY` | $FF25-$FF26 | 2 | animation next y (kAnimNextY) |
+| `kColourTables` | $FF2B-$FF40 | 22 | the colour tables: colour at offset 0, black and white at offset 11 |
+| `kPlayfieldFF41` | $FF41-$FF42 | 2 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
+| `kSoundBlockers` | $FFE9-$FFEC | 4 | sound blockers (kSoundBlockers) |
+| `kSoundLength` | $FFED-$FFF0 | 4 | sound lengths (kSoundLength) |
+| `kStartTuneA` | $FFF1-$FFF4 | 4 | start tune notes, first (kStartTuneA) |
+| `kStartTuneB` | $FFF5-$FFF8 | 4 | start tune notes, second (kStartTuneB) |
+
+A read past the end of a table stops the program with a message; the proofs of G5b run 190 games without it happening.

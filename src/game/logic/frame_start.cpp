@@ -1,5 +1,5 @@
 #include "frame_start.hpp"
-#include "../data/rom_tables.hpp"
+#include "../data/tables.hpp"
 #include "../state/cycles.hpp"
 
 namespace game {
@@ -11,16 +11,16 @@ void frameStart(GameState& st, const Cartridge& cart, const ConsoleInput& in, Ti
   chip.write(chip::CXCLR, 3);
   const uint8_t counter = st.frameCounter;
   const uint8_t eighths = counter >> 3;
-  st.scratch[kSprite0PtrLo] = cart.at(rom::kGhostPictures + ((eighths >> 1) & 3));
+  st.scratch[kSprite0PtrLo] = data::kGhostPictures[(eighths >> 1) & 3];
   uint8_t sprite1 = 0;
   bool chosen = false;
   if (st.gameFlags & 0x40) {                         // dying: the picture follows the event timer
-    sprite1 = cart.at(rom::kPacmanDyingPictures + ((st.eventTimer >> 2) & 0x0F));
+    sprite1 = data::kPacmanDyingPictures[(st.eventTimer >> 2) & 0x0F];
     chosen = sprite1 != 0;
   }
   if (!chosen) {
-    sprite1 = cart.at(rom::kPacmanPictures + (eighths & 3));
-    if (st.gameFlags & 0x80) sprite1 = cart.at(rom::kPacmanPictures);        // frozen: the first picture
+    sprite1 = data::kPacmanPictures[eighths & 3];
+    if (st.gameFlags & 0x80) sprite1 = data::kPacmanPictures[0];        // frozen: the first picture
   }
   st.scratch[kSprite1PtrLo] = sprite1;
   uint8_t& frame = st.frameCounter;

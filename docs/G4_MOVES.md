@@ -75,3 +75,25 @@ Evidence: both builds OK; the ten proofs `problems: []`, `result: OK`; 128 of 12
 
 The only changed line of code: `goto L_F360;` in `mazeRows()` is `return;` (the code at L_F360 is `bottomWall()`, reached only by that jump). T-G4-3.
 Evidence: both builds OK; `f23_kernel` (every timed chip write in 8,266 sampled frames) and the other nine proofs `problems: []`, `result: OK`; 128 of 128 layout checks; `f25_games --games 120` `result: OK`; `d10_replay_compare` 350,460 key frames, 0 differences.
+
+## G4.7 — the host program (2026-10-26)
+
+`src\host\main.cpp` 1,601 to 141 lines (the usage comment and `main()`). The rest, in namespace `host` (T-G4-4):
+
+| Part | What is in it | Lines (hpp/cpp) |
+| --- | --- | --- |
+| `common.hpp` | includes, window title, first window size | 37 |
+| `options` | `View`, `Options`, `parseArguments`, mode names | 42 / 111 |
+| `rom_choice` | ROM search report, file dialog, problem message, `showError` | 22 / 120 |
+| `screen` | `Screen`, `--self-check`, `--layout-check`, key list | 58 / 181 |
+| `pads` | `Pads`, `applyInput`, `--pad-check` | 121 / 190 |
+| `pacer` | `Pacer`, console speed, `--audio-check` | 75 / 77 |
+| `window_tracker` | `Tracker`, window place and fullscreen helpers | 32 / 103 |
+| `window_checks` | `--fullscreen-check`, `--state-report` | 16 / 104 |
+| `play_window` | `playWindow` | 15 / 246 |
+| `headless` | `--headless`, `--keys-replay`, frame trace | 20 / 187 |
+
+Both executables link the static library `host_app` (`CMakeLists.txt`) plus their emulator. Line-by-line comparison old against new text: 1,476 non-blank lines of the old file, 6 not found as they were (the two window constants and `kConsoleFrameHz` now carry `inline`; the signatures of `layoutCheck`, `drawHelp` and `settle` keep their default arguments in the header only); one comment block was lost by the first run of the script and put back.
+
+Evidence (2026-10-26): both builds OK. For `pacman2600` (native) and `pacman2600_ref` (Stella): `--self-check`, `--find-rom`, `--headless` 600 frames, `--layout-check` at 1280x960 and 960x720 fill (`result=OK`), `--help-check`, `--fullscreen-check` (`result=OK`), `--audio-check 20` (`underruns=0`), `--pad-check` (`result=OK`), `--timed 10`, `--state-report`, key pushing into the real window with recording (all four directions and the switch values seen), the recording replayed in the window (480 frames, 0 differences) and headless (719 frames, 0 differences) all exit 0 and say OK. `test_controls`, `test_layout`, `test_rom_finder`, `test_trace` exit 0; `test_inputlog` 25 checks and `test_windowstate` 29 checks pass (given an existing scratch folder). The ten game proofs `result: OK`; `d10_replay_compare` 350,460 key frames, 0 differences. Two false alarms in my own test script (a grep pattern; a missing scratch folder) were checked by hand and are not program faults. Not rerun: `f25_games` (no game code changed in G4.7), the Gate D release-zip script (needs a commit first), the window dragging and sound by ear (D-008).
+

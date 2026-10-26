@@ -34,7 +34,7 @@ The program is honestly an **emulator front-end**: our code for everything aroun
 
 | File or folder | Owner | Stage | Job |
 | --- | --- | --- | --- |
-| `src\host\main.cpp` | Ours | D2 (built) | Starts SDL3, makes the window, runs the main loop, closes cleanly. Also `src\host\CMakeLists.txt` and `tools\build_host.cmd` |
+| `src\host\main.cpp` | Ours | D2 (built) | Starts SDL3, chooses what to run from the command line, makes the window, closes cleanly (G4.7: since then only `main()`; the parts are `options`, `rom_choice`, `screen`, `pads`, `pacer`, `window_tracker`, `window_checks`, `play_window`, `headless` and `common.hpp`, see `docs\G4_MOVES.md`). Also `src\host\CMakeLists.txt` and `tools\build_host.cmd` |
 | `src\host\rom_finder.*` | Ours | D3 (built) | Finds the ROM (command line, saved path, `roms` folder, file dialog) and checks size and SHA-1 `0940fea7…dbb1`. Tests: `tests\host\test_rom_finder.cpp` |
 | `src\host\emulator.*` | Ours | D4 (built) | Thin wrapper around `StellaLIBRETRO`: load, run frame, picture, RAM, state. The only host file that includes Stella headers |
 | `src\host\layout.*` | Ours | D6 (built) | Where the picture goes in the window: pixel shape (Stella's 19:10 for this ROM), Sharp / Fill / TV frame. Tests: `tests\host\test_layout.cpp` |

@@ -134,6 +134,13 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G4-4 — The host program is split by what each part does (2026-10-26, Stage G4.7)
+
+- **Facts:** `main.cpp` was 1,601 lines: 45 items in one anonymous namespace (types, helpers, test modes) and `main()`. G1 sketched five parts (options, screen, pads, pacer, checks).
+- **Choice:** nine parts, each under 250 lines: `options` (command line, `View`), `rom_choice` (ROM search, dialog, errors), `screen` (picture, self/layout/help checks), `pads` (controllers, pad check), `pacer` (speed, audio check), `window_tracker` (window place and fullscreen state), `window_checks` (fullscreen check, state report), `play_window` (playing), `headless` (no-window runs, key replay, trace); `common.hpp` holds the includes, the title and the first window size. The checks are kept with the part they test instead of one big `checks` file, because each needs that part's types.
+- **How:** only items used by another part are declared in a header; the rest are local to their file. The code text is unchanged; default arguments moved to the declarations. `host_app` is a static library; `pacman2600` links it with the native emulator, `pacman2600_ref` with the Stella one.
+- **Reversible:** Yes (Git).
+
 ### T-G4-3 — The picture code is a class with the processor registers as members (2026-10-26, Stage G4.6)
 
 - **Facts:** `drawPicture` was one 610-line function whose lambdas and the registers `A`, `X`, `Y` are shared by all its parts; the maze part is a loop of `goto` labels.

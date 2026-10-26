@@ -1,0 +1,190 @@
+// The game controllers (keyboard keys and gamepads) as the console inputs, and the pad check.
+// (Stage G4.7: moved out of main.cpp, the code is unchanged.)
+#include "pads.hpp"
+#include "options.hpp"
+#include "rom_choice.hpp"
+
+namespace host {
+
+// ---- Keyboard (Stage D10, DECISIONS.md T-D10-1) ----
+
+// Gives the console what the keyboard adds up to. extraReset is for tests that press Reset by frame number.
+void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset)
+{
+  emulator.setJoystick(in.up, in.down, in.left, in.right, in.fire);
+  emulator.setConsoleSelect(in.select);
+  emulator.setConsoleReset(in.reset || extraReset);
+  emulator.setDifficulty(in.leftDifficultyA, in.rightDifficultyA);
+  emulator.setBlackWhite(in.blackWhite);
+}
+
+// --pad-check: a virtual gamepad (SDL's own test device, which goes through the same gamepad code as a real pad) plays the
+// real game through the same Pads code the window uses. Every button and the stick are checked against the game's own
+// memory and the console switches; then the pad is unplugged while the stick is held and plugged in again.
+bool padCheck(const Options& o)
+{
+  std::ofstream report(o.padCheckFile);
+  const auto found = rom::findQuietly(o.romArg, o.settingsFile, o.romsDir);
+  std::vector<std::uint8_t> bytes;
+  if(!report || !found || found->check.status != rom::Status::Ok || !readRomBytes(found->check.path, bytes)) { if(report) report << "result=no usable ROM\n"; return false; }
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(found->check.path), bytes); !error.empty()) { report << "result=" << error << '\n'; return false; }
+
+  bool ok = true;
+  auto line = [&](const std::string& name, bool pass, const std::string& detail) {
+    report << name << (pass ? ": ok  " : ": FAIL  ") << detail << '\n';
+    ok = ok && pass;
+  };
+
+  Pads pads;
+  if(!pads.start()) { report << "result=FAIL gamepads could not start\n"; return false; }
+  report << "real_gamepads_found=" << pads.count() << " (" << pads.names() << ")\n";
+  const int realPads = pads.count();
+
+  SDL_VirtualJoystickDesc desc;
+  SDL_INIT_INTERFACE(&desc);
+  desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+  desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
+  desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
+  desc.name = "Test pad (virtual)";
+
+  SDL_JoystickID virtualId = 0;
+  SDL_Joystick* joystick = nullptr;
+  auto plugIn = [&]() {
+    virtualId = SDL_AttachVirtualJoystick(&desc);
+    joystick = virtualId ? SDL_OpenJoystick(virtualId) : nullptr;
+    return joystick != nullptr;
+  };
+  auto button = [&](SDL_GamepadButton b, bool down) { if(joystick) SDL_SetJoystickVirtualButton(joystick, b, down); };
+  auto axis = [&](SDL_GamepadAxis a, int value) { if(joystick) SDL_SetJoystickVirtualAxis(joystick, a, static_cast<Sint16>(value)); };
+
+  controls::Input lastInput;
+  int lastEd = 0, lastSwitches = 0;
+  std::set<int> switchesSeen;
+  // Runs frames, taking the pad from the real Pads code each frame; returns nothing, leaves the last readings behind.
+  auto run = [&](int frames) {
+    for(int f = 0; f < frames; ++f) {
+      for(SDL_Event e; SDL_PollEvent(&e); ) pads.handleEvent(e);
+      SDL_UpdateJoysticks();
+      lastInput = controls::merge(controls::Input{}, pads.poll());
+      applyInput(emulator, lastInput, false);
+      emulator.runFrame();
+      lastEd = emulator.ram()[0xED - 0x80];  // C6: up 1, down 2, left 4, right 8
+      lastSwitches = emulator.consoleSwitches();
+      switchesSeen.insert(lastSwitches);
+    }
+  };
+  auto hex = [](int v) { char t[8]; std::snprintf(t, sizeof t, "%02x", v); return std::string(t); };
+  // A fresh game with Pac-Man alive and free to move (a ghost catches an idle Pac-Man about 420 frames after a game starts,
+  // docs\SOUND.md, and the game then stops reading the joystick): Options, then the start tune.
+  auto newGame = [&]() {
+    button(SDL_GAMEPAD_BUTTON_START, true);
+    run(10);
+    button(SDL_GAMEPAD_BUTTON_START, false);
+    run(190);
+  };
+
+  line("plug in a virtual gamepad", plugIn(), SDL_GetError());
+  run(30);
+  line("the program opened it", pads.count() == realPads + 1, "pads open: " + std::to_string(pads.count()) + " (" + pads.names() + ")");
+
+  run(60);  // attract mode
+  // Share = Game Select: the select switch (bit 1 of the switch register) goes low while held
+  button(SDL_GAMEPAD_BUTTON_BACK, true);
+  run(8);
+  line("Share = Game Select", lastInput.select && (lastSwitches & 0x02) == 0, "switch register " + hex(lastSwitches));
+  button(SDL_GAMEPAD_BUTTON_BACK, false);
+  run(30);
+  // Options = Game Reset: the reset switch (bit 0) goes low while held, and a game starts
+  button(SDL_GAMEPAD_BUTTON_START, true);
+  run(10);
+  line("Options = Game Reset", lastInput.reset && (lastSwitches & 0x01) == 0, "switch register " + hex(lastSwitches));
+  button(SDL_GAMEPAD_BUTTON_START, false);
+  run(200);  // the start tune plays, then Pac-Man can move
+  line("both released: switches back", (lastSwitches & 0x03) == 0x03, "switch register " + hex(lastSwitches));
+
+  line("nothing pressed: joystick byte 0", lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+  // D-pad and stick, all four directions each (the game's joystick byte: up 1, down 2, left 4, right 8)
+  const struct { SDL_GamepadButton pad; int axisValue; bool vertical; int expect; const char* name; } dirs[] = {
+      {SDL_GAMEPAD_BUTTON_DPAD_UP, -32767, true, 1, "up"}, {SDL_GAMEPAD_BUTTON_DPAD_DOWN, 32767, true, 2, "down"},
+      {SDL_GAMEPAD_BUTTON_DPAD_LEFT, -32767, false, 4, "left"}, {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, 32767, false, 8, "right"}};
+  for(const auto& d : dirs) {
+    newGame();  // Pac-Man must be alive for each direction
+    button(d.pad, true);
+    run(6);
+    line(std::string("D-pad ") + d.name, lastEd == d.expect, "RAM $ED = " + std::to_string(lastEd) + " (wanted " + std::to_string(d.expect) + ")");
+    button(d.pad, false);
+    run(6);
+    axis(d.vertical ? SDL_GAMEPAD_AXIS_LEFTY : SDL_GAMEPAD_AXIS_LEFTX, d.axisValue);
+    run(6);
+    line(std::string("left stick ") + d.name, lastEd == d.expect, "RAM $ED = " + std::to_string(lastEd) + " (wanted " + std::to_string(d.expect) + ")");
+    axis(d.vertical ? SDL_GAMEPAD_AXIS_LEFTY : SDL_GAMEPAD_AXIS_LEFTX, 0);
+    run(6);
+    line(std::string("stick back to the middle after ") + d.name, lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+  }
+  newGame();
+  // The dead zone, and a crooked push (mostly right, a little up: one direction, right)
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 8000);
+  run(6);
+  line("stick at 25 %: inside the dead zone", lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 30000);
+  axis(SDL_GAMEPAD_AXIS_LEFTY, -18000);
+  run(6);
+  line("crooked push (right 92 %, up 55 %): right only", lastEd == 8, "RAM $ED = " + std::to_string(lastEd));
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 0);
+  axis(SDL_GAMEPAD_AXIS_LEFTY, 0);
+  run(6);
+  button(SDL_GAMEPAD_BUTTON_SOUTH, true);
+  run(2);
+  line("Cross = fire", lastInput.fire, "");
+  button(SDL_GAMEPAD_BUTTON_SOUTH, false);
+  button(SDL_GAMEPAD_BUTTON_WEST, true);
+  run(2);
+  line("Square = fire", lastInput.fire, "");
+  button(SDL_GAMEPAD_BUTTON_WEST, false);
+  run(2);
+
+  // Unplug with the stick held right: the direction must go with it
+  newGame();
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 32767);
+  run(10);
+  line("stick held right before unplugging", lastEd == 8, "RAM $ED = " + std::to_string(lastEd));
+  SDL_CloseJoystick(joystick);
+  joystick = nullptr;
+  SDL_DetachVirtualJoystick(virtualId);
+  run(10);
+  line("unplugged: the program closed the pad", pads.count() == realPads, "pads open: " + std::to_string(pads.count()));
+  line("unplugged: nothing stays pressed", lastEd == 0 && !lastInput.right, "RAM $ED = " + std::to_string(lastEd));
+  run(120);
+  line("still running 2 seconds later", lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+
+  // Plug in again
+  line("plug in again", plugIn(), SDL_GetError());
+  run(30);
+  line("the program opened it again", pads.count() == realPads + 1, "pads open: " + std::to_string(pads.count()));
+  newGame();
+  axis(SDL_GAMEPAD_AXIS_LEFTX, -32767);
+  run(8);
+  line("works after plugging in again: left", lastEd == 4, "RAM $ED = " + std::to_string(lastEd));
+  axis(SDL_GAMEPAD_AXIS_LEFTX, 0);
+  run(4);
+
+  // While the window is not in front the pad is ignored
+  newGame();
+  axis(SDL_GAMEPAD_AXIS_LEFTY, -32767);
+  pads.setActive(false);
+  run(6);
+  line("window not in front: pad ignored", lastEd == 0, "RAM $ED = " + std::to_string(lastEd));
+  pads.setActive(true);
+  run(6);
+  line("window in front again: pad counts at once", lastEd == 1, "RAM $ED = " + std::to_string(lastEd));
+  axis(SDL_GAMEPAD_AXIS_LEFTY, 0);
+
+  if(joystick) { SDL_CloseJoystick(joystick); joystick = nullptr; SDL_DetachVirtualJoystick(virtualId); }
+  report << "console_switch_values_seen=";
+  for(int v : switchesSeen) report << hex(v) << ' ';
+  report << "\nresult=" << (ok ? "OK" : "FAIL") << '\n';
+  return ok;
+}
+
+}  // namespace host

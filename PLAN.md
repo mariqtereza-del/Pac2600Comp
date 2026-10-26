@@ -2603,7 +2603,7 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G3_STATE.md`, `DECISIONS.md` (T-G3-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`, `docs\GLOSSARY.md`, `docs\G1_MODULE_LAYOUT.md`.
       - **Git checkpoint:** `Stage G3: Separate the state from its memory layout`.
       - **Next stage:** G4 — Move code into the G1 modules.
-4. **[In progress: G4.1 done] G4 — Move code into the G1 modules,** one module per session, lockstep green after each. Split into sub-stages G4.1-G4.7 (T-G4-1, Rule 12); the owner allowed file moves for all of G4.
+4. **[Done] G4 — Move code into the G1 modules,** one module per session, lockstep green after each. Split into sub-stages G4.1-G4.7 (T-G4-1, Rule 12); the owner allowed file moves for all of G4.
     - **G4 — Move code into the G1 modules** *(expanded 2026-10-26; split into sub-stages, one per session)*
       - **Objective:** every function of `routines.*`, `kernel.*` and `main.cpp` ends up in the file `docs\G1_MODULE_LAYOUT.md` names for it; `routines.*` disappears.
       - **Why it matters:** the files are over the size limit and mix unrelated jobs; this is what makes the source readable.
@@ -2707,7 +2707,23 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G4_MOVES.md`, `DECISIONS.md` (T-G4-3), `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G4.6: Cut the picture code into picture\kernel_*`.
       - **Next stage:** G4.7.
-        7. **[Not started] G4.7 — `src\host` split** (`options`, `screen`, `pads`, `pacer`, `checks`); window, sound and pad checks.
+        7. **[Done] G4.7 — `src\host` split** (see the entry below); window, sound and pad checks.
+    - **G4.7 — Split `src\host\main.cpp`** *(expanded and done 2026-10-26)*
+      - **Objective:** `main.cpp` (1,601 lines, one anonymous namespace) becomes `main()` plus nine small parts.
+      - **Why it matters:** the window program is what the owner runs; each part (arguments, ROM choice, picture, pads, pacing, window tracking, checks, playing, headless runs) now has a name and a file.
+      - **Prerequisites:** G4.6 Done (`1350bca`), clean tree.
+      - **What Claude Code will do:** a script (`g47_split.py`, scratch folder) lists every top-level item of the old file, assigns it to a part, finds the items other parts use, and writes headers for those only; everything else becomes file-local. Code text is unchanged except: a signature's default argument stays in the header, and the shared constants and types are `inline`/in headers. `CMakeLists.txt` gets a static library `host_app` that both programs (`pacman2600`, `pacman2600_ref`) link.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** both programs behave as before.
+      - **Verification:** a line-by-line comparison of old and new text (only 6 intended differences); both builds; the ten proofs; `d10_replay_compare` (`f25_games` is not rerun: the game library did not change in G4.7); and for both programs `--self-check`, `--find-rom`, `--headless`, `--layout-check` (two sizes), `--help-check`, `--fullscreen-check`, `--audio-check` (20 s), `--pad-check`, `--timed`, `--state-report`, key pushing with recording and the two replays, and the six `test_*` programs.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** the window tests open real windows on the owner's screen for a few seconds.
+      - **Recovery:** return to `1350bca` (with your OK).
+      - **Documentation updates:** `docs\G4_MOVES.md`, `DECISIONS.md` (T-G4-4), `ARCHITECTURE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G4.7: Split src\host\main.cpp into its parts`.
+      - **Next stage:** G5 — Remove leftovers.
 5. **[Not started] G5 — Remove leftovers.** Duplicated logic, unused helpers, literal blocks (or your documented approval of each remaining one), and any dependency the game no longer needs.
 6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments.
 7. **[Not started] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.**
@@ -2883,3 +2899,4 @@ Never claim something works or exists without showing the evidence.
 - [stella2014-libretro](https://github.com/libretro/stella2014-libretro): the libretro version of Stella, GPL-2.
 
 Hardware facts in sections 1–2 and D6 (4 KB size, 128 bytes RAM, 160-pixel lines, 12:7 pixel shape) are from general knowledge and are confirmed by measurement in stages A3, A4, C3 and D6 before anything relies on them.
+ 

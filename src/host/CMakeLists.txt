@@ -61,16 +61,22 @@ add_library(emulator_native STATIC native_emulator.cpp)
 target_compile_options(emulator_native PRIVATE /W4 /permissive-)
 target_link_libraries(emulator_native PUBLIC game_native)
 
+# The program's parts (Stage G4.7, split out of main.cpp): arguments, ROM choice, screen, pads, pacing, window handling, headless runs.
+# They need an Emulator but not which one: the executables below link the native one or the Stella one.
+add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp pads.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp)
+target_compile_options(host_app PRIVATE /W4 /permissive-)
+target_link_libraries(host_app PUBLIC SDL3::SDL3 rom_finder layout windowstate audio controls inputlog trace)
+
 # WIN32 = a normal windowed program (no console window when double-clicked).
 # pacman2600 is the game: it plays with the rebuilt game (emulator_native) and contains no Stella.
 add_executable(pacman2600 WIN32 main.cpp)
 target_compile_options(pacman2600 PRIVATE /W4 /permissive-)
-target_link_libraries(pacman2600 PRIVATE SDL3::SDL3 rom_finder emulator_native layout windowstate audio controls inputlog trace)
+target_link_libraries(pacman2600 PRIVATE host_app emulator_native)
 
 # pacman2600_ref is the same program with Stella inside: the REFERENCE the tests compare with (golden traces are made with it). It is not part of a release.
 add_executable(pacman2600_ref WIN32 main.cpp)
 target_compile_options(pacman2600_ref PRIVATE /W4 /permissive-)
-target_link_libraries(pacman2600_ref PRIVATE SDL3::SDL3 rom_finder emulator layout windowstate audio controls inputlog trace)
+target_link_libraries(pacman2600_ref PRIVATE host_app emulator)
 
 # Tests for the ROM finder (Stage D3): build/host/test_rom_finder.exe <scratch folder> <rom copy>
 add_executable(test_rom_finder ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_rom_finder.cpp)

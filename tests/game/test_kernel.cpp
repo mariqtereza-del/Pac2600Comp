@@ -15,6 +15,7 @@
 
 #include "../../src/game/cartridge_data.hpp"
 #include "../../src/game/kernel.hpp"
+#include "../../src/testsupport/state_bytes.hpp"
 
 using game::ChipWrite;
 
@@ -75,12 +76,14 @@ int main(int argc, char** argv) {
       auto end = ends.find(f);
       if (exp == expected.end() || end == ends.end()) continue;
       ++frames;
-      game::Ram ram;
-      for (int i = 0; i < 128; ++i) ram[i] = start[i];
+      testsupport::Bytes bytes;
+      for (int i = 0; i < 128; ++i) bytes[i] = start[i];
+      game::GameState state = testsupport::fromBytes(bytes);
       Recorder rec;
       int startLine = 16;
       for (const auto& w : exp->second) if (w.site == 0xF083) { startLine = w.line; break; }
-      game::drawPicture(ram, cart, startLine, rec);
+      game::drawPicture(state, cart, startLine, rec);
+      bytes = testsupport::toBytes(state);
       for (auto& w : rec.writes) w.clock += shift;
       writesChecked += static_cast<long>(exp->second.size());
       bool same = rec.writes.size() == exp->second.size();
@@ -94,7 +97,7 @@ int main(int argc, char** argv) {
       bool ramSame = true;
       int badByte = -1;
       for (int i = 0; i < 118; ++i)   // all but the stack bytes $F6-$FF
-        if (ram[i] != end->second[i]) { ramSame = false; badByte = i; break; }
+        if (bytes[i] != end->second[i]) { ramSame = false; badByte = i; break; }
       if (ramSame) ++ramEqual;
       if ((!same || !ramSame) && shown++ < show) {
         std::printf("%s frame %d (start line %d):", g.c_str(), f, startLine);
@@ -105,7 +108,7 @@ int main(int argc, char** argv) {
             if (k < exp->second.size()) std::printf(" emu[%zu] line %d clock %d reg $%02X val $%02X site $%04X;", k, exp->second[k].line, exp->second[k].clock, exp->second[k].reg, exp->second[k].value, exp->second[k].site);
           }
         }
-        if (!ramSame) std::printf(" memory differs at $%02X: ours $%02X emulator $%02X;", 0x80 + badByte, ram[badByte], end->second[badByte]);
+        if (!ramSame) std::printf(" memory differs at $%02X: ours $%02X emulator $%02X;", 0x80 + badByte, bytes[badByte], end->second[badByte]);
         std::printf("\n");
       }
     }

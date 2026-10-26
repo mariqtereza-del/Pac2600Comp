@@ -1,6 +1,7 @@
 #include "natives.hpp"
 
 #include "../game/routines.hpp"
+#include "../testsupport/state_bytes.hpp"
 
 namespace lockstep {
 namespace {
@@ -23,9 +24,10 @@ void rngStep(Machine& m, bool broken) {
 // Hands the memory of the machine to a game routine and writes back what changed (so the writer of each byte is the native routine).
 template <typename F>
 void withRam(Machine& m, F&& fn) {
-  game::Ram before = m.ram();
-  game::Ram after = before;
-  fn(after);
+  const testsupport::Bytes before = m.ram();
+  game::GameState state = testsupport::fromBytes(before);
+  fn(state);
+  const testsupport::Bytes after = testsupport::toBytes(state);
   for (int i = 0; i < 128; ++i)
     if (after[i] != before[i]) m.write(static_cast<uint16_t>(0x80 + i), after[i]);
 }
@@ -72,7 +74,7 @@ void finishMove(Machine& m, const game::Move& mv) {
 void moveNative(Machine& m) {
   const uint8_t object = m.x;
   game::Move mv{};
-  withRam(m, [&](game::Ram& r) { mv = game::moveObject(r, object); });
+  withRam(m, [&](game::GameState& r) { mv = game::moveObject(r, object); });
   finishMove(m, mv);
 }
 
@@ -97,7 +99,7 @@ class MachineChip : public game::SoundChip {
 void soundEffectsNative(Machine& m, bool wrong = false) {
   if (m.x != 0) { m.fail(); return; }
   MachineChip chip(m, wrong);
-  withRam(m, [&](game::Ram& r) { game::soundEffects(r, chip); });
+  withRam(m, [&](game::GameState& r) { game::soundEffects(r, chip); });
   m.rts();
 }
 
@@ -109,7 +111,7 @@ void pictureSkipNative(Machine& m) { m.pc = 0xF4E7; }
 // start ($F7D6) with the stack pointer at $FF. Contract: stack pointer and arrival address; free stack bytes are ignored.
 void startUpNative(Machine& m) {
   MachineChip chip(m, false);
-  withRam(m, [&](game::Ram& r) { game::startUp(r, chip); });
+  withRam(m, [&](game::GameState& r) { game::startUp(r, chip); });
   m.sp = 0xFF;
   m.p = static_cast<uint8_t>((m.p | 0x04) & ~0x08);   // SEI, CLD
   m.pc = 0xF7D6;
@@ -123,7 +125,7 @@ void frameStartNative(Machine& m) {
   in.colour = (m.read(0x282) & 0x08) != 0;
   MachineChip chip(m, false);
   const game::Cartridge cart(m.romBytes());
-  withRam(m, [&](game::Ram& r) { game::frameStart(r, cart, in, chip); });
+  withRam(m, [&](game::GameState& r) { game::frameStart(r, cart, in, chip); });
   m.x = 0;
   m.pc = 0xF87C;
 }
@@ -139,7 +141,7 @@ void bottomLogicNative(Machine& m) {
   MachineChip chip(m, false);
   const game::Cartridge cart(m.romBytes());
   bool ok = true;
-  withRam(m, [&](game::Ram& r) { ok = game::bottomLogic(r, cart, in, chip); });
+  withRam(m, [&](game::GameState& r) { ok = game::bottomLogic(r, cart, in, chip); });
   if (!ok) { m.fail(); return; }
   m.pc = 0xF7D1;
 }
@@ -158,7 +160,7 @@ void topLogicNative(Machine& m) {
   MachineChip chip(m, false);
   const game::Cartridge cart(m.romBytes());
   bool ok = true;
-  withRam(m, [&](game::Ram& r) { ok = game::topLogic(r, cart, in, chip); });
+  withRam(m, [&](game::GameState& r) { ok = game::topLogic(r, cart, in, chip); });
   if (!ok) { m.fail(); return; }
   m.pc = 0xF07F;
 }
@@ -170,7 +172,7 @@ void scoreDigitsNative(Machine& m) {
   MachineChip chip(m, false);
   const game::Cartridge cart(m.romBytes());
   const uint8_t offset = m.y;
-  withRam(m, [&](game::Ram& r) { game::scoreDigits(r, cart, chip, offset); });
+  withRam(m, [&](game::GameState& r) { game::scoreDigits(r, cart, chip, offset); });
   m.rts();
 }
 
@@ -181,7 +183,7 @@ void scoreDigitsNative(Machine& m) {
 void keepGoingNative(Machine& m) {
   const game::Cartridge cart(m.romBytes());
   game::KeepGoing r = game::KeepGoing::NotOnCell;
-  withRam(m, [&](game::Ram& ram) { r = game::pacmanKeepGoing(ram, cart); });
+  withRam(m, [&](game::GameState& ram) { r = game::pacmanKeepGoing(ram, cart); });
   if (r == game::KeepGoing::Stands) {
     m.sp = static_cast<uint8_t>(m.sp + 2);
     m.pc = 0xF7BA;
@@ -197,7 +199,7 @@ void soundMusicNative(Machine& m) {
   if (sweep && m.x != 1) { m.fail(); return; }
   MachineChip chip(m, false);
   const game::Cartridge cart(m.romBytes());
-  withRam(m, [&](game::Ram& r) { game::soundMusic(r, cart, chip); });
+  withRam(m, [&](game::GameState& r) { game::soundMusic(r, cart, chip); });
   m.rts();
 }
 
@@ -207,7 +209,7 @@ void soundStartNative(Machine& m) {
   const game::Cartridge cart(m.romBytes());
   uint8_t a = 0;
   const uint8_t sound = m.y;
-  withRam(m, [&](game::Ram& r) { a = game::soundStart(r, cart, sound); });
+  withRam(m, [&](game::GameState& r) { a = game::soundStart(r, cart, sound); });
   m.a = a;
   m.setZN(a);
   m.rts();
@@ -219,7 +221,7 @@ void ghostUpdateNative(Machine& m) {
   const uint8_t object = m.x;
   const game::Cartridge cart(m.romBytes());
   bool ok = true;
-  withRam(m, [&](game::Ram& r) { ok = game::ghostUpdate(r, cart, object); });
+  withRam(m, [&](game::GameState& r) { ok = game::ghostUpdate(r, cart, object); });
   if (!ok) { m.fail(); return; }
   m.rts();
 }
@@ -232,9 +234,9 @@ void ghostDecideNative(Machine& m, bool wrong = false) {
   const uint8_t object = m.x;
   const game::Cartridge cart(m.romBytes());
   bool ok = true;
-  withRam(m, [&](game::Ram& r) {
+  withRam(m, [&](game::GameState& r) {
     ok = game::ghostDecide(r, cart, object);
-    if (wrong) r[game::ram::TEMP_D2 - 0x80] += 1;   // test fixture: a small mistake in a scratch byte
+    if (wrong) r.scratch[game::kTempD2] += 1;   // test fixture: a small mistake in a scratch byte
   });
   if (!ok) { m.fail(); return; }
   m.rts();
@@ -247,7 +249,7 @@ void animateNative(Machine& m) {
   const uint8_t object = m.x, sprite = m.y;
   const game::Cartridge cart(m.romBytes());
   game::AnimResult r{};
-  withRam(m, [&](game::Ram& ram) { r = game::animateObject(ram, cart, object, sprite); });
+  withRam(m, [&](game::GameState& ram) { r = game::animateObject(ram, cart, object, sprite); });
   auto carry = [&](bool c) { m.p = static_cast<uint8_t>((m.p & ~0x01) | (c ? 1 : 0)); };
   auto finish = [&](uint8_t a) { m.a = a; m.setZN(a); };
   switch (r.path) {
@@ -346,7 +348,7 @@ void tryNative(Machine& m, uint8_t dir) {
   const uint8_t stateBefore = m.read(static_cast<uint16_t>(0xBB + object));
   const game::Cartridge cart(m.romBytes());
   game::TryResult r{};
-  withRam(m, [&](game::Ram& ram) { r = game::tryDirection(ram, cart, object, dir); });
+  withRam(m, [&](game::GameState& ram) { r = game::tryDirection(ram, cart, object, dir); });
   if (tryRegisters(m, dir, r, object, stateBefore)) dropCallerAndReturn(m);
   else m.rts();
 }
@@ -364,7 +366,7 @@ void pairNative(Machine& m, bool vertical) {
   const uint8_t stateBefore = m.read(static_cast<uint16_t>(0xBB + object));
   const game::Cartridge cart(m.romBytes());
   game::PairResult pr{};
-  withRam(m, [&](game::Ram& ram) { pr = game::tryPair(ram, cart, object, vertical, zero); });
+  withRam(m, [&](game::GameState& ram) { pr = game::tryPair(ram, cart, object, vertical, zero); });
   // The original pushes return addresses with its JSRs and leaves them in the stack bytes (part of the compared memory): the address after the JSR
   // into TRY_PAIR_UD / TRY_PAIR_LR at the top, and under it the address after the JSR into each TRY routine that was run (the last one stays).
   const uint16_t sp0 = m.sp;
@@ -390,7 +392,7 @@ void livesMarkersNative(Machine& m) {
   const game::Cartridge cart(m.romBytes());
   uint8_t last = 0;
   const uint8_t lives = m.x, offset = m.y;
-  withRam(m, [&](game::Ram& r) { last = game::livesMarkers(r, cart, lives, offset); });
+  withRam(m, [&](game::GameState& r) { last = game::livesMarkers(r, cart, lives, offset); });
   m.a = last;
   m.setZN(last);
   m.rts();
@@ -402,7 +404,7 @@ void addScoreNative(Machine& m) {
   const uint8_t callerX = m.x;
   const game::Cartridge cart(m.romBytes());
   game::Bcd last{};
-  withRam(m, [&](game::Ram& r) { last = game::addScore(r, cart, m.y, callerX); });
+  withRam(m, [&](game::GameState& r) { last = game::addScore(r, cart, m.y, callerX); });
   m.a = last.value;
   m.p = static_cast<uint8_t>((m.p & ~(0x08 | 0x41)) | (last.carry ? 0x01 : 0) | (last.overflow ? 0x40 : 0));
   m.setZN(callerX);
@@ -415,7 +417,7 @@ void setDirectionNative(Machine& m) {
   const uint8_t object = m.x;
   const uint8_t direction = m.y & 3;
   game::Move mv{};
-  withRam(m, [&](game::Ram& r) { mv = game::setDirection(r, object, direction); });
+  withRam(m, [&](game::GameState& r) { mv = game::setDirection(r, object, direction); });
   finishMove(m, mv);
 }
 
@@ -426,7 +428,7 @@ void setDirectionNative(Machine& m) {
 void locateNative(Machine& m) {
   const uint8_t object = m.x;
   game::Location loc{};
-  withRam(m, [&](game::Ram& r) { loc = game::locateObject(r, object); });
+  withRam(m, [&](game::GameState& r) { loc = game::locateObject(r, object); });
   // The row loop ends with an SBC #10: it leaves the overflow flag as that subtraction sets it (the flag is kept by the PHP and stays to the end).
   uint8_t flags = m.p;
   if (loc.row != 0) {
@@ -445,7 +447,7 @@ void locateNative(Machine& m) {
 // F21.5/F21.6 NEW_GAME_SETUP ($FBF4), NEW_MAZE ($FC0C) and PLACE_OBJECTS ($FC21): all three end with LDA #$80 (A = $80, negative set, zero clear), X = $FF (the loop leaves it after
 // DEX of 0), Y = 0 (LDY #0 in the loop), carry untouched.
 void placeNative(Machine& m, int which) {
-  withRam(m, [which](game::Ram& r) { if (which == 2) game::newGameSetup(r); else if (which == 1) game::newMaze(r); else game::placeObjects(r); });
+  withRam(m, [which](game::GameState& r) { if (which == 2) game::newGameSetup(r); else if (which == 1) game::newMaze(r); else game::placeObjects(r); });
   m.a = 0x80;
   m.x = 0xFF;
   m.y = 0;
@@ -459,7 +461,7 @@ void placeNative(Machine& m, int which) {
 // negative clear (LDA of a positive number), carry untouched.
 void wrapNative(Machine& m, bool top) {
   const uint8_t object = m.x;
-  withRam(m, [object, top](game::Ram& r) { if (top) game::wrapToTop(r, object); else game::wrapToBottom(r, object); });
+  withRam(m, [object, top](game::GameState& r) { if (top) game::wrapToTop(r, object); else game::wrapToBottom(r, object); });
   m.a = top ? 0x0B : 0x51;
   m.setZN(m.a);
   m.rts();
@@ -470,7 +472,7 @@ void wrapNative(Machine& m, bool top) {
 void rngRegisters(Machine& m) {
   const uint8_t old = m.read(0xCB);
   uint8_t result = 0;
-  withRam(m, [&result](game::Ram& r) { result = game::rngStep(r); });
+  withRam(m, [&result](game::GameState& r) { result = game::rngStep(r); });
   m.y = m.read(0xCB) & 7;
   m.a = result;
   m.p = static_cast<uint8_t>((m.p & ~0x01) | (old >> 7));
@@ -486,9 +488,9 @@ void rngStepNative(Machine& m) {
 // the flags of the last DEX: negative set, zero clear.
 // `variant` 1 = test fixture that forgets LIVES_P2 (found by the memory comparison), 2 = test fixture that leaves X = 0 (found only by the routine check).
 void clearScores(Machine& m, int variant = 0) {
-  withRam(m, [variant](game::Ram& r) {
+  withRam(m, [variant](game::GameState& r) {
     game::clearScores(r);
-    if (variant == 1) r[game::ram::LIVES_P2 - 0x80] = 1;
+    if (variant == 1) r.player[1].lives = 1;
   });
   m.a = 0;
   m.x = (variant == 2) ? 0 : 0xFF;
@@ -501,7 +503,7 @@ void clearScores(Machine& m, int variant = 0) {
 void swapPlayers(Machine& m) {
   const uint8_t oldA = m.read(0x88);
   const uint8_t oldY = m.read(0x9C);
-  withRam(m, [](game::Ram& r) { game::swapPlayers(r); });
+  withRam(m, [](game::GameState& r) { game::swapPlayers(r); });
   m.a = oldA;
   m.y = oldY;
   m.x = 0xFF;

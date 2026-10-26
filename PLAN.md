@@ -2585,7 +2585,24 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\CONVENTIONS.md`, `DECISIONS.md` (T-G2-1), `PROJECT_STATUS.md`, `PLAN.md`, `docs\GLOSSARY.md`.
       - **Git checkpoint:** `Stage G2: Coding and comment conventions`.
       - **Next stage:** G3 — Separate the state from its memory layout.
-3. **[Not started] G3 — Separate the state from its memory layout.** In Phase F the game state copied the original 128-byte layout so lockstep could compare it directly. Now give it named fields, and move the byte-for-byte mapping into the test tool only.
+3. **[Done] G3 — Separate the state from its memory layout.** In Phase F the game state copied the original 128-byte layout so lockstep could compare it directly. Now give it named fields, and move the byte-for-byte mapping into the test tool only.
+    - **G3 — Separate the state from its memory layout** *(expanded and done 2026-10-26)*
+      - **Objective:** the game works on named fields (`game::GameState`) instead of a 128-byte array addressed by number; the byte-for-byte mapping exists only for the test tools.
+      - **Why it matters:** `at(ram, ram::GHOST_X1)` forces a reader to know the original's memory map; `st.objX[2]` does not. It is also the base of the module moves in G4.
+      - **Prerequisites:** G2 Done (`d3311b3`), working tree clean, lockstep suite green.
+      - **What Claude Code will do:** `src\game\state.hpp` (the struct, in the original's order, exactly 128 bytes); `src\testsupport\` (`ram_map.hpp` moved here by the generator, `state_layout_checks.hpp` with 128 compile-time checks, `state_bytes.hpp`); every access in `routines.*`, `kernel.*`, `game.*` rewritten; lockstep adapters, host trace/poke and `test_kernel` use the byte conversion; `tools\g3_state_layout.py`; record T-G3-1; `docs\G3_STATE.md`.
+      - **What I must do:** answer one question: may the unused old `src\game\ram_map.hpp` be deleted (Rule 6)? (Answered yes.)
+      - **Exact instructions:** none.
+      - **Required input:** the yes/no above.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** no `ram::` name, memory address or `Ram` type left in `src\game`; all lockstep proofs unchanged.
+      - **Verification:** both builds with 0 errors; `f21_native`, `f21_routines`, `f22_loader`, `f20_lockstep`, `f23_kernel`, `f23_tia`, `f23_pictures`, `f23_collisions`, `f24_audio`, `f24_sound`, `f25_games --games 120`, `d10_replay_compare` all say their OK line; search finds no address use in `src\game`; direct before/after comparison with the committed build.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** a field in the wrong place would change behaviour: guarded by the 128 static_asserts and the lockstep suite. The scratch bytes stay an array (honest about the original's reuse); G5 may revisit them.
+      - **Recovery:** returning to `d3311b3` (with your OK) restores the old code; no data changes.
+      - **Documentation updates:** `docs\G3_STATE.md`, `DECISIONS.md` (T-G3-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`, `docs\GLOSSARY.md`, `docs\G1_MODULE_LAYOUT.md`.
+      - **Git checkpoint:** `Stage G3: Separate the state from its memory layout`.
+      - **Next stage:** G4 — Move code into the G1 modules.
 4. **[Not started] G4 — Move code into the G1 modules,** one module per session, lockstep green after each.
 5. **[Not started] G5 — Remove leftovers.** Duplicated logic, unused helpers, literal blocks (or your documented approval of each remaining one), and any dependency the game no longer needs.
 6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments.

@@ -11,6 +11,7 @@
 #include "../game/game.hpp"
 #include "../game/renderer.hpp"
 #include "ntsc_palette.hpp"
+#include "../testsupport/state_bytes.hpp"
 
 struct Emulator::Impl {
   game::CartridgeData data;
@@ -21,6 +22,7 @@ struct Emulator::Impl {
   bool up = false, down = false, left = false, right = false, fire = false, select = false, reset = false;
   bool leftA = false, rightA = false, blackWhite = false;
   bool softBlend = false;
+  mutable testsupport::Bytes memory{};   // the state as the original's 128 bytes, for the trace and the test options (src/testsupport)
   // what the last frame made
   std::vector<std::int16_t> stereo;
   const std::array<std::uint8_t, game::TiaVideo::kWidth * game::TiaVideo::kHeight>* picture = nullptr;
@@ -130,10 +132,10 @@ std::vector<std::uint32_t> Emulator::colours() const
 
 void Emulator::pokeRam(int address, std::uint8_t value)
 {
-  if(address >= 0x80 && address <= 0xFF && impl_->game) impl_->game->state()[static_cast<std::size_t>(address - 0x80)] = value;
+  if(address >= 0x80 && address <= 0xFF && impl_->game) testsupport::byteAt(impl_->game->state(), address) = value;
 }
 
-const std::uint8_t* Emulator::ram() const { return impl_->game->state().data(); }
+const std::uint8_t* Emulator::ram() const { impl_->memory = testsupport::toBytes(impl_->game->state()); return impl_->memory.data(); }
 
 std::uint64_t Emulator::pictureFingerprint() const
 {

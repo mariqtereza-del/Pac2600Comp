@@ -31,13 +31,13 @@ class Game {
   // The number of scanlines of the frame just played (262 as a rule, 43 for the first, 263 or 261 around a frame whose frame start ran one line long).
   int lastFrameLines() const { return lastLines_; }
 
-  const Ram& state() const { return ram_; }
-  Ram& state() { return ram_; }
+  const GameState& state() const { return state_; }
+  GameState& state() { return state_; }
 
  private:
   bool frameStartRanLong(const ConsoleInput& console) const;
   const Cartridge& cart_;
-  Ram ram_{};
+  GameState state_{};
   bool started_ = false;
   TimedChip* picture_ = nullptr;
   int shift_ = 0;         // 1 when the vertical timer of the last frame start ended one line early: this frame's numbering starts one line later

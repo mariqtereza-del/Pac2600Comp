@@ -134,6 +134,17 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G3-1 — The game state has named fields; the byte map lives in `src\testsupport` (2026-10-26, Stage G3)
+
+- **Facts:** the native game worked on `std::array<uint8_t,128>` and 357 places named bytes by address (`at(ram, ram::GHOST_X1)`). The lockstep tools compare those 128 bytes with the original after every frame.
+- **Choice:** `game::GameState` (`src\game\state.hpp`) is a plain struct whose fields follow the original's memory order and add up to exactly 128 bytes: `frameCounter`, `player[2]` (maze, lives, level, pill flags, score colour), `objX/objY/objState/speedAcc[5]` (0 = Pac-Man, 1-4 ghosts), `ghostTimer[4]`, `score[6]`, `colour[6]`, and so on. The picture code's scratch bytes `$D2-$E3` stay one array `scratch[]` with named places (`kTempD2`, `kSprite0Y`, `kSprite0PtrLo` ...), because the original gives the same bytes several jobs (the score digit pointers overlay the sprite set-up bytes). `swapPlayers` is still the exchange of the two `PlayerBlock`s.
+- **Why the same order:** a layout copy means one `memcpy` converts to and from the original's memory, so the lockstep proofs stay exact and nothing about timing or behaviour can change. A different order would need a field-by-field mapping in the test tool that could itself be wrong.
+- **Where the addresses went:** `src\testsupport\ram_map.hpp` (the F7 names, made by `tools\f20_gen_tables.py`), `state_layout_checks.hpp` (one `static_assert` per byte, 128 of 128, made by `tools\g3_state_layout.py`; the build fails if a field is not where the F7 map says) and `state_bytes.hpp` (`toBytes`, `fromBytes`, `byteAt`). Only the lockstep tool, the host's trace/poke options and `test_kernel` include them; `src\game` includes nothing from there (checked by search).
+- **How it was done:** a one-off script rewrote every access from the same name table (so the field names come from one place); the 8 irregular places (the kernel's `SPRITE_X + X`, its maze reads at `$88/$8C/$90/$94 + Y`, pointer reads) were done by hand. Name of the type is `GameState` because `tia_video.hpp` already has a `State`.
+- **Proof:** see `docs\G3_STATE.md`. Behaviour before and after was also compared directly: the committed version (built in a scratch checkout) and the new one both give IDENTICAL with nothing left out on BL-001, BL-035 and BL-050.
+- **Deleted with the owner's OK (Rule 6, asked and answered yes in this session):** the old `src\game\ram_map.hpp`, which nothing used any more (`git rm`; it stays in Git history).
+- **Reversible:** Yes (Git).
+
 ### T-G2-1 — Conventions; the evidence for `ORIGINAL:` tags is the F-stage documents (2026-10-26, Stage G2)
 
 - **Facts:** the plan asked for a link to an `RE_NOTES.md` entry. That file does not exist; the findings of Phase F are in `docs\F<n>_*.md`, each written by the tool that proves it, and in `DECISIONS.md`.

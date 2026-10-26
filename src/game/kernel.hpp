@@ -37,6 +37,6 @@ struct PictureEnd {
 
 // Draws one picture. `startLine` is the scanline on which the original code starts (it follows the top logic, whose length varies a little; the
 // maze itself starts on `kernelStartLine`, 34 as a rule: one line earlier after a frame whose frame start ran one line long, see game.cpp).
-PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip& chip, int kernelStartLine = 34);
+PictureEnd drawPicture(GameState& st, const Cartridge& cart, int startLine, TimedChip& chip, int kernelStartLine = 34);
 
 }  // namespace game

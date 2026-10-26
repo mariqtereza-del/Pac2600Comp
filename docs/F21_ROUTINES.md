@@ -4,7 +4,7 @@
 
 ## How a routine is rewritten (the protocol)
 
-1. The routine is written as a C++ function in `src\game\routines.cpp`, working on the 128 memory bytes with the names of F7 (`src\game\ram_map.hpp`, generated). No ROM data and no emulator code is allowed there; things the original reads from the cartridge come later through the data loader (F22).
+1. The routine is written as a C++ function in `src\game\routines.cpp`, working on the game state (`game::GameState`, `src\game\state.hpp`: named fields in the order of the 128 memory bytes of the original; the F7 address names are only in `src\testsupport`). No ROM data and no emulator code is allowed there; things the original reads from the cartridge come later through the data loader (F22).
 2. An adapter in `src\lockstep\natives.cpp` registers it under the entry address of the original and reproduces what the original leaves in the registers and flags (the callers may depend on them).
 3. `lockstep.exe ... --native <name> --verify` runs all recorded games with the native routine in place of the original. It checks (a) all 128 bytes after every frame and (b) at every call, the native results against the original code run on a copy (memory, `A`, `X`, `Y`, stack pointer, return address, flags). Both must be clean in all 70 games.
 4. Only then is the routine marked done here and in `PLAN.md`, and the stage is committed. Fixtures that are wrong on purpose prove the checks bite.

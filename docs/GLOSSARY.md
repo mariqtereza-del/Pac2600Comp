@@ -200,3 +200,4 @@ Every project term in one line of plain English. New terms are added in the stag
 | Reference program | `pacman2600_ref.exe`: the same window program with the Stella emulator inside. The tests ask it for the "right answers" (golden traces) and compare our own game with them. The game you play, `pacman2600.exe`, has no Stella in it. (Stage F26) |
 | Module | One source file (or a .hpp/.cpp pair) that does one job of the game, such as the ghosts or the scoring. Phase G cuts the big files into modules so a reader can find things. (Stage G1) |
 | ORIGINAL: tag | A comment in the source marking behaviour of the 1981 game that looks like a mistake but must be kept, with a link to the document that proves it. (Stage G2) |
+| Game state | Everything the game remembers between frames (positions, score, lives, timers), kept as named fields in one object, `game::GameState`. In the original these were 128 numbered memory bytes. (Stage G3) |

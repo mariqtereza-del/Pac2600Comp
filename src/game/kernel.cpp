@@ -32,27 +32,27 @@ struct Beam {
 
 }  // namespace
 
-PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip& chip, int kernelStartLine) {
+PictureEnd drawPicture(GameState& st, const Cartridge& cart, int startLine, TimedChip& chip, int kernelStartLine) {
   Beam b{chip, startLine};
   uint8_t A = 0, X = 0, Y = 0;
-  auto M = [&](uint8_t addr) -> uint8_t& { return at(ram, addr); };
-  auto ptr = [&](uint8_t lo) -> uint16_t { return static_cast<uint16_t>(M(lo) | (M(static_cast<uint8_t>(lo + 1)) << 8)); };
+  // The sprite and digit pictures are found through 16-bit pointers kept in the scratch bytes: `lo` is the place (a Scratch name) of the low byte.
+  auto ptr = [&](uint8_t lo) -> uint16_t { return static_cast<uint16_t>(st.scratch[lo] | (st.scratch[lo + 1] << 8)); };
   auto negative = [](int v) { return (v & 0x80) != 0; };
 
   // The next picture byte of a sprite for the line being drawn, as the original fetches it: A is 0 unless the sprite's first line has been reached
   // (X, the line counter, not below the sprite's y) and it still has lines left; the line count in Y then goes down by one.
   auto fetch0 = [&]() {
     A = 0;
-    if (!negative(X - M(ram::SPRITE0_Y))) {
-      Y = M(ram::SPRITE0_LINES);
-      if (!negative(Y)) { A = cart.at(static_cast<uint16_t>(ptr(ram::SPRITE0_PTR_LO) + Y)); --Y; M(ram::SPRITE0_LINES) = Y; }
+    if (!negative(X - st.scratch[kSprite0Y])) {
+      Y = st.scratch[kSprite0Lines];
+      if (!negative(Y)) { A = cart.at(static_cast<uint16_t>(ptr(kSprite0PtrLo) + Y)); --Y; st.scratch[kSprite0Lines] = Y; }
     }
   };
   auto fetch1 = [&]() {
     A = 0;
-    if (!negative(X - M(ram::SPRITE1_Y))) {
-      Y = M(ram::SPRITE1_LINES);
-      if (!negative(Y)) { A = cart.at(static_cast<uint16_t>(ptr(ram::SPRITE1_PTR_LO) + Y)); --Y; M(ram::SPRITE1_LINES) = Y; }
+    if (!negative(X - st.scratch[kSprite1Y])) {
+      Y = st.scratch[kSprite1Lines];
+      if (!negative(Y)) { A = cart.at(static_cast<uint16_t>(ptr(kSprite1PtrLo) + Y)); --Y; st.scratch[kSprite1Lines] = Y; }
     }
   };
   auto crossing = [&](uint8_t pointerLo, uint8_t y) { return ((ptr(pointerLo) & 0xFF) + y) > 0xFF ? 1 : 0; };
@@ -65,7 +65,7 @@ PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip
   b.w(0xF083, NUSIZ0, 0x20, 5);                    // LDA #$20, STA NUSIZ0
   X = 0;
   Y = 0x20;
-  A = M(ram::FRAME_COUNTER) & 0x08;
+  A = st.frameCounter & 0x08;
   b.adv(4 + 5);                                    // LDX, TAY, LDA, AND
   if (A != 0) b.adv(3);
   else { b.adv(2); X = 9; b.adv(4); }              // BNE not taken, LDX #9, NOP
@@ -81,7 +81,7 @@ PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip
   b.adv(2);
   for (;;) {                                       // L_F09C: object X (1 = Pac-Man, 0 = the ghost)
     b.adv(2 + 2 + 4);                              // LDA #1, CLC, ADC SPRITE_X,X
-    A = static_cast<uint8_t>(1 + M(static_cast<uint8_t>(ram::SPRITE_X + X)));
+    A = static_cast<uint8_t>(1 + (X == 0 ? st.spriteX : st.objX[X - 1]));
     Y = 2;
     b.adv(2 + 2);                                  // LDY #2, SEC
     bool carry = true;
@@ -122,18 +122,18 @@ PictureEnd drawPicture(Ram& ram, const Cartridge& cart, int startLine, TimedChip
   A = 0;
   b.w(0xF0CC, VBLANK, Y, 3);
   b.w(0xF0CE, HMCLR, A, 3);
-  A = M(ram::COLOUR_BG);
+  A = st.colour[kColourBg];
   b.adv(3);
   b.w(0xF0D2, COLUBK, A, 3);
-  M(ram::ROW_PARITY) = Y;
+  st.rowParity = Y;
   --Y;
-  M(ram::CELL_INDEX) = Y;
-  M(ram::CELL_ROW) = X;
+  st.cellIndex = Y;
+  st.cellRow = X;
   ++X;
   A = 0x31;
   b.adv(3 + 2 + 3 + 3 + 2 + 2);
   b.w(0xF0DE, CTRLPF, A, 3);
-  A = M(ram::COLOUR_MAZE);
+  A = st.colour[kColourMaze];
   b.adv(3);
   b.w(0xF0E2, COLUPF, A, 3);
   p0Line();
@@ -150,117 +150,117 @@ L_F0F4:   // the line after the start of a pair of maze lines: the second sprite
   fetch1();
   b.wsync();
   b.w(0xF105, GRP1, A, 3);
-  Y = M(ram::ROW_PARITY);
+  Y = st.rowParity;
   --Y;
   if (Y == 0) goto L_F176;
-  Y = M(ram::CELL_INDEX);
-  A = M(static_cast<uint8_t>(0x88 + Y)) & 0x0F;
+  Y = st.cellIndex;
+  A = st.player[0].maze[Y] & 0x0F;
   A = cart.at(static_cast<uint16_t>(0xFD47 + A));
-  M(ram::TEMP_D4) = A;
+  st.scratch[kTempD4] = A;
   p0Line();
   b.adv(2);
   b.w(0xF11E, ENAM0, 0, 3);
-  Y = M(ram::CELL_INDEX);
-  A = (M(static_cast<uint8_t>(0x88 + Y)) >> 4) & 0x07;
-  M(ram::TEMP_D3) = cart.at(static_cast<uint16_t>(0xFD3F + A));
+  Y = st.cellIndex;
+  A = (st.player[0].maze[Y] >> 4) & 0x07;
+  st.scratch[kTempD3] = cart.at(static_cast<uint16_t>(0xFD3F + A));
   p1Line();
-  Y = M(ram::CELL_INDEX);
-  M(ram::TEMP_D2) = (M(static_cast<uint8_t>(0x88 + Y)) & 0x80) ? 0x50 : 0x10;
-  A = M(static_cast<uint8_t>(0x8C + Y)) & 0x07;
-  M(ram::TEMP_D7) = cart.at(static_cast<uint16_t>(0xFD63 + A));
+  Y = st.cellIndex;
+  st.scratch[kTempD2] = (st.player[0].maze[Y] & 0x80) ? 0x50 : 0x10;
+  A = st.player[0].maze[Y + 4] & 0x07;
+  st.scratch[kTempD7] = cart.at(static_cast<uint16_t>(0xFD63 + A));
   p0Line();
-  Y = M(ram::CELL_INDEX);
-  A = M(static_cast<uint8_t>(0x8C + Y)) >> 3;
-  M(ram::TEMP_D5) = A;
-  M(ram::TEMP_D6) = cart.at(static_cast<uint16_t>(0xFD5B + (A & 0x07)));
+  Y = st.cellIndex;
+  A = st.player[0].maze[Y + 4] >> 3;
+  st.scratch[kTempD5] = A;
+  st.scratch[kTempD6] = cart.at(static_cast<uint16_t>(0xFD5B + (A & 0x07)));
   p1Line();
-  A = (M(ram::TEMP_D5) >> 3) & 0x03;
-  M(ram::TEMP_D5) = cart.at(static_cast<uint16_t>(0xFD57 + A));
+  A = (st.scratch[kTempD5] >> 3) & 0x03;
+  st.scratch[kTempD5] = cart.at(static_cast<uint16_t>(0xFD57 + A));
   goto L_F1F4;
 
 L_F176:
-  Y = M(ram::CELL_INDEX);
-  A = M(static_cast<uint8_t>(0x90 + Y)) & 0x07;
-  M(ram::TEMP_D4) = cart.at(static_cast<uint16_t>(0xFD7B + A));
+  Y = st.cellIndex;
+  A = st.player[0].maze[Y + 8] & 0x07;
+  st.scratch[kTempD4] = cart.at(static_cast<uint16_t>(0xFD7B + A));
   p0Line();
   b.adv(2);
   b.w(0xF188, ENAM0, 0, 3);
-  A = M(ram::TEMP_E1);
+  A = st.scratch[kTempE1];
   b.adv(3);
   b.w(0xF18C, ENABL, A, 3);
-  Y = M(ram::CELL_INDEX);
-  A = (M(static_cast<uint8_t>(0x90 + Y)) >> 3) & 0x0F;
-  M(ram::TEMP_D3) = cart.at(static_cast<uint16_t>(0xFD6B + A));
+  Y = st.cellIndex;
+  A = (st.player[0].maze[Y + 8] >> 3) & 0x0F;
+  st.scratch[kTempD3] = cart.at(static_cast<uint16_t>(0xFD6B + A));
   p1Line();
-  Y = M(ram::CELL_INDEX);
-  M(ram::TEMP_D2) = (M(static_cast<uint8_t>(0x90 + Y)) & 0x80) ? 0x50 : 0x10;
-  A = M(static_cast<uint8_t>(0x94 + Y)) & 0x07;
-  M(ram::TEMP_D7) = cart.at(static_cast<uint16_t>(0xFD63 + A));
+  Y = st.cellIndex;
+  st.scratch[kTempD2] = (st.player[0].maze[Y + 8] & 0x80) ? 0x50 : 0x10;
+  A = st.player[0].maze[Y + 12] & 0x07;
+  st.scratch[kTempD7] = cart.at(static_cast<uint16_t>(0xFD63 + A));
   p0Line();
-  Y = M(ram::CELL_INDEX);
-  A = M(static_cast<uint8_t>(0x94 + Y)) >> 3;
-  M(ram::TEMP_D5) = A;
-  M(ram::TEMP_D6) = cart.at(static_cast<uint16_t>(0xFD83 + (A & 0x07)));
+  Y = st.cellIndex;
+  A = st.player[0].maze[Y + 12] >> 3;
+  st.scratch[kTempD5] = A;
+  st.scratch[kTempD6] = cart.at(static_cast<uint16_t>(0xFD83 + (A & 0x07)));
   p1Line();
-  A = M(ram::TEMP_E1);
+  A = st.scratch[kTempE1];
   b.adv(3);
   b.w(0xF1D5, ENAM1, A, 3);
-  A = M(ram::TEMP_D5) >> 3;
-  M(ram::TEMP_D5) = cart.at(static_cast<uint16_t>(0xFD47 + A));
+  A = st.scratch[kTempD5] >> 3;
+  st.scratch[kTempD5] = cart.at(static_cast<uint16_t>(0xFD47 + A));
   goto L_F1F4;
 
 L_F1F4:   // the wall and wafer bit patterns of the two halves of the row are written on this and the next line
   p0Line();
-  if (M(ram::CELL_ROW) == 4) {
-    M(ram::TEMP_D4) |= 0x40;
-    M(ram::TEMP_D5) |= 0x20;
+  if (st.cellRow == 4) {
+    st.scratch[kTempD4] |= 0x40;
+    st.scratch[kTempD5] |= 0x20;
   }
   fetch1();
   b.wsync();
   b.w(0xF21A, GRP1, A, 3);
-  A = M(ram::TEMP_D2);
+  A = st.scratch[kTempD2];
   b.adv(3);
   b.w(0xF21E, PF0, A, 3);
   b.adv(2);
   b.w(0xF222, CTRLPF, 0x30, 3);
-  A = M(ram::TEMP_D3);
+  A = st.scratch[kTempD3];
   b.adv(3);
   b.w(0xF226, PF1, A, 3);
-  A = M(ram::TEMP_D4);
+  A = st.scratch[kTempD4];
   b.adv(3);
   b.w(0xF22A, PF2, A, 3);
   ++X;
   b.adv(2);
-  A = M(ram::TEMP_D5);
+  A = st.scratch[kTempD5];
   b.adv(3);
   b.w(0xF22F, PF0, A, 3);
   b.adv(3);   // CPX SPRITE0_Y
-  if (negative(X - M(ram::SPRITE0_Y))) { b.adv(4); goto L_F1E5; }
+  if (negative(X - st.scratch[kSprite0Y])) { b.adv(4); goto L_F1E5; }
   b.adv(2);
-  A = M(ram::TEMP_D6);
+  A = st.scratch[kTempD6];
   b.adv(3);
   b.w(0xF237, PF1, A, 3);
-  Y = M(ram::SPRITE0_LINES);
+  Y = st.scratch[kSprite0Lines];
   b.adv(3);
   if (negative(Y)) { b.adv(4); goto L_F1EB; }
   b.adv(2);
-  A = M(ram::TEMP_D7);
+  A = st.scratch[kTempD7];
   b.adv(3);
   b.w(0xF23F, PF2, A, 3);
-  b.adv(5 + crossing(ram::SPRITE0_PTR_LO, Y));
-  A = cart.at(static_cast<uint16_t>(ptr(ram::SPRITE0_PTR_LO) + Y));
+  b.adv(5 + crossing(kSprite0PtrLo, Y));
+  A = cart.at(static_cast<uint16_t>(ptr(kSprite0PtrLo) + Y));
   --Y;
-  M(ram::SPRITE0_LINES) = Y;
+  st.scratch[kSprite0Lines] = Y;
   b.adv(2 + 3);
   goto L_F246;
 
 L_F1E5:
-  A = M(ram::TEMP_D6);
+  A = st.scratch[kTempD6];
   b.adv(3);
   b.w(0xF1E7, PF1, A, 3);
   b.adv(4);   // NOP, NOP
 L_F1EB:
-  A = M(ram::TEMP_D7);
+  A = st.scratch[kTempD7];
   b.adv(3);
   b.w(0xF1ED, PF2, A, 3);
   A = 0;
@@ -269,48 +269,48 @@ L_F1EB:
 L_F246:
   b.wsync();
   b.w(0xF248, GRP0, A, 3);
-  A = M(ram::TEMP_D2);
+  A = st.scratch[kTempD2];
   b.adv(3);
   b.w(0xF24C, PF0, A, 3);
-  A = M(ram::TEMP_D3);
+  A = st.scratch[kTempD3];
   b.adv(3);
   b.w(0xF250, PF1, A, 3);
-  A = M(ram::TEMP_D4);
+  A = st.scratch[kTempD4];
   b.adv(3);
   b.w(0xF254, PF2, A, 3);
   b.adv(4);   // NOP, NOP
-  A = M(ram::TEMP_D5);
+  A = st.scratch[kTempD5];
   b.adv(3);
   b.w(0xF25A, PF0, A, 3);
   b.adv(3);   // CPX SPRITE1_Y
-  if (negative(X - M(ram::SPRITE1_Y))) {
+  if (negative(X - st.scratch[kSprite1Y])) {
     b.adv(3);
-    A = M(ram::TEMP_D6);
+    A = st.scratch[kTempD6];
     b.adv(3);
     b.w(0xF27A, PF1, A, 3);
     b.adv(4);   // NOP, NOP
     goto L_F27E;
   }
   b.adv(2);
-  A = M(ram::TEMP_D6);
+  A = st.scratch[kTempD6];
   b.adv(3);
   b.w(0xF262, PF1, A, 3);
-  Y = M(ram::SPRITE1_LINES);
+  Y = st.scratch[kSprite1Lines];
   b.adv(3);
   if (negative(Y)) { b.adv(3); goto L_F27E; }
   b.adv(2);
-  A = M(ram::TEMP_D7);
+  A = st.scratch[kTempD7];
   b.adv(3);
   b.w(0xF26A, PF2, A, 3);
-  b.adv(5 + crossing(ram::SPRITE1_PTR_LO, Y));
-  A = cart.at(static_cast<uint16_t>(ptr(ram::SPRITE1_PTR_LO) + Y));
+  b.adv(5 + crossing(kSprite1PtrLo, Y));
+  A = cart.at(static_cast<uint16_t>(ptr(kSprite1PtrLo) + Y));
   --Y;
-  M(ram::SPRITE1_LINES) = Y;
+  st.scratch[kSprite1Lines] = Y;
   b.adv(2 + 3);
   goto L_F271;
 
 L_F27E:
-  A = M(ram::TEMP_D7);
+  A = st.scratch[kTempD7];
   b.adv(3);
   b.w(0xF280, PF2, A, 3);
   A = 0;
@@ -320,7 +320,7 @@ L_F271:
   b.wsync();
   b.w(0xF273, GRP1, A, 3);
   b.adv(3);   // JMP
-  Y = M(ram::ROW_PARITY);
+  Y = st.rowParity;
   b.adv(3);
   A = cart.at(static_cast<uint16_t>(0xFE0A + Y));
   b.adv(4);
@@ -330,40 +330,40 @@ L_F271:
   b.w(0xF291, PF1, A, 3);
   b.adv(2);
   b.w(0xF295, CTRLPF, 0x31, 3);
-  A = M(ram::TEMP_E3);
+  A = st.scratch[kTempE3];
   b.adv(3);
   b.w(0xF299, PF2, A, 3);
-  A = static_cast<uint8_t>(M(ram::CELL_ROW) + 0xFF);
+  A = static_cast<uint8_t>(st.cellRow + 0xFF);
   if (negative(A)) goto L_F360;
-  M(ram::CELL_ROW) = A;
+  st.cellRow = A;
   ++X;
   fetch0();
   b.wsync();
   b.w(0xF2B9, GRP0, A, 3);
   b.adv(2);
   b.w(0xF2BD, ENAM1, 0, 3);
-  M(ram::TEMP_E2) = 0;
-  A = M(ram::CELL_ROW);
-  M(ram::ROW_PARITY) = A & 1;
-  M(ram::CELL_INDEX) = static_cast<uint8_t>((A + 1) >> 1);
+  st.scratch[kTempE2] = 0;
+  A = st.cellRow;
+  st.rowParity = A & 1;
+  st.cellIndex = static_cast<uint8_t>((A + 1) >> 1);
   p1p0Line();
   Y = 1;
-  if (!(M(ram::FRAME_COUNTER) & 0x08)) Y = 3;
-  A = M(ram::CELL_ROW);
+  if (!(st.frameCounter & 0x08)) Y = 3;
+  A = st.cellRow;
   if (A == 0 || A == 6) {
     if (A == 6) --Y;
-    if (M(ram::PILL_FLAGS) & cart.at(static_cast<uint16_t>(0xFE6C + Y))) M(ram::TEMP_E2) = 0x02;
+    if (st.player[0].pillFlags & cart.at(static_cast<uint16_t>(0xFE6C + Y))) st.scratch[kTempE2] = 0x02;
   }
   p1Line();
   b.adv(2);
   b.w(0xF2F3, ENABL, 0, 3);
   p0Line();
-  A = M(ram::TEMP_E2);
+  A = st.scratch[kTempE2];
   b.adv(3);
   b.w(0xF2FA, ENAM0, A, 3);
   p1Line();
   p0Line();
-  Y = M(ram::ROW_PARITY);
+  Y = st.rowParity;
   b.adv(3);
   A = cart.at(static_cast<uint16_t>(0xFF41 + Y));
   b.adv(4);
@@ -377,22 +377,22 @@ L_F271:
 
 L_F313:   // the lines of a row between its walls: the bonus item bits and the playfield bytes for the next lines
   p1Line();
-  A = M(ram::GAME_FLAGS);
-  Y = M(ram::CELL_ROW);
+  A = st.gameFlags;
+  Y = st.cellRow;
   if (Y != 3) A = 0;
-  M(ram::TEMP_E1) = A;
+  st.scratch[kTempE1] = A;
   p0Line();
-  Y = M(ram::ROW_PARITY);
+  Y = st.rowParity;
   A = cart.at(static_cast<uint16_t>(0xFE0D + Y));
-  Y = M(ram::CELL_ROW);
+  Y = st.cellRow;
   if (Y == 4) A = 0x40;
-  M(ram::TEMP_E3) = A;
+  st.scratch[kTempE3] = A;
   p1Line();
   ++X;
   fetch0();
   b.wsync();
   b.w(0xF349, GRP0, A, 3);
-  Y = M(ram::ROW_PARITY);
+  Y = st.rowParity;
   b.adv(3);
   b.w(0xF34D, GRP0, A, 3);
   A = cart.at(static_cast<uint16_t>(0xFE0A + Y));
@@ -401,7 +401,7 @@ L_F313:   // the lines of a row between its walls: the bonus item bits and the p
   A = cart.at(static_cast<uint16_t>(0xFE0C + Y));
   b.adv(4);
   b.w(0xF357, PF1, A, 3);
-  A = M(ram::TEMP_E3);
+  A = st.scratch[kTempE3];
   b.adv(3);
   b.w(0xF35B, PF2, A, 3);
   goto L_F0F4;
@@ -439,7 +439,7 @@ L_F360:   // the last row is done: the bottom wall, then the score
   b.w(0xF489, GRP0, 0, 3);
   b.w(0xF48B, GRP1, 0, 3);
   b.adv(6);
-  A = M(ram::ATTRACT_SHIFT);
+  A = st.attractShift;
   b.adv(3);
   b.w(0xF3B0, COLUP1, A, 3);
   b.w(0xF3B2, COLUP0, A, 3);
@@ -461,11 +461,11 @@ L_F360:   // the last row is done: the bottom wall, then the score
   b.w(0xF3C8, COLUBK, X, 3);
   {
     // SCORE_DIGITS ($F3EE), called for player 1 (offset 4) and, in a two-player game, for player 2 (offset 5).
-    auto scoreByte = [&](uint8_t y) { return M(static_cast<uint8_t>(ram::SCORE_P1_LO + y)); };
+    auto scoreByte = [&](uint8_t y) { return st.score[y]; };
     auto scoreDigits = [&](uint8_t offset) {
       uint8_t slot = 8;
       uint8_t y = offset;
-      uint8_t& seen = M(ram::TEMP_E1);
+      uint8_t& seen = st.scratch[kTempE1];
       seen = 0;
       b.adv(2 + 2 + 3 + 3);   // LDX #8, LDA #0, STA TEMP_E1, BEQ
       auto shapeFor = [&](uint8_t digit) {
@@ -482,26 +482,26 @@ L_F360:   // the last row is done: the bottom wall, then the score
           b.adv(4 + 8 + 2);
           const uint8_t shape = shapeFor(scoreByte(y) >> 4);
           b.adv(3 + 4);
-          M(static_cast<uint8_t>(ram::TEMP_D5 + slot)) = shape;
+          st.scratch[kTempD5 + slot] = shape;
           slot = static_cast<uint8_t>(slot - 2);
           b.adv(4 + 2);   // DEX, DEX, CPX #4
           if (slot == 4) { b.adv(2 + 2 + 3); b.wsync(); b.w(0xF420, COLUBK, 0, 3); }
           else {
             b.adv(3 + 2);   // BNE, TXA
             if (slot != 0) b.adv(3);
-            else { b.adv(2 + 3); b.wsync(); b.w(0xF420, COLUBK, M(ram::TEMP_D2), 3); }
+            else { b.adv(2 + 3); b.wsync(); b.w(0xF420, COLUBK, st.scratch[kTempD2], 3); }
           }
         }
         low = false;
         b.adv(3);   // L_F422: STX TEMP_E2
-        M(ram::TEMP_E2) = slot;
+        st.scratch[kTempE2] = slot;
         b.adv(4 + 2 + 2);
         const uint8_t shape = shapeFor(scoreByte(y) & 0x0F);
         b.adv(3 + 4);
-        M(static_cast<uint8_t>(ram::TEMP_D5 + slot)) = shape;
+        st.scratch[kTempD5 + slot] = shape;
         slot = static_cast<uint8_t>(slot - 2);
         b.adv(4 + 3);   // DEX, DEX, STX TEMP_E2
-        M(ram::TEMP_E2) = slot;
+        st.scratch[kTempE2] = slot;
         y = static_cast<uint8_t>(y - 2);
         b.adv(4);   // DEY, DEY
         if (!negative(y)) { b.adv(3); continue; }
@@ -510,9 +510,9 @@ L_F360:   // the last row is done: the bottom wall, then the score
       }
       b.adv(3);   // LDA TEMP_E1
       if (seen != 0) b.adv(3);
-      else { b.adv(2 + 2 + 3); M(ram::TEMP_D5) = 0xAC; }   // a score of 0 shows one 0
+      else { b.adv(2 + 2 + 3); st.scratch[kTempD5] = 0xAC; }   // a score of 0 shows one 0
       b.adv(2 + 2);   // LDA #$FE, LDX #9
-      for (uint8_t i = 1; i <= 9; i += 2) M(static_cast<uint8_t>(ram::TEMP_D5 + i)) = 0xFE;
+      for (uint8_t i = 1; i <= 9; i += 2) st.scratch[kTempD5 + i] = 0xFE;
       b.adv(4 * 11 + 10);
       b.adv(2 + 3);   // LDA #6, STA TEMP_E1
       seen = 6;
@@ -526,18 +526,18 @@ L_F360:   // the last row is done: the bottom wall, then the score
           b.adv(5 + crossing(pointerLo, row));
           return cart.at(static_cast<uint16_t>(ptr(pointerLo) + row));
         };
-        A = shapeByte(ram::SPRITE0_PTR_LO);
+        A = shapeByte(kSprite0PtrLo);
         b.w(0xF465, GRP1, A, 3);
-        A = shapeByte(ram::SPRITE0_LINES);
+        A = shapeByte(kSprite0Lines);
         b.w(0xF469, GRP0, A, 3);
-        A = shapeByte(ram::SPRITE1_Y);
-        M(ram::TEMP_E2) = A;
+        A = shapeByte(kSprite1Y);
+        st.scratch[kTempE2] = A;
         b.adv(3);
-        X = shapeByte(ram::TEMP_D7);
+        X = shapeByte(kTempD7);
         b.adv(2);
-        Y = shapeByte(ram::TEMP_D5);
+        Y = shapeByte(kTempD5);
         b.adv(2);
-        A = M(ram::TEMP_E2);
+        A = st.scratch[kTempE2];
         b.adv(3);
         b.w(0xF477, GRP1, A, 3);
         b.w(0xF479, GRP0, X, 3);
@@ -557,19 +557,19 @@ L_F360:   // the last row is done: the bottom wall, then the score
       b.adv(6);
     };
     Y = 4;
-    A = M(ram::COLOUR_SCORE_P1);
+    A = st.colour[kColourScoreP1];
     b.adv(2 + 3 + 3 + 6);   // LDY #4, LDA, STA TEMP_D2, JSR
-    M(ram::TEMP_D2) = A;
+    st.scratch[kTempD2] = A;
     scoreDigits(4);
-    A = M(ram::PLAYER_MODE);
+    A = st.playerMode;
     b.adv(3 + 2);
     A = static_cast<uint8_t>(A << 1);
     if (!negative(A)) b.adv(3);
     else {
       b.adv(2);
       Y = 5;
-      A = M(ram::COLOUR_SCORE_P2);
-      M(ram::TEMP_D2) = A;
+      A = st.colour[kColourScoreP2];
+      st.scratch[kTempD2] = A;
       b.adv(2 + 3 + 3 + 6);
       scoreDigits(5);
     }
@@ -587,27 +587,27 @@ L_F360:   // the last row is done: the bottom wall, then the score
       b.adv(6 + 2);
       if (lives == 0) b.adv(3); else b.adv(2 + 2);
       b.adv(5 + 4 + 5 + 4 + 5 + 6);
-      livesMarkers(ram, cart, lives, offset);
+      livesMarkers(st, cart, lives, offset);
     };
     A = 0;
     Y = 0;
     b.adv(2 + 3);   // TAY, LDA PLAYER_MODE
-    if (M(ram::PLAYER_MODE) & 0x80) { Y = 3; b.adv(2 + 2); } else b.adv(3);
+    if (st.playerMode & 0x80) { Y = 3; b.adv(2 + 2); } else b.adv(3);
     b.adv(3);   // LDX LIVES
-    marker(M(ram::LIVES), Y);
+    marker(st.player[0].lives, Y);
     b.adv(2);   // LDA #0
     b.wsync();
     b.w(0xF49E, COLUBK, 0, 3);
     b.adv(2 + 3);   // LDY #3, LDA PLAYER_MODE
-    if (!(M(ram::PLAYER_MODE) & 0x80)) { Y = 3; b.adv(3); } else { Y = 0; b.adv(2 + 2); }
+    if (!(st.playerMode & 0x80)) { Y = 3; b.adv(3); } else { Y = 0; b.adv(2 + 2); }
     b.adv(3);   // LDX LIVES_P2
-    marker(M(ram::LIVES_P2), Y);
+    marker(st.player[1].lives, Y);
     b.adv(2);   // LDX #6
     X = 6;
-    A = M(ram::COLOUR_SCORE_P2);
+    A = st.colour[kColourScoreP2];
     b.adv(3);
     b.w(0xF4B1, COLUP1, A, 3);
-    A = M(ram::COLOUR_SCORE_P1);
+    A = st.colour[kColourScoreP1];
     b.adv(3);
     b.w(0xF4B5, COLUP0, A, 3);
     for (;;) {
@@ -615,18 +615,18 @@ L_F360:   // the last row is done: the bottom wall, then the score
       b.adv(2);
       b.w(0xF4BB, CTRLPF, 0x02, 3);
       b.adv(3);
-      b.w(0xF4BF, PF0, M(ram::TEMP_D2), 3);
+      b.w(0xF4BF, PF0, st.scratch[kTempD2], 3);
       b.adv(3);
-      b.w(0xF4C3, PF1, M(ram::TEMP_D3), 3);
+      b.w(0xF4C3, PF1, st.scratch[kTempD3], 3);
       b.adv(3);
-      b.w(0xF4C7, PF2, M(ram::TEMP_D4), 3);
+      b.w(0xF4C7, PF2, st.scratch[kTempD4], 3);
       b.adv(6);   // NOP x3
       b.adv(3);
-      b.w(0xF4CE, PF0, M(ram::TEMP_D5), 3);
+      b.w(0xF4CE, PF0, st.scratch[kTempD5], 3);
       b.adv(3);
-      b.w(0xF4D2, PF1, M(ram::TEMP_D6), 3);
+      b.w(0xF4D2, PF1, st.scratch[kTempD6], 3);
       b.adv(3);
-      b.w(0xF4D6, PF2, M(ram::TEMP_D7), 3);
+      b.w(0xF4D6, PF2, st.scratch[kTempD7], 3);
       --X;
       b.adv(2);
       if (X != 0) { b.adv(3); continue; }

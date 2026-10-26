@@ -18,6 +18,7 @@
 #include "../game/cartridge_data.hpp"
 #include "../game/game.hpp"
 #include "../game/renderer.hpp"
+#include "../testsupport/state_bytes.hpp"
 
 class NullChip : public game::TiaChip {
  public:
@@ -133,7 +134,7 @@ int main(int argc, char** argv) {
     in.frame.bonusTouched = o != oracle.end() && o->second.first;
     in.frame.ghostTouched = o != oracle.end() && o->second.second;
     for (const auto& pk : pokes)
-      if (pk[0] == f && pk[1] >= 0x80 && pk[1] <= 0xFF) g.state()[pk[1] - 0x80] = static_cast<uint8_t>(pk[2]);
+      if (pk[0] == f && pk[1] >= 0x80 && pk[1] <= 0xFF) testsupport::byteAt(g.state(), pk[1]) = static_cast<uint8_t>(pk[2]);
     renderer.trace = (f == traceFrame);
     if (!g.runFrame(in, chip)) { std::printf("frame %d: the game met the one path of the original that no recording runs\n", f); return 1; }
     if (pictures) {
@@ -158,7 +159,8 @@ int main(int argc, char** argv) {
     }
     std::string ours;
     char buf[3];
-    for (int i = 0; i < 128; ++i) { std::snprintf(buf, sizeof buf, "%02x", g.state()[i]); ours += buf; }
+    const testsupport::Bytes bytes = testsupport::toBytes(g.state());
+    for (int i = 0; i < 128; ++i) { std::snprintf(buf, sizeof buf, "%02x", bytes[i]); ours += buf; }
     for (int i : ignore)
       if (i >= 0 && i < 128) ours.replace(2 * i, 2, golden[f].substr(2 * i, 2));
     if (ours != golden[f]) {

@@ -9,7 +9,7 @@ $script:Started = Get-Date
 $script:RunDir = $null
 $script:Python = $null
 
-function Start-Tests([string]$Kind) {
+function Start-Tests([string]$Kind, [switch]$NoRom) {
   Set-Location $script:Root
   $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
   $script:RunDir = Join-Path $script:Root ("build\test_runs\" + $stamp + "-" + $Kind)
@@ -19,9 +19,14 @@ function Start-Tests([string]$Kind) {
   if ($py) { $script:Python = $py.Source }
   Write-Host ("Test run '" + $Kind + "' started " + $script:Started + "; logs in " + $script:RunDir)
   $missing = @()
+  if ($NoRom) {
+    # the public set: needs only Python and the built test programs, never the ROM or reference\
+    if (-not $script:Python) { $missing += 'python' }
+  } else {
   if (-not (Test-Path $script:Rom)) { $missing += 'rom\pacman.a26 (the working copy of the ROM)' }
   if (-not (Test-Path (Join-Path $script:Root 'reference\f6\coverage_all.txt'))) { $missing += 'reference\ (the local golden traces and maps)' }
   if (-not $script:Python) { $missing += 'python' }
+  }
   if ($missing.Count -gt 0) {
     Write-Host 'CANNOT RUN. Missing on this PC:'
     $missing | ForEach-Object { Write-Host ('  ' + $_) }
@@ -118,6 +123,22 @@ function Add-QuickSteps {
   foreach ($id in @('BL-001', 'BL-035', 'BL-044', 'BL-067', 'BL-070')) {
     Py ('baseline ' + $id) 'baseline.py' @('check', $rom, $id) -Must 'equals the stored SHA-256' -MustNot 'DIFFERS'
   }
+}
+
+# The steps of the public set (Stage H4): no ROM, no reference folder. Whole games are replayed from the tracked inputs and compared with
+# the tracked fingerprint files (tests\game\data); the game's tables are part of the program.
+function Add-PublicSteps {
+  $L = Join-Path $script:Root 'build\lockstep'
+  Step 'test_tables (structure)' "$L\test_tables.exe" @() -Must 'result: OK'
+  Step 'test_game_modules' "$L\test_game_modules.exe" @() -Must 'result: OK'
+  $games = Get-ChildItem (Join-Path $script:Root 'tests\game\data') -Filter 'BL-*.fingerprints.txt' | Sort-Object Name
+  foreach ($g in $games) {
+    $id = $g.Name.Substring(0, 6)
+    Step ('test_no_rom ' + $id) "$L\test_no_rom.exe" @(('baseline\' + $id + '.inputs'), ('tests\game\data\' + $g.Name)) -Must 'result: IDENTICAL'
+  }
+  Py 'g2_conventions --strict' 'g2_conventions_check.py' @('--strict') -Must 'result: CLEAN'
+  Py 'g7_gate_check --no-rom' 'g7_gate_check.py' @('--no-rom')
+  Py 'h1_testing_check' 'h1_testing_check.py'
 }
 
 function Finish-Tests([string]$Kind) {

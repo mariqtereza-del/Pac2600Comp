@@ -1,4 +1,5 @@
-// Test of the data tables (Stage G5b): test_tables <rom file>. The ROM is only read. Every byte of every embedded table must equal the ROM byte at its
+// Test of the data tables (Stage G5b): test_tables [rom file]. The ROM is only read. Without a ROM (Stage H4: the public, ROM-free set) only the
+// structure is checked: sizes, order, no overlap, the lookup by address inside each table and the totals. Every byte of every embedded table must equal the ROM byte at its
 // original address, the lookup by address must agree, and the totals must be the ones of docs/EMBEDDED_DATA.md (34 tables, 508 bytes).
 #include <cstdio>
 #include <fstream>
@@ -8,10 +9,15 @@
 #include "../../src/game/data/tables.hpp"
 
 int main(int argc, char** argv) {
-  if (argc < 2) { std::fprintf(stderr, "usage: test_tables <rom>\n"); return 2; }
-  std::ifstream in(argv[1], std::ios::binary);
-  std::vector<unsigned char> rom((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-  if (rom.size() != 4096) { std::fprintf(stderr, "the ROM must have 4096 bytes\n"); return 2; }
+  std::vector<unsigned char> rom;
+  const bool haveRom = argc >= 2;
+  if (haveRom) {
+    std::ifstream in(argv[1], std::ios::binary);
+    rom.assign((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    if (rom.size() != 4096) { std::fprintf(stderr, "the ROM must have 4096 bytes\n"); return 2; }
+  } else {
+    std::printf("no ROM given: structure checks only\n");
+  }
   int checks = 0, failures = 0;
   auto check = [&](bool ok, const char* what, unsigned a) {
     ++checks;
@@ -24,8 +30,8 @@ int main(int argc, char** argv) {
     check(seg.address >= 0xF000 && seg.address + seg.size <= 0x10000, "table inside the cartridge window", seg.address);
     for (unsigned i = 0; i < seg.size; ++i) {
       const unsigned a = seg.address + i;
-      check(seg.bytes[i] == rom[a - 0xF000], "embedded byte equals the ROM byte", a);
-      check(game::data::byAddress(static_cast<uint16_t>(a)) == rom[a - 0xF000], "lookup by address equals the ROM byte", a);
+      if (haveRom) check(seg.bytes[i] == rom[a - 0xF000], "embedded byte equals the ROM byte", a);
+      check(game::data::byAddress(static_cast<uint16_t>(a)) == seg.bytes[i], "lookup by address equals the table byte", a);
     }
     if (s > 0) {
       const game::data::Segment& before = game::data::kSegments[s - 1];
@@ -34,7 +40,8 @@ int main(int argc, char** argv) {
   }
   check(game::data::kSegmentCount == 34, "34 tables", 0);
   check(total == 508, "508 bytes", 0);
-  check(game::data::kMazeWalls.size() == 80 && game::data::kMazeWalls[0] == rom[0xFE13 - 0xF000] && game::data::kMazeWalls[79] == rom[0xFE62 - 0xF000], "the maze wall table", 0xFE13);
+  check(game::data::kMazeWalls.size() == 80, "the maze wall table has 80 bytes", 0xFE13);
+  if (haveRom) check(game::data::kMazeWalls[0] == rom[0xFE13 - 0xF000] && game::data::kMazeWalls[79] == rom[0xFE62 - 0xF000], "the maze wall table ends", 0xFE13);
   std::printf("%d checks, %d failures; %zu tables, %u bytes\n", checks, failures, game::data::kSegmentCount, total);
   std::printf("result: %s\n", failures == 0 ? "OK" : "FAILED");
   return failures == 0 ? 0 : 1;

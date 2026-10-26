@@ -19,13 +19,28 @@ Run from the project folder in PowerShell. Neither builds in the quick case; bot
 
 The five key traces use five different inputs: BL-046 and BL-049 replay the same input file as BL-035 (the bot route) and give the identical trace, so they add nothing as a second trace.
 
+## The public test set (Stage H4)
+
+`powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_public.ps1 [-Build]` runs only what needs **no ROM and no `reference\` folder**, so a stranger who clones the repository can run it, and the GitHub workflow `.github\workflows\public-tests.yml` runs the same command. It needs Python and the test programs built by `tools\build_lockstep.cmd` (`-Build` does that).
+
+| Step | What it proves without a ROM |
+| --- | --- |
+| `test_tables` (no argument) | the 34 embedded tables: sizes, order, no overlap, lookup by address, 508 bytes in total (the comparison with the cartridge needs the ROM and is left to the full set) |
+| `test_game_modules` | the 83 rule checks of H2 |
+| `test_no_rom` for 11 recorded games (BL-001, 003, 035, 044, 047, 048, 062, 063, 067, 068, 070; 40,000 frames in all) | the game, in a program with no ROM code in it, replays the tracked input and gives the same picture and sound fingerprint on every frame as the original did: title screen and Select, a whole first level, the power pill and eaten ghosts, the end of the level and the new map, a game to game over, two players, both console switches, random joystick and buttons, ghosts walking home |
+| `g2_conventions_check --strict` | file, function and line limits; `ORIGINAL:` tags |
+| `g7_gate_check --no-rom` | no ROM or archive in Git; only the start-up check opens a file; Rule 7 text; no markers; architecture complete (checks 2 and 3 of the gate need the ROM and are skipped, and the output says so) |
+| `h1_testing_check` | this page lists every test and tool |
+
+Not in the public set: the lockstep proofs, `test_rom_check`, the comparison of the tables with the cartridge, the scan for cartridge code (all need the ROM), and the host program tests (`test_controls`, `test_layout` and the others need SDL built; planned for H5). The fingerprint files (`tests\game\data\BL-nnn.fingerprints.txt`, made by `tools\g5c_make_fingerprints.py` from the reference traces) hold hashes of the output only. The workflow file has never run on GitHub (nothing is pushed); whether the build script finds the compiler there is untested.
+
 ## 1. Unit tests (small, made-up or fixed data)
 
 | Test | Command | What it proves | ROM | Time |
 | --- | --- | --- | --- | --- |
 | `test_rom_check` | `build\lockstep\test_rom_check.exe rom\pacman.a26` | the start-up check accepts only 4,096 bytes with the right SHA-1 and gives a plain message for every wrong case | needs the ROM as the good example | under 1 s |
-| `test_tables` | `build\lockstep\test_tables.exe rom\pacman.a26` | the 34 embedded tables (508 bytes) equal the ROM; 1,086 lookups | needs the ROM | under 1 s |
-| `test_no_rom` | `build\lockstep\test_no_rom.exe baseline\BL-001.inputs tests\game\data\BL-001.fingerprints.txt` (also BL-035) | a program with no ROM code reproduces the pictures and sounds of 700 and 3,000 frames from stored fingerprints | **no ROM** | 0 s and 1 s |
+| `test_tables` | `build\lockstep\test_tables.exe [rom\pacman.a26]` | the 34 embedded tables (508 bytes) equal the ROM; 1,086 lookups (without a ROM argument: structure only) | ROM optional | under 1 s |
+| `test_no_rom` | `build\lockstep\test_no_rom.exe baseline\BL-001.inputs tests\game\data\BL-001.fingerprints.txt` (11 games, see the public set) | a program with no ROM code reproduces the pictures and sounds of recorded games from stored fingerprints | **no ROM** | 0 to 3 s each |
 | `test_tia_video` | run by `f23_tia.py` | the video-chip model against stored emulator pictures | needs `reference\f23` | inside f23_tia |
 | `test_tia_audio` | run by `f24_audio.py` | the sound-chip model against stored sound | needs `reference\f24` | inside f24_audio |
 | `test_kernel` | run by `f23_kernel.py` | the drawing code gives the emulator's chip writes | needs the ROM and `reference\f23` | inside f23_kernel |
@@ -75,7 +90,7 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 | Tool | What it proves | ROM | Time |
 | --- | --- | --- | --- |
 | `g2_conventions_check.py --strict` | file, function and line limits; every `ORIGINAL:` tag links to evidence | no ROM | under 1 s |
-| `g7_gate_check.py` | no ROM or cartridge code in Git or the program; tables equal the list; Rule 7 text; architecture complete | needs the ROM | 2 s |
+| `g7_gate_check.py` | no ROM or cartridge code in Git or the program; tables equal the list; Rule 7 text; architecture complete (`--no-rom`: the six checks that need no ROM) | ROM optional | 2 s |
 | `h1_testing_check.py` | this page lists every test | no ROM | under 1 s |
 | `g5a_data_list.py`, `g5b_make_tables.py`, `g5c_make_fingerprints.py` | generators of the table list, `tables.cpp` and the fingerprint files; they rewrite files, so not run as tests | needs the ROM | not timed |
 | `f20_gen_tables.py`, `f23_dump.py`, `f24_dump.py`, `f24_cycles.py`, `f26_palette.py` | generators and helpers of the proofs above | needs the ROM | not timed |

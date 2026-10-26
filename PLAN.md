@@ -2892,7 +2892,22 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
       - **Recovery:** new scripts only; revert the commit.
       - **Documentation updates:** `TESTING.md`, `CLAUDE.md`, `DECISIONS.md` (T-H3-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage H3: Two test commands`. **Next stage:** H4 (ROM-free test set).
-4. **[Not started] H4 — ROM-free test set for GitHub.** The subset that runs without the ROM, so the public repository can check itself automatically on every change. **D-009:** after G5c this set also contains whole-game runs (they need no ROM, only stored fingerprints).
+4. **[Done] H4 — ROM-free test set for GitHub.** The subset that runs without the ROM, so the public repository can check itself automatically on every change. **D-009:** after G5c this set also contains whole-game runs (they need no ROM, only stored fingerprints).
+    - **H4 - ROM-free test set** *(expanded 2026-10-26)*
+      - **Objective:** one command, `tools\test_public.ps1`, that runs every test that needs no ROM and no `reference\` folder, with as much of the game as possible in it; plus a GitHub workflow file that runs the same command (not pushed).
+      - **Why it matters:** the public repository must be able to check itself, and the proof that the game needs no ROM should be a test, not a claim.
+      - **Prerequisites:** H3 Done (`9067df8`), clean tree.
+      - **What Claude Code will do:** add nine more recorded games to the stored fingerprint files (eleven in all: title and Select, a whole level, power pill, new map, game over, two players, both switches, random buttons, ghosts walking home); let `test_tables` and `g7_gate_check` run without a ROM (the checks that need one are skipped and said so); write `test_public.ps1` and `.github\workflows\public-tests.yml`; prove it in a clean copy of the project that has no `rom\` and no `reference\` and its own Git repository.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** `test_public.ps1` says `result: OK` in the clean copy.
+      - **Verification:** the clean-copy run, then `test_quick.ps1` in the real project.
+      - **Completion criteria:** the public set runs with no ROM, the skipped checks are named, the workflow is marked untested on GitHub.
+      - **Potential problems:** the workflow may not find the compiler on a GitHub runner (known untested).
+      - **Recovery:** new files only; revert the commit.
+      - **Documentation updates:** `TESTING.md`, `CLAUDE.md`, `DECISIONS.md` (T-H4-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage H4: ROM-free test set`. **Next stage:** H5 (clean-build and release checks).
 5. **[Not started] H5 — Clean-build and release checks.** A fresh copy built following only `BUILDING.md`; the release zip scanned for ROM files.
 6. **[Not started] H6 — Performance and pacing checks.** Frame-time log on your 180 Hz screen and with the monitor set to 60 Hz; any frame-rate dependence is a failure.
 7. **[Not started] H7 — Gate H: freeze the preservation suite.** `tests\preservation\` is locked: its traces can be added to, never edited. Every later change must pass it.

@@ -1,6 +1,7 @@
 r"""Stage G7 (Gate G): the checks of the gate that are not already a proof of an earlier stage.
 
 python -I tools\g7_gate_check.py rom\pacman.a26
+python -I tools\g7_gate_check.py --no-rom   (Stage H4, the public set: checks 2 and 3 are skipped and said so)
 
 Needs the local files reference\f6\coverage_all.txt and the built build\host\pacman2600.exe (tools\build_host.cmd).
 Reads the ROM, changes nothing. Prints one line per check and 'result: OK' or 'result: FAILED'.
@@ -36,7 +37,11 @@ def check(name, ok, detail=''):
 
 def git_files():
     out = subprocess.run(['git', 'ls-files'], cwd=ROOT, capture_output=True, text=True, check=True).stdout
-    return [l for l in out.split('\n') if l]
+    names = [l for l in out.split('\n') if l]
+    if not names:
+        print('FAIL  0 no list of tracked files (this folder is not a Git repository of its own)')
+        sys.exit(1)
+    return names
 
 
 def check_git(files):
@@ -191,6 +196,19 @@ def check_conventions():
 
 
 def main():
+    if len(sys.argv) == 2 and sys.argv[1] == '--no-rom':   # Stage H4: the public set; checks 2 and 3 need the ROM
+        files = git_files()
+        check_git(files)
+        print('SKIP  2 tables against the ROM and the F6 map (needs the ROM)')
+        print('SKIP  3 scan for cartridge code (needs the ROM)')
+        check_reads_no_files()
+        check_rule7()
+        check_markers(files)
+        check_architecture(files)
+        check_conventions()
+        ok = all(results)
+        print('result: %s (%d checks run, 2 skipped without the ROM)' % ('OK' if ok else 'FAILED', len(results)))
+        return 0 if ok else 1
     if len(sys.argv) != 2:
         print(__doc__)
         return 2

@@ -9,7 +9,17 @@ build\lockstep\test_no_rom.exe plays the recorded input (baseline\BL-nnn.inputs,
 import pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-GAMES = [('BL-001', 700), ('BL-035', 3000)]   # the idle title screen; the bot's route (start, play, wafers, ghosts, a power pill, deaths)
+GAMES = [('BL-001', 700), ('BL-035', 3000),   # the idle title screen; the bot's route (start, play, wafers, ghosts, a power pill, deaths)
+         # Stage H4: more kinds of play for the ROM-free set (frame counts are the first frames of the recorded game)
+         ('BL-003', 1400),   # Select steps through the 16 game selections
+         ('BL-044', 4000),   # the first power pill and the first ghosts eaten
+         ('BL-047', 7500),   # the end of the first level: the last wafer, the extra life, the new map
+         ('BL-048', 3000),   # an idle game to game over, then the fire button
+         ('BL-062', 800),    # the right difficulty switch moved during play
+         ('BL-063', 800),    # the colour / black-and-white switch moved during play
+         ('BL-067', 3800),   # two players, an idle game to the end
+         ('BL-068', 6000),   # random joystick and console buttons
+         ('BL-070', 6000)]   # eaten ghosts walk back to the box
 
 for name, limit in GAMES:
     lines = (ROOT / 'reference' / 'baseline' / (name + '.trace')).read_text().split('\n')[3:]

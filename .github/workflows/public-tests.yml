@@ -1,0 +1,18 @@
+# The public test set (Stage H4): runs on GitHub on every push and pull request, with NO ROM and no reference folder.
+# UNTESTED ON GITHUB: this file was written locally and has never run there (nothing is pushed). Whether the build script finds the
+# compiler on a GitHub runner is not known until the first real run (Stage J). The same commands run locally with tools\test_public.ps1.
+name: public-tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  public:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the test programs
+        shell: cmd
+        run: tools\build_lockstep.cmd
+      - name: Run the public tests
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_public.ps1

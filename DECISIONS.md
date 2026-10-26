@@ -154,6 +154,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-H4-1 — The public, ROM-free test set (2026-10-26, Stage H4)
+
+- **Choice:** `tools\test_public.ps1` (same runner as H3) runs: the structure test of the 34 tables, the 83 module checks, eleven whole recorded games replayed by `test_no_rom` from tracked inputs and compared with tracked picture and sound fingerprints (40,000 frames), the conventions check, `g7_gate_check --no-rom` and the test-list check. Nine more fingerprint files were made (`tools\g5c_make_fingerprints.py`, about 1.2 MB of text; hashes only, no cartridge data); all eleven games are identical.
+- **What cannot be public:** the lockstep proofs, `test_rom_check`, the table-versus-cartridge comparison and the scan for cartridge code need the ROM. `test_tables` and `g7_gate_check` got a no-ROM mode that runs what it can and prints which checks were skipped. Host program tests need SDL built and wait for H5.
+- **Proof it needs no ROM:** the set was built and run in a copy of exactly the files that would be committed (tracked plus new, ignored files left out), in a new folder `build\public_check\<time>` with no `rom\` and no `reference\`, and a Git repository of its own: 17 of 17 steps (with the build) and then 16 of 16 passed. The first copy had no `.git`, which made two checks of `g7_gate_check` pass on an empty file list; the tool now fails when it gets no file list.
+- **GitHub:** `.github\workflows\public-tests.yml` is a local file. It has never run on GitHub (nothing is pushed, Rule: GitHub only with the owner's approval) and it is not known whether `build_lockstep.cmd` finds the compiler on a runner; that is tested in Phase J. It uses one third-party action, `actions/checkout`, by GitHub itself.
+- **A slip, stopped:** while testing the no-ROM mode I typed a command that would have moved the working ROM copy `rom\pacman.a26` away. The permission check blocked it before anything ran; I confirmed the file and its SHA-1 were unchanged. The ROM is never needed to be absent for a test: the clean copy is the proof.
+- **Reversible:** Yes (Git).
+
 ### T-H3-1 — The two test commands (2026-10-26, Stage H3)
 
 - **Choice:** PowerShell scripts, as the plan names them: `tools\test_quick.ps1` and `tools\test_full.ps1`, sharing `tools\test_common.ps1`. Each step is one program or proof run as a child process with a time limit; it passes only if the exit code is 0 and, where the tool prints a verdict, the verdict text is there (and no forbidden text, for example `DIFFERS`). Every step keeps its full output in a new folder under `build\test_runs`; nothing is deleted or overwritten. A missing ROM, `reference\` or Python gives a plain message and exit 2, never a pass.

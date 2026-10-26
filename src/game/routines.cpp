@@ -28,15 +28,6 @@ void placeObjects(GameState& st) {
   st.objState[0] = 0x80;
 }
 
-// LIVES_MARKERS ($FC68).
-uint8_t livesMarkers(GameState& st, const Cartridge& cart, uint8_t lives, uint8_t offset) {
-  st.scratch[kTempD2 + offset] = lives == 0 ? 0 : 0x40;
-  st.scratch[kTempD3 + offset] = cart.at(rom::kLivesMarkerPf1 + lives);
-  const uint8_t last = cart.at(rom::kLivesMarkerPf2 + lives);
-  st.scratch[kTempD4 + offset] = last;
-  return last;
-}
-
 // GHOST_DECIDE ($FA26).
 namespace {
 
@@ -143,103 +134,6 @@ bool ghostUpdate(GameState& st, const Cartridge& cart, uint8_t object) {
   return true;
 }
 
-// SOUND_START ($FF43).
-uint8_t soundStart(GameState& st, const Cartridge& cart, uint8_t sound) {
-  cy(4 + 3);   // LDA, AND
-  const uint8_t blocked = cart.at(rom::kSoundBlockers + sound) & st.soundActive;
-  if (blocked != 0) { cy(3 + 6); return blocked; }
-  cy(2 + 4 + 3 + 4 + 3 + 6);
-  st.soundActive = cart.at(rom::kSoundBit + sound);
-  const uint8_t length = cart.at(rom::kSoundLength + sound);
-  st.soundTimer = length;
-  return length;
-}
-
-// SOUND_EFFECTS ($FF55) and SOUND_WRITE ($FF8B).
-void soundEffects(GameState& st, SoundChip& out) {
-  const uint8_t active = st.soundActive;
-  uint8_t volume, pitch, control;
-  if (active & 0x01) {                                   // ghost eaten: a sliding tone
-    cy(24);
-    control = 4;
-    pitch = st.soundTimer & 0x1F;
-    volume = pitch ^ 0x0F;
-  } else if (active & 0x06) {                            // power pill (bit 1) and bonus item (bit 2): the steady tone
-    cy((active & 0x02) ? 22 : 30);
-    control = pitch = volume = 0x0D;
-  } else if (active & 0x08) {                            // wafer
-    const uint8_t timer = st.soundTimer;
-    cy(timer != 0 ? 33 : 37);
-    if (timer != 0) { control = 9; pitch = 9; volume = timer; }
-    else { control = pitch = volume = 0; }              // a timer of 0 cannot occur; the original then writes zeros
-  } else {
-    cy(29);
-    return;
-  }
-  st.scratch[kTempD3] = control;
-  uint8_t& timer = st.soundTimer;
-  timer = static_cast<uint8_t>(timer - 1);
-  cy(6);   // DEC SOUND_TIMER,X
-  if (timer == 0) { cy(2 + 2 + 3 + 6); st.soundActive = 0; return; }
-  cy(3);   // BNE
-  cy(4); out.write(chip::AUDV0, volume);
-  cy(3 + 4); out.write(chip::AUDC0, control);
-  cy(4); out.write(chip::AUDF0, pitch);
-  cy(6);
-}
-
-// SOUND_MUSIC ($FF94).
-void soundMusic(GameState& st, const Cartridge& cart, SoundChip& out) {
-  uint8_t& flags = st.gameFlags;
-  const uint8_t timer = st.eventTimer;
-  cy(2 + 3);   // LDA #8, BIT GAME_FLAGS
-  if (flags & 0x40) {                                   // dying: a falling tone
-    cy(2 + 3 + 3);
-    out.write(chip::AUDV0, timer);
-    cy(2 + 3);
-    out.write(chip::AUDF0, timer >> 1);
-    cy(2 + 3);
-    out.write(chip::AUDC0, 4);
-    cy(6);
-    return;
-  }
-  cy(3);   // BVC taken
-  if (flags & 0x08) {                                   // the start tune
-    cy(2 + 3);   // BEQ not taken, LDA EVENT_TIMER
-    uint8_t a = timer;
-    if (timer == 0) { cy(2 + 2 + 3 + 3); flags &= 0xF7; a = flags; }       // the tune ends; the note number is then taken from the flags themselves (as the original does)
-    else cy(3);
-    const uint8_t note = (a >> 3) & 7;
-    cy(6 + 2 + 2 + 2);   // LSR x3, AND, TAX, CPX
-    if (note >= 4) { cy(3 + 6); return; }
-    cy(2);
-    cy(4 + 3);
-    out.write(chip::AUDF0, cart.at(rom::kStartTuneA + note));
-    cy(4 + 3);
-    out.write(chip::AUDF1, cart.at(rom::kStartTuneB + note));
-    cy(2 + 3);
-    out.write(chip::AUDC0, 4);
-    cy(3);
-    out.write(chip::AUDC1, 4);
-    cy(2 + 3);
-    out.write(chip::AUDV0, 8);
-    cy(3);
-    out.write(chip::AUDV1, 8);
-    cy(6);
-    return;
-  }
-  cy(3 + 3 + 2);   // BEQ taken, LDA PILL_FLAGS, ASL
-  if (!((st.player[0].pillFlags << 1) & 0x80)) { cy(3 + 6); return; }   // scared (first part): the sweep on channel 1
-  cy(2);
-  st.scratch[kTempD3] = 4;
-  const uint8_t pitch = (st.frameCounter >> 1) & 0x0F;
-  cy(2 + 3 + 3 + 2 + 2 + 2 + 2 + 2 + 3);   // LDA #4, STA, LDA, LSR, AND, TAY, EOR, LSR, JMP
-  cy(4); out.write(chip::AUDV1, (pitch ^ 0x0F) >> 1);
-  cy(3 + 4); out.write(chip::AUDC1, 4);
-  cy(4); out.write(chip::AUDF1, pitch);
-  cy(6);
-}
-
 // PACMAN_KEEP_GOING ($F793).
 KeepGoing pacmanKeepGoing(GameState& st, const Cartridge& cart) {
   cy(3 + 3);   // LDA, ORA
@@ -256,66 +150,6 @@ KeepGoing pacmanKeepGoing(GameState& st, const Cartridge& cart) {
   const bool taken = tryDirection(st, cart, 0, direction).exit == TryExit::Taken;
   if (!taken) cy((direction == 2 ? 0 : 3) + 4 + 4);   // JMP L_F7B8 (not after the last case), PLA, PLA: the caller is left too
   return taken ? KeepGoing::Moved : KeepGoing::Stands;
-}
-
-// SCORE_DIGITS ($F3EE) and CLEAR_GRAPHICS ($F483).
-void scoreDigits(GameState& st, const Cartridge& cart, TiaChip& chip, uint8_t offset) {
-  auto buffer = [&](uint8_t slot) -> uint8_t& { return st.scratch[kTempD5 + slot]; };
-  auto scoreByte = [&](uint8_t y) { return st.score[y]; };
-  uint8_t& seen = st.scratch[kTempE1];      // how many digits that are not zero were met (leading zeros are blank)
-  uint8_t& slotMemory = st.scratch[kTempE2];
-  seen = 0;
-  uint8_t slot = 8;
-  uint8_t y = offset;
-  auto digitShape = [&](uint8_t digit) {
-    if (digit != 0) ++seen;
-    if (seen == 0) digit = 10;
-    return cart.at(rom::kDigitPointerLow + digit);
-  };
-  bool first = true;
-  for (;;) {
-    if (!first) {                                           // L_F3F6: the high nibble of the next lower byte
-      buffer(slot) = digitShape(scoreByte(y) >> 4);
-      slot = static_cast<uint8_t>(slot - 2);
-      if (slot == 4) chip.write(chip::COLUBK, 0);
-      else if (slot == 0) chip.write(chip::COLUBK, st.scratch[kTempD2]);
-    }
-    first = false;
-    slotMemory = slot;                                      // L_F422: the low nibble
-    buffer(slot) = digitShape(scoreByte(y) & 0x0F);
-    slot = static_cast<uint8_t>(slot - 2);
-    slotMemory = slot;
-    y = static_cast<uint8_t>(y - 2);
-    if (y & 0x80) break;
-  }
-  if (seen == 0) buffer(0) = 0xAC;                          // a score of 0 shows one 0
-  for (uint8_t i = 1; i <= 9; i += 2) buffer(i) = 0xFE;     // the high bytes of the five shape pointers
-  auto shapeByte = [&](uint8_t base, uint8_t row) {
-    const uint16_t pointer = static_cast<uint16_t>((buffer(static_cast<uint8_t>(base + 1)) << 8) | buffer(base));
-    return cart.at(static_cast<uint16_t>(pointer + row));
-  };
-  seen = 6;
-  for (;;) {
-    const uint8_t row = seen;
-    chip.write(chip::GRP0, 0);
-    chip.write(chip::GRP0, 0);
-    chip.write(chip::GRP1, shapeByte(8, row));              // pointer at $DD
-    chip.write(chip::GRP0, shapeByte(6, row));              // $DB
-    const uint8_t third = shapeByte(4, row);                // $D9
-    slotMemory = third;
-    const uint8_t fourth = shapeByte(2, row);               // $D7
-    const uint8_t fifth = shapeByte(0, row);                // $D5
-    chip.write(chip::GRP1, third);
-    chip.write(chip::GRP0, fourth);
-    chip.write(chip::GRP1, fifth);
-    chip.write(chip::GRP0, fifth);
-    seen = static_cast<uint8_t>(seen - 1);
-    if (seen & 0x80) break;
-  }
-  chip.write(chip::GRP0, 0);                                // CLEAR_GRAPHICS
-  chip.write(chip::GRP1, 0);
-  chip.write(chip::GRP0, 0);
-  chip.write(chip::GRP1, 0);
 }
 
 // The top logic of the frame ($F87E-$F9A7).

@@ -53,7 +53,7 @@ target_link_libraries(emulator PUBLIC stella_core)
 
 # The game itself (Stage F26): the rebuilt logic, the drawing code and the chip models of src/game, with no Stella and no 6502.
 add_library(game_native STATIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/../game/routines.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/players.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/maze.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/objects.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/animation.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/scoring.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/game.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/kernel.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/../game/routines.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/players.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/maze.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/objects.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/animation.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/logic/scoring.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/picture/status_bar.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/sound/sound_logic.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/game.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/kernel.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../game/tia_video.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/tia_audio.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/renderer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../game/data/cartridge_data.cpp)
 target_compile_options(game_native PRIVATE /W4 /permissive-)

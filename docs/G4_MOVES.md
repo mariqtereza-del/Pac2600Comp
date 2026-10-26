@@ -28,3 +28,12 @@ Evidence (final build, 2026-10-26): `tools\build_lockstep.cmd` and `tools\build_
 | `scoring` | `addScore` (with `bcdAdd`) | 21 / 40 |
 
 `routines.cpp` 1,329 to 1,007 lines, `routines.hpp` 274 to 131. Moved by script (text unchanged, original order), then the build lists in `src\lockstep\CMakeLists.txt` and `src\host\CMakeLists.txt` got the five files. One real change: `swapPlayers` is `std::swap(st.player[0], st.player[1])`; the cycle count line is unchanged. Still in `routines.*`: `rngStep`, `placeObjects` (to `flow`, G4.4), the ghost, sound, status-line, Pac-Man, top, bottom and frame-start code.
+
+## G4.3 — status line and sound logic (2026-10-26)
+
+| File | Functions | Lines (hpp/cpp) |
+| --- | --- | --- |
+| `picture\status_bar` | `livesMarkers`, `scoreDigits` | 27 / 76 |
+| `sound\sound_logic` | `soundStart`, `soundEffects`, `soundMusic` | 30 / 104 |
+
+`routines.cpp` 1,007 to 827 lines, `routines.hpp` 131 to 101. Same method as G4.2 (script, text unchanged). Still in `routines.*`: `rngStep`, `placeObjects`, `ghostDecide`, `ghostUpdate`, `pacmanKeepGoing`, `topLogic`, `bottomLogic`, `frameStart`, `startUp`, `ConsoleInput`, `FrameInput`.

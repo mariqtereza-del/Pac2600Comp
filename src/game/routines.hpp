@@ -16,6 +16,8 @@
 #include "logic/objects.hpp"
 #include "logic/animation.hpp"
 #include "logic/scoring.hpp"
+#include "picture/status_bar.hpp"
+#include "sound/sound_logic.hpp"
 
 namespace game {
 
@@ -26,10 +28,6 @@ uint8_t rngStep(GameState& st);
 // F21.5  PLACE_OBJECTS ($FC21): freezes the game (GAME_FLAGS bit 7), sets the event timer to $3C (the freeze lasts 60 steps) and puts the four ghosts
 // at x = $4C, y = $1E (state 0) and Pac-Man at x = $4C, y = $3C with the state $80.
 void placeObjects(GameState& st);
-// F21.11  LIVES_MARKERS ($FC68): the three playfield values for the row of life markers of one player, for `lives` markers, stored in the scratch bytes
-// TEMP_D2+offset .. TEMP_D4+offset (offset 0 for player 1, 3 for player 2): $40 if there is any life (else 0), then the cartridge bytes at $FF1B+lives
-// and $FEEC+lives. Returns the last value stored (the original leaves it in A).
-uint8_t livesMarkers(GameState& st, const Cartridge& cart, uint8_t lives, uint8_t offset);
 
 // F21.15  GHOST_DECIDE ($FA26): the decision of the ghost (object n, 1-4) that has just been located (LOCATE_OBJECT, F21.7). Only on a cell exactly (both
 // offsets 0) and with no step due. On the title screen the ghost wanders. Eyes (state bit 3) aim at the pen door (x $58, y $1F). Otherwise: on the
@@ -47,40 +45,12 @@ bool ghostDecide(GameState& st, const Cartridge& cart, uint8_t object);
 // Otherwise: locate it, let it decide, and move it unless the decision put it into an opening. Returns false only for the never-run path of ghostDecide.
 bool ghostUpdate(GameState& st, const Cartridge& cart, uint8_t object);
 
-// F21.17  SOUND_START ($FF43): starts sound effect number y (0 wafer, 1 bonus item, 2 power pill, 3 ghost eaten, F19) unless one that outranks it is playing.
-// The cartridge tables: $FFE9 (the sounds that block it, as bits of SOUND_ACTIVE), $FE6E (the bit it sets in SOUND_ACTIVE), $FFED (its length, into
-// SOUND_TIMER). Returns the value the original leaves in A: the blocking bits if it was refused, else the length.
-uint8_t soundStart(GameState& st, const Cartridge& cart, uint8_t sound);
-
-// F21.18  SOUND_EFFECTS ($FF55) with its shared writer SOUND_WRITE ($FF8B): each frame, plays the sound effect that SOUND_START chose, on channel 0 (the
-// caller has X = 0). Ghost eaten: control 4, pitch = timer and $1F, volume = pitch xor $0F; power pill and bonus item: the steady tone $0D; wafer:
-// control 9, pitch 9, volume = timer. The timer goes down; when it reaches 0 nothing is written and the effect ends (SOUND_ACTIVE = 0). TEMP_D3 is the
-// scratch byte that holds the control value.
-void soundEffects(GameState& st, SoundChip& chip);
-
-// F21.19  SOUND_MUSIC ($FF94): each frame, the long sounds, in this order: Pac-Man dying (GAME_FLAGS bit 6): channel 0, volume = pitch x 2 = EVENT_TIMER,
-// control 4; the start tune (GAME_FLAGS bit 3): from bits 3-5 of EVENT_TIMER (or, when the timer is 0, of the flags with the tune bit cleared) a note 0-3
-// for both channels from the cartridge tables $FFF1 / $FFF5, control 4, volume 8, silent for 4-7; the scared-ghost sweep (PILL_FLAGS bit 6): channel 1,
-// control 4, pitch = (FRAME_COUNTER / 2) and $0F, volume = (pitch xor $0F) / 2. The caller has X = 1 (channel 1) for the sweep. TEMP_D3 holds the sweep's
-// control value.
-void soundMusic(GameState& st, const Cartridge& cart, SoundChip& chip);
-
 // F21.20  PACMAN_KEEP_GOING ($F793): Pac-Man with the stick neutral. If he is not exactly on a cell nothing happens (NotOnCell: the routine returns and the
 // main loop then moves him). Exactly on a cell he tries to go on in his own direction (TRY_* of F21.12): if that is allowed the direction is set again
 // (Moved: the routine returns and the main loop moves him); if a wall is in the way (Stands) the routine drops its caller's return and the main loop
 // goes on at $F7BA without moving him: he stands still.
 enum class KeepGoing { NotOnCell, Moved, Stands };
 KeepGoing pacmanKeepGoing(GameState& st, const Cartridge& cart);
-
-// F21.21  SCORE_DIGITS ($F3EE) with the CLEAR_GRAPHICS ($F483) it falls into: turns the decimal digits of one player's score into the
-// picture pointers of the score line and draws the line. `offset` is the byte of the score's high part (4 for player 1, 5 for player 2; the score is
-// SCORE_P1_LO + offset, - 2, - 4). Only five digits are shown (the hundred-thousands digit never): the low nibble of the high byte and both nibbles of the
-// middle and low bytes; leading zeros are blank (shape number 10), a score of 0 shows one 0. The digit pointers go to $D5-$DE (low byte from the cartridge
-// table at $FEF6, high byte $FE), TEMP_E1 counts the digits that are not zero, TEMP_E2 is the slot being filled. The background colour is set to black
-// after the third digit and to TEMP_D2 (the score colour) after the fifth. Then seven picture rows (row 6 down to 0), each: the graphics registers cleared,
-// then the five digit shapes (cartridge bytes at $FE00 + shape pointer + row) written to GRP0 / GRP1 in the six-picture order; finally the graphics registers
-// are cleared again (CLEAR_GRAPHICS).
-void scoreDigits(GameState& st, const Cartridge& cart, TiaChip& chip, uint8_t offset);
 
 // The console as the game logic sees it in one frame: the buttons and switches the top logic reads (F9).
 struct ConsoleInput {

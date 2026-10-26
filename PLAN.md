@@ -2639,7 +2639,23 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G4_MOVES.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G4.2: Move the leaf logic into logic\`.
       - **Next stage:** G4.3.
-        3. **[Not started] G4.3 — `picture\status_bar`, `sound\sound_logic`.**
+        3. **[Done] G4.3 — `picture\status_bar`, `sound\sound_logic`** (see the entry below).
+    - **G4.3 — Move the status line and the sound logic** *(expanded and done 2026-10-26)*
+      - **Objective:** `livesMarkers` and `scoreDigits` go to `picture\status_bar`; `soundStart`, `soundEffects`, `soundMusic` go to `sound\sound_logic`.
+      - **Why it matters:** 161 more lines leave `routines.cpp`; the sound rules and the status line each get one file.
+      - **Prerequisites:** G4.2 Done (`b9d1936`), clean tree.
+      - **What Claude Code will do:** the same script method as G4.2 (header chunks cut at each function's declaration this time, because the `scoreDigits` chunk ran into the `ConsoleInput` struct); CMake lists get two files.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** behaviour unchanged.
+      - **Verification:** both builds; the ten proofs say OK.
+      - **Completion criteria:** the above, one commit.
+      - **Potential problems:** none seen; `kernel.cpp` has its own copy of the score-digit drawing inside `drawPicture` (a different thing: it places the chip writes), left for G4.6.
+      - **Recovery:** return to `b9d1936` (with your OK).
+      - **Documentation updates:** `docs\G4_MOVES.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage G4.3: Move the status line and the sound logic`.
+      - **Next stage:** G4.4.
         4. **[Not started] G4.4 — `logic\ghosts`, `pacman`, `collisions`, `flow`** (the `Bottom` struct is cut here).
         5. **[Not started] G4.5 — `logic\bottom`, `top`, `frame_start`;** `routines.*` deleted; full long suite.
         6. **[Not started] G4.6 — `picture\kernel_*`** (cut `drawPicture` along the F18 stages).

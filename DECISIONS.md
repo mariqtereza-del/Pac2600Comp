@@ -97,10 +97,18 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 
 - **What it means:** the running game never reads game data from the ROM file. Everything it needs is inside the program. The ROM is still asked for at start-up, but only to be checked (size and SHA-1: it proves the player has the right cartridge); no byte of it is passed to the game.
 - **What "everything it needs" is:** 504 bytes in 48 tables (measured in G5a, docs\EMBEDDED_DATA.md) of data that the game reads today through `game::Cartridge` (the maze wall table, the sprite and digit shapes, the colour, sound, speed and score tables; `docs\F4_DATA_TABLES.md`, `src\game\data\rom_tables.hpp`). None of the cartridge's machine code (about 3,500 bytes) is needed or will be included.
-- **Why it is a decision with a catch:** your Rule 7 says the ROM must never be in the public repository or release. Tables copied from the cartridge are part of its content. Rule 7 is yours, so I do **not** change its wording myself. Stage G5a drafts a new wording (the data tables may be in the program; the cartridge's code and the file never) for you to approve; the stages that put data bytes into Git (G5b, G5c) start only after your approval. Until then the repository holds no cartridge data.
+- **Why it is a decision with a catch:** your Rule 7 says the ROM must never be in the public repository or release. Tables copied from the cartridge are part of its content. Rule 7 is yours, so I do **not** change its wording myself. Stage G5a drafted a new wording and the owner approved it with changes (below); the stages that put data bytes into Git (G5b, G5c) start now.
 - **Changed in `PLAN.md`:** three stages inserted in Phase G before the stranger test: G5a (list and wording, no bytes in Git), G5b (the tables become part of the program), G5c (the ROM becomes a check only). G6, G7 and H4 are adjusted: the stranger test and the 1.0.0 baseline come after the change, and the public tests can then include whole-game runs without a ROM.
 - **Stays as it is:** the ROM finder and its checks (D3); the original-versus-native lockstep suite still needs the ROM as the reference (it is the test tool, never shipped); `pacman2600_ref` and the measuring tools; Rule 1 (the original file is never changed).
-- **Open:** your approval of the Rule 7 wording (G5a). Nothing else is needed from you.
+- **Owner's answer, 2026-10-26 (G5a): "Yes, with changes. The rom exists as an indirect form of DRM, preventing any user without a legal dump of the game to play it using this project. No game data should be read from the rom, it should all be included with the release."** Rule 7 now reads (in `CLAUDE.md`):
+
+    > The original ROM file, and the cartridge's program code, must never be included in the public repository or executable release.
+    >
+    > The game data it needs (the tables listed in `docs\EMBEDDED_DATA.md`) is part of the program and is included with the release: the game reads no game data from the ROM.
+    >
+    > The ROM exists only as an indirect form of DRM. The program requires the player to have a legal dump of the original game and checks it (size and SHA-1) before it starts, so that nobody without a legal dump can play it with this project.
+
+- **So:** the data tables go into the program and the release (G5b); the ROM stays only as the start-up check that makes the program unplayable without a legal dump (G5c: no ROM, or a different file, means the program refuses to start with a plain message). The ROM file and the cartridge's program code are still never in Git or a release.
 - **Reversible:** Yes until G5b; after that the tables are in Git history.
 
 ### D-008 — The owner's input is avoided unless absolutely necessary (2026-10-26, Stage E1)

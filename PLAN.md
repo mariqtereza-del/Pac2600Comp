@@ -2741,7 +2741,7 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G5_LEFTOVERS.md`, `docs\CONVENTIONS.md`, `DECISIONS.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G5: Remove leftovers`.
       - **Next stage:** G6 — "Stranger test".
-**[Work done 2026-10-26; waiting for the owner's approval of the Rule 7 wording] G5a — The data the game needs, and the Rule 7 wording** *(added 2026-10-26, D-009; the owner's instruction: the game needs no ROM file, the ROM is only a security check).*
+**[Done 2026-10-26] G5a — The data the game needs, and the Rule 7 wording** *(added 2026-10-26, D-009; the owner's instruction: the game needs no ROM file, the ROM is only a security check).*
     - **Objective:** decide exactly what cartridge data the program will carry and how Rule 7 reads afterwards.
     - **Why it matters:** the game reads 504 bytes in 48 tables (measured in G5a, docs\EMBEDDED_DATA.md) of the cartridge today. Moving them into the program removes the need for the ROM file but touches Rule 7 (ROM never in the repository or release), which only the owner can change.
     - **Prerequisites:** G5 Done (`04e1f5f`), D-009 recorded.
@@ -2751,21 +2751,21 @@ Reshape the verified native code so a stranger can read and mod it, without chan
     - **Claude Code prompt:** the resume prompt.
     - **Expected result:** a written list the owner can judge, and a wording of Rule 7 ready to adopt.
     - **Verification:** every byte read in 439,680 recorded and 2,400,000 random frames is inside the listed tables; the list totals match `tools\f4_tables.py`.
-    - **Completion criteria:** the owner has approved a wording (or said no, in which case G5b and G5c are dropped and D-009 is reversed). Rule 7 in `CLAUDE.md` is changed only then, and its text is checked against the owner's approved text.
+    - **Completion criteria (met: the owner approved with changes on 2026-10-26, Rule 7 reworded in `CLAUDE.md`):** the owner has approved a wording (or said no, in which case G5b and G5c are dropped and D-009 is reversed). Rule 7 in `CLAUDE.md` is changed only then, and its text is checked against the owner's approved text.
     - **Potential problems:** a table read only in a rare game state could be missed by the counter; the counter run covers every recorded state, and the F4 map is the cross-check.
     - **Recovery:** documents only.
     - **Documentation updates:** `docs\EMBEDDED_DATA.md`, `DECISIONS.md`, `CLAUDE.md` (Rule 7, after approval), `PROJECT_STATUS.md`, `PLAN.md`.
     - **Git checkpoint:** `Stage G5a: The data the game needs`. **Next stage:** G5b.
 
-**[Not started] G5b — The tables become part of the program** *(D-009; starts only after the owner approved the Rule 7 wording in G5a).*
+**[Not started] G5b — The tables become part of the program** *(D-009; the owner approved the Rule 7 wording on 2026-10-26: the data is part of the program and the release).*
     - **Objective:** the data lives in named arrays in `src\game\data\`; no game code reads the cartridge by address any more.
     - **What Claude Code will do:** a tool (`tools\g5b_make_tables.py`) reads the local ROM once and writes `src\game\data\tables.hpp/.cpp` (generated, each table with its name, use and evidence, no code bytes); code that said `cart.at(rom::kMazeWalls + i)` says `data::kMazeWalls[i]`; the shape and digit tables the picture code reaches through pointers become arrays and index values; `game::Cartridge` and `rom_tables.hpp` are removed; each table is checked equal to the ROM by the tool and by a test.
     - **Verification:** the ten proofs, `f25_games --games 120` and `d10_replay_compare` identical to before; the F22 source scan is replaced by a check that the only cartridge bytes in the source are the listed tables.
     - **Completion criteria:** all of the above; one commit. **Recovery:** return to the commit before (with the owner's OK); the tables stay in history.
     - **Next stage:** G5c.
 
-**[Not started] G5c — The ROM becomes a check only** *(D-009).*
-    - **Objective:** the game is built and run without any cartridge input; the ROM file is still required at start-up, but only to check it.
+**[Not started] G5c — The ROM becomes a check only (an indirect DRM)** *(D-009).*
+    - **Objective:** the game is built and run without any cartridge input; the ROM file is still required at start-up, but only to check it. That check is the DRM: without a legal dump (right size and SHA-1) the program does not start.
     - **What Claude Code will do:** `game::Game` takes no `Cartridge`; `CartridgeData` becomes `RomCheck` (size and SHA-1, a yes or no with the plain message of F22/D3); the host asks for the ROM, runs the check and starts the game without passing a byte; the lockstep tool, which still needs the ROM as the reference, keeps its own loader; a new test runs the game for 600 frames in a program that never opens a ROM and equals the stored picture fingerprints.
     - **Verification:** the same proofs; the new no-ROM test; `pacman2600.exe` given the right file (starts) and a wrong file (refuses, plain message).
     - **Completion criteria:** all of the above; one commit; H4 can now include whole-game tests. **Next stage:** G6.

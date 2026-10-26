@@ -128,10 +128,10 @@ def main():
               '- The program still asks for the ROM at start-up and checks its size (4,096 bytes) and SHA-1 (`0940fea7...6dbb1`) with the existing finder (D3) and loader checks (F22). It then starts the game **without handing it any byte**.',
               '- The lockstep suite, the measuring tools and `pacman2600_ref` keep using the ROM as the reference; they are test tools and are not part of a release.',
               '- F22\'s source scan (\"the source holds no cartridge bytes\") changes in G5b into a check that the only cartridge bytes in the source are the tables listed above.', '',
-              '## Draft wording of Rule 7 for the owner to approve', '',
-              'Present text: *The original ROM must never be included in the public repository or executable release.*', '',
-              'Proposed text: *The original ROM file, and the cartridge\'s program code, must never be included in the public repository or executable release. The data tables the game needs, listed in `docs' + BS + 'EMBEDDED_DATA.md`, may be part of the program; they are kept to what the game reads, with no machine code. The program still requires the player to have the original ROM and checks it (size and SHA-1) before it starts.*', '',
-              'This is the owner\'s rule; it changes only if the owner approves a wording. Until then no table is put into any file that Git tracks.', '']
+              '## Rule 7 as approved by the owner (2026-10-26, D-009)', '',
+              'Before: *The original ROM must never be included in the public repository or executable release.*', '',
+              'Now (in `CLAUDE.md`): *The original ROM file, and the cartridge\'s program code, must never be included in the public repository or executable release. The game data it needs (the tables listed in `docs' + BS + 'EMBEDDED_DATA.md`) is part of the program and is included with the release: the game reads no game data from the ROM. The ROM exists only as an indirect form of DRM. The program requires the player to have a legal dump of the original game and checks it (size and SHA-1) before it starts, so that nobody without a legal dump can play it with this project.*', '',
+              'The owner\'s words: the ROM is an indirect DRM, preventing anyone without a legal dump from playing with this project; no game data is read from the ROM; it is all included with the release.', '']
     (ROOT / 'docs' / 'EMBEDDED_DATA.md').write_text('\n'.join(lines), encoding='utf-8', newline='\n')
 
     # the local byte-level list

@@ -22,7 +22,7 @@ import g5a_data_list as g5a  # noqa: E402  (USE: what the named tables are for)
 BS = chr(92)
 SHA1 = '0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1'
 KIND = {'GFX': 'Gfx', 'TBL': 'Tbl', 'COLOR': 'Color', 'PF': 'Pf', 'SND': 'Snd', 'UNREAD': 'Unread'}
-# names of the src/game/data/rom_tables.hpp (G4.1) by start address; the segment at $FF2B holds two colour tables (colour switch, black and white)
+# names that rom_tables.hpp (G4.1, deleted after G5b) gave the tables, by start address; the segment at $FF2B holds two colour tables (colour switch, black and white)
 NAMES = {
     0xFE13: 'kMazeWalls', 0xFE6A: 'kWaferBitMask', 0xFE6C: 'kPillMask', 0xFE79: 'kWaferByteIndex', 0xFF06: 'kScoreAmountLow', 0xFF0C: 'kScoreAmountMid',
     0xFF1B: 'kLivesMarkerPf1', 0xFEEC: 'kLivesMarkerPf2', 0xFEF6: 'kDigitPointerLow', 0xFF0D: 'kAnimPointerStep', 0xFF19: 'kAnimWhichPointer',

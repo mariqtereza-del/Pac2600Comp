@@ -163,4 +163,4 @@ G5c - the ROM becomes a check only: game::Game takes no Cartridge, CartridgeData
 
 ## Handoff from the last session
 
-Stage G5b done (docs\EMBEDDED_DATA.md). Needed from the owner: may src\game\data\rom_tables.hpp (unused now) be deleted (Rule 6)? Still in build\host\test_tmp (ignored by Git): small test files. Delete only with the owner's OK.
+Stage G5b done (docs\EMBEDDED_DATA.md). rom_tables.hpp was deleted with the owner's OK. Nothing is needed from the owner (G5c may ask about moving the cartridge files). Still in build\host\test_tmp (ignored by Git): small test files. Delete only with the owner's OK.

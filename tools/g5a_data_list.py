@@ -23,7 +23,7 @@ EXE = ROOT / 'build' / 'lockstep' / 'lockstep_native_reads.exe'
 OUT = ROOT / 'reference' / 'g5a'
 BS = chr(92)
 
-# what the named tables are for (the names of src/game/data/rom_tables.hpp); other segments are reached through a pointer or an index
+# what the named tables are for (the names that rom_tables.hpp had in G4.1, now the table names of src/game/data/tables.hpp); other segments are reached through a pointer or an index
 USE = {
     0xFE13: 'maze wall table (kMazeWalls)', 0xFE6A: 'wafer bit masks (kWaferBitMask)', 0xFE6C: 'power-pill masks (kPillMask)',
     0xFE79: 'wafer byte index (kWaferByteIndex)', 0xFF06: 'score amounts, low byte (kScoreAmountLow)', 0xFF0C: 'score amounts, middle byte (kScoreAmountMid)',

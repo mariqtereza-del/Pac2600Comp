@@ -29,6 +29,7 @@ struct Options {
   bool pushKeys = false;  // tests: a helper thread presses keys in the real window's event queue (--push-keys)
   bool timerClock = false;  // pace the game from the PC clock instead of the sound card (comparison only)
   int stallMs = 0;    // tests: freeze the loop once, 5 seconds in (--audio-check: the game loop; the game window: the window thread)
+  double presentHz = 0;  // tests (Stage H6): --present-hz N shows pictures at N a second from a timer, as a monitor of N Hz would (the real monitor's wait is off)
   bool windowGiven = false;  // --window on the command line: do not use the remembered window
   layout::Mode mode = layout::Mode::Framed;  // 12:7 pixels, game area, black border on every side (D-006); keys 1-5 switch it while playing
   layout::PixelShape pixelShape{12, 7};        // the standard NTSC shape of a 2600 pixel (D-005); {0, 0} = Stella's 19:10 (--pixel-aspect stella)

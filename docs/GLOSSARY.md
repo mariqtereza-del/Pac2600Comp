@@ -134,6 +134,8 @@ Every project term in one line of plain English. New terms are added in the stag
 | --- | --- |
 | Phase / stage | The plan is split into phases A–J, each made of small stages done one per session. |
 | Gate | The checklist at the end of a phase that must pass before the next phase starts. |
+| Pretend monitor | A test switch (`--present-hz N`) where a timer, not the real screen, sets how often pictures are shown, to test other refresh rates such as 60 Hz on a 180 Hz PC. |
+| Spike | One frame that takes far longer than usual to compute (probably Windows pausing the program); counted, and allowed only a few times per test run. |
 | D-001, D-002 … | Decisions the owner approved, in `DECISIONS.md`. |
 | T-B3-2 etc. | Small technical choices Claude Code made inside a stage, also in `DECISIONS.md`. |
 | Resume prompt | The standard message pasted at the start of each session. |

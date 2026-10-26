@@ -31,6 +31,9 @@ public:
 
   bool due(Uint64 now) const { return now >= next_; }
 
+  // When the frame that is due now was meant to start (Stage H6: how late frames start is measured).
+  Uint64 dueAt() const { return next_; }
+
   // Nanoseconds until the next frame is due (0 if it is due now).
   Uint64 untilDue(Uint64 now) const { return now >= next_ ? 0 : next_ - now; }
 

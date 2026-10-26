@@ -96,6 +96,7 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 | `f20_gen_tables.py`, `f23_dump.py`, `f24_dump.py`, `f24_cycles.py`, `f26_palette.py` | generators and helpers of the proofs above | needs the ROM | not timed |
 | `tools\make_release.ps1`, `tools\make_checkpoint.ps1` | release and backup scripts (the release scan refuses ROM-like files; `make_release.ps1 -TestScan` proves the scan on invented zips, 6 cases) | no ROM | `-TestScan` 2 s; the release in the clean copy about 1 minute |
 | `h5_zip_code_scan.py <zip> rom\pacman.a26` | looks inside a release zip and the source zip in it for any of the 3,368 eight-byte runs of cartridge program code (raw and as `0x..` numbers) and for the ROM itself; a zip holding one such run is refused (control) | needs the ROM and `reference\f6` | under 1 minute |
+| `tools\h6_performance.ps1 [-Seconds 60]` | speed, sound underruns, frame time, lateness and start-up on the real monitor and five pretend monitors (`--present-hz`); pictures identical across monitor speeds; results in `docs\PERFORMANCE.md` | needs the ROM and a sound device (muted) | about 7 minutes (6 cases of 60 s) |
 
 ## The clean-build check (Stage H5)
 

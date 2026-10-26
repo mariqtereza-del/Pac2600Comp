@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     SDL_Quit();
     return 1;
   }
-  SDL_SetRenderVSync(renderer, 1);  // present once per screen refresh, so the loop does not spin
+  SDL_SetRenderVSync(renderer, options.presentHz > 0 ? 0 : 1);  // present once per screen refresh, so the loop does not spin (--present-hz: a timer plays the monitor, Stage H6)
 
   Tracker tracker;
   if(remembered.known) {

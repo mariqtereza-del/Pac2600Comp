@@ -75,6 +75,11 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   std::uint32_t joystickValuesSeen = 0;      // bit n set = the game's joystick byte (RAM $ED) held the value n
   std::set<int> switchValuesSeen;            // the console switch register values the game could read
   const Uint64 started = SDL_GetTicksNS();
+  // Stage H6: how long each game frame took to compute, and how late it started after the moment it was due (milliseconds).
+  std::vector<float> computeMs, lateMs;
+  computeMs.reserve(1 << 16);
+  lateMs.reserve(1 << 16);
+  std::atomic<double> firstPictureMs{-1};  // from the start of this function to the first picture handed to the window
 
   std::thread game([&]() {
     Pacer pacer(audio, options.timerClock, frameRate(options));
@@ -94,6 +99,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
 
       int steps = 0;
       while(steps < 5 && pacer.due(now)) {
+        const Uint64 frameBegan = SDL_GetTicksNS();
+        lateMs.push_back(static_cast<float>(static_cast<double>(frameBegan - pacer.dueAt()) / 1e6));
         if(softBlend.load() != glowApplied) { glowApplied = softBlend.load(); emulator.setSoftBlend(glowApplied); }
         // A replay gives the console what was recorded; when it has run out, the keyboard and pads take over again.
         controls::Input in = controls::Input::unpack(replaying && frames < replay.frames ? replay.bitsAt(frames) : inputBits.load());
@@ -113,9 +120,11 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
           if(joystick < 32) joystickValuesSeen |= 1u << joystick;
           switchValuesSeen.insert(emulator.consoleSwitches());
         }
+        computeMs.push_back(static_cast<float>(static_cast<double>(SDL_GetTicksNS() - frameBegan) / 1e6));
         pacer.ran(now); ++steps; ++frames;
       }
       if(steps > 0) {
+        if(firstPictureMs.load() < 0) firstPictureMs = static_cast<double>(SDL_GetTicksNS() - started) / 1e6;
         std::vector<std::uint32_t> picture = emulator.colours();
         std::lock_guard<std::mutex> guard(lock);
         sharedPixels = std::move(picture);
@@ -214,7 +223,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     SDL_RenderPresent(renderer);
     ++presents;
     if(frameNow > 0) ++shownCount;
-    if(SDL_GetTicksNS() - beforePresent < 500000) SDL_Delay(1);  // a present that does not wait for the monitor (window hidden): do not spin
+    if(options.presentHz > 0) {  // Stage H6 test: wait for the next tick of a pretend monitor
+      const double period = 1e9 / options.presentHz;
+      const Uint64 sinceStart = SDL_GetTicksNS() - started;
+      const Uint64 nextTick = static_cast<Uint64>((std::floor(static_cast<double>(sinceStart) / period) + 1) * period);
+      SDL_DelayPrecise(nextTick - sinceStart);
+    } else if(SDL_GetTicksNS() - beforePresent < 500000) SDL_Delay(1);  // a present that does not wait for the monitor (window hidden): do not spin
     if(maxSeconds > 0 && static_cast<double>(SDL_GetTicksNS() - started) >= maxSeconds * 1e9) running = false;
   }
   stop = true;
@@ -233,6 +247,14 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         << "\nrefreshes_per_game_frame_1=" << refreshHistogram[0] << "\nrefreshes_per_game_frame_2=" << refreshHistogram[1]
         << "\nrefreshes_per_game_frame_3=" << refreshHistogram[2] << "\nrefreshes_per_game_frame_4=" << refreshHistogram[3]
         << "\nrefreshes_per_game_frame_5_or_more=" << refreshHistogram[4] << "\ngame_frames_never_shown=" << framesNeverShown << '\n';
+    // Stage H6: the game thread's own timing (the game thread has ended, so the lists can be read here)
+    auto percentile = [](std::vector<float> v, double p) { if(v.empty()) return 0.0f; std::sort(v.begin(), v.end()); return v[static_cast<size_t>(p * static_cast<double>(v.size() - 1))]; };
+    auto mean = [](const std::vector<float>& v) { double s = 0; for(float x : v) s += x; return v.empty() ? 0.0 : s / static_cast<double>(v.size()); };
+    const auto over = [](const std::vector<float>& v, float limit) { return std::count_if(v.begin(), v.end(), [limit](float x) { return x > limit; }); };
+    log << "frames_compute_over_16_7_ms=" << over(computeMs, 16.7f) << "\nframes_compute_over_5_ms=" << over(computeMs, 5.0f)
+        << "\nframe_compute_ms_mean=" << mean(computeMs) << "\nframe_compute_ms_p99=" << percentile(computeMs, 0.99) << "\nframe_compute_ms_max=" << percentile(computeMs, 1.0)
+        << "\nframe_start_late_ms_p99=" << percentile(lateMs, 0.99) << "\nframe_start_late_ms_max=" << percentile(lateMs, 1.0)
+        << "\nfirst_picture_ms=" << firstPictureMs.load() << "\npresent_hz_simulated=" << options.presentHz << '\n';
     if(options.pushKeys) {
       log << "joystick_ram_values_seen=";
       for(int n = 0; n < 32; ++n) if(joystickValuesSeen & (1u << n)) log << n << ' ';

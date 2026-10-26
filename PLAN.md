@@ -2924,7 +2924,22 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
       - **Recovery:** new folders only under `build\` (ignored by Git, nothing deleted); documents and scripts revert with Git.
       - **Documentation updates:** `BUILDING.md` (new), `TESTING.md`, `DECISIONS.md` (T-H5-1), `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage H5: Clean-build and release checks`. **Next stage:** H6 (performance and pacing checks).
-6. **[Not started] H6 — Performance and pacing checks.** Frame-time log on your 180 Hz screen and with the monitor set to 60 Hz; any frame-rate dependence is a failure.
+6. **[Done] H6 — Performance and pacing checks.** Frame-time log on your 180 Hz screen and with the monitor set to 60 Hz; any frame-rate dependence is a failure.
+    - **H6 - Performance and pacing checks** *(expanded 2026-10-27)*
+      - **Objective:** measure, with a repeatable script, how fast the game computes a frame, how late frames start, how long start-up takes, and prove that the game does not depend on the monitor's refresh rate (real monitor and pretend monitors of 30, 60, 75, 144 and 240 Hz).
+      - **Why it matters:** the owner has a 180 Hz screen; many players have 60 Hz. The game must run at the console's 59.9227 frames a second and show identical pictures on all of them, and the numbers must be recorded for each release.
+      - **Prerequisites:** H5 Done (`60dd544`), clean tree, `build\host\pacman2600.exe` built, ROM in `rom\`.
+      - **What Claude Code will do:** add per-frame timing to the window program's end-of-run note (compute time, lateness of the start, time to the first picture) and a test-only switch `--present-hz N` (a timer plays the monitor; the real monitor's wait is off); write `tools\h6_performance.ps1`; run it for 60 s per case; add it to `TESTING.md` and `h1_testing_check`; run `test_quick.ps1`. The real monitor is NOT switched to 60 Hz (that is a global Windows setting, so it needs the owner's approval, and the pretend 60 Hz run tests the same code path); this is recorded openly.
+      - **What I must do:** nothing. (Optional, later: switch the monitor to 60 Hz yourself and run the script again.)
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** at every monitor speed: 59.92 frames a second (within 0.1 %), 0 sound underruns, pictures identical across runs, frame start lateness (99th percentile) under 2 ms, compute time per frame far below 16.7 ms.
+      - **Verification:** `tools\h6_performance.ps1` output (`result: OK`), then `test_quick.ps1`.
+      - **Completion criteria:** all cases measured with output shown; the real-60-Hz limitation written down; numbers in `docs\PERFORMANCE.md`.
+      - **Potential problems:** a busy PC adds jitter (rerun and report both); a pretend monitor is not a real one (its present path differs from the vsync path).
+      - **Recovery:** the code change is a measuring log and one test switch; revert the commit.
+      - **Documentation updates:** `docs\PERFORMANCE.md` (new), `TESTING.md`, `CLAUDE.md`, `DECISIONS.md` (T-H6-1), `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage H6: Performance and pacing checks`. **Next stage:** H7 (Gate H).
 7. **[Not started] H7 — Gate H: freeze the preservation suite.** `tests\preservation\` is locked: its traces can be added to, never edited. Every later change must pass it.
 
 ### Phase I — Modernization discussion (4 stages, then one stage per approved feature)

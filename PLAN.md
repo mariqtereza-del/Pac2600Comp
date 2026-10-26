@@ -2545,9 +2545,9 @@ Findings are recorded the moment they are made, with the address, the evidence a
 4. Check public references (Stella docs, 2600 programming guides, community notes), always recording the source.
 5. Still unclear after two sessions: write a literal translation marked `// LITERAL: not yet understood`, so the game stays correct, mark it "Reconstructed (literal)" in the coverage map, and come back later. Gate G requires zero literal blocks remaining, or each one approved by you as documented.
 
-### Phase G — Readable source and maintainable architecture (7 stages)
+### Phase G — Readable source and maintainable architecture (10 stages: G5a, G5b, G5c added by D-009)
 
-Reshape the verified native code so a stranger can read and mod it, without changing a single frame of output. The lockstep suite runs after every change in this phase; any red result means the change is undone.
+Reshape the verified native code so a stranger can read and mod it, without changing a single frame of output. The lockstep suite runs after every change in this phase; any red result means the change is undone. D-009 (2026-10-26) added G5a to G5c: the game must not read the ROM; the ROM is only a security check.
 
 1. **[Done] G1 — Choose the module layout from the real game.** Claude Code proposes files based on what Phase F found (likely along the lines of game state, maze, player, ghosts, scoring, game flow, renderer, sound, ROM data, platform). It explains each in one sentence; recorded as T-G1-1 in `DECISIONS.md` (decided by Claude Code, not an owner approval: a technical choice with no effect on the game, D-008; the owner may still ask for changes).
     - **G1 — Choose the module layout from the real game** *(expanded and done 2026-10-26)*
@@ -2741,8 +2741,37 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G5_LEFTOVERS.md`, `docs\CONVENTIONS.md`, `DECISIONS.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage G5: Remove leftovers`.
       - **Next stage:** G6 — "Stranger test".
-6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments.
-7. **[Not started] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.**
+**[Not started] G5a — The data the game needs, and the Rule 7 wording** *(added 2026-10-26, D-009; the owner's instruction: the game needs no ROM file, the ROM is only a security check).*
+    - **Objective:** decide exactly what cartridge data the program will carry and how Rule 7 reads afterwards.
+    - **Why it matters:** the game reads about 515 bytes of the cartridge today. Moving them into the program removes the need for the ROM file but touches Rule 7 (ROM never in the repository or release), which only the owner can change.
+    - **Prerequisites:** G5 Done (`04e1f5f`), D-009 recorded.
+    - **What Claude Code will do:** list every cartridge byte the game reads (from the F4 map and a read counter in the test tool run over all 70 recorded and 120 random games), table by table, with name, size, use and evidence; confirm that no machine code is among them; write `docs\EMBEDDED_DATA.md` (the list, the totals, what the ROM check still does, what changes in F22, H4 and the release); draft the new wording of Rule 7 (for example: the original file and the cartridge's program code are never in the repository or the release; the data tables listed in `docs\EMBEDDED_DATA.md` may be part of the program). No cartridge byte is written into any file that Git tracks in this stage; a byte-level list stays under `reference\` (local only).
+    - **What I must do:** read the drafted wording and answer yes, no or change it (a rule-required approval, allowed by D-008).
+    - **Exact instructions:** none. **Required input:** the approval above.
+    - **Claude Code prompt:** the resume prompt.
+    - **Expected result:** a written list the owner can judge, and a wording of Rule 7 ready to adopt.
+    - **Verification:** every byte read in 439,680 recorded and 2,400,000 random frames is inside the listed tables; the list totals match `tools\f4_tables.py`.
+    - **Completion criteria:** the owner has approved a wording (or said no, in which case G5b and G5c are dropped and D-009 is reversed). Rule 7 in `CLAUDE.md` is changed only then, and its text is checked against the owner's approved text.
+    - **Potential problems:** a table read only in a rare game state could be missed by the counter; the counter run covers every recorded state, and the F4 map is the cross-check.
+    - **Recovery:** documents only.
+    - **Documentation updates:** `docs\EMBEDDED_DATA.md`, `DECISIONS.md`, `CLAUDE.md` (Rule 7, after approval), `PROJECT_STATUS.md`, `PLAN.md`.
+    - **Git checkpoint:** `Stage G5a: The data the game needs`. **Next stage:** G5b.
+
+**[Not started] G5b — The tables become part of the program** *(D-009; starts only after the owner approved the Rule 7 wording in G5a).*
+    - **Objective:** the data lives in named arrays in `src\game\data\`; no game code reads the cartridge by address any more.
+    - **What Claude Code will do:** a tool (`tools\g5b_make_tables.py`) reads the local ROM once and writes `src\game\data\tables.hpp/.cpp` (generated, each table with its name, use and evidence, no code bytes); code that said `cart.at(rom::kMazeWalls + i)` says `data::kMazeWalls[i]`; the shape and digit tables the picture code reaches through pointers become arrays and index values; `game::Cartridge` and `rom_tables.hpp` are removed; each table is checked equal to the ROM by the tool and by a test.
+    - **Verification:** the ten proofs, `f25_games --games 120` and `d10_replay_compare` identical to before; the F22 source scan is replaced by a check that the only cartridge bytes in the source are the listed tables.
+    - **Completion criteria:** all of the above; one commit. **Recovery:** return to the commit before (with the owner's OK); the tables stay in history.
+    - **Next stage:** G5c.
+
+**[Not started] G5c — The ROM becomes a check only** *(D-009).*
+    - **Objective:** the game is built and run without any cartridge input; the ROM file is still required at start-up, but only to check it.
+    - **What Claude Code will do:** `game::Game` takes no `Cartridge`; `CartridgeData` becomes `RomCheck` (size and SHA-1, a yes or no with the plain message of F22/D3); the host asks for the ROM, runs the check and starts the game without passing a byte; the lockstep tool, which still needs the ROM as the reference, keeps its own loader; a new test runs the game for 600 frames in a program that never opens a ROM and equals the stored picture fingerprints.
+    - **Verification:** the same proofs; the new no-ROM test; `pacman2600.exe` given the right file (starts) and a wrong file (refuses, plain message).
+    - **Completion criteria:** all of the above; one commit; H4 can now include whole-game tests. **Next stage:** G6.
+
+6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments. **Moved after G5c (D-009): the explanation is tested on the final code.**
+7. **[Not started] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.** **D-009 adds:** the game builds and runs with no ROM input (only the start-up check reads the file); the embedded tables are exactly the ones listed in `docs\EMBEDDED_DATA.md` and contain no machine code; Rule 7 reads as the owner approved it.
 
 Guarding against "generic Pac-Man": no rule may be simplified to what arcade Pac-Man or a tutorial does. If cleaner code would change one byte of RAM or one pixel, the original behaviour wins and the code gets a comment instead.
 
@@ -2769,7 +2798,7 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
 1. **[Not started] H1 — `TESTING.md`.** Lists every test, what it proves, how long it takes, and whether it needs the ROM.
 2. **[Not started] H2 — Unit tests per module** (maze lookups, score table, speed tables, ROM loader, scaling maths).
 3. **[Not started] H3 — Two test commands.** `tools\test_quick.ps1` (unit tests + 5 key traces, a few minutes) after every stage; `tools\test_full.ps1` (everything) at gates and before releases. This keeps each session short, as you asked.
-4. **[Not started] H4 — ROM-free test set for GitHub.** The subset that runs without the ROM, so the public repository can check itself automatically on every change.
+4. **[Not started] H4 — ROM-free test set for GitHub.** The subset that runs without the ROM, so the public repository can check itself automatically on every change. **D-009:** after G5c this set also contains whole-game runs (they need no ROM, only stored fingerprints).
 5. **[Not started] H5 — Clean-build and release checks.** A fresh copy built following only `BUILDING.md`; the release zip scanned for ROM files.
 6. **[Not started] H6 — Performance and pacing checks.** Frame-time log on your 180 Hz screen and with the monitor set to 60 Hz; any frame-rate dependence is a failure.
 7. **[Not started] H7 — Gate H: freeze the preservation suite.** `tests\preservation\` is locked: its traces can be added to, never edited. Every later change must pass it.

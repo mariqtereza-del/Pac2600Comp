@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "../../src/game/cartridge_data.hpp"
+#include "../../src/game/data/cartridge_data.hpp"
 #include "../../src/game/kernel.hpp"
 #include "../../src/testsupport/state_bytes.hpp"
 

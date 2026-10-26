@@ -2603,7 +2603,31 @@ Reshape the verified native code so a stranger can read and mod it, without chan
       - **Documentation updates:** `docs\G3_STATE.md`, `DECISIONS.md` (T-G3-1), `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`, `docs\GLOSSARY.md`, `docs\G1_MODULE_LAYOUT.md`.
       - **Git checkpoint:** `Stage G3: Separate the state from its memory layout`.
       - **Next stage:** G4 — Move code into the G1 modules.
-4. **[Not started] G4 — Move code into the G1 modules,** one module per session, lockstep green after each.
+4. **[In progress: G4.1 done] G4 — Move code into the G1 modules,** one module per session, lockstep green after each. Split into sub-stages G4.1-G4.7 (T-G4-1, Rule 12); the owner allowed file moves for all of G4.
+    - **G4 — Move code into the G1 modules** *(expanded 2026-10-26; split into sub-stages, one per session)*
+      - **Objective:** every function of `routines.*`, `kernel.*` and `main.cpp` ends up in the file `docs\G1_MODULE_LAYOUT.md` names for it; `routines.*` disappears.
+      - **Why it matters:** the files are over the size limit and mix unrelated jobs; this is what makes the source readable.
+      - **Prerequisites:** G3 Done (`490a0a4`), clean tree, owner's OK to move files (given).
+      - **What Claude Code will do:** the sub-stages below, each a move with no change of behaviour.
+      - **What I must do:** nothing.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** `python -I tools\g2_conventions_check.py --strict` shows no file over 400 lines in `src\game` and `src\host` (lockstep tool files and the 610-line `drawPicture` are covered in G4.6 and G5).
+      - **Verification:** after every sub-stage: both builds, `f21_native`, `f21_routines`, `f22_loader`, `f20_lockstep`, `f23_kernel`, `f23_tia`, `f23_pictures`, `f23_collisions`, `f24_audio`, `f24_sound` say OK; `f25_games --games 120` and `d10_replay_compare` before the last sub-stage and at the end.
+      - **Completion criteria:** all sub-stages Done.
+      - **Potential problems:** cycle counts (`cy()`) must stay in order; a function moved with its helper lambdas may need its anonymous-namespace helpers moved too.
+      - **Recovery:** each sub-stage is one commit; return to the one before (with your OK).
+      - **Documentation updates:** per sub-stage: `docs\G4_MOVES.md`, `docs\G1_MODULE_LAYOUT.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** one commit per sub-stage, `Stage G4.n: ...`.
+      - **Next stage:** G5 — Remove leftovers.
+      - **Sub-stages:**
+        1. **[Done] G4.1 — `data\` and `state\`:** `Cartridge`, `rom_tables.hpp` (49 raw table addresses named), `cartridge_data.*`, `state.hpp`, `cycles.hpp`, `chips.hpp` out of `routines.hpp`.
+        2. **[Not started] G4.2 — leaf logic:** `logic\players`, `objects`, `animation`, `scoring`, `maze`.
+        3. **[Not started] G4.3 — `picture\status_bar`, `sound\sound_logic`.**
+        4. **[Not started] G4.4 — `logic\ghosts`, `pacman`, `collisions`, `flow`** (the `Bottom` struct is cut here).
+        5. **[Not started] G4.5 — `logic\bottom`, `top`, `frame_start`;** `routines.*` deleted; full long suite.
+        6. **[Not started] G4.6 — `picture\kernel_*`** (cut `drawPicture` along the F18 stages).
+        7. **[Not started] G4.7 — `src\host` split** (`options`, `screen`, `pads`, `pacer`, `checks`); window, sound and pad checks.
 5. **[Not started] G5 — Remove leftovers.** Duplicated logic, unused helpers, literal blocks (or your documented approval of each remaining one), and any dependency the game no longer needs.
 6. **[Not started] G6 — "Stranger test".** A fresh Claude Code session, told nothing, is asked to explain how ghosts choose a direction and how scoring works using only the source and docs. Wrong or vague answers mark places that need better names or comments.
 7. **[Not started] G7 — Gate G.** Checklist: lockstep fully green; no file over the size limit; every `ORIGINAL:` tag links to evidence; `ARCHITECTURE.md` updated with a diagram of the modules; the 1.0.0 preservation build tagged. **This tag is the permanent baseline that modern features may never alter.**

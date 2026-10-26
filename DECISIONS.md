@@ -134,6 +134,14 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-G4-1 — G4 is split into seven sub-stages; G4.1 moves the data and state parts (2026-10-26, Stage G4.1)
+
+- **Facts:** G4 means moving about 30 functions, the 610-line `drawPicture` and the 1,601-line `main.cpp`. The proof suite takes about 40 minutes (the 120-game run alone about 27). One stage per session (CLAUDE.md).
+- **Choice:** G4.1 to G4.7 as listed in `PLAN.md` (leaf logic first, then the parts that call them, then the frame functions, the kernel, the host). Rule 12: the plan adapts, as F21 and F24 were split. The owner allowed moving and renaming files under `src` and `tests` for all of G4 (asked and answered in this session), including removing `routines.*` once empty.
+- **G4.1 content:** `src\game\data\cartridge.hpp` (the `Cartridge` view), `rom_tables.hpp` (the start addresses of 37 cartridge tables with names; 49 raw `0xFxxx` numbers in `routines.cpp` and `kernel.cpp` replaced; the 5 other cartridge reads go through pointers kept in memory), `cartridge_data.hpp/.cpp` (moved, `git mv`), `src\game\state\state.hpp` (moved) and `cycles.hpp`, `src\game\chips.hpp` (`TiaChip`, `SoundChip`, `chip::` names). Nothing else changed: no behaviour, no cycle count.
+- **Not done on purpose:** `ConsoleInput` and `FrameInput` stay in `routines.hpp` until the frame functions move (G4.5); the picture code's `site` numbers (original addresses of the writing instruction) are not table addresses and were left.
+- **Reversible:** Yes (Git).
+
 ### T-G3-1 — The game state has named fields; the byte map lives in `src\testsupport` (2026-10-26, Stage G3)
 
 - **Facts:** the native game worked on `std::array<uint8_t,128>` and 357 places named bytes by address (`at(ram, ram::GHOST_X1)`). The lockstep tools compare those 128 bytes with the original after every frame.

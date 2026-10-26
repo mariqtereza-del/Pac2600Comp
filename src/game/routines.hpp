@@ -7,25 +7,12 @@
 #pragma once
 #include <cstdint>
 
-#include "state.hpp"
+#include "chips.hpp"
+#include "data/cartridge.hpp"
+#include "state/cycles.hpp"
+#include "state/state.hpp"
 
 namespace game {
-
-// The processor cycles the original code needs, counted along the path the rewritten routines take (Stage F24.2). Only the bottom logic of the frame
-// uses the count: its sound writes happen at an exact moment (cycles x 3 colour clocks after the end of the drawing code), which decides the samples.
-inline thread_local long gCycles = 0;
-inline void cy(int cycles) { gCycles += cycles; }
-
-// The data of the cartridge (maze, amounts, shapes, sounds) is never part of this source: the routines read it by its address in the original
-// program ($F000-$FFFF) through this view, which the data loader (F22) fills from the player's own ROM after checking its fingerprint.
-class Cartridge {
- public:
-  explicit Cartridge(const uint8_t* bytes4k) : bytes_(bytes4k) {}
-  uint8_t at(uint16_t address) const { return bytes_[address & 0x0FFF]; }
-
- private:
-  const uint8_t* bytes_;
-};
 
 // F21.1  CLEAR_SCORES ($FC7D): both scores to 0 and both lives bytes to 0.
 void clearScores(GameState& st);
@@ -166,28 +153,6 @@ bool ghostUpdate(GameState& st, const Cartridge& cart, uint8_t object);
 // The cartridge tables: $FFE9 (the sounds that block it, as bits of SOUND_ACTIVE), $FE6E (the bit it sets in SOUND_ACTIVE), $FFED (its length, into
 // SOUND_TIMER). Returns the value the original leaves in A: the blocking bits if it was refused, else the length.
 uint8_t soundStart(GameState& st, const Cartridge& cart, uint8_t sound);
-
-// The sound chip as the game logic sees it: it is given register writes. In the finished game the sound generator of F24 stands behind it; in the
-// lockstep tool the writes go to the emulated chip (and are compared with the original's writes).
-class TiaChip {
- public:
-  virtual ~TiaChip() = default;
-  virtual void write(uint8_t reg, uint8_t value) = 0;
-  // Where in the picture the following writes happen: a scanline number (the logic code has no exact timing), or -1 for the power-on set-up. Only a
-  // video renderer cares; the default does nothing.
-  virtual void position(int /*line*/) {}
-  // From now on the writes follow the processor cycle count (gCycles, reset to 0 now) from this scanline and colour clock: the bottom logic of the frame,
-  // whose length varies and decides the moment of its sound writes. Ended by the next position().
-  virtual void timeBase(int /*line*/, int /*clock*/) {}
-  // A write at an exact moment of the top logic: this many processor cycles after the write that switched the vertical sync off (the Select step of the
-  // title screen silences the sound there). The default is an ordinary write.
-  virtual void writeAtCycle(long /*cycles*/, uint8_t reg, uint8_t value) { write(reg, value); }
-};
-using SoundChip = TiaChip;   // the sound routines see the same chip
-namespace chip {
-inline constexpr uint8_t COLUBK = 0x09, GRP0 = 0x1B, GRP1 = 0x1C, COLUP0 = 0x06, COLUP1 = 0x07, REFP1 = 0x0C, VSYNC = 0x00, VBLANK = 0x01, CXCLR = 0x2C, RESM1 = 0x13, RESBL = 0x14, HMM1 = 0x23, HMBL = 0x24, HMOVE = 0x2A, HMCLR = 0x2B;
-inline constexpr uint8_t AUDC0 = 0x15, AUDC1 = 0x16, AUDF0 = 0x17, AUDF1 = 0x18, AUDV0 = 0x19, AUDV1 = 0x1A;
-}
 
 // F21.18  SOUND_EFFECTS ($FF55) with its shared writer SOUND_WRITE ($FF8B): each frame, plays the sound effect that SOUND_START chose, on channel 0 (the
 // caller has X = 0). Ghost eaten: control 4, pitch = timer and $1F, volume = pitch xor $0F; power pill and bonus item: the steady tone $0D; wafer:

@@ -1,4 +1,5 @@
 #include "routines.hpp"
+#include "data/rom_tables.hpp"
 
 namespace game {
 
@@ -193,9 +194,9 @@ Bcd addScore(GameState& st, const Cartridge& cart, uint8_t amount, uint8_t calle
   uint8_t& lo = st.score[player];
   uint8_t& mid = st.score[player + 2];
   uint8_t& hi = st.score[player + 4];
-  const Bcd a = bcdAdd(lo, cart.at(0xFF06 + amount), false);
+  const Bcd a = bcdAdd(lo, cart.at(rom::kScoreAmountLow + amount), false);
   lo = a.value;
-  const Bcd b = bcdAdd(mid, cart.at(0xFF0C + amount), a.carry);
+  const Bcd b = bcdAdd(mid, cart.at(rom::kScoreAmountMid + amount), a.carry);
   mid = b.value;
   const Bcd c = bcdAdd(hi, 0, b.carry);
   hi = c.value;
@@ -205,8 +206,8 @@ Bcd addScore(GameState& st, const Cartridge& cart, uint8_t amount, uint8_t calle
 // LIVES_MARKERS ($FC68).
 uint8_t livesMarkers(GameState& st, const Cartridge& cart, uint8_t lives, uint8_t offset) {
   st.scratch[kTempD2 + offset] = lives == 0 ? 0 : 0x40;
-  st.scratch[kTempD3 + offset] = cart.at(0xFF1B + lives);
-  const uint8_t last = cart.at(0xFEEC + lives);
+  st.scratch[kTempD3 + offset] = cart.at(rom::kLivesMarkerPf1 + lives);
+  const uint8_t last = cart.at(rom::kLivesMarkerPf2 + lives);
   st.scratch[kTempD4 + offset] = last;
   return last;
 }
@@ -221,7 +222,7 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
       cy(3);
       if (r.row == 0) { cy(3 + 6); r.exit = TryExit::AtEdge; return r; }
       cy(2 + 3 + 4 + 2);
-      r.tableByte = cart.at(0xFE13 + r.cell);
+      r.tableByte = cart.at(rom::kMazeWalls + r.cell);
       if (!(r.tableByte & 0x40)) { cy(3 + 6); r.exit = TryExit::Wall; return r; }
       cy(2 + 2);
       break;
@@ -229,7 +230,7 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
       cy(3 + 2);
       if (r.row == 7) { cy(3 + 6); r.exit = TryExit::AtEdge; return r; }
       cy(2 + 3 + 4 + 2 + 2);
-      r.tableByte = cart.at(0xFE13 + r.cell);
+      r.tableByte = cart.at(rom::kMazeWalls + r.cell);
       if (!(r.tableByte & 0x20)) { cy(3 + 6); r.exit = TryExit::Wall; return r; }
       cy(2 + 2 + 3);
       break;
@@ -242,7 +243,7 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
         cy(2);
       }
       cy(2 + 4);
-      r.tableByte = cart.at(0xFE13 + static_cast<uint8_t>(r.cell - 1));
+      r.tableByte = cart.at(rom::kMazeWalls + static_cast<uint8_t>(r.cell - 1));
       if (r.tableByte & 0x80) { cy(3 + 6); r.exit = TryExit::Wall; return r; }
       cy(2 + 2 + 3);
       break;
@@ -255,7 +256,7 @@ TryResult tryDirection(GameState& st, const Cartridge& cart, uint8_t object, uin
         cy(2);
       }
       cy(2 + 2 + 4);
-      r.tableByte = cart.at(0xFE13 + static_cast<uint8_t>(r.cell + 2));
+      r.tableByte = cart.at(rom::kMazeWalls + static_cast<uint8_t>(r.cell + 2));
       if (r.tableByte & 0x80) { cy(3 + 6); r.exit = TryExit::Wall; return r; }
       cy(2 + 2 + 3);
       break;
@@ -322,8 +323,8 @@ AnimResult animateObject(GameState& st, const Cartridge& cart, uint8_t object, u
       r.path = AnimPath::SpriteY;
     } else {
       st.scratch[kSprite0Lines + sprite] = y;
-      r.tableByte = cart.at(0xFF0D + y);
-      r.ptrIndex = cart.at(0xFF19 + sprite);
+      r.tableByte = cart.at(rom::kAnimPointerStep + y);
+      r.ptrIndex = cart.at(rom::kAnimWhichPointer + sprite);
       uint8_t& ptr = st.scratch[kSprite0PtrLo + r.ptrIndex];
       r.ptrOld = ptr;
       ptr = static_cast<uint8_t>(ptr + r.tableByte);
@@ -338,7 +339,7 @@ AnimResult animateObject(GameState& st, const Cartridge& cart, uint8_t object, u
       r.newY = y;
       if (y != 0x5B) { spriteY = y; r.path = AnimPath::RightStep; r.stateAfter = state; return r; }
       state = static_cast<uint8_t>((state & 0x0F) | 0x60);
-      y = cart.at(0xFF25 + sprite);
+      y = cart.at(rom::kAnimNextY + sprite);
       spriteY = 0x70;
       r.path = AnimPath::RightEnd;
       r.stateAfter = state;
@@ -361,7 +362,7 @@ AnimResult animateObject(GameState& st, const Cartridge& cart, uint8_t object, u
       y = static_cast<uint8_t>(y - 1);
       if (y & 0x80) {
         state = static_cast<uint8_t>((state & 0x0F) | 0xA0);
-        y = cart.at(0xFF25 + sprite);
+        y = cart.at(rom::kAnimNextY + sprite);
         spriteY = 0x70;
         r.path = AnimPath::UpEnd;
         r.newY = y;
@@ -453,7 +454,7 @@ bool ghostDecide(GameState& st, const Cartridge& cart, uint8_t object) {
   uint8_t& timer = st.ghostTimer[object - 1];
   timer = static_cast<uint8_t>(timer - 1);
   if (timer != 0) { g.chase(pacX, pacY); return !g.unsupported; }
-  timer = cart.at(0xFE6F + (st.player[0].level >> 1));
+  timer = cart.at(rom::kChaseTimerReload + (st.player[0].level >> 1));
   if ((object >> 1) & 1) timer = static_cast<uint8_t>(timer + 1);
   g.wander();
   return !g.unsupported;
@@ -482,11 +483,11 @@ bool ghostUpdate(GameState& st, const Cartridge& cart, uint8_t object) {
 // SOUND_START ($FF43).
 uint8_t soundStart(GameState& st, const Cartridge& cart, uint8_t sound) {
   cy(4 + 3);   // LDA, AND
-  const uint8_t blocked = cart.at(0xFFE9 + sound) & st.soundActive;
+  const uint8_t blocked = cart.at(rom::kSoundBlockers + sound) & st.soundActive;
   if (blocked != 0) { cy(3 + 6); return blocked; }
   cy(2 + 4 + 3 + 4 + 3 + 6);
-  st.soundActive = cart.at(0xFE6E + sound);
-  const uint8_t length = cart.at(0xFFED + sound);
+  st.soundActive = cart.at(rom::kSoundBit + sound);
+  const uint8_t length = cart.at(rom::kSoundLength + sound);
   st.soundTimer = length;
   return length;
 }
@@ -550,9 +551,9 @@ void soundMusic(GameState& st, const Cartridge& cart, SoundChip& out) {
     if (note >= 4) { cy(3 + 6); return; }
     cy(2);
     cy(4 + 3);
-    out.write(chip::AUDF0, cart.at(0xFFF1 + note));
+    out.write(chip::AUDF0, cart.at(rom::kStartTuneA + note));
     cy(4 + 3);
-    out.write(chip::AUDF1, cart.at(0xFFF5 + note));
+    out.write(chip::AUDF1, cart.at(rom::kStartTuneB + note));
     cy(2 + 3);
     out.write(chip::AUDC0, 4);
     cy(3);
@@ -606,7 +607,7 @@ void scoreDigits(GameState& st, const Cartridge& cart, TiaChip& chip, uint8_t of
   auto digitShape = [&](uint8_t digit) {
     if (digit != 0) ++seen;
     if (seen == 0) digit = 10;
-    return cart.at(0xFEF6 + digit);
+    return cart.at(rom::kDigitPointerLow + digit);
   };
   bool first = true;
   for (;;) {
@@ -742,7 +743,7 @@ bool topLogic(GameState& st, const Cartridge& cart, const ConsoleInput& in, TiaC
   if (st.objState[0] & 0x20) animateObject(st, cart, 0, 1);
   // the six colour values: the colour table of the cartridge ($FF2B; $FF36 when the mask says black and white), the title shift, the mask
   const bool colourTv = (st.colourMask & 0x80) != 0;
-  const uint16_t table = colourTv ? 0xFF2B : 0xFF36;
+  const uint16_t table = colourTv ? rom::kColourTableTv : rom::kColourTableBlackWhite;
   st.scratch[kTempD3] = 0xFF;
   st.scratch[kTempD2] = colourTv ? 0x2B : 0x36;
   for (int x = 5; x >= 0; --x) {
@@ -769,7 +770,7 @@ struct Bottom {
   uint8_t& flags() { return st.gameFlags; }
   uint8_t& pill() { return st.player[0].pillFlags; }
   uint8_t& state() { return st.objState[0]; }
-  uint8_t wall(unsigned i) { return cart.at(0xFE13 + (i & 0xFF)); }
+  uint8_t wall(unsigned i) { return cart.at(rom::kMazeWalls + (i & 0xFF)); }
 
   // L_F7C3: the volumes are silenced, then the sound effects (channel 0) and the long sounds (channel 1 for the sweep)
   void sounds() {
@@ -828,8 +829,8 @@ struct Bottom {
     cy(2);
     cy(2 + 2 + 3 + 2 + 2 + 4 + 2 + 2 + 2 + 2 + 4 + 2 + 4);   // LSR, TAX, LDA CELL_ROW, ROL, TAY, LDA, TAY, TXA, AND, TAX, LDA, TAX, AND
     const uint8_t index = t >> 2;
-    const uint8_t byte = cart.at(0xFE79 + ((st.cellRow << 1) | ((t >> 1) & 1)));
-    const uint8_t mask = cart.at(0xFE6A + (index & 7));
+    const uint8_t byte = cart.at(rom::kWaferByteIndex + ((st.cellRow << 1) | ((t >> 1) & 1)));
+    const uint8_t mask = cart.at(rom::kWaferBitMask + (index & 7));
     uint8_t& maze = st.player[0].maze[byte];
     if (!(maze & mask)) { cy(3); return; }
     cy(2);
@@ -1172,7 +1173,7 @@ struct Bottom {
         if (!toGhost) {
           cy(4 + 2 + 3);
           onPill = true;
-          const uint8_t mask = cart.at(0xFE6C + x);
+          const uint8_t mask = cart.at(rom::kPillMask + x);
           if (!(pill() & mask)) { cy(3); onPill = false; }
           else {
             cy(2 + 2 + 2 + 3 + 2 + 3 + 2 + 3 + 2);
@@ -1254,16 +1255,16 @@ void frameStart(GameState& st, const Cartridge& cart, const ConsoleInput& in, Ti
   chip.write(chip::CXCLR, 3);
   const uint8_t counter = st.frameCounter;
   const uint8_t eighths = counter >> 3;
-  st.scratch[kSprite0PtrLo] = cart.at(0xFDAB + ((eighths >> 1) & 3));
+  st.scratch[kSprite0PtrLo] = cart.at(rom::kGhostPictures + ((eighths >> 1) & 3));
   uint8_t sprite1 = 0;
   bool chosen = false;
   if (st.gameFlags & 0x40) {                         // dying: the picture follows the event timer
-    sprite1 = cart.at(0xFDFA + ((st.eventTimer >> 2) & 0x0F));
+    sprite1 = cart.at(rom::kPacmanDyingPictures + ((st.eventTimer >> 2) & 0x0F));
     chosen = sprite1 != 0;
   }
   if (!chosen) {
-    sprite1 = cart.at(0xFDC2 + (eighths & 3));
-    if (st.gameFlags & 0x80) sprite1 = cart.at(0xFDC2);        // frozen: the first picture
+    sprite1 = cart.at(rom::kPacmanPictures + (eighths & 3));
+    if (st.gameFlags & 0x80) sprite1 = cart.at(rom::kPacmanPictures);        // frozen: the first picture
   }
   st.scratch[kSprite1PtrLo] = sprite1;
   uint8_t& frame = st.frameCounter;

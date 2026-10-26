@@ -1,0 +1,18 @@
+// The view of the cartridge's 4 KB that the game code reads (Stage G4.1). The data of the cartridge (maze, amounts, shapes, sounds) is never part of
+// this source: the game reads it by its address in the original program ($F000-$FFFF) through this view, which the data loader (cartridge_data.hpp,
+// F22) fills from the player's own ROM after checking its fingerprint. The addresses of the tables the code uses are named in rom_tables.hpp.
+#pragma once
+#include <cstdint>
+
+namespace game {
+
+class Cartridge {
+ public:
+  explicit Cartridge(const uint8_t* bytes4k) : bytes_(bytes4k) {}
+  uint8_t at(uint16_t address) const { return bytes_[address & 0x0FFF]; }
+
+ private:
+  const uint8_t* bytes_;
+};
+
+}  // namespace game

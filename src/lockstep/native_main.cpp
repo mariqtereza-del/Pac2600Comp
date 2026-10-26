@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "../game/cartridge_data.hpp"
+#include "../game/data/cartridge_data.hpp"
 #include "../game/game.hpp"
 #include "../game/renderer.hpp"
 #include "../testsupport/state_bytes.hpp"

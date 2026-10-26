@@ -55,7 +55,7 @@ target_link_libraries(emulator PUBLIC stella_core)
 add_library(game_native STATIC
   ${CMAKE_CURRENT_SOURCE_DIR}/../game/routines.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/game.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/kernel.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/../game/tia_video.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/tia_audio.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../game/renderer.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/../game/cartridge_data.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../game/data/cartridge_data.cpp)
 target_compile_options(game_native PRIVATE /W4 /permissive-)
 add_library(emulator_native STATIC native_emulator.cpp)
 target_compile_options(emulator_native PRIVATE /W4 /permissive-)

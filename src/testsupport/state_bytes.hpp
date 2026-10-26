@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "../game/state.hpp"
+#include "../game/state/state.hpp"
 #include "state_layout_checks.hpp"
 
 namespace testsupport {

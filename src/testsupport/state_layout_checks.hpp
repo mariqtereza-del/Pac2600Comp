@@ -3,7 +3,7 @@
 #pragma once
 #include <cstddef>
 
-#include "../game/state.hpp"
+#include "../game/state/state.hpp"
 #include "ram_map.hpp"
 
 namespace testsupport {

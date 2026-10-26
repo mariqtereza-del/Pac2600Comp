@@ -7,7 +7,7 @@
 #include <array>
 #include <optional>
 
-#include "../game/cartridge_data.hpp"
+#include "../game/data/cartridge_data.hpp"
 #include "../game/game.hpp"
 #include "../game/renderer.hpp"
 #include "ntsc_palette.hpp"

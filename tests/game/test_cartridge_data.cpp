@@ -5,7 +5,7 @@
 #include <iterator>
 #include <vector>
 
-#include "../../src/game/cartridge_data.hpp"
+#include "../../src/game/data/cartridge_data.hpp"
 
 static int failed = 0;
 static void check(bool ok, const char* what) {

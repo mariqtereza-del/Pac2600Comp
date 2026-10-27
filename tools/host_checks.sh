@@ -45,6 +45,9 @@ for prog in pacman2600 pacman2600_ref; do
   # Stage I10: the HDR rows of Game options (HDR turned off, the highlights taken from 50 to 60)
   has "$prog menu remembered HDR off" "$P/s14.ini" "hdr=off"
   has "$prog menu remembered the highlights" "$P/s14.ini" "hdr_highlights=60"
+  has "$prog sound page remembered the volume" "$P/s14.ini" "volume=90"
+  has "$prog sound page remembered Mute on" "$P/s14.ini" "sound_muted=on"
+  has "$prog window reports the volume and mute" "$P/s14.ini.audio.txt" "volume_percent=90"
   # Stage I7: every background in the real window at three window shapes (tall, wide, square); the picture is never touched and the space is filled
   for size in 1280x1024 1920x1080 1000x1000; do
     "$EXE" --backdrop-check "$P/bd_$size" "$ROM" --window $size --settings "$P/s15.ini"; check "$prog backdrop-check $size" $? 0; has "$prog backdrop result $size" "$P/bd_$size.txt" "result=OK"

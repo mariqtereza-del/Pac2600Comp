@@ -28,6 +28,8 @@ class Session {
     bool hdr = true;
     int hdrStrength = 50;
     bool hdrWindows = false;
+    int volume = 100;       // Stage I12
+    bool muted = false;
   };
   void open(const controls::Input& switches, const Window& window = Window());  // the choices start where the game, the switches and the window are now
   Result key(Key key);                           // sends a key to the open menu; StartGame has been queued for the game thread when it returns

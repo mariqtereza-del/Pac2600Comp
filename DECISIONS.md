@@ -208,6 +208,14 @@ The owner's words: "Next up, I want the option for CRT filters in the Graphics O
 - **The way (to be proved in the first stage):** SDL's standard renderer cannot run our own shaders; SDL 3.4's GPU renderer can (custom fragment shaders through `SDL_GPURenderState`); T-I11-1 chose a better way: our own shader passes on SDL's Direct3D 11 renderer, which keeps HDR, vsync and everything else as it is. The shaders are rewritten from slang (GLSL) into HLSL, compiled with `dxc` ahead of time, and run by a small multi-pass runner of our own (textures between the passes, the parameters as constants). It has to keep working with HDR (Stage I10), the smooth picture and the highlights, and the default has to stay exactly today's picture (Rule 3).
 - **Known risks:** the size of the guest shader port (many passes and parameters); HDR through the GPU renderer must be shown to work before anything else is built; the look cannot be judged from screenshots alone for HDR; shader files are data, not instructions (they are only read as source).
 
+### D-018 - Sound options: a volume slider and a mute button (2026-10-27, Stage I12)
+
+The owner's words, after trying the GDV filter ("looks great"): "Next up I need a 'Sound options' that only has a volume slider and a mute button."
+
+- **Status:** approved by the owner's request; built and proved in Stage I12 (T-I12-1).
+- **What it is:** a page of the Escape menu, opened from a row under Graphics options, with exactly: Volume (0 to 100, 100 at the start), Mute (Off at the start) and Back. Nothing else is on the page.
+- **What it must not do:** change the game, its speed, its pacing or the sound the game makes. It changes only how loud the samples are that go to the sound card.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -358,6 +366,16 @@ The owner's words: "Next up, I want the option for CRT filters in the Graphics O
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-I12-1 - Volume and mute: scale the played samples, keep the stream running (2026-10-27, Stage I12, D-018)
+
+- **Where:** `AudioOutput::push` (`src\host\audio.cpp`), the one place where the game's sound goes to the sound card. `setVolume(percent, muted)` is callable from the window thread (atomics); the game thread reads it on every push.
+- **Curve:** the amplitude is the square of the slider (50 percent is a quarter of the amplitude, about 12 dB down), because loudness is felt on a logarithmic scale and a straight slider would sound as if nothing happened until it is nearly at zero. 100 percent hands on the game's samples untouched (not even multiplied), so at the default the sound is bit for bit what it always was.
+- **Mute:** plays silence into the same stream instead of stopping it, as `--mute` (the test option) always did. The sound clock that paces the game (T-D9-2) keeps going, so muting and unmuting cannot change the speed of the game or make the sound crackle. The volume keeps its place while muted.
+- **Remembered:** `settings.ini` `volume=0..100`, `sound_muted=on|off` (written at once, as the other choices are). There is no command-line option: the existing `--mute` stays a test-only option.
+- **Menu:** `menu.cpp` went over the 400-line limit, so the long explanations moved to `menu_text.cpp` (text unchanged); one test row count changed (the main page has five rows plus Quit; `test_background` goes up three from Resume instead of two to reach Graphics).
+- **Proof:** `test_volume` 45 checks (the factor, and on a ramp covering all 16 bits: 100 percent changes no sample, 0 gives zeros, each step louder, the same wave only smaller and never turned over); `test_menu` 355 checks; the real window (`--push-menu`) chose volume 90 and Mute on and `settings.ini` and the window's report say so; the host checks, the recorded games and the quick and public test runs. Not measured: the sound card's output itself (a test cannot hear it), so how the slider sounds is for the owner to judge.
+- **Reversible:** Yes (Git).
 
 ### T-I11-4 - GDV NTSC 2600: a translator and a chain of 19 passes (2026-10-27, Stage I11.4, D-017)
 

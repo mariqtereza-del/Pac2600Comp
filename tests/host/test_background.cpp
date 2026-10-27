@@ -90,8 +90,8 @@ int main()
   menu::Choice start;
   m.open(start);
   expect(m.page() == Page::Main && m.choice().background == Kind::Black, "the menu opens on the main page with the black background");
-  m.press(Key::Up); m.press(Key::Up);
-  expect(m.cursor() == Item::Graphics, "the Graphics row is just above Quit");
+  m.press(Key::Up); m.press(Key::Up); m.press(Key::Up);
+  expect(m.cursor() == Item::Graphics, "the Graphics row is just above Sound options and Quit");
   expect(m.press(Key::Right) == Result::None && m.page() == Page::Main, "Right on the Graphics row does not open it (only Enter does)");
   expect(m.press(Key::Enter) == Result::None && m.page() == Page::Graphics && m.isOpen(), "Enter opens the Graphics options page");
   expect(m.cursor() == Item::Background && m.rows().size() == menu::Menu::graphicsItems().size(), "the page starts on Background and has its own rows");
@@ -138,7 +138,7 @@ int main()
     menu::Choice c;
     c.background = static_cast<Kind>(kind);
     m.open(c);
-    m.press(Key::Up); m.press(Key::Up); m.press(Key::Enter);
+    m.press(Key::Up); m.press(Key::Up); m.press(Key::Up); m.press(Key::Enter);
     for(std::size_t row = 0; row < menu::Menu::graphicsItems().size(); ++row) {
       const std::vector<std::string> words = m.explanation(60);
       bool fits = !words.empty();

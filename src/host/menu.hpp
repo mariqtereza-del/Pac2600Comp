@@ -18,8 +18,9 @@ enum class Item { Resume, NewGame, GameOptions, Graphics, Quit,  // the main pag
                   FrameRate, FrameCounter,                 // and its next two rows (Stage I9.5)
                   Crt, Hdr, HdrHighlights,                 // on the "Graphics options" page, after the TV type (Stages I11 and I10)
                   Background, TvType, Preview,                     // the "Graphics options" page (Stage I7; the TV type moved there in I8)
-                  Back };                                          // the last row of both pages
-enum class Page { Main, GameOptions, Graphics };
+                  SoundOptions, Volume, Mute,                      // the "Sound options" page (Stage I12): a row on the main page, then a slider and a mute button
+                  Back };                                          // the last row of every page
+enum class Page { Main, GameOptions, Graphics, Sound };
 enum class Result { None, Resume, StartGame, Quit };
 
 inline constexpr int kGames = 8;  // the console's Game Select offers 8 games, each for one or two players (docs\F17_STATES.md)
@@ -37,6 +38,8 @@ struct Choice {
   int hdrStrength = 50;                                    // how bright the highlights are, 0 to 100 (percent of the way to the most the screen can show)
   bool hdrWindows = false;                                 // Windows is in HDR mode for the screen now (for the explanation only)
   bool smoothAvailable = true;                             // false in the reference program, which has no smooth motion: the rates above 60 are skipped
+  int volume = 100;                                        // how loud the sound is played, 0 to 100 (Stage I12); 100 is the sound exactly as the game makes it
+  bool muted = false;                                      // no sound is played; the volume keeps its place
 };
 
 // What differs between the eight games (docs\F16_LEVELS.md, docs\F10_PACMAN.md; checked by `pacman2600 --menu-check`).
@@ -67,6 +70,7 @@ class Menu {
   static const std::vector<Item>& items();          // the rows of the main page
   static const std::vector<Item>& gameItems();      // the rows of the "Game options" page
   static const std::vector<Item>& graphicsItems();  // the rows of the "Graphics options" page
+  static const std::vector<Item>& soundItems();     // the rows of the "Sound options" page
   const std::vector<Item>& shown() const;
   Page page() const { return page_; }
   bool previewing() const { return previewing_; }  // the menu is hidden so that the background can be looked at; any key brings it back

@@ -3079,7 +3079,7 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-016, T-I10-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** one commit per sub-stage, `Stage I10.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
 
-    - **I11 - CRT filters (ported shaders)** **[In progress: I11.1 to I11.4 done 2026-10-27]** *(sixth approved feature, D-017)*
+    - **I11 - CRT filters (ported shaders)** **[Done 2026-10-27 except I11.6, the closing full test run; I11.5 (tuning) not needed: the owner on the GDV filter, "looks great"]** *(sixth approved feature, D-017)*
       - **Objective:** a "CRT filter" row in Graphics options with: Off (today's picture, the default), GDV NTSC 2600 (crt-guest-advanced NTSC), CRT-Lottes and CRT-Geom, each the real shader ported, working with HDR, the smooth picture and every window shape.
       - **Why it matters:** the owner asked for it (D-017) and chose to port the real shaders.
       - **Prerequisites:** I10 Done, clean tree, D-017 recorded, **the owner's approval to download the shader sources** (GPL / public domain files from the libretro slang-shaders collection, kept in `third_party\shaders` with their licences, never executed); the Retro Crisis preset file if the owner has it.
@@ -3091,6 +3091,19 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Recovery:** new files and a new folder; revert the commits.
       - **Documentation updates:** `DECISIONS.md` (D-017, T-I11-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\DEPENDENCIES.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** one commit per sub-stage, `Stage I11.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
+
+    - **I12 - Sound options (volume and mute)** **[Done 2026-10-27]** *(seventh approved feature, D-018)*
+      - **Objective:** a "Sound options" page in the Escape menu with a volume slider and a mute button, and nothing else.
+      - **Why it matters:** the owner asked for it (D-018). Today the game plays at the sound card's full level with no control in the program.
+      - **Prerequisites:** I11 Done (the GDV filter looks right to the owner), clean tree.
+      - **What Claude Code will do:** a row "Sound options..." on the main page under Graphics options; a page with Volume (a 0 to 100 slider in steps of 5, like the HDR highlights slider; 100 at the start) and Mute (On / Off) and Back. `AudioOutput::setVolume` multiplies only the samples that are played (the square of the slider, so the middle of the slider is a natural half; exactly the game's sound at 100; silence at 0 or when muted). Remembered as `volume=` and `sound_muted=` in `settings.ini`. The game, its pacing and the sound it makes are never changed (muting plays silence into the same stream, so the sound clock goes on).
+      - **What I must do:** judge how the slider feels (optional).
+      - **Verification:** `test_volume` (the factor and the samples), `test_menu` (the page, the slider, the button), the real window (`--push-menu` chooses volume 90 and Mute on, and `settings.ini` and the window's report say so), the 70 recorded games and every earlier proof unchanged.
+      - **Completion criteria:** no frozen file changed; at the default (100, not muted) the played samples are the game's own.
+      - **Potential problems:** menu tests that count rows; `menu.cpp` over the file limit (the long explanations moved to `menu_text.cpp`).
+      - **Recovery:** revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-018, T-I12-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I12: Sound options (volume and mute)`. **Next stage:** I3 continues with the owner's other answers.
 
 Two rules for every feature:
 

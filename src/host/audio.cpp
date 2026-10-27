@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <vector>
@@ -97,13 +98,36 @@ void AudioOutput::push(const std::int16_t* stereo, int frames)
     stats_.droppedFrames += frames;
     return;
   }
-  if(muted_) {
+  const int volume = volume_.load();
+  if(muted_ || userMuted_.load() || volume <= 0) {
     const std::vector<std::int16_t> silence(static_cast<std::size_t>(frames) * 2, 0);
     SDL_PutAudioStreamData(stream_, silence.data(), frames * kBytesPerPair);
-  } else {
+  } else if(volume >= 100) {
     SDL_PutAudioStreamData(stream_, stereo, frames * kBytesPerPair);
+  } else {
+    std::vector<std::int16_t> quieter(static_cast<std::size_t>(frames) * 2);
+    scale(stereo, quieter.data(), frames, volume);
+    SDL_PutAudioStreamData(stream_, quieter.data(), frames * kBytesPerPair);
   }
   stats_.pushedFrames += frames;
+}
+
+void AudioOutput::setVolume(int percent, bool muted)
+{
+  volume_ = std::clamp(percent, 0, 100);
+  userMuted_ = muted;
+}
+
+void AudioOutput::scale(const std::int16_t* in, std::int16_t* out, int frames, int percent)
+{
+  const float gain = gainOf(percent);
+  for(int i = 0; i < frames * 2; ++i) out[i] = static_cast<std::int16_t>(std::lround(static_cast<float>(in[i]) * gain));
+}
+
+float AudioOutput::gainOf(int percent)
+{
+  const float slider = static_cast<float>(std::clamp(percent, 0, 100)) / 100.0f;
+  return slider * slider;
 }
 
 AudioOutput::Stats AudioOutput::stats() const

@@ -57,7 +57,8 @@ void drawMenu(SDL_Renderer* renderer, const menu::Menu& menu)
   SDL_RenderRect(renderer, &box);
   const float x = x0 + 2 * charSize;
   float y = y0 + lineH;
-  SDL_RenderDebugText(renderer, x, y, graphicsPage ? "GRAPHICS OPTIONS   (the game is paused)" : menu.page() == menu::Page::GameOptions ? "GAME OPTIONS   (the game is paused)" : "MENU   (the game is paused)");
+  SDL_RenderDebugText(renderer, x, y, graphicsPage ? "GRAPHICS OPTIONS   (the game is paused)" : menu.page() == menu::Page::GameOptions ? "GAME OPTIONS   (the game is paused)"
+                                                                                                 : menu.page() == menu::Page::Sound ? "SOUND OPTIONS   (the game is paused)" : "MENU   (the game is paused)");
   y += 2 * lineH;
   for(const std::string& row : rows) { SDL_RenderDebugText(renderer, x, y, row.c_str()); y += lineH; }
   y += lineH;

@@ -116,6 +116,7 @@ function Add-QuickSteps {
   Step 'test_hdr' "$H\test_hdr.exe" @() -Must 'ALL TESTS PASSED'
   Step 'test_options' "$H\test_options.exe" @() -Must 'ALL TESTS PASSED'
   Step 'test_crt' "$H\test_crt.exe" @() -Must 'ALL TESTS PASSED'
+  Step 'test_volume' "$H\test_volume.exe" @() -Must 'ALL TESTS PASSED'
   # Stage I5: the Escape menu and the game played together, three starting states and all eight games; the report file says PASS for each (exit 0 = all right)
   $menuDir = Scratch 'menu'
   Step 'menu-check' "$H\pacman2600.exe" @('--menu-check', (Join-Path $menuDir 'menu.txt'), $rom, '--settings', (Join-Path $menuDir 's.ini'))

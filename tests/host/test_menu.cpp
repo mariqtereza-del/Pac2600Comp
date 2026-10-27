@@ -166,6 +166,36 @@ int main()
 
   expect(m.press(Key::Escape) == Result::None && m.page() == Page::Main && m.cursor() == Item::Graphics, "Escape goes back to the main page");
   m.press(Key::Down);
+  expect(m.cursor() == Item::SoundOptions && m.press(Key::Right) == Result::None && m.page() == Page::Main, "Sound options follows Graphics options; Right does not open it (Stage I12)");
+  expect(m.press(Key::Enter) == Result::None && m.page() == Page::Sound && m.cursor() == Item::Volume, "Enter opens the Sound options page on the volume");
+  expect(m.rows().size() == 3 && Menu::soundItems().size() == 3, "the page has only the volume, the mute button and Back");
+  expect(m.choice().volume == 100 && !m.choice().muted, "the volume starts at 100 and the sound is not muted");
+  m.press(Key::Right);
+  expect(m.choice().volume == 100, "the slider stops at 100");
+  m.press(Key::Left);
+  expect(m.choice().volume == 95, "Left: 5 less");
+  for(int i = 0; i < 30; ++i) m.press(Key::Left);
+  expect(m.choice().volume == 0, "and it stops at 0");
+  m.press(Key::Enter);
+  expect(m.choice().volume == 5, "Enter moves it on by 5");
+  for(int i = 0; i < 20; ++i) m.press(Key::Enter);
+  expect(m.choice().volume == 0, "Enter goes round from 100 to 0");
+  for(int i = 0; i < 10; ++i) m.press(Key::Right);
+  bool volumeBar = false;
+  for(const std::string& r : m.rows()) if(r.find("Volume:") != std::string::npos && r.find("[" + std::string(10, '#') + std::string(10, '-') + "]") != std::string::npos && r.find("50%") != std::string::npos) volumeBar = true;
+  expect(volumeBar, "the row shows the slider as a bar and a percentage");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Mute && !m.choice().muted, "the mute button follows the volume, off at the start");
+  m.press(Key::Enter);
+  expect(m.choice().muted && m.choice().volume == 50, "Enter mutes and leaves the volume where it was");
+  bool muteRow = false;
+  for(const std::string& r : m.rows()) if(r.find("Mute:") != std::string::npos && r.find("< On >") != std::string::npos) muteRow = true;
+  expect(muteRow, "the row shows Mute On");
+  m.press(Key::Left);
+  expect(!m.choice().muted, "Left unmutes");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Back && m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::SoundOptions, "Back returns to the main page, on Sound options");
+  m.press(Key::Down);
   expect(m.cursor() == Item::Quit && m.press(Key::Right) == Result::None, "Right on Quit does nothing");
   expect(m.press(Key::Enter) == Result::Quit && !m.isOpen(), "Enter on Quit quits and closes");
   m.open(start);
@@ -178,10 +208,10 @@ int main()
   expect(m.press(Key::Enter) == Result::StartGame && !m.isOpen() && m.choice().game == 5, "Enter on New game starts, with the choice");
 
   // The rows and the explanations: one marked row, every row has an explanation, none too wide, the facts of the games are in it.
-  for(int page = 0; page < 3; ++page) {  // the main page, then Game options, then Graphics options
+  for(int page = 0; page < 4; ++page) {  // the main page, then Game options, Graphics options and Sound options
     m.open(start);
     if(page > 0) { for(int i = 0; i < 1 + page; ++i) m.press(Key::Down); m.press(Key::Enter); }
-    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : Menu::graphicsItems();
+    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : page == 2 ? Menu::graphicsItems() : Menu::soundItems();
     expect(m.rows().size() == items.size(), "one text row per item, page " + std::to_string(page));
     for(std::size_t i = 0; i < items.size(); ++i) {
       int marked = 0;

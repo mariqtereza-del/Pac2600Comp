@@ -34,6 +34,12 @@ public:
   void close();
   bool isOpen() const { return stream_ != nullptr; }
 
+  // The player's volume (Stage I12): 0 to 100 percent, and a mute button. Only the samples that are played change; 100 and not muted hands on the game's
+  // sound untouched. The stream keeps running when muted (silence is played), so the pacing does not change. Callable from any thread.
+  void setVolume(int percent, bool muted);
+  static float gainOf(int percent);   // the factor the samples are multiplied by: the square of the slider, 1 at 100 and 0 at 0
+  static void scale(const std::int16_t* in, std::int16_t* out, int frames, int percent);   // `frames` pairs, multiplied by gainOf(percent)
+
   // One frame's sound: 16-bit stereo, left and right interleaved, `frames` pairs.
   void push(const std::int16_t* stereo, int frames);
 
@@ -58,6 +64,8 @@ private:
   int targetFrames_ = 0, maxFrames_ = 0;
   std::string problem_;
   Stats stats_;
+  std::atomic<int> volume_{100};
+  std::atomic<bool> userMuted_{false};
   std::atomic<long long> underruns_{0};
   std::atomic<long long> shortfall_{0};
   long long underrunsHandled_ = 0;

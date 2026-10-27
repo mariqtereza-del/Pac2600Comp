@@ -47,7 +47,11 @@ std::thread startKeyPusher(const Options& options, const std::atomic<bool>& stop
         for(int i = 0; i < 3; ++i) tap(6.7 + 0.1 * i, SDL_SCANCODE_DOWN);
         tap(7.4, SDL_SCANCODE_RETURN); tap(7.5, SDL_SCANCODE_RIGHT); tap(7.6, SDL_SCANCODE_RIGHT);
         tap(7.7, SDL_SCANCODE_ESCAPE); tap(7.8, SDL_SCANCODE_ESCAPE);
-        tap(8.2, SDL_SCANCODE_ESCAPE); tap(8.4, SDL_SCANCODE_UP); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
+        tap(8.2, SDL_SCANCODE_ESCAPE);   // Stage I12: the Sound options page (4 rows down), the volume two steps down (90), Mute on, back to the main page
+        for(int i = 0; i < 4; ++i) tap(8.25 + 0.02 * i, SDL_SCANCODE_DOWN);
+        tap(8.33, SDL_SCANCODE_RETURN); tap(8.35, SDL_SCANCODE_LEFT); tap(8.37, SDL_SCANCODE_LEFT);
+        tap(8.39, SDL_SCANCODE_DOWN); tap(8.41, SDL_SCANCODE_RIGHT); tap(8.43, SDL_SCANCODE_ESCAPE);
+        tap(8.5, SDL_SCANCODE_DOWN); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
       }
       const Uint64 t0 = SDL_GetTicksNS();
       for(const auto& step : plan) {

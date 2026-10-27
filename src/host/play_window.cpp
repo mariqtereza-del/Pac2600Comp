@@ -47,6 +47,12 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   AudioOutput audio;
   if(!audio.open(soundRate(options, emulator), options.mute)) std::fprintf(stderr, "%s\nThe game goes on without sound.\n", audio.problem().c_str());
 
+  // Stage I12: the volume and the mute button (menu, Sound options; settings.ini volume=0..100, sound_muted=on|off). They change the played samples only.
+  const std::string volumeSetting = settings::get(options.settingsFile, "volume");
+  int volumePercent = volumeSetting.empty() ? 100 : std::clamp(std::atoi(volumeSetting.c_str()), 0, 100);
+  bool soundMuted = settings::get(options.settingsFile, "sound_muted") == "on";
+  audio.setVolume(volumePercent, soundMuted);
+
   Screen screen;
   screen.renderer = renderer;
   screen.view = view;
@@ -203,7 +209,8 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     if(!menuSession.isOpen()) {
       if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
       keyboard.releaseAll();  // no direction may stay held while the game is stopped
-      menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn});
+      menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn,
+                                                                         volumePercent, soundMuted});
       menuOpenedAtFrame = framesNow();
       ++menuOpens;
       return true;
@@ -228,6 +235,10 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       if(c.hdr != hdrWanted) { hdrWanted = c.hdr; remember("hdr", hdrWanted ? "on" : "off"); adaptToHdr(); }
       if(c.hdrStrength != hdrPercent) { hdrPercent = c.hdrStrength; remember("hdr_highlights", std::to_string(hdrPercent)); updateSmoothWanted(); }
       if(c.frameRate != rate) { rate = c.frameRate; updateSmoothWanted(); applyVSync(); remember("frame_rate", framerate::settingName(rate)); }
+      if(c.volume != volumePercent || c.muted != soundMuted) {
+        volumePercent = c.volume; soundMuted = c.muted; audio.setVolume(volumePercent, soundMuted);
+        remember("volume", std::to_string(volumePercent)); remember("sound_muted", soundMuted ? "on" : "off");
+      }
       if(c.frameCounter != counterOn) { counterOn = c.frameCounter; remember("frame_counter", counterOn ? "on" : "off"); }
       if(result == menu::Result::Quit) running = false;
       return true;
@@ -358,6 +369,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         << "\npresents=" << presents << "\npresents_per_second=" << static_cast<double>(presents) / elapsed
         << "\nhdr_pipeline=" << (hdrPipeline ? "yes" : "no") << "\nwindows_hdr_on=" << (screenStateOf(window).hdrOn ? "yes" : "no")
         << "\nwindows_hdr_headroom=" << screenStateOf(window).headroom << "\nhdr_wanted=" << (hdrWanted ? "yes" : "no") << "\nhdr_highlights_percent=" << hdrPercent
+        << "\nvolume_percent=" << volumePercent << "\nsound_muted=" << (soundMuted ? "yes" : "no")
         << "\nframe_rate=" << framerate::settingName(rate) << "\npictures_shown=" << picturesShown << "\npictures_per_second=" << static_cast<double>(picturesShown) / elapsed
         << "\ngame_frames=" << sharedFrame << "\ngame_frames_per_second=" << static_cast<double>(sharedFrame) / elapsed
         << "\nrefreshes_per_game_frame_1=" << refreshHistogram[0] << "\nrefreshes_per_game_frame_2=" << refreshHistogram[1]

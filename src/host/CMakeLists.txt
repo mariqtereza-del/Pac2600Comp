@@ -35,7 +35,7 @@ target_compile_options(controls PRIVATE /W4 /permissive-)
 target_link_libraries(controls PUBLIC SDL3::SDL3)
 
 # The Escape menu (Stage I5): the choices, their explanations and the presses that start a game; no window code.
-add_library(menu STATIC menu.cpp menu_session.cpp background.cpp)
+add_library(menu STATIC menu.cpp menu_text.cpp menu_session.cpp background.cpp)
 target_compile_options(menu PRIVATE /W4 /permissive-)
 target_link_libraries(menu PUBLIC controls framerate crt)
 
@@ -129,6 +129,12 @@ target_link_libraries(test_trace PRIVATE trace)
 add_executable(test_framerate ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_framerate.cpp)
 target_compile_options(test_framerate PRIVATE /W4 /permissive-)
 target_link_libraries(test_framerate PRIVATE framerate)
+
+# Tests for the volume (Stage I12): build/host/test_volume.exe
+add_executable(test_volume ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_volume.cpp)
+target_compile_options(test_volume PRIVATE /W4 /permissive-)
+target_include_directories(test_volume PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_volume PRIVATE audio SDL3::SDL3)
 
 # Tests for the CRT filter choices (Stage I11.2): build/host/test_crt.exe
 add_executable(test_crt ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_crt.cpp)

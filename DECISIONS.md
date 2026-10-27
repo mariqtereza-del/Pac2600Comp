@@ -293,6 +293,13 @@ The owner's words, exactly: "Now, is it posssible to have an FPS option in the "
 - **Not looked at / not done:** the smooth picture with two players and with the arcade-panel background at the same time (the pieces are tested alone); a 60 Hz monitor (none to hand; at 144 and Unlocked on a 60 Hz screen the screen shows 60 pictures a second); Pac-Man's speed alternating between a full and a half pixel a step (T-I9-3) is as the owner saw it and found perfect; a choice to draw all four ghosts at once instead of the flicker is not offered (T-I9-5).
 - **Reversible:** Yes (Git); `frame_rate=60` is today's look.
 
+### T-I9-7 - Which program offers which frame rates (2026-10-27, after Stage I9.6, D-015)
+
+- **The owner's words:** "You have removed the FPS options... it is just 30 and 60 FPS now. Please make sure the following FPS modes are available - 30, 60, 75, 120, 144 and unlocked."
+- **What I found:** nothing was removed from `pacman2600.exe`: its menu goes 60, 75, 120, 144, Unlocked, 30, 60 (tested through the path the window uses, `test_menu` 308 checks, and in the real window by the host checks: 75 chosen and remembered). Only 30 and 60 is exactly what `pacman2600_ref.exe` offers: the reference program with Stella inside, which has no smooth motion and which sits in the same folder `build\host`. It is for the tests (T-F26-1) and was always meant to offer 30 and 60 only (T-I9-4, T-I9-5).
+- **Change:** the reference program now says what it is: its window title ends with "REFERENCE PROGRAM, no smooth motion", and the explanation of the Frame rate row says it is the reference program and that `pacman2600.exe` offers all six. No change to the real program.
+- **Reversible:** Yes (Git).
+
 ### T-I2-1 — The feature menu (2026-10-27, Stage I2)
 
 - **Choice:** `docs\I2_FEATURE_MENU.md` lists 18 candidates in four groups (A around the game, 8; B reads the game's state, 4; C changes play, 4; D other, 2), each with the eight required answers. The groups are chosen by what they can do to the frozen preservation suite: A cannot change the game by construction; B reads or saves its state and needs a completeness check; C needs one planned opening in the game (an options value, default = original) and its own tests; D is outside the game. My *now / later / never* are marked as proposals (now: pause, volume, screenshot; never: more difficulty settings, new mazes, online play).

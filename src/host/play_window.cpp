@@ -50,7 +50,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   screen.renderer = renderer;
   screen.view = view;
   auto retitle = [&]() {
-    const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath) + " - " + modeName(screen.view.mode) + (replaying ? " - REPLAY" : "") + (options.recordFile.empty() ? "" : " - RECORDING") + " - F1 = keys";
+    const std::string title = std::string(kTitle) + " - " + fileNameOf(romPath) + " - " + modeName(screen.view.mode) + (replaying ? " - REPLAY" : "") + (options.recordFile.empty() ? "" : " - RECORDING") + (emulator.smoothAvailable() ? "" : " - REFERENCE PROGRAM, no smooth motion") + " - F1 = keys";
     SDL_SetWindowTitle(window, title.c_str());
   };
   retitle();

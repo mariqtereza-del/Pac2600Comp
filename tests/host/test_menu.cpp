@@ -182,6 +182,23 @@ int main()
   m.press(Key::Right);
   expect(m.choice().frameRate == framerate::Rate::Fps60, "and back to 60");
 
+  // The path the window uses (Session::open with what the window knows): a program with smooth motion goes through all six rates, one without only 30 and 60.
+  {
+    using framerate::Rate;
+    for(const bool smoothAvailable : {true, false}) {
+      Session session(true);
+      session.open(controls::Input{}, Session::Window{background::Kind::Black, Rate::Fps60, false, smoothAvailable});
+      session.key(Key::Down); session.key(Key::Down); session.key(Key::Enter);                        // Game options
+      session.key(Key::Down); session.key(Key::Down); session.key(Key::Down); session.key(Key::Down);   // the frame rate row
+      std::string seen;
+      for(int i = 0; i < 7; ++i) {
+        seen += std::string(framerate::settingName(session.menu().choice().frameRate)) + " ";
+        session.key(Key::Right);
+      }
+      expect(seen == (smoothAvailable ? "60 75 120 144 unlocked 30 60 " : "60 30 60 30 60 30 60 "), std::string("the rates the window's menu goes through, smooth motion ") + (smoothAvailable ? "available: " : "not available: ") + seen);
+    }
+  }
+
   // Wrapping.
   const auto lines = wrap("one two three four five six seven", 9);
   expect(lines.size() == 4 && lines[0] == "one two" && lines[1] == "three" && lines[3] == "six seven", "wrap cuts at spaces");

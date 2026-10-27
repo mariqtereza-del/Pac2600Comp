@@ -3063,6 +3063,22 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-015, T-I9-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** one commit per sub-stage, `Stage I9.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I10 - HDR output** **[Planned 2026-10-27, not started]** *(fifth approved feature, D-016)*
+      - **Objective:** when Windows is in HDR mode for the screen, show the game through the HDR pipeline: the picture as it is at normal white, with the power pills, Pac-Man and the ghosts brighter than white by an amount the owner sets with a slider in Game options; HDR on by itself when Windows has it on, with a menu option to turn it off.
+      - **Why it matters:** the owner asked for it (D-016). The original has no HDR; this is a modern enhancement, off whenever Windows is not in HDR mode and never changing the game.
+      - **Prerequisites:** I9 Done (`2469df3` and `2e66847`), clean tree, D-016 recorded. SDL 3.4.18 (already shipped) can render in HDR (linear colour space, headroom and white level queries); no new library.
+      - **What Claude Code will do:** in sub-stages, each proved before the next. I10.1: ask the screen (is Windows in HDR mode, what headroom and white level) with a report mode, a decision with no window code (`hdr::decide`), and a renderer made in the HDR colour space only when Windows is in HDR mode (the picture of a program without HDR is not touched); recreated when Windows turns HDR on or off. I10.2: the picture through the HDR path looks like the standard one (every pixel within one step of it). I10.3: the highlights: the picture without the moving objects at normal white, Pac-Man, the pills and the ghosts drawn over it with a brightness above white (the layers and the exact composing of I9, also at 60), never above the headroom of the screen. I10.4: the menu rows in Game options: HDR (On, Off) and the brightness slider, with explanations; remembered. I10.5: pictures, numbers and the fallback checks.
+      - **What I must do:** nothing is needed for the machine proofs (D-008); the HDR look itself is judged on the owner's screen, with Windows HDR on (a global Windows setting that I do not change).
+      - **Exact instructions / Required input:** none now.
+      - **Claude Code prompt:** the owner's words in D-016.
+      - **Expected result:** Windows not in HDR mode: the program is exactly as before. In HDR mode: the same picture, with brighter highlights as set by the slider; slider at 0 or HDR off = the plain picture; the maze, score and menu at normal white.
+      - **Verification:** every earlier proof unchanged (`test_quick`, `test_public`, the host checks); new: `test_hdr` (no window), `--hdr-report` on the real screen, the picture through the HDR path against the standard one, the highlight arithmetic (never above the headroom).
+      - **Completion criteria:** no frozen file changed; the program with HDR off or without Windows HDR draws the same pixels as before; all numbers sent to the screen are within the screen's headroom.
+      - **Potential problems:** the HDR look cannot be shown in a screenshot; screens differ in peak brightness (the slider is a fraction of the headroom); recreating the renderer when Windows HDR is switched must not lose the picture or the menu.
+      - **Recovery:** new files plus small edits in `src\host`; the setting is off by default only when Windows is not in HDR mode; revert the commits.
+      - **Documentation updates:** `DECISIONS.md` (D-016, T-I10-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** one commit per sub-stage, `Stage I10.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

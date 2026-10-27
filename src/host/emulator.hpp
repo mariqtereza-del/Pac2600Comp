@@ -8,6 +8,22 @@
 #include <string>
 #include <vector>
 
+// Stage I9.4 (DECISIONS.md D-015, T-I9-4): a rectangle of the smooth picture, in picture units (columns and rows of the 160-wide picture), 0xAARRGGBB.
+struct SmoothRect {
+  float x, y, w, h;
+  std::uint32_t colour;
+};
+
+// What the window needs to show a picture between two game steps: the picture without the moving objects, and the means to make the rectangles of the
+// moving objects for any moment of the step. A snapshot does not change; the window keeps the latest one.
+class SmoothSnapshot {
+public:
+  virtual ~SmoothSnapshot() = default;
+  std::vector<std::uint32_t> background;  // kWidth x height colours, the picture without Pac-Man and the ghosts
+  // The moving objects `progress` (0 up to 1) of the way through the step, with no delay: Pac-Man, the power pills, the four ghosts.
+  virtual void compose(double progress, std::vector<SmoothRect>& out) const = 0;
+};
+
 class Emulator {
 public:
   static constexpr int kWidth = 160;  // TIA pixels per line
@@ -45,6 +61,13 @@ public:
   // Stella's "phosphor" glow: each picture is blended 60 % with the one before (softer ghost flicker, trails behind movers).
   // Off from the start (D-007: authentic, as on a real TV); only the colours() picture changes, never indexed() or the fingerprint.
   void setSoftBlend(bool on);
+
+  // Stage I9.4: after each runFrame also make what a smooth picture needs (smoothSnapshot): the picture without the moving objects, and a look-ahead of the next
+  // frames with the controls held. Costs a little time a frame; changes nothing in the game, its sound or its pictures. Only the program that plays with the
+  // rebuilt game has it (smoothAvailable); the one with Stella inside, the reference, has not and ignores the call.
+  void setSmooth(bool on);
+  bool smoothAvailable() const;
+  std::shared_ptr<const SmoothSnapshot> smoothSnapshot() const;  // of the last frame; empty when switched off or not available
 
   void setConsoleReset(bool pressed);  // the console's Reset switch (starts a game); held until set again
 

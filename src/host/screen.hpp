@@ -22,7 +22,8 @@ struct Screen {
   Backdrop backdrop;
   ~Screen() { if(texture) SDL_DestroyTexture(texture); }
 
-  bool show(const std::vector<std::uint32_t>& pixels, int height)
+  // `moving`: the rectangles of Pac-Man, the pills and the ghosts (smooth motion, Stage I9.4), drawn over `pixels`, which is then the picture without them.
+  bool show(const std::vector<std::uint32_t>& pixels, int height, const std::vector<SmoothRect>* moving = nullptr)
   {
     if(!texture) {
       texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, Emulator::kWidth, height);
@@ -48,6 +49,17 @@ struct Screen {
       backdrop.draw(scene, backgroundKind);
     }
     SDL_RenderTexture(renderer, texture, &src, &dst);
+    if(moving && !moving->empty()) {
+      const float scaleX = dst.w / static_cast<float>(Emulator::kWidth), scaleY = dst.h / static_cast<float>(shownRows);
+      const SDL_Rect clip{where.x, where.y, where.w, where.h};
+      SDL_SetRenderClipRect(renderer, &clip);   // nothing outside the picture, whatever the rows of the moving objects
+      for(const SmoothRect& r : *moving) {
+        SDL_SetRenderDrawColor(renderer, static_cast<Uint8>(r.colour >> 16), static_cast<Uint8>(r.colour >> 8), static_cast<Uint8>(r.colour), 255);
+        const SDL_FRect d{dst.x + r.x * scaleX, dst.y + (r.y - static_cast<float>(top)) * scaleY, r.w * scaleX, r.h * scaleY};
+        SDL_RenderFillRect(renderer, &d);
+      }
+      SDL_SetRenderClipRect(renderer, nullptr);
+    }
     shownTop = top;
     shownHeight = shownRows;
     return true;

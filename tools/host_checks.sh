@@ -30,7 +30,8 @@ for prog in pacman2600 pacman2600_ref; do
   "$EXE" --menu-check "$P/menu.txt" "$ROM" --settings "$P/s12.ini"; check "$prog menu-check" $? 0; has "$prog menu-check result" "$P/menu.txt" "scenarios_passed=34"
   "$EXE" --menu-shot "$P/menu.png" "$ROM" --window 1280x960 --settings "$P/s13.ini"; check "$prog menu-shot" $? 0; has "$prog menu-shot result" "$P/menu.png.txt" "result=OK"
   "$EXE" --push-menu --timed 14 "$P/menuwin.txt" "$ROM" --mute --settings "$P/s14.ini"; check "$prog push-menu" $? 0
-  has "$prog menu paused the game" "$P/s14.ini.audio.txt" "menu_frames_run_while_open=0"
+  # 0, or 1 when the game thread was already in the middle of a frame at the moment Escape was pressed: that frame is counted (T-I6-1, T-I9-4); never more
+  has "$prog menu paused the game" "$P/s14.ini.audio.txt" "menu_frames_run_while_open=[01]$"
   has "$prog menu opened four times" "$P/s14.ini.audio.txt" "menu_opens=4"
   has "$prog menu chose game 3" "$P/s14.ini.audio.txt" "final_game_number_byte=10"
   has "$prog menu set the level" "$P/s14.ini.audio.txt" "final_level=4"
@@ -41,6 +42,26 @@ for prog in pacman2600 pacman2600_ref; do
   for size in 1280x1024 1920x1080 1000x1000; do
     "$EXE" --backdrop-check "$P/bd_$size" "$ROM" --window $size --settings "$P/s15.ini"; check "$prog backdrop-check $size" $? 0; has "$prog backdrop result $size" "$P/bd_$size.txt" "result=OK"
   done
+  # Stage I9.4: the frame rate of the picture. Only the program with the rebuilt game has smooth motion; the reference program keeps to 60.
+  if [ "$prog" = pacman2600 ]; then
+    "$EXE" --smooth-shot "$P/smooth" "$ROM" --window 1280x960 --settings "$P/s16.ini"; check "$prog smooth-shot" $? 0; has "$prog smooth-shot result" "$P/smooth.txt" "result=OK"
+    for fps in 30 60 144 unlocked; do
+      "$EXE" --fps $fps --timed 6 "$P/fps_$fps.txt" "$ROM" --mute --reset-at 60 --settings "$P/s17_$fps.ini"; check "$prog frame rate $fps" $? 0
+      has "$prog frame rate $fps was used" "$P/s17_$fps.ini.audio.txt" "frame_rate=$fps"
+    done
+    python -I -c "
+import sys
+def get(p,k):
+    for line in open(p):
+        if line.startswith(k+'='): return float(line.split('=')[1])
+r={}
+for fps in ('30','60','144','unlocked'):
+    p=sys.argv[1]+'/s17_'+fps+'.ini.audio.txt'
+    r[fps]=(get(p,'pictures_per_second'),get(p,'presents_per_second'))
+print('pictures a second:',{k:round(v[0],1) for k,v in r.items()},'presents a second:',{k:round(v[1],1) for k,v in r.items()})
+ok = 27<=r['30'][0]<=33 and 56<=r['60'][0]<=62 and r['144'][0]>=0.85*min(144,r['144'][1]) and r['unlocked'][0]>=0.85*r['unlocked'][1]
+sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a second asked for" $? 0
+  fi
   "$EXE" --push-keys --timed 12 "$P/keys.txt" "$ROM" --mute --settings "$P/s9.ini" --record "$P/rec1.inputs" --fingerprints "$P/A.csv"; check "$prog push-keys recording" $? 0
   for v in 1 2 4 8; do has "$prog key direction $v seen" "$P/s9.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0

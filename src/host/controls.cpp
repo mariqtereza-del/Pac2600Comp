@@ -112,6 +112,8 @@ std::vector<HelpLine> helpLines(const Input& current, const std::string& control
   lines.push_back({"  Share", "Game Select: next game variation"});
   lines.push_back({"1 / 2 / 3 / 4 / 5", "Picture: Sharp / Fill / TV frame / Game area / Framed"});
   lines.push_back({"F7", std::string("Soft glow: smooths the flicker  [now ") + (softBlend ? "on" : "off") + "]"});
+  lines.push_back({"F8", "Frame rate: 30 / 60 / 75 / 120 / 144 / Unlocked (smoother motion above 60)"});
+  lines.push_back({"F9", "Show / hide the pictures-a-second counter"});
   lines.push_back({"Alt + Enter", "Fullscreen on / off"});
   lines.push_back({"F1", "Show / hide this list"});
   lines.push_back({"Esc", "Menu: pauses the game; games, difficulty, quit"});

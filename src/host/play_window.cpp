@@ -4,6 +4,8 @@
 #include "headless.hpp"
 #include "menu_checks.hpp"
 #include "menu_session.hpp"
+#include "framerate.hpp"
+#include "key_pusher.hpp"
 #include "options.hpp"
 #include "pacer.hpp"
 #include "pads.hpp"
@@ -70,11 +72,20 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   bool helpOn = false;
   // Stella's soft glow (F7): off unless the owner turned it on; remembered in settings.ini as soft_glow=on|off
   std::atomic<bool> softBlend{settings::get(options.settingsFile, "soft_glow") == "on"};
+  // Stage I9.4: the frame rate of the picture (settings.ini frame_rate=30|60|75|120|144|unlocked, --fps). Above 60 the moving objects are drawn between their places.
+  framerate::Rate rate = framerate::fromSetting(options.fps.empty() ? settings::get(options.settingsFile, "frame_rate") : options.fps);
+  if(!emulator.smoothAvailable() && framerate::smooth(rate)) rate = framerate::Rate::Fps60;   // the reference program has no smooth motion
+  std::atomic<bool> smoothWanted{framerate::smooth(rate)};
+  auto applyVSync = [&]() { SDL_SetRenderVSync(renderer, (options.presentHz > 0 || framerate::unlocked(rate)) ? 0 : 1); };
+  applyVSync();   // the screen's own wait is off while the frame rate is unlocked
+  const double stepSeconds = 1.0 / frameRate(options);   // the length of one game step
   std::mutex lock;  // guards the shared picture below
   std::vector<std::uint32_t> sharedPixels;
   int sharedHeight = 0;
   std::array<std::uint8_t, 128> sharedRam{};  // the game's memory after the frame that sharedPixels shows (for the arcade panel)
   long long sharedFrame = 0;  // number of the picture in sharedPixels (frames run so far)
+  std::shared_ptr<const SmoothSnapshot> sharedSnapshot;  // the same frame as a smooth picture, when smooth motion is on
+  Uint64 sharedStepAt = 0;                                 // when the game thread had it ready (SDL ticks, nanoseconds)
   double longestGapMs = 0;
   int gapsOver30 = 0;
   std::string gapLog;
@@ -96,6 +107,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     Uint64 lastLoop = SDL_GetTicksNS();
     long long frames = 0;
     bool glowApplied = false;  // the emulator starts without the glow
+    bool smoothApplied = false;
     while(!stop.load()) {
       // The menu is open: no frames, so no sound is made either. Afterwards the pacer starts afresh (no frames to catch up).
       if(menuSession.paused()) { wasPaused = true; waitFor(1000000); continue; }
@@ -114,6 +126,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         const Uint64 frameBegan = SDL_GetTicksNS();
         lateMs.push_back(static_cast<float>(static_cast<double>(frameBegan - pacer->dueAt()) / 1e6));
         if(softBlend.load() != glowApplied) { glowApplied = softBlend.load(); emulator.setSoftBlend(glowApplied); }
+        if(smoothWanted.load() != smoothApplied) { smoothApplied = smoothWanted.load(); emulator.setSmooth(smoothApplied); }
         // A replay gives the console what was recorded; when it has run out, the keyboard and pads take over again.
         controls::Input in = controls::Input::unpack(replaying && frames < replay.frames ? replay.bitsAt(frames) : inputBits.load());
         if(options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10) in.reset = true;
@@ -140,8 +153,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       if(steps > 0) {
         if(firstPictureMs.load() < 0) firstPictureMs = static_cast<double>(SDL_GetTicksNS() - started) / 1e6;
         std::vector<std::uint32_t> picture = emulator.colours();
+        std::shared_ptr<const SmoothSnapshot> snapshot = emulator.smoothSnapshot();
+        const Uint64 readyAt = SDL_GetTicksNS();
         std::lock_guard<std::mutex> guard(lock);
         sharedPixels = std::move(picture);
+        sharedSnapshot = std::move(snapshot);
+        sharedStepAt = readyAt;
         for(std::size_t i = 0; i < sharedRam.size(); ++i) sharedRam[i] = emulator.ram()[i];
         sharedHeight = emulator.height();
         sharedFrame = frames;
@@ -151,54 +168,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     averageCorrectionPpm = pacer->averageCorrectionPpm();
   });
 
-  // Test only (--push-keys): a helper thread puts key presses into this window's event queue, as the operating system would.
-  std::thread pusher;
-  if(options.pushKeys || options.pushMenu) {
-    pusher = std::thread([&]() {
-      auto key = [](SDL_Scancode code, bool down) {
-        SDL_Event e{};
-        e.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
-        e.key.scancode = code;
-        e.key.key = SDL_GetKeyFromScancode(code, SDL_KMOD_NONE, false);
-        e.key.down = down;
-        SDL_PushEvent(&e);
-      };
-      struct Step { double at; SDL_Scancode code; bool down; };
-      std::vector<Step> plan = {
-          {0.5, SDL_SCANCODE_F3, true}, {0.8, SDL_SCANCODE_F3, false},          // Game Reset: a game starts
-          {4.0, SDL_SCANCODE_RIGHT, true}, {4.6, SDL_SCANCODE_RIGHT, false},    // joystick right (Pac-Man starts moving at about 2 s)
-          {5.0, SDL_SCANCODE_A, true}, {5.6, SDL_SCANCODE_A, false},            // left, with the letter key
-          {6.0, SDL_SCANCODE_UP, true}, {6.6, SDL_SCANCODE_UP, false},          // up
-          {7.0, SDL_SCANCODE_S, true}, {7.6, SDL_SCANCODE_S, false},            // down, with the letter key
-          {8.0, SDL_SCANCODE_F5, true}, {8.1, SDL_SCANCODE_F5, false},          // left difficulty to A
-          {8.5, SDL_SCANCODE_F6, true}, {8.6, SDL_SCANCODE_F6, false},          // right difficulty to A
-          {9.0, SDL_SCANCODE_F4, true}, {9.1, SDL_SCANCODE_F4, false},          // Colour to B&W
-          {9.5, SDL_SCANCODE_F7, true}, {9.6, SDL_SCANCODE_F7, false}};         // soft glow on
-      if(options.pushMenu) {  // Stage I5 (then I7): open the menu, choose game 3 and the left difficulty A, start it; open and close it again; quit from it
-        plan.clear();
-        auto tap = [&](double at, SDL_Scancode code) { plan.push_back({at, code, true}); plan.push_back({at + 0.05, code, false}); };
-        tap(1.0, SDL_SCANCODE_ESCAPE);
-        tap(1.5, SDL_SCANCODE_DOWN); tap(1.6, SDL_SCANCODE_DOWN); tap(1.65, SDL_SCANCODE_RETURN);  // open the Game options page (Stage I8), on the Game row
-        tap(1.7, SDL_SCANCODE_RIGHT); tap(1.8, SDL_SCANCODE_RIGHT);  // game 3
-        tap(1.85, SDL_SCANCODE_DOWN);                                // the Players row stays at one player (Stage I6)
-        tap(1.9, SDL_SCANCODE_DOWN); tap(2.0, SDL_SCANCODE_RIGHT);  // left difficulty to A
-        tap(2.05, SDL_SCANCODE_ESCAPE); tap(2.1, SDL_SCANCODE_UP);   // back to the main page (on Game options), up to New game
-        tap(3.0, SDL_SCANCODE_RETURN);                               // go
-        tap(6.0, SDL_SCANCODE_ESCAPE); tap(6.5, SDL_SCANCODE_ESCAPE);  // open and close again
-        tap(6.6, SDL_SCANCODE_ESCAPE);                                // Stage I7: open the menu, go to Graphics options, choose the Mirrored edge, back, close
-        for(int i = 0; i < 3; ++i) tap(6.7 + 0.1 * i, SDL_SCANCODE_DOWN);
-        tap(7.4, SDL_SCANCODE_RETURN); tap(7.5, SDL_SCANCODE_RIGHT); tap(7.6, SDL_SCANCODE_RIGHT);
-        tap(7.7, SDL_SCANCODE_ESCAPE); tap(7.8, SDL_SCANCODE_ESCAPE);
-        tap(8.2, SDL_SCANCODE_ESCAPE); tap(8.4, SDL_SCANCODE_UP); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
-      }
-      const Uint64 t0 = SDL_GetTicksNS();
-      for(const auto& step : plan) {
-        while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) SDL_Delay(5);
-        if(stop.load()) break;
-        key(step.code, step.down);
-      }
-    });
-  }
+  std::thread pusher = startKeyPusher(options, stop);   // test only: --push-keys, --push-menu
 
   // Stage I5: Escape opens the menu (and closes it); while it is open the arrow keys (or WASD), Enter and Escape belong to it. True = the key was used.
   long long menuOpenedAtFrame = 0, menuFramesRun = 0;  // frames the game ran while the menu was open (must be 0; read for the --push-menu report)
@@ -237,6 +207,16 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   };
 
   std::vector<std::uint32_t> pixels;
+  std::shared_ptr<const SmoothSnapshot> snapshot;  // the smooth picture of the latest game step
+  Uint64 snapshotAt = 0;
+  std::vector<SmoothRect> moving;
+  bool counterOn = false;          // F9: the pictures-a-second counter stays on
+  Uint64 overlayUntil = 0;         // F8: the frame rate is shown for a few seconds
+  long long picturesShown = 0, picturesAtMark = 0;
+  Uint64 markAt = SDL_GetTicksNS();
+  double picturesPerSecond = 0;
+  long long lastShownFrame = -1, lastGrid = -2;
+  std::shared_ptr<const SmoothSnapshot> lastSnapshot;   // the snapshot the picture on screen was made from
   std::array<std::uint8_t, 128> shownRam{};
   int height = 0;
   bool failed = false, stalled = false;
@@ -256,6 +236,14 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         if(e.key.key == SDLK_3) { screen.view.mode = layout::Mode::TvFrame; retitle(); }
         if(e.key.key == SDLK_4) { screen.view.mode = layout::Mode::GameArea; retitle(); }
         if(e.key.key == SDLK_5) { screen.view.mode = layout::Mode::Framed; retitle(); }
+        if(e.key.scancode == SDL_SCANCODE_F8 && emulator.smoothAvailable()) {   // the frame rate: the next one in the list (the menu row comes in Stage I9.5)
+          rate = framerate::next(rate);
+          smoothWanted = framerate::smooth(rate);
+          applyVSync();
+          settings::set(options.settingsFile, "frame_rate", framerate::settingName(rate));
+          overlayUntil = SDL_GetTicksNS() + 4000000000ull;
+        }
+        if(e.key.scancode == SDL_SCANCODE_F9) { counterOn = !counterOn; overlayUntil = 0; }
         if(e.key.scancode == SDL_SCANCODE_F7) { softBlend = !softBlend.load(); settings::set(options.settingsFile, "soft_glow", softBlend.load() ? "on" : "off"); }
       }
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode == SDL_SCANCODE_F1) helpOn = !helpOn;
@@ -277,7 +265,10 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     long long frameNow = 0;
     {
       std::lock_guard<std::mutex> guard(lock);
-      if(!sharedPixels.empty() && sharedFrame != shownFrame) { pixels = sharedPixels; height = sharedHeight; shownRam = sharedRam; }
+      if(!sharedPixels.empty() && sharedFrame != shownFrame && framerate::shownStep(rate, sharedFrame) == sharedFrame) { pixels = sharedPixels; height = sharedHeight; shownRam = sharedRam; }
+      snapshot = sharedSnapshot;
+      snapshotAt = sharedStepAt;
+      if(snapshot) height = sharedHeight;
       frameNow = sharedFrame;
     }
     if(frameNow != shownFrame) {  // a new game frame: close the count of the previous one
@@ -289,9 +280,42 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       shownCount = 0;
     }
     screen.ram = shownRam.data();
-    if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
+    const bool smoothNow = framerate::smooth(rate) && snapshot && !snapshot->background.empty();
+    if(smoothNow) {   // the picture without the moving objects, and Pac-Man, the pills and the ghosts between their places (no delay: each is on its way to where the original shows it next)
+      const double nowSeconds = static_cast<double>(SDL_GetTicksNS()) / 1e9;
+      const long long grid = framerate::pictureIndex(rate, nowSeconds);   // the picture of this moment of the clock: made once, kept until the next
+      if(grid < 0 || grid != lastGrid || !lastSnapshot) {
+        const double progress = framerate::progress(framerate::pictureTime(rate, nowSeconds), static_cast<double>(snapshotAt) / 1e9, stepSeconds);
+        snapshot->compose(progress, moving);
+        lastSnapshot = snapshot;
+        lastGrid = grid;
+        ++picturesShown;
+      }
+      if(!screen.show(lastSnapshot->background, height, &moving)) { failed = true; running = false; }
+    } else {
+      lastSnapshot.reset();
+      if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
+      if(frameNow != lastShownFrame && framerate::shownStep(rate, frameNow) == frameNow) ++picturesShown;   // a new picture of the game
+    }
+    lastShownFrame = frameNow;
     if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load());
     if(menuSession.isOpen()) drawMenu(renderer, menuSession.menu());
+    if(const Uint64 t = SDL_GetTicksNS(); t - markAt >= 500000000ull) {   // pictures a second, over the last half second
+      picturesPerSecond = static_cast<double>(picturesShown - picturesAtMark) * 1e9 / static_cast<double>(t - markAt);
+      picturesAtMark = picturesShown;
+      markAt = t;
+    }
+    if(counterOn || SDL_GetTicksNS() < overlayUntil) {
+      char text[96];
+      std::snprintf(text, sizeof text, "Frame rate %s%s   %.0f pictures a second", framerate::title(rate), framerate::smooth(rate) ? " (smooth)" : "", picturesPerSecond);
+      SDL_SetRenderScale(renderer, 2.0f, 2.0f);
+      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+      const SDL_FRect back{2.0f, 2.0f, static_cast<float>(std::strlen(text)) * 8.0f + 8.0f, 14.0f};
+      SDL_RenderFillRect(renderer, &back);
+      SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+      SDL_RenderDebugText(renderer, 6.0f, 6.0f, text);
+      SDL_SetRenderScale(renderer, 1.0f, 1.0f);
+    }
     const Uint64 beforePresent = SDL_GetTicksNS();
     SDL_RenderPresent(renderer);
     ++presents;
@@ -316,6 +340,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     log << audioStatsText(audio, elapsed) << "game_thread_longest_gap_ms=" << longestGapMs << "\ngame_thread_gaps_over_30ms=" << gapsOver30
         << "\ngame_thread_gaps=" << gapLog << "\nclock=" << (usedSoundClock ? "sound card" : "PC timer") << "\naverage_clock_correction_ppm=" << averageCorrectionPpm
         << "\npresents=" << presents << "\npresents_per_second=" << static_cast<double>(presents) / elapsed
+        << "\nframe_rate=" << framerate::settingName(rate) << "\npictures_shown=" << picturesShown << "\npictures_per_second=" << static_cast<double>(picturesShown) / elapsed
         << "\ngame_frames=" << sharedFrame << "\ngame_frames_per_second=" << static_cast<double>(sharedFrame) / elapsed
         << "\nrefreshes_per_game_frame_1=" << refreshHistogram[0] << "\nrefreshes_per_game_frame_2=" << refreshHistogram[1]
         << "\nrefreshes_per_game_frame_3=" << refreshHistogram[2] << "\nrefreshes_per_game_frame_4=" << refreshHistogram[3]

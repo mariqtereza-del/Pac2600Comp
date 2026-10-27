@@ -3047,7 +3047,7 @@ Development stops here until you decide what, if anything, to add. Nothing in th
     - **I8 - Game options page; TV type moves to Graphics options** **[Done 2026-10-27]** *(D-013 and D-014, T-I8-1; includes I7b, the maze-colour Solid background)*
       - **Result:** the Escape menu's main page is Resume, New game, Game options, Graphics options, Quit; tests and pictures in `DECISIONS.md` T-I8-1. **Git checkpoint:** `Stage I8: Game options page (includes I7b maze-colour background)` (`f4847f8`).
 
-    - **I9 - Smooth motion: an FPS option in Game options** **[In progress: I9.1 to I9.3 done 2026-10-27]** *(fourth approved feature, D-015)*
+    - **I9 - Smooth motion: an FPS option in Game options** **[In progress: I9.1 to I9.4 done 2026-10-27]** *(fourth approved feature, D-015)*
       - **Objective:** a "Frame rate" row in Game options (30, 60, 75, 120, 144, Unlocked; default 60) that makes the motion on screen smoother while the game's own pace and sound stay exactly as the original's.
       - **Why it matters:** the owner asked for it (D-015). The game makes 59.92 pictures a second and moves in whole pixels, so more frames of the same pictures would change nothing; smoothness needs the moving objects drawn between their last two positions.
       - **Prerequisites:** I8 Done (`f4847f8`), clean tree, D-015 recorded.

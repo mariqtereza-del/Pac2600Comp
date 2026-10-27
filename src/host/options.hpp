@@ -16,6 +16,7 @@ const char* modeName(layout::Mode m);
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
+  std::string smoothShotPng;     // --smooth-shot <png prefix> (Stage I9.4)
   std::string backdropCheckPng;  // --backdrop-check <png prefix> (Stage I7)
   std::string menuCheckFile, menuShotPng;  // --menu-check <report> / --menu-shot <png> (Stage I5)
   std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
@@ -23,6 +24,7 @@ struct Options {
   std::vector<std::array<int, 3>> pokes;  // --poke <frame>:<hex address>:<hex value> (headless only, TEST ONLY, Stage E8): memory edits before a frame
   std::string traceFile;               // --trace <file>: what the game did on every frame (Stage E1, docs\BASELINE.md)
   long long ramSeed = -1;              // --ram-seed N: power-on memory filled from seed N (-1 = zeros)
+  std::string fps;                     // --fps 30|60|75|120|144|unlocked (Stage I9.4): the frame rate of the picture; empty = the remembered one (settings.ini frame_rate=)
   bool softGlow = false;               // --soft-glow: Stella's phosphor glow on (headless tests of F7)
   bool stellaSpeed = false;            // --stella-speed: 60.000 frames a second like Stella, instead of the console's own 59.92 (comparison only)
   double audioCheckSeconds = 0;

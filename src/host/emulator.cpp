@@ -100,6 +100,11 @@ std::uint8_t Emulator::consoleSwitches() const { return impl_->core.osystem().co
 
 void Emulator::setSoftBlend(bool on) { impl_->core.setVideoPhosphor(on ? 2 : 1, 60); }
 
+// Smooth motion needs the rebuilt game (Stage I9.4); this program, the reference, has none of it.
+void Emulator::setSmooth(bool) {}
+bool Emulator::smoothAvailable() const { return false; }
+std::shared_ptr<const SmoothSnapshot> Emulator::smoothSnapshot() const { return {}; }
+
 void Emulator::setConsoleReset(bool pressed) { impl_->core.setInputEvent(Event::ConsoleReset, pressed ? 1 : 0); }
 
 int Emulator::height() const { return static_cast<int>(impl_->core.osystem().console().tia().height()); }

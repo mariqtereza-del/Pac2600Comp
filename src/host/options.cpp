@@ -65,9 +65,11 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--menu-check") o.menuCheckFile = next();
     else if(a == "--menu-shot") o.menuShotPng = next();
     else if(a == "--backdrop-check") o.backdropCheckPng = next();
+    else if(a == "--smooth-shot") o.smoothShotPng = next();
     else if(a == "--pad-check") o.padCheckFile = next();
     else if(a == "--stella-speed") o.stellaSpeed = true;
     else if(a == "--soft-glow") o.softGlow = true;
+    else if(a == "--fps") o.fps = next();
     else if(a == "--ram-seed") o.ramSeed = std::atoll(next().c_str());
     else if(a == "--trace") o.traceFile = next();
     else if(a == "--poke") {

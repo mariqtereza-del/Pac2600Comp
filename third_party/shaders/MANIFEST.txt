@@ -1,0 +1,31 @@
+# The shader files downloaded for the CRT filters (Stage I11, D-017), 2026-10-27.
+# Source: https://raw.githubusercontent.com/libretro/slang-shaders/master/crt/<path> (the libretro slang-shaders collection).
+# Text shader files (slang) and four small PNG lookup tables. They are data: only read as source, never run. Never edit them; the project's own versions are
+# the HLSL files made from them. SHA-256 of each file as downloaded:
+
+094d5133a3b6fbb4c2e6cba65141e5b850517aa3201bea7bdb41e4899087b60b  crt-geom.slangp  (92 bytes)
+d4e66ed1250ae9101971f5174978ae82061c1e3901397832984d523c543a8163  crt-guest-advanced-ntsc.slangp  (3553 bytes)
+51bdf93aa6e3dd8605bf1c2b19af1f511672b53f3551d8de1041e02a7bbf9610  crt-lottes.slangp  (94 bytes)
+6533ad97601445f35a1b4f25ad54974ee9983fef0337ffec11c9c372226dbb58  shaders/crt-geom.slang  (30747 bytes)
+e382eec413c2acf5d03cce65d447347553032acf2e550826d0142a9c51d559ef  shaders/crt-lottes.slang  (9540 bytes)
+7a53266418477402d00ae20848142fc5db795befc25e5870edcb03b28d0dbafd  shaders/guest/advanced/afterglow0.slang  (3310 bytes)
+30d27513e322a7c82654f7c70b2a7a34eaeff554761e40cba7756b8f4068cbb4  shaders/guest/advanced/avg-lum-ntsc.slang  (3368 bytes)
+e7992b156937ce826572ae72e7e379d4e548b1de8315d82c4de625ba5f9e8b6b  shaders/guest/advanced/bloom_vertical.slang  (2806 bytes)
+d499fad2c65b03c36a3057e1efc8e74d9d9aa67edf72ca23ac18c992453cee64  shaders/guest/advanced/crt-guest-advanced-ntsc-pass1.slang  (4976 bytes)
+b094a856579913a5207dba2a4d449ba764d523bb58fd3c8c6e5be5a6fc35ccf8  shaders/guest/advanced/crt-guest-advanced-ntsc-pass2.slang  (14490 bytes)
+ef91e3d4f564a8fe4f097aaaec46c0611867ba2e122b180c9355c8a9a41810b8  shaders/guest/advanced/custom-fast-sharpen.slang  (4801 bytes)
+93326a53f688c31f01d740f50bd5de0efabb96e952edb27631c7d86e826c9ef0  shaders/guest/advanced/deconvergence-ntsc.slang  (31330 bytes)
+869e6d0eb1b630ab8e5b3ff9868df3cf9a7a6ba33d768dcc9ecc0ea93b36b359  shaders/guest/advanced/gaussian_vertical.slang  (2809 bytes)
+313ad5f188ff39749f450a0a59ff850a4fc8d311b4cb3ea8197c81facf26ffa1  shaders/guest/advanced/interlace-ntsc.slang  (4509 bytes)
+5100d2a252697a2fdc938f87aa9d92faf08586513fb381fd759f18568204cf00  shaders/guest/advanced/linearize-ntsc-new.slang  (3471 bytes)
+1c4e57ff95acc881d761d95196fce8e3000701750868187907c4cffad5c6d4b7  shaders/guest/advanced/pre-shaders-afterglow.slang  (10394 bytes)
+fa7d346e3706a351aa77dc8e77bd049b8bfde635baf4376fedcf81f38d9a4008  shaders/guest/advanced/stock.slang  (665 bytes)
+2acb6633e4dede7f36e3e62b7aa9d0ed76ecfbc5cb7ed7f3f8813dddec0e9145  shaders/guest/advanced/lut/inv-trinitron-lut.png  (15627 bytes)
+86ec3d2e21138845cb73500e915425582b991e173a4149fa192a62d798382b59  shaders/guest/advanced/lut/nec-lut.png  (15243 bytes)
+a23ae9d27d6d5f9073d4a84678187f54758b329387c47686294ea979dcde6d03  shaders/guest/advanced/lut/ntsc-lut.png  (22140 bytes)
+bcc8c237eb39ed2a632554959cb4c5e0dd52b59a4922745b46b7525fc6b6b61a  shaders/guest/advanced/lut/trinitron-lut.png  (9188 bytes)
+31788bb4b9929e66ed656ff4b32bb419dec744263f4f4ac7c989ca300481fbc3  shaders/guest/advanced/ntsc/ntsc-pass1.slang  (7753 bytes)
+572cb5da08482742ba849b04f65f2ce4bbde8bba495213e7c2e9069582ba2aaa  shaders/guest/advanced/ntsc/ntsc-pass2.slang  (8059 bytes)
+1b8f9c6bd9738355498155e49be6491ff7b6ab7e436994974bbdeea4163d9a6b  shaders/guest/advanced/ntsc/ntsc-pass3.slang  (10621 bytes)
+417824f3056a57067ad57b6bb973aa321450fd3033f5c39b375d1e478e2bb074  shaders/guest/hd/bloom_horizontal.slang  (3187 bytes)
+a74c7251b0cd71092611b2b696fd737e9f635525dbce7d8b5da10a664af1f225  shaders/guest/hd/gaussian_horizontal.slang  (4044 bytes)

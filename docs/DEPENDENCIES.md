@@ -6,6 +6,7 @@ Every outside library the project uses, pinned to one exact version, with where 
 | --- | --- | --- | --- | --- |
 | SDL3 | **3.4.18** (tag `release-3.4.18`, 2026-10-02) | `third_party\SDL3\` | zlib (`LICENSE.txt`) | Window, sound, controllers (Phase D host) |
 | Stella | **7.0** (tag `7.0`, commit `d55b1aec0d06`, 2024-10-04), D-002 | `third_party\stella\` | GNU GPL version 2 (`License.txt`) | Its libretro core: the 2600 emulator embedded in the Phase 1 program, and the same version as the reference app (C1) |
+| libretro slang-shaders (files only) | master of 2026-10-27, 26 files | `third_party\shaders\libretro\crt\` | per file: `crt-guest-advanced` family GNU GPL version 2 or later (guest(r), Dr. Venom); `crt-geom` GNU GPL version 2 or later (cgwg and others); `crt-lottes` public domain (Timothy Lottes); the NTSC passes say "based on Themaister's NTSC shader" and the lookup-table PNGs carry no licence text in the files (not stated: not invented) | CRT filters (Stage I11, D-017): the source of the shaders that are ported to HLSL; read as text, never run |
 
 ## Where they came from and how they were checked
 
@@ -59,3 +60,10 @@ The unpacked sources are committed (T-B7-2), so the project builds without inter
 - **SDL3 (zlib):** may be used in any program. The licence asks only that its notice isn't removed from the source and that changed versions are marked.
 - **Stella (GPL v2):** any program we release that contains Stella's code (the Phase 1 emulator build, the test tool) must also make its complete source available under the GPL. The native game build planned for later phases will not contain Stella.
 - **"v2 only" or "v2 or later"?** Package listings disagree. `License.txt` is the plain GPL v2 text, and individual files may say more. J1 reads the file headers to settle it.
+
+### libretro slang-shaders, 26 files (Stage I11, D-017)
+
+- **Approved by the owner on 2026-10-27** ("1" to the question whether the shader sources may be downloaded). Source: `https://raw.githubusercontent.com/libretro/slang-shaders/master/crt/` (the libretro project's collection on GitHub), the three presets (`crt-guest-advanced-ntsc.slangp`, `crt-lottes.slangp`, `crt-geom.slangp`) and every shader, include and lookup table they name.
+- **What they are:** text files in the slang shader language (Vulkan GLSL with `#pragma parameter` lines) and four small PNG lookup tables. They are data, not instructions: they are only read as source text; they are not compiled or run as they are. The program runs HLSL versions written from them (D-017, T-I11-1).
+- **Record:** `third_party\shaders\MANIFEST.txt` lists every file with its SHA-256 as downloaded. No installer, no executable and no library was downloaded or installed; the shader compiler used is `d3dcompiler` (part of Windows) and `dxc.exe` of the Windows SDK, already on the computer.
+- **Licences:** see the table; the project's own licence is GNU GPL, which takes in GPL 2 or later and public domain files. Where a file states no licence it is recorded as not stated.

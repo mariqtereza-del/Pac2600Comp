@@ -67,13 +67,6 @@ bool hdrReport(const Options& o)
   return true;
 }
 
-namespace {
-
-struct Pixels {
-  int w = 0, h = 0;
-  std::vector<std::uint32_t> xrgb;   // 0x00RRGGBB in the standard colour space
-};
-
 float halfToFloat(std::uint16_t h)
 {
   const int sign = (h >> 15) & 1, exponent = (h >> 10) & 31, mantissa = h & 1023;
@@ -126,7 +119,6 @@ bool readAsStandard(SDL_Renderer* renderer, Pixels& out, const std::string& png,
   return saved;
 }
 
-}  // namespace
 
 // --hdr-check: the game's picture drawn by the standard renderer and by the one in the HDR colour space, side by side in numbers (Stage I10.1).
 bool hdrCheck(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view)

@@ -18,6 +18,7 @@ struct Options {
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
   std::string hdr;               // --hdr on|off (Stage I10.1): HDR output on or off for this run; empty = the remembered choice (settings.ini hdr=, on unless turned off)
   std::string hdrHighlightsPng;  // --hdr-highlights <png prefix> (Stage I10.3)
+  std::string filterCheckPng;    // --filter-check <png prefix> (Stage I11.1)
   std::string hdrCheckPng;       // --hdr-check <png prefix> (Stage I10.1)
   std::string hdrReportFile;     // --hdr-report <file> (Stage I10.1)
   std::string smoothShotPng;     // --smooth-shot <png prefix> (Stage I9.4)
@@ -57,6 +58,9 @@ bool hdrWantedBy(const Options& o);
 
 // --hdr-highlights (Stage I10.3): Pac-Man, the pills and the ghost drawn brighter than white at three slider positions, checked in numbers; `renderer` is replaced.
 bool hdrHighlights(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view);
+
+// --filter-check (Stage I11.1): our own pixel shaders on SDL's Direct3D 11 renderer, standard and HDR; `renderer` is replaced.
+bool filterCheck(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view);
 
 // --hdr-check (Stage I10.1): the game's picture through the standard renderer and through the HDR one, compared pixel by pixel; `renderer` is replaced.
 bool hdrCheck(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view);

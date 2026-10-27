@@ -49,6 +49,10 @@ for prog in pacman2600 pacman2600_ref; do
   for size in 1280x1024 1920x1080 1000x1000; do
     "$EXE" --backdrop-check "$P/bd_$size" "$ROM" --window $size --settings "$P/s15.ini"; check "$prog backdrop-check $size" $? 0; has "$prog backdrop result $size" "$P/bd_$size.txt" "result=OK"
   done
+  # Stage I11.1: our own shaders on SDL's Direct3D 11 renderer (standard and, where Windows is in HDR mode, HDR): identical to the plain picture where nothing changes
+  if [ "$prog" = pacman2600 ]; then
+    "$EXE" --filter-check "$P/flt" "$ROM" --window 1280x960 --settings "$P/s22.ini"; check "$prog filter-check" $? 0; has "$prog filter-check result" "$P/flt.txt" "^result=OK"
+  fi
   # Stage I10.1: HDR. What the screen says is written down; the picture through the HDR renderer equals the standard one in every flat area (or the check says it
   # was SKIPPED because Windows is not in HDR mode on this computer); the game is the same with HDR on and off. Only the program with the rebuilt game draws in HDR.
   "$EXE" --hdr-report "$P/hdr_report.txt"; check "$prog hdr-report" $? 0; has "$prog hdr-report result" "$P/hdr_report.txt" "result=OK"

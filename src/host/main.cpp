@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
   if(!SDL_Init(SDL_INIT_VIDEO)) { showError("SDL could not start."); return 1; }
 
   // The remembered window (Stage D7) is used for playing and for --state-report, not for the other checks or when --window is given.
-  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty() || !options.menuShotPng.empty() || !options.backdropCheckPng.empty() || !options.smoothShotPng.empty() || !options.hdrCheckPng.empty() || !options.hdrHighlightsPng.empty();
+  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty() || !options.menuShotPng.empty() || !options.backdropCheckPng.empty() || !options.smoothShotPng.empty() || !options.hdrCheckPng.empty() || !options.hdrHighlightsPng.empty() || !options.filterCheckPng.empty();
   windowstate::State remembered;
   if(!otherCheck && !options.windowGiven) remembered = windowstate::fitToMonitors(windowstate::load(options.settingsFile), monitorAreas());
 
@@ -132,6 +132,8 @@ int main(int argc, char* argv[])
         exitCode = helpCheck(renderer, options.helpCheckPng, romPath) ? 0 : 2;
       } else if(!options.backdropCheckPng.empty()) {
         exitCode = backdropCheck(renderer, options.backdropCheckPng, romPath) ? 0 : 2;
+      } else if(!options.filterCheckPng.empty()) {
+        exitCode = filterCheck(window, renderer, options.filterCheckPng, romPath, view) ? 0 : 2;
       } else if(!options.hdrHighlightsPng.empty()) {
         exitCode = hdrHighlights(window, renderer, options.hdrHighlightsPng, romPath, view) ? 0 : 2;
       } else if(!options.hdrCheckPng.empty()) {

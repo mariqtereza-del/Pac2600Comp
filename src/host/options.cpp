@@ -68,6 +68,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--smooth-shot") o.smoothShotPng = next();
     else if(a == "--hdr-report") o.hdrReportFile = next();
     else if(a == "--hdr-check") o.hdrCheckPng = next();
+    else if(a == "--filter-check") o.filterCheckPng = next();
     else if(a == "--hdr-highlights") o.hdrHighlightsPng = next();
     else if(a == "--hdr") o.hdr = next();
     else if(a == "--pad-check") o.padCheckFile = next();

@@ -1,5 +1,8 @@
 #include "render_setup.hpp"
 
+#include <algorithm>
+#include <cstdlib>
+
 namespace host {
 
 hdr::ScreenState screenStateOf(SDL_Window* window)
@@ -30,6 +33,28 @@ SDL_Renderer* createRenderer(SDL_Window* window, bool hdrPipeline, bool* gotHdr)
   SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
   if(renderer) SDL_SetRenderVSync(renderer, 1);
   return renderer;
+}
+
+FlatComparison compareFlat(const Pixels& a, const Pixels& b)
+{
+  FlatComparison r;
+  const int w = a.w, h = a.h;
+  auto diffOf = [&](std::size_t i) {
+    int d = 0;
+    for(int shift = 0; shift <= 16; shift += 8) d = std::max(d, std::abs(static_cast<int>((a.xrgb[i] >> shift) & 0xFF) - static_cast<int>((b.xrgb[i] >> shift) & 0xFF)));
+    return d;
+  };
+  if(a.xrgb.size() != b.xrgb.size()) return r;
+  for(int y = 1; y + 1 < h; ++y)
+    for(int x = 1; x + 1 < w; ++x) {
+      const std::size_t i = static_cast<std::size_t>(y * w + x);
+      const std::uint32_t c = a.xrgb[i];
+      const bool flat = a.xrgb[i - 1] == c && a.xrgb[i + 1] == c && a.xrgb[i - static_cast<std::size_t>(w)] == c && a.xrgb[i + static_cast<std::size_t>(w)] == c;
+      const int d = diffOf(i);
+      if(flat) { ++r.inside; if(d > 1) ++r.insideDifferent; r.largestInside = std::max(r.largestInside, d); }
+      else { ++r.edges; if(d > 1) ++r.edgesDifferent; }
+    }
+  return r;
 }
 
 }  // namespace host

@@ -23,15 +23,11 @@ struct Rgb {
 };
 Rgb scaled(Rgb colour, double factor);       // every channel times factor, kept in 0..255
 
-// The colours of "Solid colour". Choice 0 is "Wall colour": the colour the maze walls are drawn in right now (see dominantColour).
-inline constexpr int kSolidChoices = 6;
-const char* solidName(int choice);
-Rgb solidColour(int choice);                 // fixed colours; choice 0 gives navy, the colour used when no wall colour can be found
-int nextSolid(int choice, int step);
-
-// The most frequent colour that is not black among the given rows of a picture of 0x00RRGGBB pixels (each channel counted in 16 steps).
-// Returns the navy of solidColour(0) if the rows are all black.
-Rgb dominantColour(const std::uint32_t* pixels, int width, int firstRow, int rows);
+// The colour of the maze: the most frequent colour that is not black among the given rows of a picture of 0x00RRGGBB pixels (each channel counted in
+// 16 steps). That is the blue the maze is drawn on, not the walls (they take up less of the picture). The Solid colour and Gradient backgrounds use it.
+// Returns defaultMazeColour() if the rows are all black (the title screen before anything is drawn).
+Rgb defaultMazeColour();
+Rgb mazeColour(const std::uint32_t* pixels, int width, int firstRow, int rows);
 
 // The picture rows cut into cols x gridRows blocks and averaged: three floats (0..255) per block, row by row. A tiny picture that, drawn large
 // with smooth scaling, gives the blurred glow.

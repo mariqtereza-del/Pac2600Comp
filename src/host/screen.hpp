@@ -18,7 +18,6 @@ struct Screen {
   int shownTop = 0, shownHeight = 0;  // which rows of the 228-row picture are shown (all of them, or the game area)
   View view;
   background::Kind backgroundKind = background::Kind::Black;  // what fills the space around the picture (Stage I7); Black = nothing is drawn
-  int solidChoice = 0;                                         // for the Solid colour background
   const std::uint8_t* ram = nullptr;                           // the game's 128 bytes, for the arcade panel; may stay null
   Backdrop backdrop;
   ~Screen() { if(texture) SDL_DestroyTexture(texture); }
@@ -46,7 +45,7 @@ struct Screen {
       BackdropScene scene;
       scene.renderer = renderer; scene.picture = texture; scene.src = src; scene.where = where; scene.windowW = windowW; scene.windowH = windowH;
       scene.pixels = pixels.data(); scene.pixelWidth = Emulator::kWidth; scene.firstRow = top; scene.rows = shownRows; scene.ram = ram;
-      backdrop.draw(scene, backgroundKind, solidChoice);
+      backdrop.draw(scene, backgroundKind);
     }
     SDL_RenderTexture(renderer, texture, &src, &dst);
     shownTop = top;

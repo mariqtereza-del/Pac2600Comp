@@ -57,7 +57,7 @@ void drawMenu(SDL_Renderer* renderer, const menu::Menu& menu)
   SDL_RenderRect(renderer, &box);
   const float x = x0 + 2 * charSize;
   float y = y0 + lineH;
-  SDL_RenderDebugText(renderer, x, y, graphicsPage ? "GRAPHICS OPTIONS   (the game is paused)" : "MENU   (the game is paused)");
+  SDL_RenderDebugText(renderer, x, y, graphicsPage ? "GRAPHICS OPTIONS   (the game is paused)" : menu.page() == menu::Page::GameOptions ? "GAME OPTIONS   (the game is paused)" : "MENU   (the game is paused)");
   y += 2 * lineH;
   for(const std::string& row : rows) { SDL_RenderDebugText(renderer, x, y, row.c_str()); y += lineH; }
   y += lineH;
@@ -65,7 +65,7 @@ void drawMenu(SDL_Renderer* renderer, const menu::Menu& menu)
   for(const std::string& line : words) { SDL_RenderDebugText(renderer, x, y, line.c_str()); y += lineH; }
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   y = y0 + boxH - 2 * lineH;
-  SDL_RenderDebugText(renderer, x, y, graphicsPage ? "Up/Down choose   Left/Right change   Enter do   Esc back" : "Up/Down choose   Left/Right change   Enter do   Esc close");
+  SDL_RenderDebugText(renderer, x, y, menu.page() != menu::Page::Main ? "Up/Down choose   Left/Right change   Enter do   Esc back" : "Up/Down choose   Left/Right change   Enter do   Esc close");
   SDL_SetRenderScale(renderer, 1.0f, 1.0f);
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
@@ -90,7 +90,8 @@ bool menuShot(SDL_Renderer* renderer, const std::string& pngPath, const std::str
   now.game = 3;
   menu.open(now);
   menu.press(menu::Key::Down);
-  menu.press(menu::Key::Down);  // the Game row: its explanation is the longest
+  menu.press(menu::Key::Down);
+  menu.press(menu::Key::Enter);  // the Game options page, on the Game row: its explanation is the longest
   drawMenu(renderer, menu);
   SDL_Surface* shot = SDL_RenderReadPixels(renderer, nullptr);
   if(!shot) { report << "result=cannot read window pixels\n"; return false; }
@@ -115,7 +116,7 @@ bool menuShot(SDL_Renderer* renderer, const std::string& pngPath, const std::str
   menu::Choice glowing = now;
   glowing.background = background::Kind::Glow;
   menu.open(glowing);
-  for(int i = 0; i < 7; ++i) menu.press(menu::Key::Down);  // the Graphics row
+  for(int i = 0; i < 3; ++i) menu.press(menu::Key::Down);  // the Graphics row
   menu.press(menu::Key::Enter);
   screen.backgroundKind = glowing.background;
   for(int i = 0; i < 30; ++i) screen.show(emulator.colours(), emulator.height());

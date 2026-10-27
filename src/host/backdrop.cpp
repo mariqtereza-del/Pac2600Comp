@@ -63,21 +63,21 @@ constexpr float kCharPx = static_cast<float>(SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE)
 
 Backdrop::~Backdrop() { if(ambient_) SDL_DestroyTexture(ambient_); }
 
-void Backdrop::draw(const BackdropScene& s, background::Kind kind, int solid)
+void Backdrop::draw(const BackdropScene& s, background::Kind kind)
 {
   using background::Kind;
   if(kind == Kind::Black) return;
   SDL_SetRenderDrawBlendMode(s.renderer, SDL_BLENDMODE_BLEND);
-  const bool needsWall = kind == Kind::Gradient || (kind == Kind::Solid && solid == 0);  // the colour the maze walls are drawn in right now
-  const background::Rgb wall = needsWall ? background::dominantColour(s.pixels, s.pixelWidth, s.firstRow, s.rows) : background::solidColour(0);
+  const bool needsMaze = kind == Kind::Gradient || kind == Kind::Solid;  // the colour the maze is drawn on right now
+  const background::Rgb maze = needsMaze ? background::mazeColour(s.pixels, s.pixelWidth, s.firstRow, s.rows) : background::defaultMazeColour();
   switch(kind) {
     case Kind::Glow: glow(s); break;
     case Kind::Mirror: mirror(s); break;
     case Kind::Solid:
-      setColour(s.renderer, solid == 0 ? wall : background::solidColour(solid));
+      setColour(s.renderer, maze);
       SDL_RenderClear(s.renderer);
       break;
-    case Kind::Gradient: gradient(s, wall); break;
+    case Kind::Gradient: gradient(s, maze); break;
     case Kind::Arcade: arcade(s); break;
     case Kind::Bezel: bezel(s); break;
     case Kind::Black: break;
@@ -127,7 +127,7 @@ void Backdrop::mirror(const BackdropScene& s)
   SDL_RenderFillRect(s.renderer, nullptr);
 }
 
-// The wall colour, fairly bright next to the picture and fading to black at the edges of the window.
+// The maze colour, fairly bright next to the picture and fading to black at the edges of the window.
 void Backdrop::gradient(const BackdropScene& s, background::Rgb colour)
 {
   const float W = static_cast<float>(s.windowW), H = static_cast<float>(s.windowH);

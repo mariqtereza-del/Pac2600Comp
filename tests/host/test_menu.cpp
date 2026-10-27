@@ -81,7 +81,8 @@ int main()
   m.press(Key::Down);
   expect(m.cursor() == Item::Resume, "Down from the last row goes to the first");
   m.press(Key::Down); m.press(Key::Down);
-  expect(m.cursor() == Item::Game, "third row is the game");
+  expect(m.cursor() == Item::GameOptions && m.press(Key::Right) == Result::None && m.page() == Page::Main, "third row is Game options; Right does not open it");
+  expect(m.press(Key::Enter) == Result::None && m.page() == Page::GameOptions && m.cursor() == Item::Game, "Enter opens the Game options page on the game");
   m.press(Key::Right);
   expect(m.choice().game == 6, "Right: next game");
   for(int i = 0; i < 3; ++i) m.press(Key::Right);
@@ -98,10 +99,15 @@ int main()
   expect(!m.choice().leftA, "and back to B");
   m.press(Key::Down); m.press(Key::Enter);
   expect(m.choice().rightA, "Enter also moves a value on (right difficulty to A)");
-  m.press(Key::Down); m.press(Key::Right);
-  expect(m.choice().blackWhite, "TV type to black and white");
+  expect(m.cursor() == Item::RightDifficulty, "the Game options page ends with the right difficulty, then Back");
   m.press(Key::Down);
-  expect(m.cursor() == Item::Graphics, "the row after TV type is the Graphics options page (Stage I7)");
+  expect(m.cursor() == Item::Back && m.press(Key::Right) == Result::None && m.page() == Page::GameOptions, "Right on Back does nothing");
+  expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::GameOptions, "Enter on Back returns to the main page, on Game options");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Graphics && m.press(Key::Enter) == Result::None && m.page() == Page::Graphics, "the Graphics options page");
+  m.press(Key::Down); m.press(Key::Right);
+  expect(m.cursor() == Item::TvType && m.choice().blackWhite, "TV type is on the Graphics options page: black and white");
+  expect(m.press(Key::Escape) == Result::None && m.page() == Page::Main && m.cursor() == Item::Graphics, "Escape goes back to the main page");
   m.press(Key::Down);
   expect(m.cursor() == Item::Quit && m.press(Key::Right) == Result::None, "Right on Quit does nothing");
   expect(m.press(Key::Enter) == Result::Quit && !m.isOpen(), "Enter on Quit quits and closes");
@@ -115,20 +121,24 @@ int main()
   expect(m.press(Key::Enter) == Result::StartGame && !m.isOpen() && m.choice().game == 5, "Enter on New game starts, with the choice");
 
   // The rows and the explanations: one marked row, every row has an explanation, none too wide, the facts of the games are in it.
-  m.open(start);
-  expect(m.rows().size() == Menu::items().size(), "one text row per item");
-  for(std::size_t i = 0; i < Menu::items().size(); ++i) {
-    int marked = 0;
-    for(const std::string& r : m.rows()) if(r.rfind("> ", 0) == 0) ++marked;
-    expect(marked == 1, "exactly one marked row at item " + std::to_string(i));
-    const std::vector<std::string> words = m.explanation(60);
-    bool fits = !words.empty();
-    for(const std::string& w : words) if(w.size() > 60) fits = false;
-    expect(fits, "the explanation of item " + std::to_string(i) + " exists and fits 60 columns");
-    m.press(Key::Down);
+  for(int page = 0; page < 3; ++page) {  // the main page, then Game options, then Graphics options
+    m.open(start);
+    if(page > 0) { for(int i = 0; i < 1 + page; ++i) m.press(Key::Down); m.press(Key::Enter); }
+    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : Menu::graphicsItems();
+    expect(m.rows().size() == items.size(), "one text row per item, page " + std::to_string(page));
+    for(std::size_t i = 0; i < items.size(); ++i) {
+      int marked = 0;
+      for(const std::string& r : m.rows()) if(r.rfind("> ", 0) == 0) ++marked;
+      expect(marked == 1, "exactly one marked row at item " + std::to_string(i) + " of page " + std::to_string(page));
+      const std::vector<std::string> words = m.explanation(60);
+      bool fits = !words.empty();
+      for(const std::string& w : words) if(w.size() > 60) fits = false;
+      expect(fits, "the explanation of item " + std::to_string(i) + " of page " + std::to_string(page) + " exists and fits 60 columns");
+      m.press(Key::Down);
+    }
   }
   m.open(start);
-  m.press(Key::Down); m.press(Key::Down);
+  m.press(Key::Down); m.press(Key::Down); m.press(Key::Enter);  // Game options, on the game
   // the table rows of the explanation: "<mark> <game> <level> <speed>", the marked one is game 5
   auto row = [&](const std::string& startsWith) {
     for(const std::string& w : m.explanation(64)) if(w.rfind(startsWith, 0) == 0) return w;
@@ -177,10 +187,10 @@ int main()
   allowed.open(in);
   refused.open(in);
   expect(allowed.paused() && refused.paused(), "an open menu pauses the game");
-  allowed.key(Key::Down); allowed.key(Key::Down); allowed.key(Key::Right);  // game 2
-  refused.key(Key::Down); refused.key(Key::Down); refused.key(Key::Right);
-  allowed.key(Key::Up);  // New game
-  refused.key(Key::Up);
+  allowed.key(Key::Down); allowed.key(Key::Down); allowed.key(Key::Enter); allowed.key(Key::Right);  // Game options, game 2
+  refused.key(Key::Down); refused.key(Key::Down); refused.key(Key::Enter); refused.key(Key::Right);
+  allowed.key(Key::Escape); allowed.key(Key::Up);  // back, up to New game
+  refused.key(Key::Escape); refused.key(Key::Up);
   expect(allowed.key(Key::Enter) == Result::StartGame && !allowed.paused(), "starting closes the menu and lets the game run");
   refused.key(Key::Enter);
   int selectFrames = 0, resetCount = 0;

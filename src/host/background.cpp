@@ -11,9 +11,6 @@ namespace {
 struct Entry { const char* setting; const char* title; };
 constexpr Entry kEntries[kKinds] = {{"black", "Black"},       {"glow", "Ambient glow"},   {"mirror", "Mirrored edge"}, {"solid", "Solid colour"},
                                     {"gradient", "Gradient"}, {"arcade", "Arcade panel"}, {"bezel", "TV bezel"}};
-struct Solid { const char* name; Rgb colour; };
-const Solid kSolids[kSolidChoices] = {{"Wall colour", {16, 24, 96}}, {"Dark grey", {38, 38, 42}}, {"Navy", {16, 24, 96}},
-                                      {"Maroon", {88, 18, 28}},      {"Forest green", {18, 70, 36}}, {"Plum", {70, 28, 88}}};
 }  // namespace
 
 const char* settingName(Kind kind) { return kEntries[static_cast<int>(kind)].setting; }
@@ -35,11 +32,9 @@ Rgb scaled(Rgb colour, double factor)
   return {one(colour.r), one(colour.g), one(colour.b)};
 }
 
-const char* solidName(int choice) { return kSolids[std::clamp(choice, 0, kSolidChoices - 1)].name; }
-Rgb solidColour(int choice) { return kSolids[std::clamp(choice, 0, kSolidChoices - 1)].colour; }
-int nextSolid(int choice, int step) { return ((choice + step) % kSolidChoices + kSolidChoices) % kSolidChoices; }
+Rgb defaultMazeColour() { return {16, 24, 96}; }
 
-Rgb dominantColour(const std::uint32_t* pixels, int width, int firstRow, int rows)
+Rgb mazeColour(const std::uint32_t* pixels, int width, int firstRow, int rows)
 {
   std::array<int, 4096> count{};
   for(int y = firstRow; y < firstRow + rows; ++y)
@@ -49,7 +44,7 @@ Rgb dominantColour(const std::uint32_t* pixels, int width, int firstRow, int row
       ++count[((c >> 20) & 15) << 8 | ((c >> 12) & 15) << 4 | ((c >> 4) & 15)];
     }
   const int best = static_cast<int>(std::max_element(count.begin(), count.end()) - count.begin());
-  if(count[static_cast<std::size_t>(best)] == 0) return solidColour(0);
+  if(count[static_cast<std::size_t>(best)] == 0) return defaultMazeColour();
   auto channel = [](int nibble) { return static_cast<std::uint8_t>(nibble * 16 + 8); };  // the middle of the 16 steps
   return {channel(best >> 8), channel((best >> 4) & 15), channel(best & 15)};
 }

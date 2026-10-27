@@ -21,7 +21,7 @@ int main()
 {
   using namespace background;
 
-  // The choices: seven, each with its own setting name, written and read back; anything unknown is Black.
+  // The choices: seven (the Solid colour one has no colour to choose: it is the maze colour), each with its own setting name, written and read back; anything unknown is Black.
   expect(kKinds == 7, "seven backgrounds (the owner's list without the player's own image)");
   std::vector<std::string> seen;
   for(int i = 0; i < kKinds; ++i) {
@@ -35,19 +35,17 @@ int main()
   expect(next(Kind::Bezel, 1) == Kind::Black && next(Kind::Black, -1) == Kind::Bezel && next(Kind::Black, 1) == Kind::Glow, "Left and Right wrap round the list");
 
   // Colours.
-  expect(kSolidChoices == 6 && std::string(solidName(0)) == "Wall colour", "six solid colours, the first is the wall colour");
-  expect(nextSolid(5, 1) == 0 && nextSolid(0, -1) == 5 && nextSolid(2, 1) == 3, "solid colours wrap round");
   expect(scaled({100, 200, 255}, 0.5) == Rgb{50, 100, 128}, "scaled halves the channels (rounded)");
   expect(scaled({200, 200, 200}, 2.0) == Rgb{255, 255, 255} && scaled({10, 10, 10}, -1.0) == Rgb{0, 0, 0}, "scaled stays within 0..255");
 
-  // The wall colour: the most frequent colour that is not black. A 4 x 4 picture: 9 black, 5 blue, 2 red (rows 1..3 are looked at).
+  // The maze colour: the most frequent colour that is not black. A 4 x 4 picture: 9 black, 5 blue, 2 red (rows 1..3 are looked at).
   std::vector<std::uint32_t> pic(16, 0);
   for(int i : {4, 5, 6, 7, 8}) pic[static_cast<std::size_t>(i)] = 0x000000C0;
   for(int i : {9, 10}) pic[static_cast<std::size_t>(i)] = 0x00C00000;
-  const Rgb dom = dominantColour(pic.data(), 4, 0, 4);
+  const Rgb dom = mazeColour(pic.data(), 4, 0, 4);
   expect(dom.b > 150 && dom.r < 40 && dom.g < 40, "the dominant colour is the blue, not the black");
-  expect(dominantColour(pic.data(), 4, 3, 1) == solidColour(0), "all-black rows give the default navy");
-  expect(dominantColour(pic.data(), 4, 2, 2).r > 150, "only the rows asked for are counted (rows 2-3 hold the red)");
+  expect(mazeColour(pic.data(), 4, 3, 1) == defaultMazeColour(), "all-black rows give the default navy");
+  expect(mazeColour(pic.data(), 4, 2, 2).r > 150, "only the rows asked for are counted (rows 2-3 hold the red)");
 
   // The blurred grid: a 4 x 4 picture whose left half is 200 grey and right half 100 grey, cut into 2 x 2 blocks.
   std::vector<std::uint32_t> halves(16);
@@ -91,7 +89,7 @@ int main()
   menu::Menu m;
   menu::Choice start;
   m.open(start);
-  expect(m.page() == Page::Main && m.choice().background == Kind::Black && m.choice().solid == 0, "the menu opens on the main page with the black background");
+  expect(m.page() == Page::Main && m.choice().background == Kind::Black, "the menu opens on the main page with the black background");
   m.press(Key::Up); m.press(Key::Up);
   expect(m.cursor() == Item::Graphics, "the Graphics row is just above Quit");
   expect(m.press(Key::Right) == Result::None && m.page() == Page::Main, "Right on the Graphics row does not open it (only Enter does)");
@@ -106,27 +104,31 @@ int main()
   expect(m.choice().background == Kind::Black, "seven steps round the list are back at Black");
   m.press(Key::Left);
   expect(m.choice().background == Kind::Bezel, "Left from Black wraps to the TV bezel");
-  m.press(Key::Down); m.press(Key::Right);
-  expect(m.cursor() == Item::SolidColour && m.choice().solid == 1, "Solid colour row: next colour");
   m.press(Key::Down);
-  expect(m.cursor() == Item::Preview && !m.previewing(), "third row: hide the menu");
+  expect(m.cursor() == Item::TvType && !m.choice().blackWhite, "second row: the TV type (moved here in Stage I8)");
+  m.press(Key::Right);
+  expect(m.choice().blackWhite, "Right: black and white");
+  m.press(Key::Left);
+  expect(!m.choice().blackWhite, "Left: colour again");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Preview && !m.previewing(), "third row: hide the menu"); 
   m.press(Key::Right);
   expect(!m.previewing(), "Right does not hide the menu");
   m.press(Key::Enter);
   expect(m.previewing() && m.isOpen(), "Enter hides the menu for a look");
-  expect(m.press(Key::Left) == Result::None && !m.previewing() && m.choice().solid == 1, "any key brings it back and does nothing else");
+  expect(m.press(Key::Left) == Result::None && !m.previewing() && m.choice().background == Kind::Bezel, "any key brings it back and does nothing else");
   m.press(Key::Down);
   expect(m.cursor() == Item::Back, "fourth row: back");
   expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::Graphics, "Enter on Back returns to the main page, on the Graphics row");
-  expect(m.choice().background == Kind::Bezel && m.choice().solid == 1, "the choices are kept");
+  expect(m.choice().background == Kind::Bezel, "the choice is kept");
   m.press(Key::Enter);
   expect(m.page() == Page::Graphics, "open the page again");
   expect(m.press(Key::Escape) == Result::None && m.page() == Page::Main && m.isOpen(), "Escape on the page goes back, it does not close the menu");
   expect(m.press(Key::Escape) == Result::Resume && !m.isOpen(), "Escape on the main page closes the menu");
   menu::Choice kept;
-  kept.background = Kind::Arcade; kept.solid = 4;
+  kept.background = Kind::Arcade;
   m.open(kept);
-  expect(m.choice().background == Kind::Arcade && m.choice().solid == 4 && m.page() == Page::Main, "the menu opens with the background that is in use, on the main page");
+  expect(m.choice().background == Kind::Arcade && m.page() == Page::Main, "the menu opens with the background that is in use, on the main page");
 
   // Every row of the page has an explanation that fits, for every background.
   m.open(kept);

@@ -31,8 +31,8 @@ class Backdrop {
   Backdrop(const Backdrop&) = delete;
   Backdrop& operator=(const Backdrop&) = delete;
 
-  // Black draws nothing. `solid` is the choice of background::solidColour (0 = the maze's wall colour).
-  void draw(const BackdropScene& scene, background::Kind kind, int solid);
+  // Black draws nothing.
+  void draw(const BackdropScene& scene, background::Kind kind);
 
  private:
   void glow(const BackdropScene& s);

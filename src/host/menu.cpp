@@ -48,14 +48,30 @@ std::vector<std::string> wrap(const std::string& text, int width)
 
 const std::vector<Item>& Menu::items()
 {
-  static const std::vector<Item> all = {Item::Resume, Item::NewGame, Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::TvType, Item::Graphics, Item::Quit};
+  static const std::vector<Item> all = {Item::Resume, Item::NewGame, Item::GameOptions, Item::Graphics, Item::Quit};
+  return all;
+}
+
+const std::vector<Item>& Menu::gameItems()
+{
+  static const std::vector<Item> all = {Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::Back};
   return all;
 }
 
 const std::vector<Item>& Menu::graphicsItems()
 {
-  static const std::vector<Item> all = {Item::Background, Item::SolidColour, Item::Preview, Item::Back};
+  static const std::vector<Item> all = {Item::Background, Item::TvType, Item::Preview, Item::Back};
   return all;
+}
+
+const std::vector<Item>& Menu::shown() const
+{
+  switch(page_) {
+    case Page::GameOptions: return gameItems();
+    case Page::Graphics: return graphicsItems();
+    case Page::Main: break;
+  }
+  return items();
 }
 
 void Menu::open(const Choice& current)
@@ -73,7 +89,7 @@ Result Menu::press(Key key)
   if(!open_) return Result::None;
   const int count = static_cast<int>(shown().size());
   if(previewing_) { previewing_ = false; return Result::None; }  // any key brings the menu back
-  if(key == Key::Escape && page_ == Page::Graphics) { leaveGraphics(); return Result::None; }
+  if(key == Key::Escape && page_ != Page::Main) { leaveSubPage(); return Result::None; }
   if(key == Key::Escape) { open_ = false; return Result::Resume; }
   if(key == Key::Up) { cursor_ = (cursor_ + count - 1) % count; return Result::None; }
   if(key == Key::Down) { cursor_ = (cursor_ + 1) % count; return Result::None; }
@@ -82,10 +98,10 @@ Result Menu::press(Key key)
     case Item::Game:
       choice_.game = (choice_.game - 1 + step + kGames) % kGames + 1;
       return Result::None;
+    case Item::GameOptions: if(key == Key::Enter) { page_ = Page::GameOptions; cursor_ = 0; } return Result::None;
     case Item::Graphics: if(key == Key::Enter) { page_ = Page::Graphics; cursor_ = 0; } return Result::None;
-    case Item::Back: if(key == Key::Enter) leaveGraphics(); return Result::None;
+    case Item::Back: if(key == Key::Enter) leaveSubPage(); return Result::None;
     case Item::Background: choice_.background = background::next(choice_.background, step); return Result::None;
-    case Item::SolidColour: choice_.solid = background::nextSolid(choice_.solid, step); return Result::None;
     case Item::Preview: if(key == Key::Enter) previewing_ = true; return Result::None;
     case Item::Players: choice_.twoPlayers = !choice_.twoPlayers; return Result::None;
     case Item::LeftDifficulty: choice_.leftA = !choice_.leftA; return Result::None;
@@ -98,10 +114,11 @@ Result Menu::press(Key key)
   return Result::None;
 }
 
-void Menu::leaveGraphics()
+void Menu::leaveSubPage()
 {
+  const Item opener = page_ == Page::GameOptions ? Item::GameOptions : Item::Graphics;
   page_ = Page::Main;
-  cursor_ = static_cast<int>(std::find(items().begin(), items().end(), Item::Graphics) - items().begin());
+  cursor_ = static_cast<int>(std::find(items().begin(), items().end(), opener) - items().begin());
 }
 
 std::vector<std::string> Menu::rows() const
@@ -111,16 +128,16 @@ std::vector<std::string> Menu::rows() const
   for(Item item : shown()) {
     switch(item) {
       case Item::Resume: std::snprintf(text, sizeof text, "Resume"); break;
-      case Item::NewGame: std::snprintf(text, sizeof text, "New game with the choices below"); break;
+      case Item::NewGame: std::snprintf(text, sizeof text, "New game with the Game options"); break;
       case Item::Game: std::snprintf(text, sizeof text, "Game:             < %d of %d >", choice_.game, kGames); break;
       case Item::Players: std::snprintf(text, sizeof text, "Players:          < %d >", choice_.twoPlayers ? 2 : 1); break;
       case Item::LeftDifficulty: std::snprintf(text, sizeof text, "Left difficulty:  < %c >", choice_.leftA ? 'A' : 'B'); break;
       case Item::RightDifficulty: std::snprintf(text, sizeof text, "Right difficulty: < %c >", choice_.rightA ? 'A' : 'B'); break;
-      case Item::TvType: std::snprintf(text, sizeof text, "TV type:          < %s >", choice_.blackWhite ? "Black & white" : "Colour"); break;
+      case Item::TvType: std::snprintf(text, sizeof text, "TV type:      < %s >", choice_.blackWhite ? "Black & white" : "Colour"); break;
+      case Item::GameOptions: std::snprintf(text, sizeof text, "Game options..."); break;
       case Item::Graphics: std::snprintf(text, sizeof text, "Graphics options..."); break;
       case Item::Quit: std::snprintf(text, sizeof text, "Quit the program"); break;
       case Item::Background: std::snprintf(text, sizeof text, "Background:   < %s >", background::title(choice_.background)); break;
-      case Item::SolidColour: std::snprintf(text, sizeof text, "Solid colour: < %s >", background::solidName(choice_.solid)); break;
       case Item::Preview: std::snprintf(text, sizeof text, "Hide this menu to look at the background"); break;
       case Item::Back: std::snprintf(text, sizeof text, "Back to the main menu"); break;
     }
@@ -136,8 +153,8 @@ static std::string backgroundText(background::Kind kind)
     case background::Kind::Black: return "Black: nothing is drawn, as on the original TV. This is the usual setting.";
     case background::Kind::Glow: return "Ambient glow: the picture's own colours, enlarged and blurred, glow behind it and follow the action, like the backlight of a modern TV.";
     case background::Kind::Mirror: return "Mirrored edge: the picture is reflected as in a mirror on every side, darkened.";
-    case background::Kind::Solid: return "Solid colour: one flat colour. Choose it on the next row.";
-    case background::Kind::Gradient: return "Gradient: the colour of the maze walls, fairly bright next to the picture and fading to black at the edge of the window.";
+    case background::Kind::Solid: return "Solid colour: one flat colour, the colour of the maze (the blue it is drawn on, not its walls), as it is right now.";
+    case background::Kind::Gradient: return "Gradient: the colour of the maze, fairly bright next to the picture and fading to black at the edge of the window.";
     case background::Kind::Arcade:
       return "Arcade panel: in the style of an arcade cabinet, the title, the score of each player and the lives left, drawn large around the picture. "
              "Where the space is too thin for readable text only the frame is drawn.";
@@ -196,10 +213,13 @@ std::vector<std::string> Menu::explanation(int width) const
       break;
     case Item::TvType:
       paragraph("The console's TV Type switch. Colour is the usual setting. Black & white makes the game use shades of grey, as it did on a black and white TV. "
-                "Nothing else changes.");
+                "Nothing else changes. It takes effect at once.");
+      break;
+    case Item::GameOptions:
+      paragraph("The game to play (1 to 8), one or two players, and the left and right difficulty switches. New game starts with these choices. Enter opens the page.");
       break;
     case Item::Graphics:
-      paragraph("What fills the space around the picture when the window is not the picture's shape. Enter opens the page.");
+      paragraph("How the picture looks: what fills the space around it, and the TV type (colour or black and white). Enter opens the page.");
       break;
     case Item::Quit:
       paragraph("Close the program. (The window's close button does the same.)");
@@ -211,10 +231,6 @@ std::vector<std::string> Menu::explanation(int width) const
       paragraph(backgroundText(choice_.background));
       break;
     }
-    case Item::SolidColour:
-      paragraph("The colour used by the Solid colour background (it changes nothing for the other backgrounds). Wall colour is the colour the walls of the maze "
-                "are drawn in right now; the others are fixed.");
-      break;
     case Item::Preview:
       paragraph("Hides this menu so that the background can be seen in full; any key brings the menu back. The game stays paused.");
       break;

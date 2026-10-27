@@ -52,12 +52,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     SDL_SetWindowTitle(window, title.c_str());
   };
   retitle();
-  // Stage I7: what fills the space around the picture, remembered in settings.ini (background=black|glow|mirror|solid|gradient|arcade|bezel, solid_colour=0..5)
+  // Stage I7: what fills the space around the picture, remembered in settings.ini (background=black|glow|mirror|solid|gradient|arcade|bezel)
   screen.backgroundKind = background::fromSetting(settings::get(options.settingsFile, "background"));
-  {
-    const std::string solid = settings::get(options.settingsFile, "solid_colour");
-    screen.solidChoice = solid.empty() ? 0 : std::clamp(std::atoi(solid.c_str()), 0, background::kSolidChoices - 1);
-  }
 
   // The game and its sound run on their own thread (DECISIONS.md T-D8-2), so that a window that is being dragged or
   // resized, which freezes this thread on Windows, cannot starve the sound card. This thread only shows the pictures.
@@ -182,15 +178,15 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         plan.clear();
         auto tap = [&](double at, SDL_Scancode code) { plan.push_back({at, code, true}); plan.push_back({at + 0.05, code, false}); };
         tap(1.0, SDL_SCANCODE_ESCAPE);
-        tap(1.5, SDL_SCANCODE_DOWN); tap(1.6, SDL_SCANCODE_DOWN);   // to the Game row
+        tap(1.5, SDL_SCANCODE_DOWN); tap(1.6, SDL_SCANCODE_DOWN); tap(1.65, SDL_SCANCODE_RETURN);  // open the Game options page (Stage I8), on the Game row
         tap(1.7, SDL_SCANCODE_RIGHT); tap(1.8, SDL_SCANCODE_RIGHT);  // game 3
         tap(1.85, SDL_SCANCODE_DOWN);                                // the Players row stays at one player (Stage I6)
         tap(1.9, SDL_SCANCODE_DOWN); tap(2.0, SDL_SCANCODE_RIGHT);  // left difficulty to A
-        tap(2.05, SDL_SCANCODE_UP); tap(2.1, SDL_SCANCODE_UP); tap(2.2, SDL_SCANCODE_UP);  // New game
+        tap(2.05, SDL_SCANCODE_ESCAPE); tap(2.1, SDL_SCANCODE_UP);   // back to the main page (on Game options), up to New game
         tap(3.0, SDL_SCANCODE_RETURN);                               // go
         tap(6.0, SDL_SCANCODE_ESCAPE); tap(6.5, SDL_SCANCODE_ESCAPE);  // open and close again
         tap(6.6, SDL_SCANCODE_ESCAPE);                                // Stage I7: open the menu, go to Graphics options, choose the Mirrored edge, back, close
-        for(int i = 0; i < 7; ++i) tap(6.7 + 0.1 * i, SDL_SCANCODE_DOWN);
+        for(int i = 0; i < 3; ++i) tap(6.7 + 0.1 * i, SDL_SCANCODE_DOWN);
         tap(7.4, SDL_SCANCODE_RETURN); tap(7.5, SDL_SCANCODE_RIGHT); tap(7.6, SDL_SCANCODE_RIGHT);
         tap(7.7, SDL_SCANCODE_ESCAPE); tap(7.8, SDL_SCANCODE_ESCAPE);
         tap(8.2, SDL_SCANCODE_ESCAPE); tap(8.4, SDL_SCANCODE_UP); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
@@ -214,7 +210,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     if(!menuSession.isOpen()) {
       if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
       keyboard.releaseAll();  // no direction may stay held while the game is stopped
-      menuSession.open(keyboard.input(), screen.backgroundKind, screen.solidChoice);
+      menuSession.open(keyboard.input(), screen.backgroundKind);
       menuOpenedAtFrame = framesNow();
       ++menuOpens;
       return true;
@@ -230,11 +226,9 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       if(!menuSession.isOpen()) menuFramesRun += framesNow() - menuOpenedAtFrame;
       const menu::Choice& c = menuSession.menu().choice();
       keyboard.setSwitches(c.leftA, c.rightA, c.blackWhite);  // the switches take effect at once; the loop below remembers them in settings.ini
-      if(c.background != screen.backgroundKind || c.solid != screen.solidChoice) {  // so does the background, which is remembered here
+      if(c.background != screen.backgroundKind) {  // so does the background, which is remembered here
         screen.backgroundKind = c.background;
-        screen.solidChoice = c.solid;
         settings::set(options.settingsFile, "background", background::settingName(c.background));
-        settings::set(options.settingsFile, "solid_colour", std::to_string(c.solid));
       }
       if(result == menu::Result::Quit) running = false;
       return true;

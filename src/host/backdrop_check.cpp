@@ -55,17 +55,15 @@ bool backdropCheck(SDL_Renderer* renderer, const std::string& pngPrefix, const s
   layout::Rect where{};
   int windowW = 0, windowH = 0;
 
-  struct Case { background::Kind kind; int solid; std::string name; };
-  std::vector<Case> cases = {{background::Kind::Black, 0, "black"}, {background::Kind::Glow, 0, "glow"}, {background::Kind::Mirror, 0, "mirror"},
-                             {background::Kind::Gradient, 0, "gradient"}, {background::Kind::Arcade, 0, "arcade"}, {background::Kind::Bezel, 0, "bezel"}};
-  for(int c = 0; c < background::kSolidChoices; ++c) cases.push_back({background::Kind::Solid, c, "solid" + std::to_string(c)});
+  struct Case { background::Kind kind; std::string name; };
+  const std::vector<Case> cases = {{background::Kind::Black, "black"}, {background::Kind::Glow, "glow"}, {background::Kind::Mirror, "mirror"}, {background::Kind::Solid, "solid"},
+                                   {background::Kind::Gradient, "gradient"}, {background::Kind::Arcade, "arcade"}, {background::Kind::Bezel, "bezel"}};
 
   for(const Case& c : cases) {
     Screen screen;
     screen.renderer = renderer;
     screen.view = view;
     screen.backgroundKind = c.kind;
-    screen.solidChoice = c.solid;
     screen.ram = ram.data();
     for(int i = 0; i < 40; ++i)  // several times, so that the glow has eased all the way to the picture
       if(!screen.show(pixels, emulator.height())) { report << "result=texture failed\n"; return false; }
@@ -87,7 +85,15 @@ bool backdropCheck(SDL_Renderer* renderer, const std::string& pngPrefix, const s
     const double lit = outside > 0 ? static_cast<double>(outsideLit) / static_cast<double>(outside) : 1.0;
     // How much of the space each background is meant to fill: the glow is dim and the arcade panel leaves most of it plain navy (all lit); Black must stay black.
     const double wanted = c.kind == background::Kind::Black ? 0.0 : c.kind == background::Kind::Glow ? 0.2 : 0.5;
-    const bool good = insideDifferent == 0 && (c.kind == background::Kind::Black ? outsideLit == 0 : lit >= wanted);
+    // Solid colour is the maze colour: the blue the maze is drawn on, which is not the tan of its walls (blue clearly above red), and it is exactly what mazeColour says.
+    bool mazeOk = true;
+    if(c.kind == background::Kind::Solid) {
+      const background::Rgb want = background::mazeColour(emulator.colours().data(), Emulator::kWidth, layout::kGameTop, layout::kGameBottom - layout::kGameTop);
+      const std::uint32_t corner = shot.pixels[0];
+      mazeOk = corner == ((static_cast<std::uint32_t>(want.r) << 16) | (static_cast<std::uint32_t>(want.g) << 8) | want.b) && want.b > want.r + 40;
+      report << "solid_corner_pixel=" << std::hex << corner << std::dec << " maze_colour_rgb=" << int(want.r) << ',' << int(want.g) << ',' << int(want.b) << " maze_colour_ok=" << (mazeOk ? "yes" : "no") << '\n';
+    }
+    const bool good = mazeOk && insideDifferent == 0 && (c.kind == background::Kind::Black ? outsideLit == 0 : lit >= wanted);
     report << c.name << ": picture_pixels_different_from_black=" << insideDifferent << " space_outside_picture=" << outside << " lit_fraction=" << lit
            << (good ? "  ok" : "  FAIL") << '\n';
     ok = ok && good;

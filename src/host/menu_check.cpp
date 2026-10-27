@@ -73,20 +73,22 @@ std::string scenario(const std::string& name, const std::vector<std::uint8_t>& r
   if(run.framesRun != before) return "the game ran while the menu was open";
   if(run.session.menu().choice().game != menu::gameOfSelect(run.ram(0x84))) return "the menu did not open on the game number the game has";
 
-  // Keys: down to Game, right to the wanted game; down to the left difficulty (A for even games), down twice to TV type (B&W for games 3 and 6);
-  // up to New game; Enter.
+  // Keys: down to Game options and in, right to the wanted game; down to the left difficulty (A for even games); back out and down to Graphics
+  // options and in, down to TV type (B&W for games 3 and 6); back out, up to New game; Enter.
   using menu::Key;
   const bool leftA = game % 2 == 0, blackWhite = game % 3 == 0;
-  run.session.key(Key::Down); run.session.key(Key::Down);
+  run.session.key(Key::Down); run.session.key(Key::Down); run.session.key(Key::Enter);
   const int rights = (game - run.session.menu().choice().game + menu::kGames) % menu::kGames;
   for(int i = 0; i < rights; ++i) run.session.key(Key::Right);
   run.session.key(Key::Down);  // to Players
   while(run.session.menu().choice().twoPlayers != twoPlayers) run.session.key(Key::Right);
   run.session.key(Key::Down);
   if(leftA) run.session.key(Key::Right);
-  run.session.key(Key::Down); run.session.key(Key::Down);
+  run.session.key(Key::Escape);  // back to the main page, on Game options
+  run.session.key(Key::Down); run.session.key(Key::Enter); run.session.key(Key::Down);  // Graphics options, TV type
   if(blackWhite) run.session.key(Key::Enter);
-  for(int i = 0; i < 5; ++i) run.session.key(Key::Up);
+  run.session.key(Key::Escape);
+  run.session.key(Key::Up); run.session.key(Key::Up);  // Game options, New game
   const menu::Choice chosen = run.session.menu().choice();
   run.keyboard.setSwitches(chosen.leftA, chosen.rightA, chosen.blackWhite);  // as the window does after each key
   if(chosen.game != game || chosen.twoPlayers != twoPlayers || chosen.leftA != leftA || chosen.blackWhite != blackWhite) return "the keys did not give the choice wanted";
@@ -153,9 +155,9 @@ std::string turnsScenario(const std::string& name, const std::vector<std::uint8_
   run.idle(200);
   using menu::Key;
   run.session.open(run.keyboard.input());
-  run.session.key(Key::Down); run.session.key(Key::Down); run.session.key(Key::Down);  // to Players
-  run.session.key(Key::Right);
-  run.session.key(Key::Up); run.session.key(Key::Up);  // to New game
+  run.session.key(Key::Down); run.session.key(Key::Down); run.session.key(Key::Enter);  // Game options
+  run.session.key(Key::Down); run.session.key(Key::Right);  // Players
+  run.session.key(Key::Escape); run.session.key(Key::Up);  // back to the main page, up to New game
   if(!run.session.menu().choice().twoPlayers || run.session.key(Key::Enter) != menu::Result::StartGame) return "the menu did not start a two-player game";
   run.idle(menu::GameStarter::framesFor(menu::pressesNeeded(run.ram(0x84), 1, true)) + 3);
   if((run.ram(0xE6) & 0xC0) != 0x40) return "the game is not a two-player game on player 1's turn";

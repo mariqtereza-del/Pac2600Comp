@@ -23,10 +23,10 @@ namespace {
 class NativeSnapshot : public SmoothSnapshot {
 public:
   game::Smoother smoother;
-  void compose(double progress, std::vector<SmoothRect>& out) const override
+  void compose(double progress, bool glide, std::vector<SmoothRect>& out) const override
   {
     std::vector<game::Rect> rects;
-    smoother.compose(progress, game::Smoother::Options{true, false}, rects);   // glide, and only the ghost of this step (the original's flicker, Stage I9.5)
+    smoother.compose(progress, game::Smoother::Options{glide, false}, rects);   // glide, and only the ghost of this step (the original's flicker, Stage I9.5)
     out.clear();
     for(const game::Rect& r : rects) out.push_back({r.x, r.y, r.w, r.h, ntsc::kPalette[r.colour >> 1]});
   }

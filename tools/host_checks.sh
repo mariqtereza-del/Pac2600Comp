@@ -42,6 +42,9 @@ for prog in pacman2600 pacman2600_ref; do
   want=75; [ "$prog" = pacman2600_ref ] && want=30
   has "$prog menu remembered the frame rate" "$P/s14.ini" "frame_rate=$want"
   has "$prog menu remembered the frame counter" "$P/s14.ini" "frame_counter=on"
+  # Stage I10: the HDR rows of Game options (HDR turned off, the highlights taken from 50 to 60)
+  has "$prog menu remembered HDR off" "$P/s14.ini" "hdr=off"
+  has "$prog menu remembered the highlights" "$P/s14.ini" "hdr_highlights=60"
   # Stage I7: every background in the real window at three window shapes (tall, wide, square); the picture is never touched and the space is filled
   for size in 1280x1024 1920x1080 1000x1000; do
     "$EXE" --backdrop-check "$P/bd_$size" "$ROM" --window $size --settings "$P/s15.ini"; check "$prog backdrop-check $size" $? 0; has "$prog backdrop result $size" "$P/bd_$size.txt" "result=OK"
@@ -85,6 +88,9 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
     for fps in 60 144 unlocked; do
       "$EXE" --replay "$P/rec1.inputs" --fps $fps --trace "$P/trace_$fps.txt" --timed 8 "$P/rt_$fps.txt" "$ROM" --mute --settings "$P/s18_$fps.ini"; check "$prog replay at frame rate $fps" $? 0
     done
+    # Stage I10.3: the highlights at three slider positions: only the moving objects change, each by exactly the scale, nothing above what the screen can show
+    "$EXE" --hdr-highlights "$P/hdrhl" "$ROM" --window 1280x960 --settings "$P/s21.ini"; check "$prog hdr-highlights" $? 0
+    if grep -q "^result=OK" "$P/hdrhl.txt"; then echo "PASS  $prog HDR highlights are exactly the scale and only on the moving objects"; elif grep -q "SKIPPED" "$P/hdrhl.txt"; then echo "PASS  $prog HDR highlights check skipped (Windows is not in HDR mode here)"; else echo "FAIL  $prog HDR highlights"; fail=1; fi
     for mode in on off; do   # Stage I10.1: HDR on and off give the same game
       "$EXE" --hdr $mode --replay "$P/rec1.inputs" --trace "$P/trace_hdr_$mode.txt" --timed 8 "$P/rh_$mode.txt" "$ROM" --mute --settings "$P/s20_$mode.ini"; check "$prog replay with HDR $mode" $? 0
     done

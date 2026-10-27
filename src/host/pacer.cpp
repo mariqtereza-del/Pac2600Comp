@@ -1,5 +1,8 @@
 // Running the game at the console's own speed, steered by the sound card, and the audio check.
 // (Stage G4.7: moved out of main.cpp, the code is unchanged.)
+#include <algorithm>
+#include <sstream>
+
 #include "pacer.hpp"
 #include "options.hpp"
 #include "rom_choice.hpp"
@@ -72,6 +75,19 @@ bool audioCheck(const Options& o)
   const bool ok = st.underruns == 0 && st.pushedFrames > 0;
   report << "result=" << (ok ? "OK" : "CHECK underruns or no sound pushed") << '\n';
   return ok;
+}
+
+std::string frameTimingText(const std::vector<float>& computeMs, const std::vector<float>& lateMs, double firstPictureMs, double presentHz)
+{
+  auto percentile = [](std::vector<float> v, double p) { if(v.empty()) return 0.0f; std::sort(v.begin(), v.end()); return v[static_cast<size_t>(p * static_cast<double>(v.size() - 1))]; };
+  auto mean = [](const std::vector<float>& v) { double s = 0; for(float x : v) s += x; return v.empty() ? 0.0 : s / static_cast<double>(v.size()); };
+  const auto over = [](const std::vector<float>& v, float limit) { return std::count_if(v.begin(), v.end(), [limit](float x) { return x > limit; }); };
+  std::ostringstream log;
+  log << "frames_compute_over_16_7_ms=" << over(computeMs, 16.7f) << "\nframes_compute_over_5_ms=" << over(computeMs, 5.0f)
+      << "\nframe_compute_ms_mean=" << mean(computeMs) << "\nframe_compute_ms_p99=" << percentile(computeMs, 0.99) << "\nframe_compute_ms_max=" << percentile(computeMs, 1.0)
+      << "\nframe_start_late_ms_p99=" << percentile(lateMs, 0.99) << "\nframe_start_late_ms_max=" << percentile(lateMs, 1.0)
+      << "\nfirst_picture_ms=" << firstPictureMs << "\npresent_hz_simulated=" << presentHz << '\n';
+  return log.str();
 }
 
 }  // namespace host

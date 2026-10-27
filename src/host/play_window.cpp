@@ -77,20 +77,28 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   framerate::Rate rate = framerate::fromSetting(options.fps.empty() ? settings::get(options.settingsFile, "frame_rate") : options.fps);
   if(!emulator.smoothAvailable() && framerate::smooth(rate)) rate = framerate::Rate::Fps60;   // the reference program has no smooth motion
   // Stage I10.1: whether the renderer is in the HDR colour space; made again in the other one when Windows turns HDR on or off (SDL_EVENT_WINDOW_HDR_STATE_CHANGED)
-  const bool hdrWanted = hdrWantedBy(options);
+  bool hdrWanted = hdrWantedBy(options);
+  int hdrPercent = std::clamp(std::atoi(settings::get(options.settingsFile, "hdr_highlights").empty() ? "50" : settings::get(options.settingsFile, "hdr_highlights").c_str()), 0, 100);
+  hdr::ScreenState screenState = screenStateOf(window);
   bool hdrPipeline = SDL_GetNumberProperty(SDL_GetRendererProperties(renderer), SDL_PROP_RENDERER_OUTPUT_COLORSPACE_NUMBER, 0) == SDL_COLORSPACE_SRGB_LINEAR;
-  std::atomic<bool> smoothWanted{framerate::smooth(rate)};
+  std::atomic<bool> smoothWanted{framerate::smooth(rate) || (hdrPipeline && hdrPercent > 0)};
+  // how many times brighter than normal white the moving objects are drawn (1 = not brighter: no HDR, or the slider at 0)
+  auto highlight = [&]() { return hdr::highlightScale(static_cast<float>(hdrPercent) / 100.0f, screenState, hdrPipeline); };
+  // the layers and the look-ahead are made when the frame rate is smooth, and for the highlights, which are drawn on the moving objects alone
+  auto updateSmoothWanted = [&]() { smoothWanted = framerate::smooth(rate) || (hdrPipeline && hdrPercent > 0); };
   bool counterOn = settings::get(options.settingsFile, "frame_counter") == "on";   // the pictures-a-second counter (menu, Game options; frame_counter=on|off)
   auto applyVSync = [&]() { SDL_SetRenderVSync(renderer, (options.presentHz > 0 || framerate::unlocked(rate)) ? 0 : 1); };
   applyVSync();   // the screen's own wait is off while the frame rate is unlocked
   auto adaptToHdr = [&]() {
-    const bool want = hdr::useHdr(hdrWanted, screenStateOf(window));
-    if(want == hdrPipeline) return;
+    screenState = screenStateOf(window);
+    const bool want = hdr::useHdr(hdrWanted, screenState);
+    if(want == hdrPipeline) { updateSmoothWanted(); return; }
     screen.dropTextures();
     SDL_DestroyRenderer(renderer);
     renderer = createRenderer(window, want, &hdrPipeline);
     screen.renderer = renderer;
     if(renderer) applyVSync();
+    updateSmoothWanted();
   };
   const double stepSeconds = 1.0 / frameRate(options);   // the length of one game step
   std::mutex lock;  // guards the shared picture below
@@ -194,7 +202,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     if(!menuSession.isOpen()) {
       if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
       keyboard.releaseAll();  // no direction may stay held while the game is stopped
-      menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable()});
+      menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), hdrWanted, hdrPercent, screenState.hdrOn});
       menuOpenedAtFrame = framesNow();
       ++menuOpens;
       return true;
@@ -214,9 +222,19 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         screen.backgroundKind = c.background;
         settings::set(options.settingsFile, "background", background::settingName(c.background));
       }
+      if(c.hdr != hdrWanted) {   // HDR on or off takes effect at once and is remembered
+        hdrWanted = c.hdr;
+        settings::set(options.settingsFile, "hdr", hdrWanted ? "on" : "off");
+        adaptToHdr();
+      }
+      if(c.hdrStrength != hdrPercent) {   // the brightness of the highlights, in percent
+        hdrPercent = c.hdrStrength;
+        settings::set(options.settingsFile, "hdr_highlights", std::to_string(hdrPercent));
+        updateSmoothWanted();
+      }
       if(c.frameRate != rate) {   // the frame rate takes effect at once and is remembered
         rate = c.frameRate;
-        smoothWanted = framerate::smooth(rate);
+        updateSmoothWanted();
         applyVSync();
         settings::set(options.settingsFile, "frame_rate", framerate::settingName(rate));
       }
@@ -239,6 +257,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   double picturesPerSecond = 0;
   long long lastShownFrame = -1, lastGrid = -2;
   std::shared_ptr<const SmoothSnapshot> lastSnapshot;   // the snapshot the picture on screen was made from
+  std::shared_ptr<const SmoothSnapshot> shownSnapshot;  // the snapshot of the game picture on screen (30 and 60: highlights are drawn on it)
   std::array<std::uint8_t, 128> shownRam{};
   int height = 0;
   bool failed = false, stalled = false;
@@ -280,7 +299,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     long long frameNow = 0;
     {
       std::lock_guard<std::mutex> guard(lock);
-      if(!sharedPixels.empty() && sharedFrame != shownFrame && framerate::shownStep(rate, sharedFrame) == sharedFrame) { pixels = sharedPixels; height = sharedHeight; shownRam = sharedRam; }
+      if(!sharedPixels.empty() && sharedFrame != shownFrame && framerate::shownStep(rate, sharedFrame) == sharedFrame) { pixels = sharedPixels; height = sharedHeight; shownRam = sharedRam; shownSnapshot = sharedSnapshot; }
       snapshot = sharedSnapshot;
       snapshotAt = sharedStepAt;
       if(snapshot) height = sharedHeight;
@@ -301,15 +320,19 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       const long long grid = framerate::pictureIndex(rate, nowSeconds);   // the picture of this moment of the clock: made once, kept until the next
       if(grid < 0 || grid != lastGrid || !lastSnapshot) {
         const double progress = framerate::progress(framerate::pictureTime(rate, nowSeconds), static_cast<double>(snapshotAt) / 1e9, stepSeconds);
-        snapshot->compose(progress, moving);
+        snapshot->compose(progress, true, moving);
         lastSnapshot = snapshot;
         lastGrid = grid;
         ++picturesShown;
       }
-      if(!screen.show(lastSnapshot->background, height, &moving)) { failed = true; running = false; }
+      if(!screen.show(lastSnapshot->background, height, &moving, highlight())) { failed = true; running = false; }
     } else {
       lastSnapshot.reset();
-      if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
+      const bool brighter = highlight() > 1.0f && shownSnapshot && !shownSnapshot->background.empty();
+      if(brighter) {   // 30 and 60 with HDR highlights: the game's own picture, its moving objects drawn again brighter on top (the same pixels, composed exactly as the original)
+        shownSnapshot->compose(0.0, false, moving);
+        if(!screen.show(shownSnapshot->background, height, &moving, highlight())) { failed = true; running = false; }
+      } else if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
       if(frameNow != lastShownFrame && framerate::shownStep(rate, frameNow) == frameNow) ++picturesShown;   // a new picture of the game
     }
     lastShownFrame = frameNow;
@@ -320,17 +343,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       picturesAtMark = picturesShown;
       markAt = t;
     }
-    if(counterOn) {
-      char text[96];
-      std::snprintf(text, sizeof text, "Frame rate %s%s   %.0f pictures a second", framerate::title(rate), framerate::smooth(rate) ? " (smooth)" : "", picturesPerSecond);
-      SDL_SetRenderScale(renderer, 2.0f, 2.0f);
-      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-      const SDL_FRect back{2.0f, 2.0f, static_cast<float>(std::strlen(text)) * 8.0f + 8.0f, 14.0f};
-      SDL_RenderFillRect(renderer, &back);
-      SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-      SDL_RenderDebugText(renderer, 6.0f, 6.0f, text);
-      SDL_SetRenderScale(renderer, 1.0f, 1.0f);
-    }
+    if(counterOn) drawFrameCounter(renderer, rate, picturesPerSecond);
     const Uint64 beforePresent = SDL_GetTicksNS();
     SDL_RenderPresent(renderer);
     ++presents;
@@ -356,20 +369,13 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         << "\ngame_thread_gaps=" << gapLog << "\nclock=" << (usedSoundClock ? "sound card" : "PC timer") << "\naverage_clock_correction_ppm=" << averageCorrectionPpm
         << "\npresents=" << presents << "\npresents_per_second=" << static_cast<double>(presents) / elapsed
         << "\nhdr_pipeline=" << (hdrPipeline ? "yes" : "no") << "\nwindows_hdr_on=" << (screenStateOf(window).hdrOn ? "yes" : "no")
-        << "\nwindows_hdr_headroom=" << screenStateOf(window).headroom
+        << "\nwindows_hdr_headroom=" << screenStateOf(window).headroom << "\nhdr_wanted=" << (hdrWanted ? "yes" : "no") << "\nhdr_highlights_percent=" << hdrPercent
         << "\nframe_rate=" << framerate::settingName(rate) << "\npictures_shown=" << picturesShown << "\npictures_per_second=" << static_cast<double>(picturesShown) / elapsed
         << "\ngame_frames=" << sharedFrame << "\ngame_frames_per_second=" << static_cast<double>(sharedFrame) / elapsed
         << "\nrefreshes_per_game_frame_1=" << refreshHistogram[0] << "\nrefreshes_per_game_frame_2=" << refreshHistogram[1]
         << "\nrefreshes_per_game_frame_3=" << refreshHistogram[2] << "\nrefreshes_per_game_frame_4=" << refreshHistogram[3]
         << "\nrefreshes_per_game_frame_5_or_more=" << refreshHistogram[4] << "\ngame_frames_never_shown=" << framesNeverShown << '\n';
-    // Stage H6: the game thread's own timing (the game thread has ended, so the lists can be read here)
-    auto percentile = [](std::vector<float> v, double p) { if(v.empty()) return 0.0f; std::sort(v.begin(), v.end()); return v[static_cast<size_t>(p * static_cast<double>(v.size() - 1))]; };
-    auto mean = [](const std::vector<float>& v) { double s = 0; for(float x : v) s += x; return v.empty() ? 0.0 : s / static_cast<double>(v.size()); };
-    const auto over = [](const std::vector<float>& v, float limit) { return std::count_if(v.begin(), v.end(), [limit](float x) { return x > limit; }); };
-    log << "frames_compute_over_16_7_ms=" << over(computeMs, 16.7f) << "\nframes_compute_over_5_ms=" << over(computeMs, 5.0f)
-        << "\nframe_compute_ms_mean=" << mean(computeMs) << "\nframe_compute_ms_p99=" << percentile(computeMs, 0.99) << "\nframe_compute_ms_max=" << percentile(computeMs, 1.0)
-        << "\nframe_start_late_ms_p99=" << percentile(lateMs, 0.99) << "\nframe_start_late_ms_max=" << percentile(lateMs, 1.0)
-        << "\nfirst_picture_ms=" << firstPictureMs.load() << "\npresent_hz_simulated=" << options.presentHz << '\n';
+    log << frameTimingText(computeMs, lateMs, firstPictureMs.load(), options.presentHz);   // Stage H6: the game thread's own timing (it has ended, so the lists can be read here)
     if(options.pushMenu) {
       char flags[16];
       std::snprintf(flags, sizeof flags, "%02x", emulator.ram()[0xE7 - 0x80]);

@@ -54,7 +54,7 @@ const std::vector<Item>& Menu::items()
 
 const std::vector<Item>& Menu::gameItems()
 {
-  static const std::vector<Item> all = {Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::FrameRate, Item::FrameCounter, Item::Back};
+  static const std::vector<Item> all = {Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::FrameRate, Item::FrameCounter, Item::Hdr, Item::HdrHighlights, Item::Back};
   return all;
 }
 
@@ -112,6 +112,11 @@ Result Menu::press(Key key)
       while(!choice_.smoothAvailable && framerate::smooth(choice_.frameRate));   // a program without smooth motion goes round 30 and 60 only
       return Result::None;
     case Item::FrameCounter: choice_.frameCounter = !choice_.frameCounter; return Result::None;
+    case Item::Hdr: choice_.hdr = !choice_.hdr; return Result::None;
+    case Item::HdrHighlights:   // a slider in steps of 5; Left and Right stop at the ends, Enter goes round
+      if(key == Key::Enter) choice_.hdrStrength = (choice_.hdrStrength + 5) % 105;
+      else choice_.hdrStrength = std::clamp(choice_.hdrStrength + 5 * step, 0, 100);
+      return Result::None;
     case Item::Resume: if(key == Key::Enter) { open_ = false; return Result::Resume; } return Result::None;
     case Item::NewGame: if(key == Key::Enter) { open_ = false; return Result::StartGame; } return Result::None;
     case Item::Quit: if(key == Key::Enter) { open_ = false; return Result::Quit; } return Result::None;
@@ -140,6 +145,14 @@ std::vector<std::string> Menu::rows() const
       case Item::RightDifficulty: std::snprintf(text, sizeof text, "Right difficulty: < %c >", choice_.rightA ? 'A' : 'B'); break;
       case Item::FrameRate: std::snprintf(text, sizeof text, "Frame rate:       < %s >", framerate::title(choice_.frameRate)); break;
       case Item::FrameCounter: std::snprintf(text, sizeof text, "Frame counter:    < %s >", choice_.frameCounter ? "On" : "Off"); break;
+      case Item::Hdr: std::snprintf(text, sizeof text, "HDR:              < %s >", choice_.hdr ? "On" : "Off"); break;
+      case Item::HdrHighlights: {
+        const int filled = choice_.hdrStrength / 5;   // 20 steps
+        std::string bar(static_cast<std::size_t>(filled), '#');
+        bar.append(static_cast<std::size_t>(20 - filled), '-');
+        std::snprintf(text, sizeof text, "HDR highlights:   < [%s] %3d%% >", bar.c_str(), choice_.hdrStrength);
+        break;
+      }
       case Item::TvType: std::snprintf(text, sizeof text, "TV type:      < %s >", choice_.blackWhite ? "Black & white" : "Colour"); break;
       case Item::GameOptions: std::snprintf(text, sizeof text, "Game options..."); break;
       case Item::Graphics: std::snprintf(text, sizeof text, "Graphics options..."); break;
@@ -190,6 +203,26 @@ static void appendFrameRateText(std::vector<std::string>& out, int width, bool s
     paragraph("THIS IS THE REFERENCE PROGRAM (pacman2600_ref.exe, the one with the emulator inside, used only by the tests): it has no smooth motion, so only 30 and 60 "
               "are offered. Start pacman2600.exe for all six.");
   }
+}
+
+// The explanation of the two HDR rows. The original game has no HDR: the picture stays exactly as it was, at normal white, and only Pac-Man, the ghosts and the
+// power pills are drawn brighter, on a screen that is in HDR mode.
+static void appendHdrText(std::vector<std::string>& out, int width, bool windowsHdr, bool slider)
+{
+  auto paragraph = [&](const std::string& text) {
+    for(const std::string& line : wrap(text, width)) out.push_back(line);
+  };
+  if(slider)
+    paragraph("How bright the highlights are: 0 draws no highlight at all (the plain picture), 100 takes them as bright as the screen can show, up to four times "
+              "brighter than white. Left and Right change it by 5. The maze, the score and the menu always stay at normal white.");
+  else
+    paragraph("On a screen that Windows has in HDR mode, the picture goes out through the HDR pipeline: the same picture at normal white, with Pac-Man, the ghosts and "
+              "the power pills drawn brighter than white (see HDR highlights). The 1981 game has no HDR; this is only an addition. Off (or Windows not in HDR "
+              "mode) gives the plain picture. The game, its speed and its sound are never changed.");
+  out.push_back("");
+  paragraph(windowsHdr ? "Windows is in HDR mode for this screen, so these choices show now."
+                       : "Windows is NOT in HDR mode for this screen, so these rows change nothing yet. Turn HDR on in Windows (Settings, System, Display, HDR); "
+                         "this program does not change that setting. It then switches itself on while the program runs.");
 }
 
 // The table of the eight games in the explanation of the Game row: the start level and Pac-Man's speed, the chosen game marked.
@@ -249,6 +282,10 @@ std::vector<std::string> Menu::explanation(int width) const
       break;
     case Item::FrameCounter:
       paragraph("Shows a small counter in the top left corner of the window: how many different pictures are shown each second. Nothing else changes.");
+      break;
+    case Item::Hdr:
+    case Item::HdrHighlights:
+      appendHdrText(out, width, choice_.hdrWindows, cursor() == Item::HdrHighlights);
       break;
     case Item::TvType:
       paragraph("The console's TV Type switch. Colour is the usual setting. Black & white makes the game use shades of grey, as it did on a black and white TV. "

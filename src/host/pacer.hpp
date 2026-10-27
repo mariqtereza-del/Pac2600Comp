@@ -65,6 +65,9 @@ private:
   long long frames_ = 0;
 };
 
+// The lines of the run log about how long each game frame took to compute and how late it started (Stage H6): milliseconds, in the order the frames ran.
+std::string frameTimingText(const std::vector<float>& computeMs, const std::vector<float>& lateMs, double firstPictureMs, double presentHz);
+
 // Sleeps until the time given (nanoseconds from now), in small steps and ending with a precise wait, so that frames start
 // within a fraction of a millisecond of when they are due.
 void waitFor(Uint64 ns);

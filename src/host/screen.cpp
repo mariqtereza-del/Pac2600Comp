@@ -178,4 +178,17 @@ bool helpCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::st
   return ok;
 }
 
+void drawFrameCounter(SDL_Renderer* renderer, framerate::Rate rate, double picturesPerSecond)
+{
+  char text[96];
+  std::snprintf(text, sizeof text, "Frame rate %s%s   %.0f pictures a second", framerate::title(rate), framerate::smooth(rate) ? " (smooth)" : "", picturesPerSecond);
+  SDL_SetRenderScale(renderer, 2.0f, 2.0f);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  const SDL_FRect back{2.0f, 2.0f, static_cast<float>(std::strlen(text)) * 8.0f + 8.0f, 14.0f};
+  SDL_RenderFillRect(renderer, &back);
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+  SDL_RenderDebugText(renderer, 6.0f, 6.0f, text);
+  SDL_SetRenderScale(renderer, 1.0f, 1.0f);
+}
+
 }  // namespace host

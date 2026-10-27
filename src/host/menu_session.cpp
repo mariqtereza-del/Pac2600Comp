@@ -16,6 +16,9 @@ void Session::open(const controls::Input& switches, const Window& window)
   now.frameRate = window.frameRate;
   now.frameCounter = window.frameCounter;
   now.smoothAvailable = window.smoothAvailable;
+  now.hdr = window.hdr;
+  now.hdrStrength = window.hdrStrength;
+  now.hdrWindows = window.hdrWindows;
   menu_.open(now);
   open_ = true;
 }

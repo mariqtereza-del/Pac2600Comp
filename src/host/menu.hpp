@@ -14,7 +14,8 @@ namespace menu {
 enum class Key { Up, Down, Left, Right, Enter, Escape };
 enum class Item { Resume, NewGame, GameOptions, Graphics, Quit,  // the main page
                   Game, Players, LeftDifficulty, RightDifficulty,  // the "Game options" page (Stage I8)
-                  FrameRate, FrameCounter,                 // and its last two rows before Back (Stage I9.5)
+                  FrameRate, FrameCounter,                 // and its next two rows (Stage I9.5)
+                  Hdr, HdrHighlights,                      // and the last two before Back (Stage I10, D-016)
                   Background, TvType, Preview,                     // the "Graphics options" page (Stage I7; the TV type moved there in I8)
                   Back };                                          // the last row of both pages
 enum class Page { Main, GameOptions, Graphics };
@@ -30,6 +31,9 @@ struct Choice {
   background::Kind background = background::Kind::Black;  // what fills the space around the picture (Stage I7); takes effect at once
   framerate::Rate frameRate = framerate::Rate::Fps60;      // how often the window shows a new picture (Stage I9.5); takes effect at once
   bool frameCounter = false;                               // a small counter of the pictures a second in the corner of the window; takes effect at once
+  bool hdr = true;                                         // HDR output when Windows is in HDR mode (Stage I10); on unless the owner turns it off
+  int hdrStrength = 50;                                    // how bright the highlights are, 0 to 100 (percent of the way to the most the screen can show)
+  bool hdrWindows = false;                                 // Windows is in HDR mode for the screen now (for the explanation only)
   bool smoothAvailable = true;                             // false in the reference program, which has no smooth motion: the rates above 60 are skipped
 };
 

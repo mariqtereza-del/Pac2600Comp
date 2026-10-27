@@ -20,8 +20,10 @@ class SmoothSnapshot {
 public:
   virtual ~SmoothSnapshot() = default;
   std::vector<std::uint32_t> background;  // kWidth x height colours, the picture without Pac-Man and the ghosts
-  // The moving objects `progress` (0 up to 1) of the way through the step, with no delay: Pac-Man, the power pills and the ghost of this step (the original draws one ghost a step, which is its flicker).
-  virtual void compose(double progress, std::vector<SmoothRect>& out) const = 0;
+  // The moving objects `progress` (0 up to 1) of the way through the step, with no delay: Pac-Man, the power pills and the ghost of this step (the original draws one
+  // ghost a step, which is its flicker). With `glide` false they are where the game's own picture of the step has them (drawn over the picture without them, the
+  // result is that picture, pixel for pixel: the HDR highlights at 60 use this).
+  virtual void compose(double progress, bool glide, std::vector<SmoothRect>& out) const = 0;
 };
 
 class Emulator {

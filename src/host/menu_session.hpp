@@ -24,6 +24,9 @@ class Session {
     framerate::Rate frameRate = framerate::Rate::Fps60;
     bool frameCounter = false;
     bool smoothAvailable = true;
+    bool hdr = true;
+    int hdrStrength = 50;
+    bool hdrWindows = false;
   };
   void open(const controls::Input& switches, const Window& window = Window());  // the choices start where the game, the switches and the window are now
   Result key(Key key);                           // sends a key to the open menu; StartGame has been queued for the game thread when it returns

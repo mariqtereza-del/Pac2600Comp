@@ -184,4 +184,98 @@ bool hdrCheck(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pn
   return ok;
 }
 
+
+namespace {
+
+// The window as linear light, 1.0 = normal white, three floats a pixel (an HDR renderer only).
+bool readLinear(SDL_Renderer* renderer, std::vector<float>& out, int& w, int& h, float sdrWhite)
+{
+  SDL_Surface* raw = SDL_RenderReadPixels(renderer, nullptr);
+  if(!raw) return false;
+  if(raw->format != SDL_PIXELFORMAT_RGBA64_FLOAT) { SDL_DestroySurface(raw); return false; }
+  w = raw->w;
+  h = raw->h;
+  out.resize(static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 3);
+  for(int y = 0; y < h; ++y) {
+    const auto* in = reinterpret_cast<const std::uint16_t*>(static_cast<const std::uint8_t*>(raw->pixels) + y * raw->pitch);
+    for(int x = 0; x < w; ++x)
+      for(int c = 0; c < 3; ++c) out[static_cast<std::size_t>((y * w + x) * 3 + c)] = halfToFloat(in[4 * x + c]) / sdrWhite;
+  }
+  SDL_DestroySurface(raw);
+  return true;
+}
+
+}  // namespace
+
+// --hdr-highlights: Pac-Man, the pills and the ghost drawn brighter than white (Stage I10.3). The same moment of a game is drawn with the slider at 0, 50 and 100;
+// against the picture with the slider at 0 only the moving objects may differ, each of them by exactly the scale the arithmetic gives, and nothing may go above the
+// most the screen can show.
+bool hdrHighlights(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view)
+{
+  std::ofstream report(pngPrefix + ".txt");
+  std::vector<std::uint8_t> bytes;
+  if(!report || !readRomBytes(romPath, bytes)) return false;
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(romPath), bytes); !error.empty()) { report << "result=" << error << '\n'; return false; }
+  const hdr::ScreenState state = screenStateOf(window);
+  report << "windows_hdr_on=" << (state.hdrOn ? "yes" : "no") << "\nsdr_white=" << state.sdrWhite << "\nheadroom=" << state.headroom << '\n';
+  if(!hdr::useHdr(true, state)) { report << "result=SKIPPED (Windows is not in HDR mode for this screen; nothing to draw)\n"; return true; }
+  SDL_DestroyRenderer(renderer);
+  bool gotHdr = false;
+  renderer = createRenderer(window, true, &gotHdr);
+  if(!renderer || !gotHdr) { report << "result=the HDR renderer could not be made\n"; return false; }
+  emulator.setSmooth(true);
+  for(int f = 0; f < 1500; ++f) {   // a game with Pac-Man walking along the bottom corridor, as --smooth-shot
+    emulator.setConsoleReset(f >= 120 && f < 130);
+    const bool left = f >= 400 && ((f - 400) / 90) % 2 == 0;
+    emulator.setJoystick(false, false, left, f >= 400 && !left, false);
+    emulator.runFrame();
+  }
+  const std::shared_ptr<const SmoothSnapshot> snapshot = emulator.smoothSnapshot();
+  if(!snapshot) { report << "result=no smooth picture\n"; return false; }
+  std::vector<SmoothRect> moving;
+  snapshot->compose(0.0, false, moving);
+  Screen screen;
+  screen.renderer = renderer;
+  screen.view = view;
+  screen.view.mode = layout::Mode::Sharp;
+  const int strengths[3] = {0, 50, 100};
+  std::vector<float> pictures[3];
+  int w = 0, h = 0;
+  float maxValue[3] = {0, 0, 0};
+  for(int i = 0; i < 3; ++i) {
+    const float scale = hdr::highlightScale(static_cast<float>(strengths[i]) / 100.0f, state, true);
+    for(int k = 0; k < 3; ++k) if(!screen.show(snapshot->background, emulator.height(), &moving, scale)) { report << "result=texture failed\n"; return false; }
+    if(!readLinear(renderer, pictures[i], w, h, state.sdrWhite)) { report << "result=cannot read the window as float\n"; return false; }
+    for(float v : pictures[i]) maxValue[i] = std::max(maxValue[i], v);
+    report << "strength_" << strengths[i] << "_scale=" << scale << "\nstrength_" << strengths[i] << "_brightest_value=" << maxValue[i] << '\n';
+  }
+  // against the plain picture (slider 0): what differs, and by how much
+  bool ok = true;
+  for(int i = 1; i < 3; ++i) {
+    const float scale = hdr::highlightScale(static_cast<float>(strengths[i]) / 100.0f, state, true);
+    long long same = 0, brighter = 0, wrong = 0;
+    for(std::size_t j = 0; j < pictures[0].size(); j += 3) {
+      float ratioLow = 1e9f, ratioHigh = 0;
+      bool anyLit = false, anyChanged = false;
+      for(int c = 0; c < 3; ++c) {
+        const float a = pictures[0][j + static_cast<std::size_t>(c)], b = pictures[i][j + static_cast<std::size_t>(c)];
+        if(std::fabs(a - b) > 0.0005f) anyChanged = true;
+        if(a > 0.02f) { anyLit = true; ratioLow = std::min(ratioLow, b / a); ratioHigh = std::max(ratioHigh, b / a); }
+      }
+      if(!anyChanged) ++same;
+      else {
+        ++brighter;
+        if(!(anyLit && ratioLow > scale * 0.97f && ratioHigh < scale * 1.03f)) ++wrong;   // every lit channel is scale times what it was
+      }
+    }
+    report << "strength_" << strengths[i] << "_pixels_unchanged=" << same << "\nstrength_" << strengths[i] << "_pixels_brighter=" << brighter << "\nstrength_" << strengths[i]
+           << "_pixels_changed_by_other_than_the_scale=" << wrong << '\n';
+    ok = ok && brighter > 100 && wrong == 0 && maxValue[i] <= hdr::ceilingOf(state) * 1.02f;
+  }
+  ok = ok && maxValue[0] <= 1.02f;   // the plain picture is never above normal white
+  report << "result=" << (ok ? "OK" : "FAIL") << '\n';
+  return ok;
+}
+
 }  // namespace host

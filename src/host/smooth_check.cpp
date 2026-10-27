@@ -80,7 +80,7 @@ bool smoothShot(SDL_Renderer* renderer, const std::string& pngPrefix, const std:
     ++steps;
     Shot shots[3], plain[3];
     for(int m = 0; m < 3; ++m) {
-      snapshot->compose(moments[m], moving);
+      snapshot->compose(moments[m], true, moving);
       if(!screen.show(snapshot->background, emulator.height(), &moving)) { report << "result=texture failed\n"; return false; }
       saved += readWindow(renderer, shots[m], pngPrefix + "_s" + std::to_string(step) + "_p" + std::to_string(m) + ".png");
       if(!screen.show(snapshot->background, emulator.height(), nullptr)) return false;   // the same without the moving objects
@@ -94,7 +94,7 @@ bool smoothShot(SDL_Renderer* renderer, const std::string& pngPrefix, const std:
   for(int f = 0; f < 4; ++f) emulator.runFrame();
   long long greyRects = 0, colouredRects = 0;
   if(const std::shared_ptr<const SmoothSnapshot> snapshot = emulator.smoothSnapshot()) {
-    snapshot->compose(0.5, moving);
+    snapshot->compose(0.5, true, moving);
     for(const SmoothRect& r : moving) {
       const std::uint32_t red = (r.colour >> 16) & 0xFF, green = (r.colour >> 8) & 0xFF, blue = r.colour & 0xFF;
       const auto spread = std::max({red, green, blue}) - std::min({red, green, blue});   // the console's grey is not quite exact in the palette

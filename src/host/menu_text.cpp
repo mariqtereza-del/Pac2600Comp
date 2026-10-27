@@ -143,6 +143,26 @@ void appendControlsText(std::vector<std::string>& out, int width, controls::Sche
 }
 
 
+// The explanation of the Light bar and Rumble rows (Stage I15, D-021). Both only send things out to the pad; the game is never changed.
+void appendFeedbackText(std::vector<std::string>& out, int width, feedback::Light light, bool lightRow, bool padConnected)
+{
+  auto paragraph = [&](const std::string& text) {
+    for(const std::string& line : wrap(text, width)) out.push_back(line);
+  };
+  if(lightRow) {
+    paragraph("The colour of the light bar on the back of a DualShock 4. Off leaves it as the pad has it. Pac-Man yellow is yellow; Maze colour follows the colour "
+              "of the maze; Lives left is green with three or more lives, yellow with two, red with the last one. It takes effect at once and is remembered.");
+    out.push_back("");
+    paragraph(std::string("Now: ") + feedback::lightTitle(light) + ".");
+  } else {
+    paragraph("Makes the pad rumble when something happens in the game: a short tick for a power pill, a thump for a ghost eaten and a long rumble when Pac-Man is "
+              "caught. Light is gentle, Strong is firm. It takes effect at once and is remembered.");
+  }
+  out.push_back("");
+  paragraph(padConnected ? "A pad is connected. A pad without a light bar or motors simply ignores this."
+                         : "No pad is connected now: this works as soon as one is plugged in.");
+}
+
 // The explanation of the Players and the two difficulty rows (moved out of menu.cpp in Stage I13).
 void appendPlayersText(std::vector<std::string>& out, int width, Item item)
 {

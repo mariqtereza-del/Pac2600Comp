@@ -13,8 +13,17 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
 {
   return std::thread([&options, &stop]() {
       SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");   // the test window may not be in front: SDL would otherwise ignore the pad (test only)
+      struct Outputs { std::atomic<int> rumbles{0}, leds{0}, ledGreen{0}; } outputs;   // what the window told the pad (Stage I15)
       SDL_VirtualJoystickDesc desc;
       SDL_INIT_INTERFACE(&desc);
+      desc.userdata = &outputs;
+      desc.Rumble = [](void* u, Uint16 low, Uint16 high) -> bool { Outputs* o = static_cast<Outputs*>(u); if(low || high) ++o->rumbles; return true; };
+      desc.SetLED = [](void* u, Uint8 r, Uint8 g, Uint8 b) -> bool {
+        Outputs* o = static_cast<Outputs*>(u);
+        ++o->leds;
+        if(r == 0 && g == 200 && b == 0) ++o->ledGreen;   // the "lives left" colour for three lives
+        return true;
+      };
       desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
       desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
       desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
@@ -42,6 +51,7 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
       tap(8.0, SDL_GAMEPAD_BUTTON_TOUCHPAD);         // open once more
       for(int i = 0; i < 6; ++i) tap(8.4 + 0.2 * i, SDL_GAMEPAD_BUTTON_DPAD_DOWN);   // down to Quit
       tap(10.0, SDL_GAMEPAD_BUTTON_SOUTH);           // Cross: Quit
+      if(!options.replayFile.empty()) plan.clear();   // with --replay the pad is only plugged in: a recording plays the game, and the pad's rumble and light are looked at
       const Uint64 t0 = SDL_GetTicksNS();
       for(const Step& step : plan) {
         while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) SDL_Delay(5);
@@ -51,6 +61,8 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
       while(!stop.load()) SDL_Delay(20);
       SDL_CloseJoystick(joystick);
       SDL_DetachVirtualJoystick(id);
+      std::ofstream note(options.settingsFile + ".pad.txt", std::ios::app);   // what the pad was told while the window ran
+      note << "rumble_pulses=" << outputs.rumbles.load() << (char)10 << "light_bar_colours_sent=" << outputs.leds.load() << (char)10 << "light_bar_green_sent=" << outputs.ledGreen.load() << (char)10;
   });
 }
 

@@ -231,6 +231,8 @@ Every project term in one line of plain English. New terms are added in the stag
 | Feedback (shader) | A picture a pass drew one frame earlier, handed back to the shader as an input. The GDV filter uses it for the afterglow (a bright spot fading away) and for the average brightness. |
 | Translator | A small program of ours (`tools\i11_slang_to_hlsl.py`) that rewrites the libretro shaders from slang into HLSL so that the GDV filter runs here. It is run by hand; its output is checked into Git. |
 | Volume / Mute | The "Sound options" page of the Escape menu (Stage I12). The volume slider (0 to 100) makes the sound the game plays quieter, and Mute plays no sound; neither changes the game or the sound it makes, only how loud the sound card is told to play it. |
+| Light bar | The coloured light on the back of a DualShock 4. The Control options page can set its colour (Stage I15). |
+| Rumble | The vibration motors of a game pad. The Control options page can make the pad rumble at the game's events (Stage I15). |
 | Pad family | The kind of game pad the program thinks it has (Stage I14): PlayStation (a DualShock 4), Xbox or other. It only decides which names the buttons are shown with. |
 | Button symbols | The cross, circle, square and triangle of a PlayStation pad, drawn as small coloured pictures in the key list (F1) and the Control options page (Stage I14). |
 | Keyboard choice | The "Control options" page of the Escape menu (Stage I13): whether the arrow keys, the letter keys W A S D, or both move the joystick. Both is the usual setting. |

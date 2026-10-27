@@ -56,7 +56,7 @@ const std::vector<Item>& Menu::items()
 
 const std::vector<Item>& Menu::controlItems()
 {
-  static const std::vector<Item> all = {Item::KeyboardKeys, Item::Back};
+  static const std::vector<Item> all = {Item::KeyboardKeys, Item::LightBar, Item::RumbleMotors, Item::Back};
   return all;
 }
 
@@ -119,6 +119,8 @@ Result Menu::press(Key key)
     case Item::SoundOptions: if(key == Key::Enter) { page_ = Page::Sound; cursor_ = 0; } return Result::None;
     case Item::ControlOptions: if(key == Key::Enter) { page_ = Page::Controls; cursor_ = 0; } return Result::None;
     case Item::KeyboardKeys: choice_.keyboard = controls::nextScheme(choice_.keyboard, step); return Result::None;
+    case Item::LightBar: choice_.light = feedback::nextLight(choice_.light, step); return Result::None;
+    case Item::RumbleMotors: choice_.rumble = feedback::nextRumble(choice_.rumble, step); return Result::None;
     case Item::Volume:   // a slider in steps of 5, like the HDR highlights: Left and Right stop at the ends, Enter goes round
       if(key == Key::Enter) choice_.volume = (choice_.volume + 5) % 105;
       else choice_.volume = std::clamp(choice_.volume + 5 * step, 0, 100);
@@ -190,6 +192,8 @@ std::vector<std::string> Menu::rows() const
       case Item::SoundOptions: std::snprintf(text, sizeof text, "Sound options..."); break;
       case Item::ControlOptions: std::snprintf(text, sizeof text, "Control options..."); break;
       case Item::KeyboardKeys: std::snprintf(text, sizeof text, "Keyboard:  < %s >", controls::schemeTitle(choice_.keyboard)); break;
+      case Item::LightBar: std::snprintf(text, sizeof text, "Light bar:  < %s >", feedback::lightTitle(choice_.light)); break;
+      case Item::RumbleMotors: std::snprintf(text, sizeof text, "Rumble:    < %s >", feedback::rumbleTitle(choice_.rumble)); break;
       case Item::TvType: std::snprintf(text, sizeof text, "TV type:      < %s >", choice_.blackWhite ? "Black & white" : "Colour"); break;
       case Item::GameOptions: std::snprintf(text, sizeof text, "Game options..."); break;
       case Item::Graphics: std::snprintf(text, sizeof text, "Graphics options..."); break;
@@ -267,6 +271,10 @@ std::vector<std::string> Menu::explanation(int width) const
       appendHdrText(out, width, choice_.hdrWindows, cursor() == Item::HdrHighlights);
       break;
     case Item::ControlOptions:
+    case Item::LightBar:
+    case Item::RumbleMotors:
+      appendFeedbackText(out, width, cursor() == Item::LightBar ? choice_.light : feedback::Light::Off, cursor() == Item::LightBar, choice_.padConnected);
+      break;
     case Item::KeyboardKeys:
       appendControlsText(out, width, choice_.keyboard, cursor() == Item::KeyboardKeys, choice_.pad, choice_.padConnected);
       break;

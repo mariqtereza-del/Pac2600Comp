@@ -110,7 +110,14 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   # Stage I14: a virtual DualShock 4 played through the real window (--push-pad): Options starts a game; Triangle, L1 and R1 flip the console switches (Triangle twice:
   # back to Colour); the touchpad opens the menu, the D-pad and Cross go to Control options, Right chooses the arrow keys, Circle goes back, the PS button closes the
   # menu; the touchpad opens it again and the D-pad and Cross choose Quit. The game must not run while the menu is open.
+  printf 'light_bar=lives\n' > "$P/s22.ini"   # Stage I15: the light bar follows the lives (three at the start: green)
   "$EXE" --push-pad --timed 14 "$P/padwin.txt" "$ROM" --mute --settings "$P/s22.ini"; check "$prog push-pad" $? 0
+  has "$prog pad: the light bar was told green for three lives" "$P/s22.ini.pad.txt" "light_bar_green_sent=[1-9]"
+  # Stage I15: the rumble, in a recorded game with three deaths (BL-048: nobody plays): the first death comes at about 13 s, so one pulse is required
+  printf 'rumble=strong\nlight_bar=lives\n' > "$P/s23.ini"
+  "$EXE" --push-pad --replay baseline/BL-048.inputs --timed 16 "$P/padrumble.txt" "$ROM" --mute --settings "$P/s23.ini"; check "$prog push-pad rumble in a recorded game" $? 0
+  has "$prog pad: the first death rumbled" "$P/s23.ini.pad.txt" "rumble_pulses=[1-9]"
+  has "$prog pad: the light bar changed with the lives" "$P/s23.ini.pad.txt" "light_bar_colours_sent=[2-9]"
   has "$prog pad: the virtual DualShock 4 was plugged in" "$P/s22.ini.pad.txt" "virtual_pad_plugged_in=yes"
   has "$prog pad: the menu opened twice" "$P/s22.ini.audio.txt" "menu_opens=2"
   has "$prog pad: the game was paused while the menu was open" "$P/s22.ini.audio.txt" "menu_frames_run_while_open=[01]$"
@@ -161,7 +168,10 @@ dab=sum(1 for i in range(nab) if a[i]!=b[i]); dac=sum(1 for i in range(nac) if a
 print('replay compare: window %d frames %d differences; headless %d frames %d differences'%(nab,dab,nac,dac))
 sys.exit(0 if (dab==0 and dac==0 and nab>=400 and nac>=700) else 1)" "$P/A.csv" "$P/B.csv" "$P/C.csv"; check "$prog replay equals recording" $? 0
 done
-for t in test_controls test_inputlog test_layout test_menu test_rom_finder test_trace test_windowstate; do
+if [ -f reference/baseline/BL-046.trace ]; then   # Stage I15: the events found in the recorded game BL-046 are the 5 power pills and 8 ghosts its entry counts
+  build/host/test_feedback.exe reference/baseline/BL-046.trace 5 8 > "$W/feedback_bl046.log" 2>&1; check "test_feedback on the recorded game BL-046" $? 0
+fi
+for t in test_controls test_feedback test_inputlog test_layout test_menu test_rom_finder test_trace test_windowstate; do
   case $t in
     test_rom_finder) mkdir -p "$W/t_$t"; build/host/$t.exe "$W/t_$t" "$ROM" >"$W/$t.log" 2>&1 ;;
     test_inputlog|test_windowstate) mkdir -p "$W/t_$t"; build/host/$t.exe "$W/t_$t" >"$W/$t.log" 2>&1 ;;

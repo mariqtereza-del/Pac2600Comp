@@ -29,8 +29,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, error.c_str(), window);
     return 0;
   }
-  const std::string romSha1 = rom::sha1Hex(bytes.data(), bytes.size());
-  const bool replaying = !options.replayFile.empty();
+  const std::string romSha1 = rom::sha1Hex(bytes.data(), bytes.size());  const bool replaying = !options.replayFile.empty();
   inputlog::Recording replay;  // --replay: what the console is given on each frame, instead of the keyboard and pads
   if(replaying) {
     std::string error;
@@ -76,7 +75,8 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
                        settings::get(options.settingsFile, "tv_type") == "bw");
   keyboard.setScheme(controls::schemeFromSetting(settings::get(options.settingsFile, "keyboard")));   // Stage I13: which keys steer (menu, Control options)
   controls::Input savedSwitches = keyboard.input();
-  Pads pads;
+  Pads pads;  PadDriver padDriver;   // the pad: menu button, menu moves and switches (Stage I14)
+  feedback::Hub feedbackHub;  FeedbackDriver padFeedback(options.settingsFile);   // what the game did, for the pad's rumble and light bar (Stage I15)
   menu::Session menuSession(!replaying);  // the Escape menu (Stage I5); a replay decides what the console is given, so it cannot start a game
   if(!pads.start()) std::fprintf(stderr, "Gamepads could not start; the keyboard still works.\n");
   bool helpOn = false;
@@ -166,6 +166,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         applyInput(emulator, in, false, sharedControls);
         emulator.runFrame();
         menuSession.publish(emulator.ram());
+        feedbackHub.gameFrame(emulator.ram());
         if(fingerprints) {
           char hash[17];
           std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
@@ -208,7 +209,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   auto openMenu = [&]() {
     keyboard.releaseAll();  // no direction may stay held while the game is stopped
     menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn,
-                                                                       volumePercent, soundMuted, keyboard.scheme(), pads.family(), pads.count() > 0});
+                                                                       volumePercent, soundMuted, keyboard.scheme(), pads.family(), pads.count() > 0, padFeedback.light(), padFeedback.rumble()});
     menuOpenedAtFrame = framesNow();
     ++menuOpens;
   };
@@ -227,6 +228,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       if(c.hdr != hdrWanted) { hdrWanted = c.hdr; remember("hdr", hdrWanted ? "on" : "off"); adaptToHdr(); }
       if(c.hdrStrength != hdrPercent) { hdrPercent = c.hdrStrength; remember("hdr_highlights", std::to_string(hdrPercent)); updateSmoothWanted(); }
       if(c.frameRate != rate) { rate = c.frameRate; updateSmoothWanted(); applyVSync(); remember("frame_rate", framerate::settingName(rate)); }
+      if(c.light != padFeedback.light() || c.rumble != padFeedback.rumble()) { padFeedback.set(c.light, c.rumble); remember("light_bar", feedback::lightSettingName(c.light)); remember("rumble", feedback::rumbleSettingName(c.rumble)); }
       if(c.keyboard != keyboard.scheme()) { keyboard.setScheme(c.keyboard); remember("keyboard", controls::schemeSettingName(c.keyboard)); }
       if(c.volume != volumePercent || c.muted != soundMuted) {
         volumePercent = c.volume; soundMuted = c.muted; audio.setVolume(volumePercent, soundMuted);
@@ -256,7 +258,6 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     return false;
   };
 
-  PadDriver padDriver;
   std::vector<std::uint32_t> pixels;
   std::shared_ptr<const SmoothSnapshot> snapshot;  // the smooth picture of the latest game step
   Uint64 snapshotAt = 0;
@@ -300,6 +301,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     // Stage I14 (D-020): the pad's menu button, menu moves and switch buttons (pad_driver.cpp); the pad does not play while the menu is open.
     const controls::PadState padNow = padDriver.update(pads, keyboard, PadMenuHooks{[&]() { return menuSession.isOpen(); }, openMenu, [&](menu::Key k) { menuPress(k, running); }},
                                                        static_cast<long long>(SDL_GetTicks()));
+    padFeedback.update(pads, feedbackHub, pixels.data(), height);
     const controls::Input input = controls::merge(keyboard.input(), padNow);  // keyboard and pads together
     inputBits = input.pack();
     if(input.leftDifficultyA != savedSwitches.leftDifficultyA || input.rightDifficultyA != savedSwitches.rightDifficultyA || input.blackWhite != savedSwitches.blackWhite) {

@@ -25,6 +25,8 @@ void Session::open(const controls::Input& switches, const Window& window)
   now.keyboard = window.keyboard;
   now.pad = window.pad;
   now.padConnected = window.padConnected;
+  now.light = window.light;
+  now.rumble = window.rumble;
   menu_.open(now);
   open_ = true;
 }

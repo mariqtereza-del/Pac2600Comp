@@ -35,7 +35,7 @@ target_compile_options(controls PRIVATE /W4 /permissive-)
 target_link_libraries(controls PUBLIC SDL3::SDL3)
 
 # The Escape menu (Stage I5): the choices, their explanations and the presses that start a game; no window code.
-add_library(menu STATIC menu.cpp menu_text.cpp menu_session.cpp background.cpp)
+add_library(menu STATIC menu.cpp menu_text.cpp menu_session.cpp background.cpp pad_feedback.cpp)
 target_compile_options(menu PRIVATE /W4 /permissive-)
 target_link_libraries(menu PUBLIC controls framerate crt)
 
@@ -129,6 +129,11 @@ target_link_libraries(test_trace PRIVATE trace)
 add_executable(test_framerate ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_framerate.cpp)
 target_compile_options(test_framerate PRIVATE /W4 /permissive-)
 target_link_libraries(test_framerate PRIVATE framerate)
+
+# Tests for what goes out to a pad (Stage I15): build/host/test_feedback.exe
+add_executable(test_feedback ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_feedback.cpp)
+target_compile_options(test_feedback PRIVATE /W4 /permissive-)
+target_link_libraries(test_feedback PRIVATE menu trace)
 
 # Tests for the volume (Stage I12): build/host/test_volume.exe
 add_executable(test_volume ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_volume.cpp)

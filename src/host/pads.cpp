@@ -46,8 +46,17 @@ bool padCheck(const Options& o)
   report << "real_gamepads_found=" << pads.count() << " (" << pads.names() << ")\n";
   const int realPads = pads.count();
 
+  // What the virtual pad was told to do (Stage I15): rumble pulses that were not zero, and light bar colours.
+  struct Outputs { int rumbles = 0, leds = 0; Uint16 low = 0, high = 0; Uint8 r = 0, g = 0, b = 0; } outputs;
   SDL_VirtualJoystickDesc desc;
   SDL_INIT_INTERFACE(&desc);
+  desc.userdata = &outputs;
+  desc.Rumble = [](void* u, Uint16 low, Uint16 high) -> bool {
+    Outputs* o = static_cast<Outputs*>(u);
+    if(low || high) { ++o->rumbles; o->low = low; o->high = high; }
+    return true;
+  };
+  desc.SetLED = [](void* u, Uint8 r, Uint8 g, Uint8 b) -> bool { Outputs* o = static_cast<Outputs*>(u); ++o->leds; o->r = r; o->g = g; o->b = b; return true; };
   desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
   desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
   desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
@@ -204,6 +213,26 @@ bool padCheck(const Options& o)
   run(3);
   line("the stick moves in the menu too", seen.nav.size() == 1 && seen.nav[0] == controls::Nav::Down, "moves: " + std::to_string(seen.nav.size()));
   run(30);
+
+  // Stage I15 (D-021): the light bar and the rumble go out to the pad.
+  pads.setLight({255, 210, 0});
+  run(2);
+  line("the light bar is told its colour", outputs.leds == 1 && outputs.r == 255 && outputs.g == 210 && outputs.b == 0, "told " + std::to_string(outputs.leds) + " time(s)");
+  pads.setLight({255, 210, 0});
+  run(2);
+  line("the same colour is not sent again", outputs.leds == 1, "told " + std::to_string(outputs.leds) + " time(s)");
+  pads.setLight({0, 200, 0});
+  run(2);
+  line("a new colour is sent", outputs.leds == 2 && outputs.g == 200, "told " + std::to_string(outputs.leds) + " time(s)");
+  pads.rumble(1000, 2000, 100);
+  run(2);
+  line("the rumble pulse reaches the pad", outputs.rumbles == 1 && outputs.low == 1000 && outputs.high == 2000, "pulses " + std::to_string(outputs.rumbles));
+  pads.setActive(false);
+  pads.rumble(5000, 5000, 100);
+  run(2);
+  line("no rumble while the window is not in front", outputs.rumbles == 1, "pulses " + std::to_string(outputs.rumbles));
+  pads.setActive(true);
+  run(20);
 
   // Unplug with the stick held right: the direction must go with it
   newGame();

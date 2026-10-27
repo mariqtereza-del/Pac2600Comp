@@ -2,6 +2,7 @@
 // (Stage G4.7: moved out of main.cpp, the code is unchanged.)
 #pragma once
 #include "common.hpp"
+#include "pad_feedback.hpp"
 #include "pad_layout.hpp"
 #include "options.hpp"
 
@@ -39,6 +40,7 @@ public:
 
   void stop()
   {
+    if(lightUsed_) setLight(feedback::defaultLightColour());   // the light bar goes back to the pad's usual colour
     for(Pad& p : pads_) SDL_CloseGamepad(p.gamepad);
     pads_.clear();
     if(started_) { SDL_QuitSubSystem(SDL_INIT_GAMEPAD); started_ = false; }
@@ -88,6 +90,21 @@ public:
     return active_ ? total : controls::PadAsks{};
   }
 
+  // Stage I15 (D-021): what goes out to the pads. The light bar colour is sent when it changed or a pad has just been plugged in; a pad without a light bar ignores it.
+  void setLight(const background::Rgb& colour)
+  {
+    lightUsed_ = true;
+    for(Pad& p : pads_)
+      if(!p.lightSent || !(p.light == colour)) { SDL_SetGamepadLED(p.gamepad, colour.r, colour.g, colour.b); p.light = colour; p.lightSent = true; }
+  }
+
+  // A pulse of the rumble motors (a pad without them ignores it); nothing while the window is not in front.
+  void rumble(Uint16 low, Uint16 high, Uint32 ms)
+  {
+    if(!active_) return;
+    for(Pad& p : pads_) SDL_RumbleGamepad(p.gamepad, low, high, ms);
+  }
+
   // The buttons of the first pad open (a DualShock 4 when there is none), for the names in the F1 list and the menu.
   controls::PadFamily family() const { return pads_.empty() ? controls::PadFamily::PlayStation : pads_.front().family; }
 
@@ -99,6 +116,8 @@ private:
     controls::StickDirection stick;
     controls::PadFamily family = controls::PadFamily::Other;
     controls::PadPresses presses;
+    background::Rgb light;
+    bool lightSent = false;
   };
 
   static controls::PadFamily familyOf(SDL_Gamepad* g)
@@ -157,7 +176,7 @@ private:
   }
 
   std::vector<Pad> pads_;
-  bool started_ = false, active_ = true;
+  bool started_ = false, active_ = true, lightUsed_ = false;
   std::string problem_;
 };
 

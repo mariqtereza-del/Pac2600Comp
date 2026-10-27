@@ -3131,6 +3131,19 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-020, T-I14-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I14: DualShock 4 support (buttons, symbols, menu on the pad)`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I15 - Light bar colours and rumble for the DualShock 4** **[Done 2026-10-28]** *(tenth approved feature, D-021)*
+      - **Objective:** two new rows on the Control options page, "Light bar" (Off / Pac-Man yellow / Maze colour / Lives left) and "Rumble" (Off / Light / Strong), both off by default.
+      - **Why it matters:** the owner asked for it (D-021): "light bar colours and rumble", the extras offered after I14.
+      - **Prerequisites:** I14 Done, clean tree.
+      - **What Claude Code will do:** the light bar is set from the choice (yellow; the colour of the maze, looked for twice a second; green / yellow / red for 3+ / 2 / 1 lives) and put back to the pad's usual blue when the choice goes back to Off and when the program ends; the pad rumbles when the game's memory shows a power pill eaten (score +5: a short tick), a ghost eaten (+20 / 40 / 80 / 160: a thump) or Pac-Man starting to die (`$E7` bit 6: a long rumble). The game thread only reads its own memory after each frame and hands over the events; the window thread talks to the pad. `pad_feedback.*`, `FeedbackDriver`, `Pads::setLight` / `rumble`. Remembered as `light_bar=` and `rumble=` in `settings.ini`.
+      - **What I must do:** try it with the real DualShock 4 and say how the strengths feel (they are my guess).
+      - **Verification:** `test_feedback` (choices, colours, pulses, events from synthetic memory, and in the recorded game BL-046 exactly its 5 power pills and 8 ghosts eaten), `test_menu`, `--pad-check` (the colour and the pulse reach a virtual pad, no repeat of a colour, nothing while the window is not in front), the real window with a virtual DualShock 4 (the light bar green for three lives; in the recorded game BL-048 a pulse at the first death), the recorded games and every earlier proof unchanged.
+      - **Completion criteria:** no frozen file changed; with both rows Off nothing is sent to the pad.
+      - **Potential problems:** SDL can only drive a light bar or motors the pad driver exposes (a DualShock 4 by cable or Bluetooth, with DS4Windows not running); `play_window.cpp` is at the file limit (the pad code lives in `pad_driver.*`).
+      - **Recovery:** revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-021, T-I15-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I15: Light bar colours and rumble`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

@@ -154,6 +154,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-I2-1 — The feature menu (2026-10-27, Stage I2)
+
+- **Choice:** `docs\I2_FEATURE_MENU.md` lists 18 candidates in four groups (A around the game, 8; B reads the game's state, 4; C changes play, 4; D other, 2), each with the eight required answers. The groups are chosen by what they can do to the frozen preservation suite: A cannot change the game by construction; B reads or saves its state and needs a completeness check; C needs one planned opening in the game (an options value, default = original) and its own tests; D is outside the game. My *now / later / never* are marked as proposals (now: pause, volume, screenshot; never: more difficulty settings, new mazes, online play).
+- **Checked against the code before writing:** SDL3 writes PNG (used by `--headless`), the sound path has a mute, the F1 list draws text with SDL's debug text, `test_controls` has 119 checks, lives start at 3 and rise by one per cleared map (`docs\F15_SCORING.md`). Features that already exist (soft glow F7, picture modes 1-5, fullscreen, recordings, switches) are listed as not offered.
+- **A gap, stated in the menu:** the owner's original brief has its own list of candidate features; it is not stored in the project files, so it could not be read. The menu asks the owner to name anything missing (Rule 11: no invented information).
+- **Estimates:** every effort word and the size of a rewind history are estimates, marked as such.
+- **Not decided:** nothing is chosen or built; I3 needs the owner's answers (a real human decision). "Add nothing" is offered as a complete answer.
+- **Reversible:** Yes (a document).
+
 ### T-I1-1 — Status report before Phase I (2026-10-27, Stage I1)
 
 - **Choice:** one document, `docs\I1_STATUS_REPORT.md`, in plain words, summary first. It answers the stage's four questions: what is preserved and how it is proved (11 claims, each with its evidence document), what is not proved (8 items, Rule 4), the differences from a real console (from `DISCREPANCIES.md`; the nine open items of Stage C8 and what became of them), and the structure (additions that need no game change, that need the game's state, that change play; four structural recommendations for I2). No code, test or frozen file was changed.

@@ -2977,7 +2977,22 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Recovery:** documents only; revert the commit.
       - **Documentation updates:** `docs\I1_STATUS_REPORT.md` (new), `DECISIONS.md` (T-I1-1), `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I1: Status report`. **Next stage:** I2 (feature menu), only when the owner asks.
-2. **[Not started] I2 — Feature menu.** Claude Code presents candidate features one at a time, each with the eight answers your brief requires: what it does, why it's useful, whether it changes game behaviour, effect on fidelity, difficulty, new dependencies, whether it should be optional, and now / later / never. The list in your brief is the starting point; nothing is added because it is common.
+2. **[Done] I2 — Feature menu.** Claude Code presents candidate features one at a time, each with the eight answers your brief requires: what it does, why it's useful, whether it changes game behaviour, effect on fidelity, difficulty, new dependencies, whether it should be optional, and now / later / never. The list in your brief is the starting point; nothing is added because it is common.
+    - **I2 - Feature menu** *(expanded 2026-10-27)*
+      - **Objective:** a menu, `docs\I2_FEATURE_MENU.md`, of candidate features, each answered under the eight headings the brief requires (what it does, why it is useful, whether it changes game behaviour, effect on fidelity, difficulty, new dependencies, whether it should be optional, now / later / never), so the owner can decide in I3.
+      - **Why it matters:** the owner decides what, if anything, is added. Nothing may be added because it is common (Phase I rule); each candidate needs its cost and its risk to the 1.0.0 baseline stated up front.
+      - **Prerequisites:** I1 Done (`e5e3e8d`), clean tree, the owner has asked to continue.
+      - **What Claude Code will do:** list candidates in four groups (around the game, reading the game's state, changing how the game plays, other); check against the code what already exists (so that nothing is offered twice) and what each would touch; write the eight answers per feature with estimates marked as estimates; mark my "now / later / never" as a proposal; give a one-line way for the owner to answer. No code is changed, nothing is added.
+      - **What I must do:** read the menu and answer in I3 (real human decision). Doing none of the features is a valid answer.
+      - **Exact instructions / Required input:** none for this stage; the answers are the input of I3.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** the menu exists, every feature has all eight answers, groups say whether the frozen suite can be affected.
+      - **Verification:** every statement about existing code checked by command (`grep`, file listings); `test_quick.ps1` `result: OK`.
+      - **Completion criteria:** all candidates answered; the owner's own brief list noted as not available in the repository (so items from it that are missing can be added); no feature decided.
+      - **Potential problems:** the original brief's candidate list is not stored in the project files, so a feature the owner had in mind may be missing; effort estimates are estimates.
+      - **Recovery:** documents only; revert the commit.
+      - **Documentation updates:** `docs\I2_FEATURE_MENU.md` (new), `DECISIONS.md` (T-I2-1), `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I2: Feature menu`. **Next stage:** I3 (the owner's decisions; it cannot start without the owner's answers).
 3. **[Not started] I3 — Your decisions.** Recorded in `DECISIONS.md` with your exact wording. Rejected features are kept in a "Considered and declined" list so they aren't proposed again.
 4. **[Not started] I4 — Plan the approved features** as new stages (I5, I6…), each small and each required to keep the preservation suite green.
 

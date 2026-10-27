@@ -37,8 +37,20 @@ const std::vector<Binding>& bindings();
 // The first key of an action (used by the replay, which presses real keys).
 SDL_Scancode primaryKey(Action action);
 
+// Which keys steer the joystick (Stage I13, D-019): both sets (the way it has always been), only the arrow keys or only W, A, S and D. Fire, Select, Reset
+// and the switches have one set of keys whatever is chosen.
+enum class Scheme { Both, Arrows, Wasd };
+Scheme nextScheme(Scheme s, int step);        // goes round
+const char* schemeTitle(Scheme s);            // as the menu shows it
+const char* schemeSettingName(Scheme s);      // as settings.ini keeps it: both | arrows | wasd
+Scheme schemeFromSetting(const std::string& text);   // anything else is Both
+// The keys of an action as the F1 list and the menu show them for a scheme ("Up arrow / W", "Up arrow", "W").
+std::string keysText(const Binding& binding, Scheme scheme);
+
 class Keyboard {
 public:
+  void setScheme(Scheme scheme) { scheme_ = scheme; }
+  Scheme scheme() const { return scheme_; }
   void keyDown(SDL_Scancode key, bool repeat);  // repeat = the key is only being held down
   void keyUp(SDL_Scancode key);
   void releaseAll();  // the window lost focus: no key may stay "held" (the three real switches stay where they are)
@@ -48,6 +60,7 @@ public:
 private:
   bool held(Action action) const;
   std::vector<SDL_Scancode> down_;
+  Scheme scheme_ = Scheme::Both;
   bool leftA_ = false, rightA_ = false, bw_ = false;
 };
 
@@ -55,7 +68,7 @@ private:
 struct HelpLine {
   std::string keys, meaning;
 };
-std::vector<HelpLine> helpLines(const Input& current, const std::string& controller = "none", bool softBlend = false);
+std::vector<HelpLine> helpLines(const Input& current, const std::string& controller = "none", bool softBlend = false, Scheme scheme = Scheme::Both);
 
 // ---- Gamepad (Stage D11, DECISIONS.md T-D11-1) ----
 

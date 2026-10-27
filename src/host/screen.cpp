@@ -105,9 +105,9 @@ bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
 }
 
 // The F1 list, drawn over the picture with SDL's built-in text.
-void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std::string& controller, bool softBlend)
+void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std::string& controller, bool softBlend, controls::Scheme scheme)
 {
-  const std::vector<controls::HelpLine> lines = controls::helpLines(current, controller, softBlend);
+  const std::vector<controls::HelpLine> lines = controls::helpLines(current, controller, softBlend, scheme);
   std::size_t keyWidth = 0, meaningWidth = 0;
   for(const auto& l : lines) { keyWidth = std::max(keyWidth, l.keys.size()); meaningWidth = std::max(meaningWidth, l.meaning.size()); }
   const float charSize = static_cast<float>(SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE);

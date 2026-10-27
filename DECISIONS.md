@@ -216,6 +216,14 @@ The owner's words, after trying the GDV filter ("looks great"): "Next up I need 
 - **What it is:** a page of the Escape menu, opened from a row under Graphics options, with exactly: Volume (0 to 100, 100 at the start), Mute (Off at the start) and Back. Nothing else is on the page.
 - **What it must not do:** change the game, its speed, its pacing or the sound the game makes. It changes only how loud the samples are that go to the sound card.
 
+### D-019 - Control options: which keys steer the joystick (2026-10-27, Stage I13)
+
+The owner's words: "Now I need a Control options menu. There needs to be keyboard support with either WASD or the arrow keys, with the keys being shown."
+
+- **Status:** approved by the owner's request; built and proved in Stage I13 (T-I13-1).
+- **How it was read:** until now both sets of keys always worked at once. The page lets the player choose: both (the default, so nothing changes for anyone), only the arrow keys, or only W A S D, and shows the keys. Not read as a request to rebind single keys; the owner is told and can ask for that.
+- **What it must not do:** change the game: only which key presses reach the joystick change.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -366,6 +374,15 @@ The owner's words, after trying the GDV filter ("looks great"): "Next up I need 
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-I13-1 - Control options: a scheme in the keyboard layer (2026-10-27, Stage I13, D-019)
+
+- **Where:** `controls::Scheme { Both, Arrows, Wasd }` and `Keyboard::setScheme` (`src\host\controls.*`). Only the four direction actions look at it: a direction key of the switched-off set is ignored when the joystick is worked out. The key tables (`bindings()`) are unchanged, so `--keys-replay`, the recordings and every older test, which use the arrow keys, are untouched; `Both` is the default and gives exactly the old behaviour.
+- **Menu keys:** the menu itself still answers to both the arrow keys and W A S D whatever is chosen, so the player cannot lock themselves out of the menu by choosing the set they do not have.
+- **Shown:** the page's explanation lists every key of the game window for the choice, and the F1 list (`helpLines`) shows the same text (`controls::keysText`).
+- **Remembered:** `settings.ini` `keyboard=both|arrows|wasd`, changed at once.
+- **Proof:** `test_controls` 152 checks (every key of both sets under each of the three choices; fire unaffected; names and the round trip); `test_menu` 373; in the real window, keys were pushed with `keyboard=wasd` and with `keyboard=arrows` in both programs: only the chosen set moved the joystick; the menu pushed the choice and `settings.ini` says `keyboard=arrows`.
+- **Reversible:** Yes (Git).
 
 ### T-I12-1 - Volume and mute: scale the played samples, keep the stream running (2026-10-27, Stage I12, D-018)
 

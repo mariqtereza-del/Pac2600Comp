@@ -266,6 +266,38 @@ int main()
     expect(controls::merge(Keyboard{}.input(), PadState{}).pack() == 0, "nothing at all: nothing");
   }
 
+  // Stage I13: which keys steer the joystick
+  {
+    using controls::Scheme;
+    const SDL_Scancode arrows[4] = {SDL_SCANCODE_UP, SDL_SCANCODE_DOWN, SDL_SCANCODE_LEFT, SDL_SCANCODE_RIGHT};
+    const SDL_Scancode letters[4] = {SDL_SCANCODE_W, SDL_SCANCODE_S, SDL_SCANCODE_A, SDL_SCANCODE_D};
+    for(Scheme scheme : {Scheme::Both, Scheme::Arrows, Scheme::Wasd})
+      for(int set = 0; set < 2; ++set)
+        for(int d = 0; d < 4; ++d) {
+          Keyboard k;
+          k.setScheme(scheme);
+          k.keyDown(set == 0 ? arrows[d] : letters[d], false);
+          const controls::Input in = k.input();
+          const bool moved = in.up || in.down || in.left || in.right;
+          const bool shouldMove = scheme == Scheme::Both || (scheme == Scheme::Arrows) == (set == 0);
+          expect(moved == shouldMove, std::string("scheme ") + controls::schemeSettingName(scheme) + (set == 0 ? ", an arrow key " : ", a letter key ") + std::to_string(d));
+        }
+    Keyboard k;
+    k.setScheme(Scheme::Wasd);
+    k.keyDown(SDL_SCANCODE_SPACE, false);
+    expect(k.input().fire, "fire works whatever keys steer");
+    expect(controls::nextScheme(Scheme::Both, 1) == Scheme::Arrows && controls::nextScheme(Scheme::Arrows, 1) == Scheme::Wasd && controls::nextScheme(Scheme::Wasd, 1) == Scheme::Both
+               && controls::nextScheme(Scheme::Both, -1) == Scheme::Wasd, "the choice goes round both ways");
+    for(Scheme s : {Scheme::Both, Scheme::Arrows, Scheme::Wasd}) expect(controls::schemeFromSetting(controls::schemeSettingName(s)) == s, "the setting name round trips");
+    expect(controls::schemeFromSetting("") == Scheme::Both && controls::schemeFromSetting("nonsense") == Scheme::Both, "anything else is both (today's behaviour)");
+    const controls::Binding& up = controls::bindings()[0];
+    expect(controls::keysText(up, Scheme::Both) == "Up arrow / W" && controls::keysText(up, Scheme::Arrows) == "Up arrow" && controls::keysText(up, Scheme::Wasd) == "W", "the keys are shown as chosen");
+    expect(controls::keysText(controls::bindings()[4], Scheme::Wasd) == "Space / Z", "fire keeps both keys");
+    bool listed = false;
+    for(const auto& l : controls::helpLines(controls::Input{}, "none", false, Scheme::Wasd)) if(l.keys == "A" && l.meaning == "Joystick left") listed = true;
+    expect(listed, "the F1 list shows the chosen keys");
+  }
+
   // primaryKey is the first key of the binding
   expect(controls::primaryKey(Action::Up) == SDL_SCANCODE_UP && controls::primaryKey(Action::Reset) == SDL_SCANCODE_F3, "primary keys are the first ones listed");
 

@@ -43,12 +43,32 @@ SDL_Scancode primaryKey(Action action)
   return SDL_SCANCODE_UNKNOWN;
 }
 
+static bool isDirection(Action a) { return a == Action::Up || a == Action::Down || a == Action::Left || a == Action::Right; }
+
+Scheme nextScheme(Scheme s, int step) { return static_cast<Scheme>((static_cast<int>(s) + 3 + step) % 3); }
+
+const char* schemeTitle(Scheme s) { return s == Scheme::Arrows ? "Arrow keys" : s == Scheme::Wasd ? "W A S D" : "Arrow keys and W A S D"; }
+
+const char* schemeSettingName(Scheme s) { return s == Scheme::Arrows ? "arrows" : s == Scheme::Wasd ? "wasd" : "both"; }
+
+Scheme schemeFromSetting(const std::string& text) { return text == "arrows" ? Scheme::Arrows : text == "wasd" ? Scheme::Wasd : Scheme::Both; }
+
+std::string keysText(const Binding& binding, Scheme scheme)
+{
+  if(!isDirection(binding.action) || scheme == Scheme::Both) return binding.keysText;
+  const std::string both = binding.keysText;   // "Up arrow / W": the arrow key first, the letter second
+  const std::size_t slash = both.find(" / ");
+  return scheme == Scheme::Arrows ? both.substr(0, slash) : both.substr(slash + 3);
+}
+
 bool Keyboard::held(Action action) const
 {
   for(const Binding& b : bindings())
     if(b.action == action)
-      for(SDL_Scancode k : b.keys)
-        if(std::find(down_.begin(), down_.end(), k) != down_.end()) return true;
+      for(std::size_t i = 0; i < b.keys.size(); ++i) {
+        if(isDirection(action) && ((scheme_ == Scheme::Arrows && i != 0) || (scheme_ == Scheme::Wasd && i != 1))) continue;   // the other set is switched off
+        if(std::find(down_.begin(), down_.end(), b.keys[i]) != down_.end()) return true;
+      }
   return false;
 }
 
@@ -95,7 +115,7 @@ Input Keyboard::input() const
   return i;
 }
 
-std::vector<HelpLine> helpLines(const Input& current, const std::string& controller, bool softBlend)
+std::vector<HelpLine> helpLines(const Input& current, const std::string& controller, bool softBlend, Scheme scheme)
 {
   std::vector<HelpLine> lines;
   for(const Binding& b : bindings()) {
@@ -103,7 +123,7 @@ std::vector<HelpLine> helpLines(const Input& current, const std::string& control
     if(b.action == Action::LeftDifficulty) meaning += std::string("  [now ") + (current.leftDifficultyA ? "A" : "B") + "]";
     if(b.action == Action::RightDifficulty) meaning += std::string("  [now ") + (current.rightDifficultyA ? "A" : "B") + "]";
     if(b.action == Action::TvType) meaning += std::string("  [now ") + (current.blackWhite ? "B&W" : "Colour") + "]";
-    lines.push_back({b.keysText, meaning});
+    lines.push_back({keysText(b, scheme), meaning});
   }
   lines.push_back({"Controller", controller});
   lines.push_back({"  D-pad / left stick", "Joystick"});

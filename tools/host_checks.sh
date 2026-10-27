@@ -12,6 +12,9 @@ check() { # name, exit code, wanted
 has() { # name, file, text
   if grep -q "$3" "$2" 2>/dev/null; then echo "PASS  $1 ($3)"; else echo "FAIL  $1 (no '$3' in $2)"; fail=1; fi
 }
+hasnot() { # name, file, text that must NOT be there
+  if grep -q "$3" "$2" 2>/dev/null; then echo "FAIL  $1 ('$3' found in $2)"; fail=1; else echo "PASS  $1"; fi
+}
 for prog in pacman2600 pacman2600_ref; do
   EXE="build/host/$prog.exe"; P="$W/$prog"; mkdir -p "$P"
   echo "=== $prog"
@@ -45,6 +48,7 @@ for prog in pacman2600 pacman2600_ref; do
   # Stage I10: the HDR rows of Game options (HDR turned off, the highlights taken from 50 to 60)
   has "$prog menu remembered HDR off" "$P/s14.ini" "hdr=off"
   has "$prog menu remembered the highlights" "$P/s14.ini" "hdr_highlights=60"
+  has "$prog control page remembered the keyboard choice" "$P/s14.ini" "keyboard=arrows"
   has "$prog sound page remembered the volume" "$P/s14.ini" "volume=90"
   has "$prog sound page remembered Mute on" "$P/s14.ini" "sound_muted=on"
   has "$prog window reports the volume and mute" "$P/s14.ini.audio.txt" "volume_percent=90"
@@ -93,6 +97,16 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   fi
   "$EXE" --push-keys --timed 12 "$P/keys.txt" "$ROM" --mute --settings "$P/s9.ini" --record "$P/rec1.inputs" --fingerprints "$P/A.csv"; check "$prog push-keys recording" $? 0
   for v in 1 2 4 8; do has "$prog key direction $v seen" "$P/s9.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
+  # Stage I13: the keyboard choice (Control options). The plan presses right and up with the arrow keys, left and down with the letters: with W A S D only the
+  # letters steer (left 4, down 2), with the arrow keys only the arrows do (right 8, up 1).
+  for scheme in wasd arrows; do
+    printf 'keyboard=%s\n' "$scheme" > "$P/sk_$scheme.ini"
+    "$EXE" --push-keys --timed 12 "$P/keys_$scheme.txt" "$ROM" --mute --settings "$P/sk_$scheme.ini"; check "$prog push-keys with keyboard=$scheme" $? 0
+    # (with the letters only, the moves change and Pac-Man may be caught before the S press at 7 s, when the game no longer reads the stick, so only A, at 5 s, is required)
+    if [ "$scheme" = wasd ]; then yes="4"; no="1 8"; else yes="1 8"; no="2 4"; fi
+    for v in $yes; do has "$prog keyboard=$scheme: direction $v seen" "$P/sk_$scheme.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
+    for v in $no; do hasnot "$prog keyboard=$scheme: direction $v not seen" "$P/sk_$scheme.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
+  done
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0
   "$EXE" --headless "$P/c.png" "$ROM" --replay "$P/rec1.inputs" --fingerprints "$P/C.csv" --settings "$P/s11.ini"; check "$prog replay headless" $? 0
   # Stage I9.6: the game does not depend on the frame rate. The same recording played in the window at 60 and at 144 (smooth motion on) must give the same

@@ -196,6 +196,29 @@ int main()
   m.press(Key::Down);
   expect(m.cursor() == Item::Back && m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::SoundOptions, "Back returns to the main page, on Sound options");
   m.press(Key::Down);
+  expect(m.cursor() == Item::ControlOptions && m.press(Key::Right) == Result::None && m.page() == Page::Main, "Control options follows Sound options; Right does not open it (Stage I13)");
+  expect(m.press(Key::Enter) == Result::None && m.page() == Page::Controls && m.cursor() == Item::KeyboardKeys, "Enter opens the Control options page on the keyboard row");
+  expect(m.rows().size() == 2 && Menu::controlItems().size() == 2, "the page has the keyboard row and Back");
+  expect(m.choice().keyboard == controls::Scheme::Both, "both sets of keys at the start (as it always was)");
+  m.press(Key::Right);
+  expect(m.choice().keyboard == controls::Scheme::Arrows, "Right: the arrow keys only");
+  m.press(Key::Enter);
+  expect(m.choice().keyboard == controls::Scheme::Wasd, "Enter moves it on: W A S D only");
+  m.press(Key::Right);
+  expect(m.choice().keyboard == controls::Scheme::Both, "and round to both");
+  m.press(Key::Left);
+  expect(m.choice().keyboard == controls::Scheme::Wasd, "Left goes back");
+  bool keysShown = false, rowShown = false;
+  for(const std::string& w : m.explanation(60)) {
+    if(w.find("  A ") == 0 && w.find("Joystick left") != std::string::npos) keysShown = true;
+    if(w.find("Up arrow") != std::string::npos) rowShown = true;
+  }
+  expect(keysShown && !rowShown, "the explanation lists the keys of the choice (W A S D, not the arrows)");
+  for(const std::string& r : m.rows()) if(r.find("Keyboard:") != std::string::npos) rowShown = r.find("W A S D") != std::string::npos;
+  expect(rowShown, "the row names the choice");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Back && m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::ControlOptions, "Back returns to the main page, on Control options");
+  m.press(Key::Down);
   expect(m.cursor() == Item::Quit && m.press(Key::Right) == Result::None, "Right on Quit does nothing");
   expect(m.press(Key::Enter) == Result::Quit && !m.isOpen(), "Enter on Quit quits and closes");
   m.open(start);
@@ -208,10 +231,10 @@ int main()
   expect(m.press(Key::Enter) == Result::StartGame && !m.isOpen() && m.choice().game == 5, "Enter on New game starts, with the choice");
 
   // The rows and the explanations: one marked row, every row has an explanation, none too wide, the facts of the games are in it.
-  for(int page = 0; page < 4; ++page) {  // the main page, then Game options, Graphics options and Sound options
+  for(int page = 0; page < 5; ++page) {  // the main page, then Game options, Graphics options, Sound options and Control options
     m.open(start);
     if(page > 0) { for(int i = 0; i < 1 + page; ++i) m.press(Key::Down); m.press(Key::Enter); }
-    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : page == 2 ? Menu::graphicsItems() : Menu::soundItems();
+    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : page == 2 ? Menu::graphicsItems() : page == 3 ? Menu::soundItems() : Menu::controlItems();
     expect(m.rows().size() == items.size(), "one text row per item, page " + std::to_string(page));
     for(std::size_t i = 0; i < items.size(); ++i) {
       int marked = 0;

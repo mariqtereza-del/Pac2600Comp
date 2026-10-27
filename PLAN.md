@@ -3105,6 +3105,19 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-018, T-I12-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I12: Sound options (volume and mute)`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I13 - Control options (which keys steer)** **[Done 2026-10-27]** *(eighth approved feature, D-019)*
+      - **Objective:** a "Control options" page in the Escape menu where the keyboard keys are chosen (the arrow keys, W A S D, or both) and every key is shown.
+      - **Why it matters:** the owner asked for it (D-019): "keyboard support with either WASD or the arrow keys, with the keys being shown".
+      - **Prerequisites:** I12 Done, clean tree.
+      - **What Claude Code will do:** a row "Control options..." on the main page (under Sound options); a page with a Keyboard row (Arrow keys and W A S D = today's behaviour and the default / Arrow keys / W A S D) and Back; the explanation of the page lists every key of the game window for the choice made. `controls::Scheme` in `controls.*`; the F1 list shows the chosen keys. Remembered as `keyboard=both|arrows|wasd`. Fire (Space / Z), Select (F2), Reset (F3), the switches (F4 to F6) and the game pad are unchanged.
+      - **What I must do:** say if "Control options" should also hold more (for example changing single keys): this stage does not rebind single keys.
+      - **Verification:** `test_controls` (every key under every choice), `test_menu`, the real window with keys pushed under each choice (the other set does nothing), the recorded games and every earlier proof unchanged.
+      - **Completion criteria:** at the default the game receives exactly what it did; no frozen file changed.
+      - **Potential problems:** menu tests that count rows; `menu.cpp` limits (more text moved to `menu_text.cpp`).
+      - **Recovery:** revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-019, T-I13-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I13: Control options (keyboard keys)`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

@@ -51,7 +51,8 @@ std::thread startKeyPusher(const Options& options, const std::atomic<bool>& stop
         for(int i = 0; i < 4; ++i) tap(8.25 + 0.02 * i, SDL_SCANCODE_DOWN);
         tap(8.33, SDL_SCANCODE_RETURN); tap(8.35, SDL_SCANCODE_LEFT); tap(8.37, SDL_SCANCODE_LEFT);
         tap(8.39, SDL_SCANCODE_DOWN); tap(8.41, SDL_SCANCODE_RIGHT); tap(8.43, SDL_SCANCODE_ESCAPE);
-        tap(8.5, SDL_SCANCODE_DOWN); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
+        tap(8.45, SDL_SCANCODE_DOWN); tap(8.47, SDL_SCANCODE_RETURN); tap(8.49, SDL_SCANCODE_RIGHT); tap(8.51, SDL_SCANCODE_ESCAPE);   // Stage I13: Control options, the keyboard to the arrow keys only, back
+        tap(8.55, SDL_SCANCODE_DOWN); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
       }
       const Uint64 t0 = SDL_GetTicksNS();
       for(const auto& step : plan) {

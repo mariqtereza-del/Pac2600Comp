@@ -73,6 +73,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   // The three real switches start where they were left (settings.ini; the defaults are B, B and Colour).
   keyboard.setSwitches(settings::get(options.settingsFile, "left_difficulty") == "a", settings::get(options.settingsFile, "right_difficulty") == "a",
                        settings::get(options.settingsFile, "tv_type") == "bw");
+  keyboard.setScheme(controls::schemeFromSetting(settings::get(options.settingsFile, "keyboard")));   // Stage I13: which keys steer (menu, Control options)
   controls::Input savedSwitches = keyboard.input();
   Pads pads;
   menu::Session menuSession(!replaying);  // the Escape menu (Stage I5); a replay decides what the console is given, so it cannot start a game
@@ -210,7 +211,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
       keyboard.releaseAll();  // no direction may stay held while the game is stopped
       menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn,
-                                                                         volumePercent, soundMuted});
+                                                                         volumePercent, soundMuted, keyboard.scheme()});
       menuOpenedAtFrame = framesNow();
       ++menuOpens;
       return true;
@@ -235,6 +236,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       if(c.hdr != hdrWanted) { hdrWanted = c.hdr; remember("hdr", hdrWanted ? "on" : "off"); adaptToHdr(); }
       if(c.hdrStrength != hdrPercent) { hdrPercent = c.hdrStrength; remember("hdr_highlights", std::to_string(hdrPercent)); updateSmoothWanted(); }
       if(c.frameRate != rate) { rate = c.frameRate; updateSmoothWanted(); applyVSync(); remember("frame_rate", framerate::settingName(rate)); }
+      if(c.keyboard != keyboard.scheme()) { keyboard.setScheme(c.keyboard); remember("keyboard", controls::schemeSettingName(c.keyboard)); }
       if(c.volume != volumePercent || c.muted != soundMuted) {
         volumePercent = c.volume; soundMuted = c.muted; audio.setVolume(volumePercent, soundMuted);
         remember("volume", std::to_string(volumePercent)); remember("sound_muted", soundMuted ? "on" : "off");
@@ -335,7 +337,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       if(frameNow != lastShownFrame && framerate::shownStep(rate, frameNow) == frameNow) ++picturesShown;   // a new picture of the game
     }
     lastShownFrame = frameNow;
-    if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load());
+    if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load(), keyboard.scheme());
     if(menuSession.isOpen()) drawMenu(renderer, menuSession.menu());
     if(const Uint64 t = SDL_GetTicksNS(); t - markAt >= 500000000ull) {   // pictures a second, over the last half second
       picturesPerSecond = static_cast<double>(picturesShown - picturesAtMark) * 1e9 / static_cast<double>(t - markAt);

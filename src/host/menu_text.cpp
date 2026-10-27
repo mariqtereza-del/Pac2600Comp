@@ -3,6 +3,8 @@
 
 #include "menu.hpp"
 
+#include <algorithm>
+
 namespace menu {
 
 // What each background does, in plain words (the Background row's explanation).
@@ -103,6 +105,59 @@ void appendSoundText(std::vector<std::string>& out, int width, Item item)
   for(const std::string& line : wrap(text, width)) out.push_back(line);
 }
 
+
+// The explanation of the Control options rows (Stage I13, D-019): what the Keyboard choice does and, always, every key of the game window as it is now.
+void appendControlsText(std::vector<std::string>& out, int width, controls::Scheme scheme, bool keysRow)
+{
+  auto paragraph = [&](const std::string& text) {
+    for(const std::string& line : wrap(text, width)) out.push_back(line);
+  };
+  if(keysRow)
+    paragraph("Which keys move the joystick: the arrow keys and W A S D together (the usual setting), only the arrow keys, or only W A S D. "
+              "Left and Right change it. It takes effect at once and is remembered. The other keys below work whatever you choose.");
+  else
+    paragraph("The keys that play the game. Enter opens the page.");
+  out.push_back("");
+  out.push_back(std::string("Keys now (") + controls::schemeTitle(scheme) + "):");
+  const int keyColumn = 17;
+  for(const controls::Binding& b : controls::bindings()) {
+    const std::string keys = controls::keysText(b, scheme);
+    const std::vector<std::string> meaning = wrap(b.meaning, std::max(10, width - keyColumn - 2));
+    for(std::size_t i = 0; i < meaning.size(); ++i) {
+      const std::string label = i == 0 ? keys : std::string();
+      out.push_back("  " + label + std::string(static_cast<std::size_t>(std::max(0, keyColumn - static_cast<int>(label.size()))), ' ') + meaning[i]);
+    }
+  }
+  out.push_back("");
+  paragraph("A game pad works as well (D-pad or left stick, Cross or Square = fire, Options = Reset, Share = Select). F1 shows this list in the game; Esc opens this menu.");
+}
+
+
+// The explanation of the Players and the two difficulty rows (moved out of menu.cpp in Stage I13).
+void appendPlayersText(std::vector<std::string>& out, int width, Item item)
+{
+  auto paragraph = [&](const std::string& text) {
+    for(const std::string& line : wrap(text, width)) out.push_back(line);
+  };
+  switch(item) {
+      case Item::Players:
+        paragraph("One player, or two players who take turns. In a two-player game player 1 plays until Pac-Man is caught, then player 2 plays on a maze and "
+                  "score of their own, and so on until the game is over. Both players use the same keys or pad (on the console, player 2 "
+                  "would use the second joystick); the game takes the input of whoever's turn it is.");
+        paragraph("Player 1 plays with the left difficulty switch and player 2 with the right one.");
+        break;
+      case Item::LeftDifficulty:
+        paragraph("The left switch of the console. B is the usual setting. It is the one that counts for player 1, so for every one-player game.");
+        paragraph("A is the harder setting: after a power pill the ghosts stay scared half as long (about 2.7 seconds instead of 5.3, then they flash for 1 second), "
+                  "and the bonus item stays on the screen for 2 ticks instead of 3 (about 8.5 seconds instead of 12.8).");
+        break;
+      case Item::RightDifficulty:
+        paragraph("The right switch of the console. It counts only for player 2 in a two-player game, so in a one-player game it changes nothing. "
+                  "A is the harder setting, as for the left switch.");
+        break;
+    default: break;
+  }
+}
 
 }  // namespace menu
 

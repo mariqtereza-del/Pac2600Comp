@@ -50,7 +50,13 @@ std::vector<std::string> wrap(const std::string& text, int width)
 
 const std::vector<Item>& Menu::items()
 {
-  static const std::vector<Item> all = {Item::Resume, Item::NewGame, Item::GameOptions, Item::Graphics, Item::SoundOptions, Item::Quit};
+  static const std::vector<Item> all = {Item::Resume, Item::NewGame, Item::GameOptions, Item::Graphics, Item::SoundOptions, Item::ControlOptions, Item::Quit};
+  return all;
+}
+
+const std::vector<Item>& Menu::controlItems()
+{
+  static const std::vector<Item> all = {Item::KeyboardKeys, Item::Back};
   return all;
 }
 
@@ -78,6 +84,7 @@ const std::vector<Item>& Menu::shown() const
     case Page::GameOptions: return gameItems();
     case Page::Graphics: return graphicsItems();
     case Page::Sound: return soundItems();
+    case Page::Controls: return controlItems();
     case Page::Main: break;
   }
   return items();
@@ -110,6 +117,8 @@ Result Menu::press(Key key)
     case Item::GameOptions: if(key == Key::Enter) { page_ = Page::GameOptions; cursor_ = 0; } return Result::None;
     case Item::Graphics: if(key == Key::Enter) { page_ = Page::Graphics; cursor_ = 0; } return Result::None;
     case Item::SoundOptions: if(key == Key::Enter) { page_ = Page::Sound; cursor_ = 0; } return Result::None;
+    case Item::ControlOptions: if(key == Key::Enter) { page_ = Page::Controls; cursor_ = 0; } return Result::None;
+    case Item::KeyboardKeys: choice_.keyboard = controls::nextScheme(choice_.keyboard, step); return Result::None;
     case Item::Volume:   // a slider in steps of 5, like the HDR highlights: Left and Right stop at the ends, Enter goes round
       if(key == Key::Enter) choice_.volume = (choice_.volume + 5) % 105;
       else choice_.volume = std::clamp(choice_.volume + 5 * step, 0, 100);
@@ -142,7 +151,7 @@ Result Menu::press(Key key)
 
 void Menu::leaveSubPage()
 {
-  const Item opener = page_ == Page::GameOptions ? Item::GameOptions : page_ == Page::Sound ? Item::SoundOptions : Item::Graphics;
+  const Item opener = page_ == Page::GameOptions ? Item::GameOptions : page_ == Page::Sound ? Item::SoundOptions : page_ == Page::Controls ? Item::ControlOptions : Item::Graphics;
   page_ = Page::Main;
   cursor_ = static_cast<int>(std::find(items().begin(), items().end(), opener) - items().begin());
 }
@@ -179,6 +188,8 @@ std::vector<std::string> Menu::rows() const
       }
       case Item::Mute: std::snprintf(text, sizeof text, "Mute:    < %s >", choice_.muted ? "On" : "Off"); break;
       case Item::SoundOptions: std::snprintf(text, sizeof text, "Sound options..."); break;
+      case Item::ControlOptions: std::snprintf(text, sizeof text, "Control options..."); break;
+      case Item::KeyboardKeys: std::snprintf(text, sizeof text, "Keyboard:  < %s >", controls::schemeTitle(choice_.keyboard)); break;
       case Item::TvType: std::snprintf(text, sizeof text, "TV type:      < %s >", choice_.blackWhite ? "Black & white" : "Colour"); break;
       case Item::GameOptions: std::snprintf(text, sizeof text, "Game options..."); break;
       case Item::Graphics: std::snprintf(text, sizeof text, "Graphics options..."); break;
@@ -238,19 +249,9 @@ std::vector<std::string> Menu::explanation(int width) const
       appendGameText(out, width, choice_.game);
       break;
     case Item::Players:
-      paragraph("One player, or two players who take turns. In a two-player game player 1 plays until Pac-Man is caught, then player 2 plays on a maze and "
-                "score of their own, and so on until the game is over. Both players use the same keys or pad (on the console, player 2 "
-                "would use the second joystick); the game takes the input of whoever's turn it is.");
-      paragraph("Player 1 plays with the left difficulty switch and player 2 with the right one.");
-      break;
     case Item::LeftDifficulty:
-      paragraph("The left switch of the console. B is the usual setting. It is the one that counts for player 1, so for every one-player game.");
-      paragraph("A is the harder setting: after a power pill the ghosts stay scared half as long (about 2.7 seconds instead of 5.3, then they flash for 1 second), "
-                "and the bonus item stays on the screen for 2 ticks instead of 3 (about 8.5 seconds instead of 12.8).");
-      break;
     case Item::RightDifficulty:
-      paragraph("The right switch of the console. It counts only for player 2 in a two-player game, so in a one-player game it changes nothing. "
-                "A is the harder setting, as for the left switch.");
+      appendPlayersText(out, width, cursor());
       break;
     case Item::FrameRate:
       appendFrameRateText(out, width, choice_.smoothAvailable);
@@ -264,6 +265,10 @@ std::vector<std::string> Menu::explanation(int width) const
     case Item::Hdr:
     case Item::HdrHighlights:
       appendHdrText(out, width, choice_.hdrWindows, cursor() == Item::HdrHighlights);
+      break;
+    case Item::ControlOptions:
+    case Item::KeyboardKeys:
+      appendControlsText(out, width, choice_.keyboard, cursor() == Item::KeyboardKeys);
       break;
     case Item::Volume:
     case Item::Mute:

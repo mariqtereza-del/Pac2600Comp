@@ -22,6 +22,7 @@ void Session::open(const controls::Input& switches, const Window& window)
   now.hdrWindows = window.hdrWindows;
   now.volume = window.volume;
   now.muted = window.muted;
+  now.keyboard = window.keyboard;
   menu_.open(now);
   open_ = true;
 }

@@ -10,6 +10,7 @@
 #include <cstring>
 #include <atomic>
 #include <fstream>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <set>

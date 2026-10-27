@@ -26,6 +26,16 @@ for prog in pacman2600 pacman2600_ref; do
   "$EXE" --pad-check "$P/pad.txt" "$ROM" --settings "$P/s7.ini"; check "$prog pad-check" $? 0; has "$prog pad result" "$P/pad.txt" "result=OK"
   "$EXE" --timed 10 "$P/timed.txt" "$ROM" --mute --reset-at 60 --settings "$P/s8.ini"; check "$prog timed 10 s" $? 0
   "$EXE" --state-report "$P/state.txt" --settings "$P/s5.ini"; check "$prog state-report" $? 0
+  # Stage I5: the Escape menu. No window: the menu and the game played together (24 scenarios); real window: the menu worked through the event queue.
+  "$EXE" --menu-check "$P/menu.txt" "$ROM" --settings "$P/s12.ini"; check "$prog menu-check" $? 0; has "$prog menu-check result" "$P/menu.txt" "scenarios_passed=24"
+  "$EXE" --menu-shot "$P/menu.png" "$ROM" --window 1280x960 --settings "$P/s13.ini"; check "$prog menu-shot" $? 0; has "$prog menu-shot result" "$P/menu.png.txt" "result=OK"
+  "$EXE" --push-menu --timed 14 "$P/menuwin.txt" "$ROM" --mute --settings "$P/s14.ini"; check "$prog push-menu" $? 0
+  has "$prog menu paused the game" "$P/s14.ini.audio.txt" "menu_frames_run_while_open=0"
+  has "$prog menu opened three times" "$P/s14.ini.audio.txt" "menu_opens=3"
+  has "$prog menu chose game 3" "$P/s14.ini.audio.txt" "final_game_number_byte=10"
+  has "$prog menu set the level" "$P/s14.ini.audio.txt" "final_level=4"
+  has "$prog menu set left difficulty A" "$P/s14.ini.audio.txt" "final_game_flags=20"
+  has "$prog menu Quit closed the program" "$P/s14.ini.audio.txt" "seconds=7"
   "$EXE" --push-keys --timed 12 "$P/keys.txt" "$ROM" --mute --settings "$P/s9.ini" --record "$P/rec1.inputs" --fingerprints "$P/A.csv"; check "$prog push-keys recording" $? 0
   for v in 1 2 4 8; do has "$prog key direction $v seen" "$P/s9.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0
@@ -39,7 +49,7 @@ dab=sum(1 for i in range(nab) if a[i]!=b[i]); dac=sum(1 for i in range(nac) if a
 print('replay compare: window %d frames %d differences; headless %d frames %d differences'%(nab,dab,nac,dac))
 sys.exit(0 if (dab==0 and dac==0 and nab>=400 and nac>=700) else 1)" "$P/A.csv" "$P/B.csv" "$P/C.csv"; check "$prog replay equals recording" $? 0
 done
-for t in test_controls test_inputlog test_layout test_rom_finder test_trace test_windowstate; do
+for t in test_controls test_inputlog test_layout test_menu test_rom_finder test_trace test_windowstate; do
   case $t in
     test_rom_finder) mkdir -p "$W/t_$t"; build/host/$t.exe "$W/t_$t" "$ROM" >"$W/$t.log" 2>&1 ;;
     test_inputlog|test_windowstate) mkdir -p "$W/t_$t"; build/host/$t.exe "$W/t_$t" >"$W/$t.log" 2>&1 ;;

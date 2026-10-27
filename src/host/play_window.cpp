@@ -2,6 +2,8 @@
 // (Stage G4.7: moved out of main.cpp, the code is unchanged.)
 #include "play_window.hpp"
 #include "headless.hpp"
+#include "menu_checks.hpp"
+#include "menu_session.hpp"
 #include "options.hpp"
 #include "pacer.hpp"
 #include "pads.hpp"
@@ -59,6 +61,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
                        settings::get(options.settingsFile, "tv_type") == "bw");
   controls::Input savedSwitches = keyboard.input();
   Pads pads;
+  menu::Session menuSession(!replaying);  // the Escape menu (Stage I5); a replay decides what the console is given, so it cannot start a game
   if(!pads.start()) std::fprintf(stderr, "Gamepads could not start; the keyboard still works.\n");
   bool helpOn = false;
   // Stella's soft glow (F7): off unless the owner turned it on; remembered in settings.ini as soft_glow=on|off
@@ -82,12 +85,16 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   std::atomic<double> firstPictureMs{-1};  // from the start of this function to the first picture handed to the window
 
   std::thread game([&]() {
-    Pacer pacer(audio, options.timerClock, frameRate(options));
-    usedSoundClock = pacer.usesSoundClock();
+    auto pacer = std::make_unique<Pacer>(audio, options.timerClock, frameRate(options));
+    usedSoundClock = pacer->usesSoundClock();
+    bool wasPaused = false;
     Uint64 lastLoop = SDL_GetTicksNS();
     long long frames = 0;
     bool glowApplied = false;  // the emulator starts without the glow
     while(!stop.load()) {
+      // The menu is open: no frames, so no sound is made either. Afterwards the pacer starts afresh (no frames to catch up).
+      if(menuSession.paused()) { wasPaused = true; waitFor(1000000); continue; }
+      if(wasPaused) { wasPaused = false; pacer = std::make_unique<Pacer>(audio, options.timerClock, frameRate(options)); lastLoop = SDL_GetTicksNS(); }
       const Uint64 now = SDL_GetTicksNS();
       const double gap = static_cast<double>(now - lastLoop) / 1e6;  // how long this thread went without running
       lastLoop = now;
@@ -98,16 +105,18 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       longestGapMs = std::max(longestGapMs, gap);
 
       int steps = 0;
-      while(steps < 5 && pacer.due(now)) {
+      while(steps < 5 && pacer->due(now)) {
         const Uint64 frameBegan = SDL_GetTicksNS();
-        lateMs.push_back(static_cast<float>(static_cast<double>(frameBegan - pacer.dueAt()) / 1e6));
+        lateMs.push_back(static_cast<float>(static_cast<double>(frameBegan - pacer->dueAt()) / 1e6));
         if(softBlend.load() != glowApplied) { glowApplied = softBlend.load(); emulator.setSoftBlend(glowApplied); }
         // A replay gives the console what was recorded; when it has run out, the keyboard and pads take over again.
         controls::Input in = controls::Input::unpack(replaying && frames < replay.frames ? replay.bitsAt(frames) : inputBits.load());
         if(options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10) in.reset = true;
+        menuSession.apply(in);  // the Select and Reset presses of a new game chosen in the menu (recorded like any other input)
         recorder.add(in.pack());
         applyInput(emulator, in, false);
         emulator.runFrame();
+        menuSession.publish(emulator.ram());
         if(fingerprints) {
           char hash[17];
           std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
@@ -121,7 +130,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
           switchValuesSeen.insert(emulator.consoleSwitches());
         }
         computeMs.push_back(static_cast<float>(static_cast<double>(SDL_GetTicksNS() - frameBegan) / 1e6));
-        pacer.ran(now); ++steps; ++frames;
+        pacer->ran(now); ++steps; ++frames;
       }
       if(steps > 0) {
         if(firstPictureMs.load() < 0) firstPictureMs = static_cast<double>(SDL_GetTicksNS() - started) / 1e6;
@@ -131,14 +140,14 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         sharedHeight = emulator.height();
         sharedFrame = frames;
       }
-      waitFor(pacer.untilDue(SDL_GetTicksNS()));
+      waitFor(pacer->untilDue(SDL_GetTicksNS()));
     }
-    averageCorrectionPpm = pacer.averageCorrectionPpm();
+    averageCorrectionPpm = pacer->averageCorrectionPpm();
   });
 
   // Test only (--push-keys): a helper thread puts key presses into this window's event queue, as the operating system would.
   std::thread pusher;
-  if(options.pushKeys) {
+  if(options.pushKeys || options.pushMenu) {
     pusher = std::thread([&]() {
       auto key = [](SDL_Scancode code, bool down) {
         SDL_Event e{};
@@ -148,7 +157,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         e.key.down = down;
         SDL_PushEvent(&e);
       };
-      const struct { double at; SDL_Scancode code; bool down; } plan[] = {
+      struct Step { double at; SDL_Scancode code; bool down; };
+      std::vector<Step> plan = {
           {0.5, SDL_SCANCODE_F3, true}, {0.8, SDL_SCANCODE_F3, false},          // Game Reset: a game starts
           {4.0, SDL_SCANCODE_RIGHT, true}, {4.6, SDL_SCANCODE_RIGHT, false},    // joystick right (Pac-Man starts moving at about 2 s)
           {5.0, SDL_SCANCODE_A, true}, {5.6, SDL_SCANCODE_A, false},            // left, with the letter key
@@ -158,6 +168,18 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
           {8.5, SDL_SCANCODE_F6, true}, {8.6, SDL_SCANCODE_F6, false},          // right difficulty to A
           {9.0, SDL_SCANCODE_F4, true}, {9.1, SDL_SCANCODE_F4, false},          // Colour to B&W
           {9.5, SDL_SCANCODE_F7, true}, {9.6, SDL_SCANCODE_F7, false}};         // soft glow on
+      if(options.pushMenu) {  // Stage I5: open the menu, choose game 3 and the left difficulty A, start it; open and close it again; quit from it
+        plan.clear();
+        auto tap = [&](double at, SDL_Scancode code) { plan.push_back({at, code, true}); plan.push_back({at + 0.05, code, false}); };
+        tap(1.0, SDL_SCANCODE_ESCAPE);
+        tap(1.5, SDL_SCANCODE_DOWN); tap(1.6, SDL_SCANCODE_DOWN);   // to the Game row
+        tap(1.7, SDL_SCANCODE_RIGHT); tap(1.8, SDL_SCANCODE_RIGHT);  // game 3
+        tap(1.9, SDL_SCANCODE_DOWN); tap(2.0, SDL_SCANCODE_RIGHT);  // left difficulty to A
+        tap(2.1, SDL_SCANCODE_UP); tap(2.2, SDL_SCANCODE_UP);        // New game
+        tap(3.0, SDL_SCANCODE_RETURN);                               // go
+        tap(6.0, SDL_SCANCODE_ESCAPE); tap(6.5, SDL_SCANCODE_ESCAPE);  // open and close again
+        tap(7.0, SDL_SCANCODE_ESCAPE); tap(7.2, SDL_SCANCODE_UP); tap(7.4, SDL_SCANCODE_RETURN);  // Quit
+      }
       const Uint64 t0 = SDL_GetTicksNS();
       for(const auto& step : plan) {
         while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) SDL_Delay(5);
@@ -166,6 +188,38 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       }
     });
   }
+
+  // Stage I5: Escape opens the menu (and closes it); while it is open the arrow keys (or WASD), Enter and Escape belong to it. True = the key was used.
+  long long menuOpenedAtFrame = 0, menuFramesRun = 0;  // frames the game ran while the menu was open (must be 0; read for the --push-menu report)
+  int menuOpens = 0;
+  auto framesNow = [&]() { std::lock_guard<std::mutex> guard(lock); return sharedFrame; };
+  auto menuKey = [&](const SDL_Event& e, bool& running) -> bool {
+    if(e.type != SDL_EVENT_KEY_DOWN) return false;
+    const SDL_Scancode code = e.key.scancode;
+    if(!menuSession.isOpen()) {
+      if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
+      keyboard.releaseAll();  // no direction may stay held while the game is stopped
+      menuSession.open(keyboard.input());
+      menuOpenedAtFrame = framesNow();
+      ++menuOpens;
+      return true;
+    }
+    static const struct { SDL_Scancode a, b; menu::Key key; bool repeats; } keys[] = {
+        {SDL_SCANCODE_UP, SDL_SCANCODE_W, menu::Key::Up, true}, {SDL_SCANCODE_DOWN, SDL_SCANCODE_S, menu::Key::Down, true},
+        {SDL_SCANCODE_LEFT, SDL_SCANCODE_A, menu::Key::Left, true}, {SDL_SCANCODE_RIGHT, SDL_SCANCODE_D, menu::Key::Right, true},
+        {SDL_SCANCODE_RETURN, SDL_SCANCODE_KP_ENTER, menu::Key::Enter, false}, {SDL_SCANCODE_ESCAPE, SDL_SCANCODE_ESCAPE, menu::Key::Escape, false}};
+    for(const auto& k : keys) {
+      if(code != k.a && code != k.b) continue;
+      if(e.key.repeat && !k.repeats) return true;
+      const menu::Result result = menuSession.key(k.key);
+      if(!menuSession.isOpen()) menuFramesRun += framesNow() - menuOpenedAtFrame;
+      const menu::Choice& c = menuSession.menu().choice();
+      keyboard.setSwitches(c.leftA, c.rightA, c.blackWhite);  // the switches take effect at once; the loop below remembers them in settings.ini
+      if(result == menu::Result::Quit) running = false;
+      return true;
+    }
+    return false;
+  };
 
   std::vector<std::uint32_t> pixels;
   int height = 0;
@@ -177,8 +231,9 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     // Test only (--stall-ms): freeze this thread once, as dragging the window does, to show the sound does not depend on it.
     if(options.stallMs > 0 && !stalled && static_cast<double>(SDL_GetTicksNS() - started) >= 5e9) { SDL_Delay(static_cast<Uint32>(options.stallMs)); stalled = true; }
     for(SDL_Event e; SDL_PollEvent(&e); ) {
-      if(e.type == SDL_EVENT_QUIT || (e.type == SDL_EVENT_KEY_DOWN && e.key.key == SDLK_ESCAPE)) running = false;
+      if(e.type == SDL_EVENT_QUIT) running = false;
       if(handleWindowEvent(window, tracker, e)) continue;
+      if(menuKey(e, running)) continue;
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat) {
         if(e.key.key == SDLK_1) { screen.view.mode = layout::Mode::Sharp; retitle(); }
         if(e.key.key == SDLK_2) { screen.view.mode = layout::Mode::Fill; retitle(); }
@@ -188,8 +243,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         if(e.key.scancode == SDL_SCANCODE_F7) { softBlend = !softBlend.load(); settings::set(options.settingsFile, "soft_glow", softBlend.load() ? "on" : "off"); }
       }
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode == SDL_SCANCODE_F1) helpOn = !helpOn;
-      if(e.type == SDL_EVENT_KEY_DOWN) keyboard.keyDown(e.key.scancode, e.key.repeat);
-      if(e.type == SDL_EVENT_KEY_UP) keyboard.keyUp(e.key.scancode);
+      if(e.type == SDL_EVENT_KEY_DOWN && !menuSession.isOpen()) keyboard.keyDown(e.key.scancode, e.key.repeat);
+      if(e.type == SDL_EVENT_KEY_UP && !menuSession.isOpen()) keyboard.keyUp(e.key.scancode);
       // a key let go while another window had the focus must not stay held
       if(e.type == SDL_EVENT_WINDOW_FOCUS_LOST) { keyboard.releaseAll(); pads.setActive(false); }
       if(e.type == SDL_EVENT_WINDOW_FOCUS_GAINED) pads.setActive(true);
@@ -219,6 +274,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     }
     if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
     if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load());
+    if(menuSession.isOpen()) drawMenu(renderer, menuSession.menu());
     const Uint64 beforePresent = SDL_GetTicksNS();
     SDL_RenderPresent(renderer);
     ++presents;
@@ -255,6 +311,14 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         << "\nframe_compute_ms_mean=" << mean(computeMs) << "\nframe_compute_ms_p99=" << percentile(computeMs, 0.99) << "\nframe_compute_ms_max=" << percentile(computeMs, 1.0)
         << "\nframe_start_late_ms_p99=" << percentile(lateMs, 0.99) << "\nframe_start_late_ms_max=" << percentile(lateMs, 1.0)
         << "\nfirst_picture_ms=" << firstPictureMs.load() << "\npresent_hz_simulated=" << options.presentHz << '\n';
+    if(options.pushMenu) {
+      char flags[16];
+      std::snprintf(flags, sizeof flags, "%02x", emulator.ram()[0xE7 - 0x80]);
+      log << "menu_opens=" << menuOpens << "\nmenu_frames_run_while_open=" << menuFramesRun
+          << "\nfinal_game_number_byte=" << static_cast<int>(emulator.ram()[0x84 - 0x80]) << "\nfinal_players_byte=" << static_cast<int>(emulator.ram()[0xE6 - 0x80])
+          << "\nfinal_level=" << static_cast<int>(emulator.ram()[0x99 - 0x80]) << "\nfinal_game_flags=" << flags
+          << "\nfinal_switches=" << std::hex << static_cast<int>(emulator.consoleSwitches()) << std::dec << '\n';
+    }
     if(options.pushKeys) {
       log << "joystick_ram_values_seen=";
       for(int n = 0; n < 32; ++n) if(joystickValuesSeen & (1u << n)) log << n << ' ';

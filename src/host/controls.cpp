@@ -114,7 +114,7 @@ std::vector<HelpLine> helpLines(const Input& current, const std::string& control
   lines.push_back({"F7", std::string("Soft glow: smooths the flicker  [now ") + (softBlend ? "on" : "off") + "]"});
   lines.push_back({"Alt + Enter", "Fullscreen on / off"});
   lines.push_back({"F1", "Show / hide this list"});
-  lines.push_back({"Esc", "Quit"});
+  lines.push_back({"Esc", "Menu: pauses the game; games, difficulty, quit"});
   return lines;
 }
 

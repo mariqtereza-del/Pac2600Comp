@@ -1,0 +1,75 @@
+// The Escape menu (Stage I5, DECISIONS.md D-010 and T-I5-1): what the menu offers, how its keys work, what each choice says it does,
+// and the Select and Reset presses that carry a choice into the game. No window code, so it can be tested on its own.
+#pragma once
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace menu {
+
+enum class Key { Up, Down, Left, Right, Enter, Escape };
+enum class Item { Resume, NewGame, Game, LeftDifficulty, RightDifficulty, TvType, Quit };
+enum class Result { None, Resume, StartGame, Quit };
+
+inline constexpr int kGames = 8;  // the console's Game Select offers 8 games, each for one or two players (docs\F17_STATES.md)
+
+// What the player has chosen. The difficulty switches and the TV type are real switches: they take effect at once.
+struct Choice {
+  int game = 1;  // 1..8, one player
+  bool leftA = false, rightA = false, blackWhite = false;
+};
+
+// What differs between the eight games (docs\F16_LEVELS.md, docs\F10_PACMAN.md; checked by `pacman2600 --menu-check`).
+struct GameInfo {
+  int startLevel;  // the level the game starts at (ghost speed and chase timer follow the level, up to 14)
+  bool slowPacman;  // Pac-Man moves at 0.562 pixel a frame instead of 0.688
+};
+GameInfo gameInfo(int game);
+
+// The game's own "game number" byte (`$84`, 2..$11) counts the 16 steps of Select: game 1 for one player is 6, then 7 is game 1 for two
+// players, 8 is game 2, ... $11 is game 6 for two players, then 2 (game 7) ... 5 (game 8, two players), then 6 again.
+int gameOfSelect(std::uint8_t gameSelect);  // 1..8 (a byte outside 2..$11 counts as the power-on value 6)
+bool twoPlayersOfSelect(std::uint8_t gameSelect);
+int pressesNeeded(std::uint8_t currentGameSelect, int game);  // Select presses that lead to this game for one player (0..15)
+
+// Cuts a text into lines of at most `width` characters at spaces.
+std::vector<std::string> wrap(const std::string& text, int width);
+
+class Menu {
+ public:
+  void open(const Choice& current);
+  bool isOpen() const { return open_; }
+  void close() { open_ = false; }
+  Result press(Key key);
+
+  const Choice& choice() const { return choice_; }
+  Item cursor() const { return items()[static_cast<std::size_t>(cursor_)]; }
+  static const std::vector<Item>& items();
+
+  // The rows of the list, the marked one starting with '>'.
+  std::vector<std::string> rows() const;
+  // What the marked row does, in plain words, cut to `width` characters.
+  std::vector<std::string> explanation(int width) const;
+
+ private:
+  bool open_ = false;
+  int cursor_ = 0;
+  Choice choice_;
+};
+
+// Carries "start a new game" into the game as the console does it: Game Select pressed once for every step, then Game Reset held.
+// One call of apply() per frame; it changes the Select and Reset inputs of that frame while a start is under way.
+class GameStarter {
+ public:
+  static constexpr int kSelectFrames = 2, kGapFrames = 3, kWaitFrames = 5, kResetFrames = 10;
+  void begin(int presses);
+  bool active() const { return step_ >= 0; }
+  void apply(bool& select, bool& reset);
+  static int framesFor(int presses) { return presses * (kSelectFrames + kGapFrames) + kWaitFrames + kResetFrames; }
+
+ private:
+  int presses_ = 0, step_ = -1;
+};
+
+}  // namespace menu

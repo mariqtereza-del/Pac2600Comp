@@ -20,6 +20,7 @@ Both are built together by `tools\build_host.cmd`. The ROM is not an input of th
                          |  play_window - headless - window_checks - pads   |
                          |  screen - layout - window_tracker - windowstate  |
                          |  audio - pacer - controls - inputlog - trace     |
+                         |  menu - menu_session - menu_view - menu_check    |
                          |  settings - common - ntsc_palette                |
                          |  native_emulator (our game)  emulator (Stella,   |
                          |  reference program only)                         |
@@ -77,6 +78,7 @@ The functions are not in the order of the 6502 code. The order of every step tha
 | `play_window`, `screen`, `layout`, `window_tracker`, `windowstate`, `settings` | the window, the picture modes, fullscreen, remembered position, `settings.ini` |
 | `audio`, `pacer` | sound output; the game runs at the console's 59.9227 frames a second, steered by the sound card |
 | `controls`, `pads`, `inputlog` | keyboard, game pad, recordings and replays |
+| `menu`, `menu_session`, `menu_view`, `menu_check` | the Escape menu (Stage I5): its choices and explanations, the Select and Reset presses that start a chosen game (`menu`, no window code); the part the window thread and the game thread share, which stops the game while the menu is open (`menu_session`); drawing and the picture test (`menu_view`); the menu-and-game check (`menu_check`) |
 | `headless`, `window_checks`, `trace` | window-less runs and the self-checks used by the tests; the per-frame trace |
 | `native_emulator` | the adapter between the host and `game::Game` |
 | `emulator` | the same adapter over Stella (reference program only) |

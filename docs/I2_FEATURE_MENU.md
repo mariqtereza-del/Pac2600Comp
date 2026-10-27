@@ -2,6 +2,10 @@
 
 This is a menu, not a plan. **Nothing here is decided, and nothing has been built.** You decide in I3. **"Add nothing" is a complete and fine answer:** the project already works as a preservation (see `docs\I1_STATUS_REPORT.md`), and Phase J can follow directly.
 
+## Update 2026-10-27
+
+The owner's first answer (D-010) was an Escape menu that pauses the game and lets the player choose the games and difficulties, with explanations. That covers **A1 (pause)** and goes further; it is built (Stage I5, `T-I5-1`). The other items are still open.
+
 ## How to read it
 
 - **The eight answers** are the ones your brief asks for. The last one, *now / later / never*, is **my proposal only**.

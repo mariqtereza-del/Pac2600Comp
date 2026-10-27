@@ -1,0 +1,184 @@
+// Tests for src\host\menu (Stage I5): the game numbers, the keys, the explanations and the presses that start a game.
+// The expected values are worked out from the written rules (docs\F10_PACMAN.md, F16_LEVELS.md, F17_STATES.md, CONTROLS.md), not copied from the code.
+// Usage: test_menu
+#include <cstdio>
+#include <set>
+#include <string>
+
+#include "../../src/host/menu.hpp"
+#include "../../src/host/menu_session.hpp"
+
+using namespace menu;
+
+static int failures = 0;
+static int checks = 0;
+
+static void expect(bool ok, const std::string& what)
+{
+  ++checks;
+  if(!ok) { ++failures; std::printf("FAIL  %s\n", what.c_str()); }
+}
+
+// The console's 16 Select steps from power-on: byte $84 starts at 6 (game 1, one player), goes up by one per press, from $11 back to 2.
+static std::uint8_t byteAfter(int presses)
+{
+  int value = 6;
+  for(int i = 0; i < presses; ++i) value = value == 0x11 ? 2 : value + 1;
+  return static_cast<std::uint8_t>(value);
+}
+
+int main()
+{
+  // Game numbers: press n of Select from power-on shows game 1 + n/2 (one player when n is even), wrapping after 16 presses.
+  for(int n = 0; n < 33; ++n) {
+    const std::uint8_t b = byteAfter(n);
+    expect(gameOfSelect(b) == (n / 2) % 8 + 1, "press " + std::to_string(n) + ": game " + std::to_string((n / 2) % 8 + 1));
+    expect(twoPlayersOfSelect(b) == (n % 2 == 1), "press " + std::to_string(n) + ": players");
+  }
+  expect(gameOfSelect(0) == 1 && gameOfSelect(0xCB) == 1, "a byte outside 2..$11 is taken as the power-on game 1");
+
+  // Presses needed: from every one of the 16 states to every game for one player; pressing that many times lands on it, never more than 15.
+  bool allLand = true, withinSixteen = true;
+  for(int start = 0; start < 16; ++start)
+    for(int game = 1; game <= kGames; ++game) {
+      const int presses = pressesNeeded(byteAfter(start), game);
+      std::uint8_t b = byteAfter(start);
+      for(int i = 0; i < presses; ++i) b = b == 0x11 ? 2 : static_cast<std::uint8_t>(b + 1);
+      if(gameOfSelect(b) != game || twoPlayersOfSelect(b)) allLand = false;
+      if(presses < 0 || presses > 15) withinSixteen = false;
+    }
+  expect(allLand, "pressing Select the number of times given always lands on the game, for one player");
+  expect(withinSixteen, "never more than 15 presses");
+  expect(pressesNeeded(6, 1) == 0, "at power-on game 1 needs no press");
+  expect(pressesNeeded(6, 2) == 2, "from game 1 to game 2 (one player) takes two presses");
+  expect(pressesNeeded(7, 1) == 15, "from game 1 for two players back to game 1 for one player takes fifteen");
+
+  // The table of the games: start levels 8, 10, 4, 6, 8, 10, 4, 6; Pac-Man is slower in games 7, 8 and 1.
+  const int levels[8] = {8, 10, 4, 6, 8, 10, 4, 6};
+  const std::set<int> slow = {1, 7, 8};
+  for(int g = 1; g <= 8; ++g) {
+    expect(gameInfo(g).startLevel == levels[g - 1], "game " + std::to_string(g) + " start level");
+    expect(gameInfo(g).slowPacman == (slow.count(g) > 0), "game " + std::to_string(g) + " Pac-Man speed");
+  }
+
+  // The keys.
+  Menu m;
+  expect(m.press(Key::Down) == Result::None && !m.isOpen(), "a closed menu ignores keys");
+  Choice start;
+  start.game = 5;
+  m.open(start);
+  expect(m.isOpen() && m.cursor() == Item::Resume && m.choice().game == 5, "opens on Resume with the current choice");
+  m.press(Key::Up);
+  expect(m.cursor() == Item::Quit, "Up from the first row goes to the last");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Resume, "Down from the last row goes to the first");
+  m.press(Key::Down); m.press(Key::Down);
+  expect(m.cursor() == Item::Game, "third row is the game");
+  m.press(Key::Right);
+  expect(m.choice().game == 6, "Right: next game");
+  for(int i = 0; i < 3; ++i) m.press(Key::Right);
+  expect(m.choice().game == 1, "Right past game 8 wraps to game 1");
+  m.press(Key::Left);
+  expect(m.choice().game == 8, "Left from game 1 wraps to game 8");
+  m.press(Key::Down); m.press(Key::Right);
+  expect(m.choice().leftA && !m.choice().rightA, "left difficulty to A");
+  m.press(Key::Left);
+  expect(!m.choice().leftA, "and back to B");
+  m.press(Key::Down); m.press(Key::Enter);
+  expect(m.choice().rightA, "Enter also moves a value on (right difficulty to A)");
+  m.press(Key::Down); m.press(Key::Right);
+  expect(m.choice().blackWhite, "TV type to black and white");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Quit && m.press(Key::Right) == Result::None, "Right on Quit does nothing");
+  expect(m.press(Key::Enter) == Result::Quit && !m.isOpen(), "Enter on Quit quits and closes");
+  m.open(start);
+  expect(m.press(Key::Escape) == Result::Resume && !m.isOpen(), "Escape closes the menu");
+  m.open(start);
+  expect(m.press(Key::Enter) == Result::Resume && !m.isOpen(), "Enter on Resume closes the menu");
+  m.open(start);
+  m.press(Key::Down);
+  expect(m.cursor() == Item::NewGame && m.press(Key::Right) == Result::None && m.isOpen(), "Right on New game does nothing");
+  expect(m.press(Key::Enter) == Result::StartGame && !m.isOpen() && m.choice().game == 5, "Enter on New game starts, with the choice");
+
+  // The rows and the explanations: one marked row, every row has an explanation, none too wide, the facts of the games are in it.
+  m.open(start);
+  expect(m.rows().size() == Menu::items().size(), "one text row per item");
+  for(std::size_t i = 0; i < Menu::items().size(); ++i) {
+    int marked = 0;
+    for(const std::string& r : m.rows()) if(r.rfind("> ", 0) == 0) ++marked;
+    expect(marked == 1, "exactly one marked row at item " + std::to_string(i));
+    const std::vector<std::string> words = m.explanation(60);
+    bool fits = !words.empty();
+    for(const std::string& w : words) if(w.size() > 60) fits = false;
+    expect(fits, "the explanation of item " + std::to_string(i) + " exists and fits 60 columns");
+    m.press(Key::Down);
+  }
+  m.open(start);
+  m.press(Key::Down); m.press(Key::Down);
+  // the table rows of the explanation: "<mark> <game> <level> <speed>", the marked one is game 5
+  auto row = [&](const std::string& startsWith) {
+    for(const std::string& w : m.explanation(64)) if(w.rfind(startsWith, 0) == 0) return w;
+    return std::string();
+  };
+  auto has = [](const std::string& line, const std::string& word) { return line.find(word) != std::string::npos; };
+  expect(has(row("> 5"), " 8 ") && has(row("> 5"), "faster"), "the table marks game 5 (level 8, faster)");
+  expect(has(row("  1 "), " 8 ") && has(row("  1 "), "slower") && has(row("  7 "), " 4 ") && has(row("  7 "), "slower"), "games 1 and 7 are slower");
+  expect(has(row("  2 "), "10") && has(row("  2 "), "faster") && has(row("  3 "), " 4 ") && has(row("  6 "), "10"), "games 2, 3 and 6 as in the table");
+
+  // Wrapping.
+  const auto lines = wrap("one two three four five six seven", 9);
+  expect(lines.size() == 4 && lines[0] == "one two" && lines[1] == "three" && lines[3] == "six seven", "wrap cuts at spaces");
+  expect(wrap("", 10).empty(), "wrap of nothing is nothing");
+
+  // The presses of a new game: Select held 2 frames and let go 3, per step; 5 frames of waiting; Reset 10 frames.
+  GameStarter s;
+  expect(!s.active(), "idle at first");
+  s.begin(2);
+  std::string selects, resets;
+  int frames = 0;
+  while(s.active() && frames < 100) {
+    bool select = false, reset = false;
+    s.apply(select, reset);
+    selects += select ? 'S' : '.';
+    resets += reset ? 'R' : '.';
+    ++frames;
+  }
+  expect(frames == GameStarter::framesFor(2) && frames == 25, "a start with 2 presses lasts 25 frames");
+  expect(selects == std::string("SS...SS...") + std::string(15, '.'), "Select shape: " + selects);
+  expect(resets == ".........." ".....RRRRRRRRRR", "Reset shape: " + resets);
+  s.begin(0);
+  frames = 0;
+  int resetFrames = 0;
+  bool anySelect = false;
+  while(s.active() && frames < 100) { bool sel = false, res = false; s.apply(sel, res); anySelect |= sel; resetFrames += res; ++frames; }
+  expect(frames == 15 && resetFrames == 10 && !anySelect, "a start with no press is 5 frames of waiting and 10 of Reset");
+
+  // The shared part: a start is queued for the game thread only when starting is allowed.
+  Session allowed(true), refused(false);
+  controls::Input in;
+  std::uint8_t ram[128] = {};
+  ram[0x84 - 0x80] = 6;
+  allowed.publish(ram);
+  refused.publish(ram);
+  allowed.open(in);
+  refused.open(in);
+  expect(allowed.paused() && refused.paused(), "an open menu pauses the game");
+  allowed.key(Key::Down); allowed.key(Key::Down); allowed.key(Key::Right);  // game 2
+  refused.key(Key::Down); refused.key(Key::Down); refused.key(Key::Right);
+  allowed.key(Key::Up);  // New game
+  refused.key(Key::Up);
+  expect(allowed.key(Key::Enter) == Result::StartGame && !allowed.paused(), "starting closes the menu and lets the game run");
+  refused.key(Key::Enter);
+  int selectFrames = 0, resetCount = 0;
+  for(int f = 0; f < 40; ++f) { controls::Input x; allowed.apply(x); selectFrames += x.select; resetCount += x.reset; }
+  expect(selectFrames == 4 && resetCount == 10, "the game thread gets 2 presses of 2 frames and then Reset");
+  selectFrames = resetCount = 0;
+  for(int f = 0; f < 40; ++f) { controls::Input x; refused.apply(x); selectFrames += x.select; resetCount += x.reset; }
+  expect(selectFrames == 0 && resetCount == 0, "a refused start (a replay is running) adds no input");
+  allowed.open(in);
+  expect(allowed.menu().choice().game == 1, "the menu opens on the game the game number byte says (6 = game 1)");
+
+  std::printf("%d checks, %d failures\n", checks, failures);
+  if(failures == 0) std::printf("ALL TESTS PASSED\n");
+  return failures == 0 ? 0 : 1;
+}

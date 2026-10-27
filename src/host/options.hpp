@@ -16,6 +16,7 @@ const char* modeName(layout::Mode m);
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
+  std::string menuCheckFile, menuShotPng;  // --menu-check <report> / --menu-shot <png> (Stage I5)
   std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
   std::string recordFile, replayFile;  // input recording (--record) and playback (--replay), Stage D13
   std::vector<std::array<int, 3>> pokes;  // --poke <frame>:<hex address>:<hex value> (headless only, TEST ONLY, Stage E8): memory edits before a frame
@@ -26,6 +27,7 @@ struct Options {
   double audioCheckSeconds = 0;
   int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
   bool mute = false;  // play the sound stream with the volume at zero (tests)
+  bool pushMenu = false;  // tests (Stage I5): a helper thread works the Escape menu through the real window's event queue (--push-menu)
   bool pushKeys = false;  // tests: a helper thread presses keys in the real window's event queue (--push-keys)
   bool timerClock = false;  // pace the game from the PC clock instead of the sound card (comparison only)
   int stallMs = 0;    // tests: freeze the loop once, 5 seconds in (--audio-check: the game loop; the game window: the window thread)

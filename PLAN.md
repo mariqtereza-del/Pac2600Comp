@@ -2993,8 +2993,24 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Recovery:** documents only; revert the commit.
       - **Documentation updates:** `docs\I2_FEATURE_MENU.md` (new), `DECISIONS.md` (T-I2-1), `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I2: Feature menu`. **Next stage:** I3 (the owner's decisions; it cannot start without the owner's answers).
-3. **[Not started] I3 — Your decisions.** Recorded in `DECISIONS.md` with your exact wording. Rejected features are kept in a "Considered and declined" list so they aren't proposed again.
-4. **[Not started] I4 — Plan the approved features** as new stages (I5, I6…), each small and each required to keep the preservation suite green.
+3. **[In progress] I3 — Your decisions.** Recorded in `DECISIONS.md` with your exact wording. Rejected features are kept in a "Considered and declined" list so they aren't proposed again.
+4. **[In progress] I4 — Plan the approved features** as new stages (I5, I6…), each small and each required to keep the preservation suite green.
+
+    - **I5 - The Escape menu** **[Done 2026-10-27]** *(planned and expanded 2026-10-27; first approved feature, D-010)*
+      - **Objective:** Escape opens a menu over the picture and pauses the game. From it the player can resume, start a new game with chosen settings, choose the game (1 to 8, one player), set the left and right difficulty switches and the Colour / Black & white switch, or quit. Each choice shows a plain-words explanation of what it changes, checked against the game.
+      - **Why it matters:** the owner asked for it (D-010); until now the game number could only be stepped blindly with the Select key (the number is not shown during play) and the difficulty switches had no explanation anywhere.
+      - **Prerequisites:** I2 Done (`07a1528`), clean tree, D-010 recorded.
+      - **What Claude Code will do:** write the menu logic with no window code (`src\host\menu.*`: items, keys, the mapping from game number to the game's Select counter, the explanations, the Select/Reset pulses that start a game), the part shared by the window and game threads (`menu_session.*`), the drawing (`menu_view.*`), the pause in the game thread (the pacer is restarted on resume so there is no catch-up), Escape handling in the window (no longer quits), two test modes (`--menu-check` plays all eight games from several starting states and checks the result in the game's memory; `--menu-shot` saves the menu as a picture) and a unit test `test_menu`; update the F1 list, `TESTING.md`, `ARCHITECTURE.md`, `CLAUDE.md`.
+      - **What I must do:** nothing is required (D-008). Optional: press Escape and look.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** `test_menu` and `--menu-check` say OK; the picture of the menu is readable; all earlier proofs unchanged (the menu is not on any recorded path); `test_quick` OK.
+      - **Verification:** `test_menu`, `pacman2600 --menu-check`, `--menu-shot` looked at, `test_quick`, `test_public`, the key-replay comparison (`d10_replay_compare.py`) with 0 differences.
+      - **Completion criteria:** every claim in an explanation is backed by a check or a named document; the menu changes no recorded behaviour; recordings made with the menu replay identically (the injected Select and Reset are recorded).
+      - **Potential problems:** two-player games are NOT offered: in the original player 2 plays on the second joystick, which the keyboard and the pad do not drive, so such a game would be unplayable; this is reported to the owner as a separate decision (proposed stage I6, with extra proof against the original). The menu is for keyboard only in this stage (the pad has no menu button).
+      - **Recovery:** new files, small edits in `play_window.cpp`, `options.*`, `main.cpp`, `controls.cpp`; revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-010, T-I5-1), `docs\GLOSSARY.md`, `TESTING.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I5: The Escape menu`. **Next stage:** I3 continues with the owner's other answers; I6 (two players) only if the owner wants it.
 
 Two rules for every feature:
 

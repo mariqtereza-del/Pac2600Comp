@@ -62,6 +62,8 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--mode") { if(!parseMode(next(), o.mode)) std::fprintf(stderr, "--mode must be sharp, fill, tv, game or framed\n"); }
     else if(a == "--keys-replay") { o.keysReplayScript = next(); o.keysReplayCsv = next(); }
     else if(a == "--help-check") o.helpCheckPng = next();
+    else if(a == "--menu-check") o.menuCheckFile = next();
+    else if(a == "--menu-shot") o.menuShotPng = next();
     else if(a == "--pad-check") o.padCheckFile = next();
     else if(a == "--stella-speed") o.stellaSpeed = true;
     else if(a == "--soft-glow") o.softGlow = true;
@@ -83,6 +85,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--mute") o.mute = true;
     else if(a == "--timer-clock") o.timerClock = true;
     else if(a == "--push-keys") o.pushKeys = true;
+    else if(a == "--push-menu") o.pushMenu = true;
     else if(a == "--stall-ms") o.stallMs = std::atoi(next().c_str());
     else if(a == "--present-hz") o.presentHz = std::atof(next().c_str());
     else if(a == "--fullscreen-check") o.fullscreenCheckFile = next();

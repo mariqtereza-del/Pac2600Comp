@@ -134,6 +134,8 @@ Every project term in one line of plain English. New terms are added in the stag
 | --- | --- |
 | Phase / stage | The plan is split into phases A–J, each made of small stages done one per session. |
 | Gate | The checklist at the end of a phase that must pass before the next phase starts. |
+| Escape menu | The menu Escape opens (Stage I5): it pauses the game and lets the player choose the game (1 to 8), the two difficulty switches and the TV type, with an explanation of each. Escape no longer quits. |
+| Game number / Select | The console's Game Select switch steps through 16 choices (8 games, each for one or two players); the game keeps the choice in one memory byte. The menu presses Select the right number of times for you. |
 | Pretend monitor | A test switch (`--present-hz N`) where a timer, not the real screen, sets how often pictures are shown, to test other refresh rates such as 60 Hz on a 180 Hz PC. |
 | Frozen file / manifest | A baseline recording or fingerprint file that may never be edited, listed with its SHA-256 in `tests\preservation\MANIFEST.txt`; a checker fails if one changes or disappears. New files may be added. |
 | Spike | One frame that takes far longer than usual to compute (probably Windows pausing the program); counted, and allowed only a few times per test run. |

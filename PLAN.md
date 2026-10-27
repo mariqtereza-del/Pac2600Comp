@@ -2961,7 +2961,22 @@ Testing starts in Phase D and grows every phase; Phase H turns it into a permane
 
 Development stops here until you decide what, if anything, to add. Nothing in this phase is pre-decided.
 
-1. **[Not started] I1 — Status report.** What is preserved and verified, what isn't, open discrepancies, and which structural changes would make additions easier.
+1. **[Done] I1 — Status report.** What is preserved and verified, what isn't, open discrepancies, and which structural changes would make additions easier.
+    - **I1 - Status report** *(expanded 2026-10-27)*
+      - **Objective:** one plain-words document, `docs\I1_STATUS_REPORT.md`, that tells the owner where the project stands before any new feature is discussed: what is preserved and how it is proved, what is not proved, the open differences from a real console, and which structural changes would make additions easier.
+      - **Why it matters:** Phase I is the owner's decision point. I2 (feature menu) and I3 (decisions) should rest on facts, not memory; the report is the shared starting point.
+      - **Prerequisites:** H7 Done (`58c07ae`), clean tree, Gate H passed.
+      - **What Claude Code will do:** gather the facts from the gate documents, `DISCREPANCIES.md`, `docs\REFERENCE.md` (open items), `docs\TESTING`, `docs\PERFORMANCE.md` and the code (sizes, module list, what the game interface allows); check each claim against its source; write the report (summary first, then: what exists, what is proved and how, what is not proved, open items with their status, the structure and what it allows host-side and game-side, risks for modernization, recommendations for I2); record the technical choices in `DECISIONS.md` (T-I1-1). No code is changed.
+      - **What I must do:** read the report if you wish (nothing is required; D-008). Phase I continues only when you ask for I2.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the resume prompt.
+      - **Expected result:** `docs\I1_STATUS_REPORT.md` exists; every number in it was checked against a command output or a document named next to it; `test_quick` says `result: OK`.
+      - **Verification:** `test_quick.ps1`, `h1_testing_check.py` (the new document has no tool), the numbers cross-checked by command.
+      - **Completion criteria:** the four questions of the stage are answered in the report; unproved things are listed as unproved (Rule 4); no feature is proposed as decided.
+      - **Potential problems:** old open items in older documents may have been settled later (the report says which); statements about what a feature "would need" are estimates, not tests.
+      - **Recovery:** documents only; revert the commit.
+      - **Documentation updates:** `docs\I1_STATUS_REPORT.md` (new), `DECISIONS.md` (T-I1-1), `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I1: Status report`. **Next stage:** I2 (feature menu), only when the owner asks.
 2. **[Not started] I2 — Feature menu.** Claude Code presents candidate features one at a time, each with the eight answers your brief requires: what it does, why it's useful, whether it changes game behaviour, effect on fidelity, difficulty, new dependencies, whether it should be optional, and now / later / never. The list in your brief is the starting point; nothing is added because it is common.
 3. **[Not started] I3 — Your decisions.** Recorded in `DECISIONS.md` with your exact wording. Rejected features are kept in a "Considered and declined" list so they aren't proposed again.
 4. **[Not started] I4 — Plan the approved features** as new stages (I5, I6…), each small and each required to keep the preservation suite green.

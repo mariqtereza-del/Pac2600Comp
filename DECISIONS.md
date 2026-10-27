@@ -154,6 +154,15 @@ Small technical choices Claude Code makes inside a stage go in the second list (
 - **Not proved by me:** how it sounds and feels to the owner (the speed is 0.13 % lower, one frame in 13 seconds; the pitch drops by 2 cents).
 - **Reversible:** Yes.
 
+### T-I1-1 — Status report before Phase I (2026-10-27, Stage I1)
+
+- **Choice:** one document, `docs\I1_STATUS_REPORT.md`, in plain words, summary first. It answers the stage's four questions: what is preserved and how it is proved (11 claims, each with its evidence document), what is not proved (8 items, Rule 4), the differences from a real console (from `DISCREPANCIES.md`; the nine open items of Stage C8 and what became of them), and the structure (additions that need no game change, that need the game's state, that change play; four structural recommendations for I2). No code, test or frozen file was changed.
+- **Checked before writing:** sizes counted with `git ls-files` (game 51 files / 3,847 lines, host 42 / 3,583, lockstep and testsupport 14 / 2,338, tests 27, tools 93, baseline 140 files); the repository has no remote (`git remote -v` empty), so "nothing pushed" is a fact; the test numbers are from the H7 runs (quick 35 of 35, public 17 of 17, full 48 of 48).
+- **Corrections made while writing:** the old open item "line count during a level change" (`docs\DISPLAY.md`) has no separate measurement in later documents; the report says it is covered in practice by the lockstep proofs (cleared levels are in the recorded games, pictures identical) and was never measured on its own. `docs\REFERENCE.md` still lists the nine items as open; it was left as the record of Gate C.
+- **Estimates, marked as such in the report:** that a save/load needs only the 128-byte state plus three small values (not checked; a first task if chosen), and the ease of adding options per module.
+- **Not decided:** no feature is proposed as chosen; I2 starts only when the owner asks.
+- **Reversible:** Yes (a document).
+
 ### T-H7-1 — Gate H: the preservation suite is frozen by a manifest (2026-10-27, Stage H7)
 
 - **Choice:** the frozen files (70 baseline entries + 70 inputs in `baseline\`, 11 fingerprint files in `tests\game\data\`; 151 in all) stay where the proofs read them and are listed, with SHA-256 and size, in the new `tests\preservation\MANIFEST.txt`. `tools\h7_preservation_check.py` checks: (1) every listed file present and unchanged; (2) every committed manifest line still present (the manifest only grows); (3) every frozen file that exists at the tag `1.0.0-preservation` equals the tag's version; (4) new unlisted files are reported and fail the check until reviewed and added with `--add` (which only appends). Hashes are over LF-normalised text so a Windows checkout (`.gitattributes` `text=auto`) gives the same values. Wired into `test_quick` (check and a `--drill` tamper drill), `test_public` (check; checks 2 and 3 say SKIPPED where Git or the tag is missing) and `test_full` (through the quick set).

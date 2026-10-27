@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX23_STANDARD_COMPILE_OPTION "/std:c++23preview")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(lockstep lockstep_main.cpp machine.cpp natives.cpp natives_frame.cpp natives_objects.cpp ../game/logic/players.cpp ../game/data/tables.cpp ../game/logic/maze.cpp ../game/logic/objects.cpp ../game/logic/animation.cpp ../game/logic/scoring.cpp ../game/logic/ghosts.cpp ../game/logic/flow.cpp ../game/logic/collisions.cpp ../game/logic/pacman.cpp ../game/logic/bottom.cpp ../game/logic/top.cpp ../game/logic/frame_start.cpp ../game/picture/status_bar.cpp ../game/sound/sound_logic.cpp)
-add_executable(lockstep_native native_main.cpp ../game/logic/players.cpp ../game/data/tables.cpp ../game/logic/maze.cpp ../game/logic/objects.cpp ../game/logic/animation.cpp ../game/logic/scoring.cpp ../game/logic/ghosts.cpp ../game/logic/flow.cpp ../game/logic/collisions.cpp ../game/logic/pacman.cpp ../game/logic/bottom.cpp ../game/logic/top.cpp ../game/logic/frame_start.cpp ../game/picture/status_bar.cpp ../game/sound/sound_logic.cpp ../game/game.cpp ../game/objects_view.cpp ../game/lookahead.cpp ../game/kernel.cpp ../game/picture/kernel_positions.cpp ../game/picture/kernel_maze.cpp ../game/picture/kernel_score.cpp ../game/tia_video.cpp ../game/renderer.cpp ../game/tia_audio.cpp)
+add_executable(lockstep_native native_main.cpp ../game/logic/players.cpp ../game/data/tables.cpp ../game/logic/maze.cpp ../game/logic/objects.cpp ../game/logic/animation.cpp ../game/logic/scoring.cpp ../game/logic/ghosts.cpp ../game/logic/flow.cpp ../game/logic/collisions.cpp ../game/logic/pacman.cpp ../game/logic/bottom.cpp ../game/logic/top.cpp ../game/logic/frame_start.cpp ../game/picture/status_bar.cpp ../game/sound/sound_logic.cpp ../game/game.cpp ../game/objects_view.cpp ../game/lookahead.cpp ../game/smooth.cpp ../game/kernel.cpp ../game/picture/kernel_positions.cpp ../game/picture/kernel_maze.cpp ../game/picture/kernel_score.cpp ../game/tia_video.cpp ../game/renderer.cpp ../game/tia_audio.cpp)
 # Stage G5a: the same program with a counter on every cartridge read (a test tool; the game's own builds never define the macro).
 get_target_property(NATIVE_SRCS lockstep_native SOURCES)
 add_executable(lockstep_native_reads ${NATIVE_SRCS})
@@ -27,3 +27,5 @@ add_executable(test_layers ../../tests/game/test_layers.cpp ${NOROM_SRCS})
 add_executable(test_objects_view ../../tests/game/test_objects_view.cpp ${NOROM_SRCS})
 # Stage I9.2: the look-ahead (the next frames with the controls held).
 add_executable(test_lookahead ../../tests/game/test_lookahead.cpp ${NOROM_SRCS})
+# Stage I9.3: the smooth motion (the objects between their places, with no delay).
+add_executable(test_smooth ../../tests/game/test_smooth.cpp ${NOROM_SRCS})

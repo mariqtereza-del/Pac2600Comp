@@ -107,6 +107,7 @@ function Add-QuickSteps {
   Step 'test_layers BL-001' "$L\test_layers.exe" @('baseline\BL-001.inputs', 'tests\game\data\BL-001.fingerprints.txt') -Must 'result: OK'
   Step 'test_objects_view BL-001' "$L\test_objects_view.exe" @('baseline\BL-001.inputs', 'tests\game\data\BL-001.fingerprints.txt') -Must 'result: OK'
   Step 'test_lookahead BL-001' "$L\test_lookahead.exe" @('baseline\BL-001.inputs', 'tests\game\data\BL-001.fingerprints.txt') -Must 'result: OK'
+  Step 'test_smooth BL-001' "$L\test_smooth.exe" @('baseline\BL-001.inputs', 'tests\game\data\BL-001.fingerprints.txt') -Must 'result: OK'
   Step 'test_controls' "$H\test_controls.exe" @() -Must 'ALL TESTS PASSED'
   Step 'test_menu' "$H\test_menu.exe" @() -Must 'ALL TESTS PASSED'
   Step 'test_background' "$H\test_background.exe" @() -Must 'ALL TESTS PASSED'
@@ -151,6 +152,7 @@ function Add-PublicSteps {
     Step ('test_objects_view ' + $id) "$L\test_objects_view.exe" @(('baseline\' + $id + '.inputs'), ('tests\game\data\' + $g.Name)) -Must 'result: OK'
     if ($id -in 'BL-001', 'BL-035', 'BL-044', 'BL-070') {
       Step ('test_lookahead ' + $id) "$L\test_lookahead.exe" @(('baseline\' + $id + '.inputs'), ('tests\game\data\' + $g.Name)) -Must 'result: OK'
+      Step ('test_smooth ' + $id) "$L\test_smooth.exe" @(('baseline\' + $id + '.inputs'), ('tests\game\data\' + $g.Name)) -Must 'result: OK'
     }
   }
   Py 'g2_conventions --strict' 'g2_conventions_check.py' @('--strict') -Must 'result: CLEAN'

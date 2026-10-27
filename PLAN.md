@@ -3079,6 +3079,19 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-016, T-I10-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** one commit per sub-stage, `Stage I10.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I11 - CRT filters (ported shaders)** **[Planned 2026-10-27, not started]** *(sixth approved feature, D-017)*
+      - **Objective:** a "CRT filter" row in Graphics options with: Off (today's picture, the default), GDV NTSC 2600 (crt-guest-advanced NTSC), CRT-Lottes and CRT-Geom, each the real shader ported, working with HDR, the smooth picture and every window shape.
+      - **Why it matters:** the owner asked for it (D-017) and chose to port the real shaders.
+      - **Prerequisites:** I10 Done, clean tree, D-017 recorded, **the owner's approval to download the shader sources** (GPL / public domain files from the libretro slang-shaders collection, kept in `third_party\shaders` with their licences, never executed); the Retro Crisis preset file if the owner has it.
+      - **What Claude Code will do:** I11.1 prove the way: the GPU renderer with a custom fragment shader compiled by `dxc`, drawing the game picture, with HDR on and off; stop if HDR cannot work there and ask. I11.2 the multi-pass runner (render targets, parameters, the picture as input, output to the window) and CRT-Lottes as the first filter, the menu row and the setting. I11.3 CRT-Geom. I11.4 and I11.5 guest-advanced NTSC: the passes in order (first the ones the 2600 preset needs), the preset values. I11.6 pictures, numbers and the test runs.
+      - **What I must do:** approve the download; give me the Retro Crisis preset if you have it; judge the looks.
+      - **Verification:** Off equals today's picture pixel for pixel; every earlier proof unchanged; each filter drawn in the real window at three window shapes (pictures looked at); the game identical with every filter (trace); HDR on and off; cost per frame.
+      - **Completion criteria:** no frozen file changed; Off is today's renderer; the licences of the shader files are recorded in `docs\DEPENDENCIES.md`.
+      - **Potential problems:** the size of the guest port; the GPU renderer and HDR; shader parameters that depend on RetroArch features (feedback, lookup textures); frame cost at 144 Hz and Unlocked.
+      - **Recovery:** new files and a new folder; revert the commits.
+      - **Documentation updates:** `DECISIONS.md` (D-017, T-I11-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\DEPENDENCIES.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** one commit per sub-stage, `Stage I11.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

@@ -5,6 +5,7 @@
 // Like the original it also leaves its scratch bytes in memory (the eleven bytes of F21.26).
 #pragma once
 #include <cstdint>
+#include <vector>
 
 #include "chips.hpp"
 #include "state/state.hpp"
@@ -40,8 +41,32 @@ struct PictureEnd {
 // maze itself starts on `kernelStartLine`, 34 as a rule: one line earlier after a frame whose frame start ran one line long, see game.cpp).
 PictureEnd drawPicture(GameState& st, int startLine, TimedChip& chip, int kernelStartLine = 34);
 
+// Stage I9.2 (D-015): when the drawing code gives each line of the two players their picture byte. The maze lines are drawn in pairs and more, so a sprite
+// line is not always two rows high; where each one is shown follows from the order of the drawing code, not from the sprite. `x` is the line counter the
+// drawing code compares with the sprite's y (the sprite starts at the first fetch whose x is not below its y, and each later fetch shows its next line);
+// `row` is the picture row on which the fetched byte begins to show. One list for each player of the chip (0 = the ghost, 1 = Pac-Man).
+struct SpriteFetch {
+  uint8_t x;
+  int row;
+  bool clear;   // not a fetch: the write that switches the players off before the score (CLEAR_GRAPHICS); it ends whatever the sprite shows
+};
+struct SpriteSchedule {
+  std::vector<SpriteFetch> player[2];
+};
+SpriteSchedule spriteSchedule(int startLine, int kernelStartLine);
+
+// The picture column of the left edge of a sprite for each x value the drawing code is given, found by running its positioning code on the video-chip
+// model and looking where an 8-pixel player appears (-1: not in the picture). The coarse position is a multiple of 15 pixels and the rest is a fine move,
+// so the column is not simply x.
+struct SpriteColumns {
+  int player[2][256];   // [0] the ghost's player, [1] Pac-Man's
+};
+const SpriteColumns& spriteColumns();
+
 // Stage I9.1 (D-015): the same picture without Pac-Man and the ghosts (maze, wafers, power pills, bonus item, score and life markers stay). Used on a copy of
-// the state, for the smooth presenter; the game itself never uses it.
-PictureEnd drawBackground(GameState& st, int startLine, TimedChip& chip, int kernelStartLine = 34);
+// the state, for the smooth presenter; the game itself never uses it. A power pill is missile 0 of the chip, in the ghost's colour and above Pac-Man;
+// with `withoutPowerPills` it is left out too, so
+// that the pills can be found as the difference.
+PictureEnd drawBackground(GameState& st, int startLine, TimedChip& chip, int kernelStartLine = 34, bool withoutPowerPills = false);
 
 }  // namespace game

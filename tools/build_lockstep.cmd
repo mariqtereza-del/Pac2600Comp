@@ -8,5 +8,5 @@ if not defined VSPATH (echo ERROR: Build Tools not found by vswhere & exit /b 1)
 call "%VSPATH%\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64 -no_logo 2>nul
 cd /d "%~dp0.."
 cmake -S src\lockstep -B build\lockstep -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl || exit /b 2
-cmake --build build\lockstep --target lockstep lockstep_native lockstep_native_reads test_rom_check test_no_rom test_tia_video test_kernel test_tia_audio test_tables test_game_modules test_layers || exit /b 3
+cmake --build build\lockstep --target lockstep lockstep_native lockstep_native_reads test_rom_check test_no_rom test_tia_video test_kernel test_tia_audio test_tables test_game_modules test_layers test_objects_view test_lookahead || exit /b 3
 echo BUILD OK

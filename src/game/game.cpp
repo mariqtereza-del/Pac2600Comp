@@ -33,16 +33,37 @@ bool Game::runFrame(const FrameInputs& in, TiaChip& chip) {
   }
   chip.position(kTopLogicLine);
   if (!topLogic(state_, in.console, chip)) return false;
+  if (trackObjects_) {
+    if (!haveSchedule_[shift_]) { schedule_[shift_] = spriteSchedule(16 - shift_, 34 - shift_); haveSchedule_[shift_] = true; }
+    objects_ = viewObjects(state_, schedule_[shift_], mirrorSet_);
+  }
   // lines 0-33 are blank, the maze from line 35, the score and the life markers below it (F18)
   if (background_) {   // the picture without the moving objects, from a copy made before the drawing code changes the scratch bytes
     GameState copy = state_;
     drawBackground(copy, 16 - shift_, *background_, 34 - shift_);
   }
+  if (bare_) {
+    GameState copy = state_;
+    drawBackground(copy, 16 - shift_, *bare_, 34 - shift_, true);
+  }
   const PictureEnd end = drawPicture(state_, 16 - shift_, picture_ ? *picture_ : nullSink, 34 - shift_);
   chip.timeBase(end.line, end.clock);
   FrameInput flags = in.frame;
   if (picture_) picture_->collisions(flags.ghostTouched, flags.bonusTouched);   // the picture tells; otherwise the platform's flags are used
-  if (!bottomLogic(state_, flags, chip)) return false;
+  {
+    // the bottom logic writes the reflect bit of Pac-Man's picture only on the paths that reach the end of the frame; note it for the picture of the next frame
+    struct Tap : TiaChip {
+      TiaChip& chip;
+      bool reflect = false;
+      explicit Tap(TiaChip& c) : chip(c) {}
+      void write(uint8_t reg, uint8_t value) override { if (reg == chip::REFP1) reflect = (value & 0x08) != 0; chip.write(reg, value); }
+      void position(int line) override { chip.position(line); }
+      void timeBase(int line, int clock) override { chip.timeBase(line, clock); }
+      void writeAtCycle(long cycles, uint8_t reg, uint8_t value) override { chip.writeAtCycle(cycles, reg, value); }
+    } tap(chip);
+    if (!bottomLogic(state_, flags, tap)) return false;
+    mirrorSet_ = tap.reflect;
+  }
   chip.position(kFrameStartLine - shift_);
   frameStart(state_, in.console, chip);
   const int extra = frameStartRanLong(in.console) ? 1 : 0;

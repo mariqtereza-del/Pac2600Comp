@@ -3,6 +3,7 @@
 // (kernel_positions.cpp, kernel_maze.cpp, kernel_score.cpp) and still be the same code. Only drawPicture (kernel.hpp) is used by the rest of the game.
 #pragma once
 #include <cstdint>
+#include <vector>
 
 #include "../chips.hpp"
 #include "../data/tables.hpp"
@@ -22,7 +23,11 @@ struct Beam {
   TimedChip& chip;
   int line;
   int clock = 0;
+  bool hidePill = false;      // Stage I9.2: the power pills (missile 0, drawn in the ghost colour and above Pac-Man) are left out too (ENAM0 is written as 0)
   bool hideSprites = false;   // Stage I9.1: the picture without Pac-Man and the ghosts (GRP0 and GRP1 are written as 0 while it is set)
+  // Stage I9.2: when set, every first write to GRP0 or GRP1 on a line is noted with the line counter of the drawing code (see SpriteSchedule in kernel.hpp).
+  std::vector<SpriteFetch>* fetches[2] = {nullptr, nullptr};
+  const uint8_t* counter = nullptr;
   void adv(int cycles) {
     clock += 3 * cycles;
     while (clock >= 228) { clock -= 228; ++line; }
@@ -30,6 +35,13 @@ struct Beam {
   void w(uint16_t site, uint8_t reg, uint8_t value, int cycles) {
     adv(cycles);
     if (hideSprites && (reg == GRP0 || reg == GRP1)) value = 0;
+    if (hidePill && reg == ENAM0) value = 0;
+    if ((reg == GRP0 || reg == GRP1) && counter) {
+      std::vector<SpriteFetch>* list = fetches[reg == GRP1 ? 1 : 0];
+      const int row = line - 23;   // the first picture row is scanline 23 after the vertical sync (TiaVideo::kFirstLine)
+      const bool again = list && !list->empty() && list->back().x == *counter && list->back().row == row;   // the second write of a line
+      if (list && !again) list->push_back({*counter, row, site >= 0xF485 && site <= 0xF48B});
+    }
     chip.write({line, clock, reg, value, site});
   }
   void wsync() {   // STA WSYNC: the write is the third cycle; the processor then waits for the start of the next line
@@ -43,7 +55,8 @@ struct Beam {
 class Kernel {
  public:
   Kernel(GameState& state, TimedChip& chip, int startLine, int kernelStart)
-      : st(state), b{chip, startLine}, kernelStartLine(kernelStart) {}
+      : st(state), b{chip, startLine}, kernelStartLine(kernelStart) { b.counter = &X; }
+  void logSprites(std::vector<SpriteFetch>* ghost, std::vector<SpriteFetch>* pacman) { b.fetches[0] = ghost; b.fetches[1] = pacman; }
 
   // The parts, in the order the original runs them.
   void positions();     // PART 2 ($F07F): the positions of the sprites and of the power-pill missile, on the lines before the picture
@@ -55,6 +68,7 @@ class Kernel {
   // Stage I9.1: while set, the maze part of the picture is made without Pac-Man and the ghosts (the two players of the chip, which the maze rows use
   // for nothing else); the score and the life markers need the same registers and are never hidden.
   void hideMovingObjects(bool hide) { b.hideSprites = hide; }
+  void hidePowerPills(bool hide) { b.hidePill = hide; }
 
  private:
   GameState& st;

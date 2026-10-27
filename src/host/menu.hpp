@@ -6,10 +6,14 @@
 #include <string>
 #include <vector>
 
+#include "background.hpp"
+
 namespace menu {
 
 enum class Key { Up, Down, Left, Right, Enter, Escape };
-enum class Item { Resume, NewGame, Game, Players, LeftDifficulty, RightDifficulty, TvType, Quit };
+enum class Item { Resume, NewGame, Game, Players, LeftDifficulty, RightDifficulty, TvType, Graphics, Quit,  // the main page
+                  Background, SolidColour, Preview, Back };                                                    // the "Graphics options" page (Stage I7)
+enum class Page { Main, Graphics };
 enum class Result { None, Resume, StartGame, Quit };
 
 inline constexpr int kGames = 8;  // the console's Game Select offers 8 games, each for one or two players (docs\F17_STATES.md)
@@ -19,6 +23,8 @@ struct Choice {
   int game = 1;  // 1..8
   bool twoPlayers = false;  // two players take turns on the same controls (D-011)
   bool leftA = false, rightA = false, blackWhite = false;
+  background::Kind background = background::Kind::Black;  // what fills the space around the picture (Stage I7); takes effect at once
+  int solid = 0;                                           // the Solid colour background's colour (background::solidColour)
 };
 
 // What differs between the eight games (docs\F16_LEVELS.md, docs\F10_PACMAN.md; checked by `pacman2600 --menu-check`).
@@ -45,8 +51,12 @@ class Menu {
   Result press(Key key);
 
   const Choice& choice() const { return choice_; }
-  Item cursor() const { return items()[static_cast<std::size_t>(cursor_)]; }
-  static const std::vector<Item>& items();
+  Item cursor() const { return shown()[static_cast<std::size_t>(cursor_)]; }
+  static const std::vector<Item>& items();          // the rows of the main page
+  static const std::vector<Item>& graphicsItems();  // the rows of the "Graphics options" page
+  const std::vector<Item>& shown() const { return page_ == Page::Main ? items() : graphicsItems(); }
+  Page page() const { return page_; }
+  bool previewing() const { return previewing_; }  // the menu is hidden so that the background can be looked at; any key brings it back
 
   // The rows of the list, the marked one starting with '>'.
   std::vector<std::string> rows() const;
@@ -54,7 +64,9 @@ class Menu {
   std::vector<std::string> explanation(int width) const;
 
  private:
-  bool open_ = false;
+  void leaveGraphics();  // back to the main page, the cursor on the row that opened the Graphics page
+  bool open_ = false, previewing_ = false;
+  Page page_ = Page::Main;
   int cursor_ = 0;
   Choice choice_;
 };

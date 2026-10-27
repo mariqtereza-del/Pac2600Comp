@@ -31,11 +31,16 @@ for prog in pacman2600 pacman2600_ref; do
   "$EXE" --menu-shot "$P/menu.png" "$ROM" --window 1280x960 --settings "$P/s13.ini"; check "$prog menu-shot" $? 0; has "$prog menu-shot result" "$P/menu.png.txt" "result=OK"
   "$EXE" --push-menu --timed 14 "$P/menuwin.txt" "$ROM" --mute --settings "$P/s14.ini"; check "$prog push-menu" $? 0
   has "$prog menu paused the game" "$P/s14.ini.audio.txt" "menu_frames_run_while_open=0"
-  has "$prog menu opened three times" "$P/s14.ini.audio.txt" "menu_opens=3"
+  has "$prog menu opened four times" "$P/s14.ini.audio.txt" "menu_opens=4"
   has "$prog menu chose game 3" "$P/s14.ini.audio.txt" "final_game_number_byte=10"
   has "$prog menu set the level" "$P/s14.ini.audio.txt" "final_level=4"
   has "$prog menu set left difficulty A" "$P/s14.ini.audio.txt" "final_game_flags=20"
-  has "$prog menu Quit closed the program" "$P/s14.ini.audio.txt" "seconds=7"
+  has "$prog menu Quit closed the program" "$P/s14.ini.audio.txt" "seconds=8"
+  has "$prog graphics page remembered the background" "$P/s14.ini" "background=mirror"
+  # Stage I7: every background in the real window at three window shapes (tall, wide, square); the picture is never touched and the space is filled
+  for size in 1280x1024 1920x1080 1000x1000; do
+    "$EXE" --backdrop-check "$P/bd_$size" "$ROM" --window $size --settings "$P/s15.ini"; check "$prog backdrop-check $size" $? 0; has "$prog backdrop result $size" "$P/bd_$size.txt" "result=OK"
+  done
   "$EXE" --push-keys --timed 12 "$P/keys.txt" "$ROM" --mute --settings "$P/s9.ini" --record "$P/rec1.inputs" --fingerprints "$P/A.csv"; check "$prog push-keys recording" $? 0
   for v in 1 2 4 8; do has "$prog key direction $v seen" "$P/s9.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0

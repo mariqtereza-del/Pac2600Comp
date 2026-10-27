@@ -4,7 +4,7 @@
 namespace menu {
 
 // Opens the menu with the choices where the game and the console switches are now (the game number is read from the game's memory, byte $84).
-void Session::open(const controls::Input& switches)
+void Session::open(const controls::Input& switches, background::Kind kind, int solid)
 {
   Choice now;
   now.game = gameOfSelect(static_cast<std::uint8_t>(gameSelect_.load()));
@@ -12,6 +12,8 @@ void Session::open(const controls::Input& switches)
   now.leftA = switches.leftDifficultyA;
   now.rightA = switches.rightDifficultyA;
   now.blackWhite = switches.blackWhite;
+  now.background = kind;
+  now.solid = solid;
   menu_.open(now);
   open_ = true;
 }

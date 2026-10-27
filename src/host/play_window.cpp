@@ -52,6 +52,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     SDL_SetWindowTitle(window, title.c_str());
   };
   retitle();
+  // Stage I7: what fills the space around the picture, remembered in settings.ini (background=black|glow|mirror|solid|gradient|arcade|bezel, solid_colour=0..5)
+  screen.backgroundKind = background::fromSetting(settings::get(options.settingsFile, "background"));
+  {
+    const std::string solid = settings::get(options.settingsFile, "solid_colour");
+    screen.solidChoice = solid.empty() ? 0 : std::clamp(std::atoi(solid.c_str()), 0, background::kSolidChoices - 1);
+  }
 
   // The game and its sound run on their own thread (DECISIONS.md T-D8-2), so that a window that is being dragged or
   // resized, which freezes this thread on Windows, cannot starve the sound card. This thread only shows the pictures.
@@ -71,6 +77,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   std::mutex lock;  // guards the shared picture below
   std::vector<std::uint32_t> sharedPixels;
   int sharedHeight = 0;
+  std::array<std::uint8_t, 128> sharedRam{};  // the game's memory after the frame that sharedPixels shows (for the arcade panel)
   long long sharedFrame = 0;  // number of the picture in sharedPixels (frames run so far)
   double longestGapMs = 0;
   int gapsOver30 = 0;
@@ -139,6 +146,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         std::vector<std::uint32_t> picture = emulator.colours();
         std::lock_guard<std::mutex> guard(lock);
         sharedPixels = std::move(picture);
+        for(std::size_t i = 0; i < sharedRam.size(); ++i) sharedRam[i] = emulator.ram()[i];
         sharedHeight = emulator.height();
         sharedFrame = frames;
       }
@@ -170,7 +178,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
           {8.5, SDL_SCANCODE_F6, true}, {8.6, SDL_SCANCODE_F6, false},          // right difficulty to A
           {9.0, SDL_SCANCODE_F4, true}, {9.1, SDL_SCANCODE_F4, false},          // Colour to B&W
           {9.5, SDL_SCANCODE_F7, true}, {9.6, SDL_SCANCODE_F7, false}};         // soft glow on
-      if(options.pushMenu) {  // Stage I5: open the menu, choose game 3 and the left difficulty A, start it; open and close it again; quit from it
+      if(options.pushMenu) {  // Stage I5 (then I7): open the menu, choose game 3 and the left difficulty A, start it; open and close it again; quit from it
         plan.clear();
         auto tap = [&](double at, SDL_Scancode code) { plan.push_back({at, code, true}); plan.push_back({at + 0.05, code, false}); };
         tap(1.0, SDL_SCANCODE_ESCAPE);
@@ -181,7 +189,11 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         tap(2.05, SDL_SCANCODE_UP); tap(2.1, SDL_SCANCODE_UP); tap(2.2, SDL_SCANCODE_UP);  // New game
         tap(3.0, SDL_SCANCODE_RETURN);                               // go
         tap(6.0, SDL_SCANCODE_ESCAPE); tap(6.5, SDL_SCANCODE_ESCAPE);  // open and close again
-        tap(7.0, SDL_SCANCODE_ESCAPE); tap(7.2, SDL_SCANCODE_UP); tap(7.4, SDL_SCANCODE_RETURN);  // Quit
+        tap(6.6, SDL_SCANCODE_ESCAPE);                                // Stage I7: open the menu, go to Graphics options, choose the Mirrored edge, back, close
+        for(int i = 0; i < 7; ++i) tap(6.7 + 0.1 * i, SDL_SCANCODE_DOWN);
+        tap(7.4, SDL_SCANCODE_RETURN); tap(7.5, SDL_SCANCODE_RIGHT); tap(7.6, SDL_SCANCODE_RIGHT);
+        tap(7.7, SDL_SCANCODE_ESCAPE); tap(7.8, SDL_SCANCODE_ESCAPE);
+        tap(8.2, SDL_SCANCODE_ESCAPE); tap(8.4, SDL_SCANCODE_UP); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
       }
       const Uint64 t0 = SDL_GetTicksNS();
       for(const auto& step : plan) {
@@ -202,7 +214,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     if(!menuSession.isOpen()) {
       if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
       keyboard.releaseAll();  // no direction may stay held while the game is stopped
-      menuSession.open(keyboard.input());
+      menuSession.open(keyboard.input(), screen.backgroundKind, screen.solidChoice);
       menuOpenedAtFrame = framesNow();
       ++menuOpens;
       return true;
@@ -218,6 +230,12 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       if(!menuSession.isOpen()) menuFramesRun += framesNow() - menuOpenedAtFrame;
       const menu::Choice& c = menuSession.menu().choice();
       keyboard.setSwitches(c.leftA, c.rightA, c.blackWhite);  // the switches take effect at once; the loop below remembers them in settings.ini
+      if(c.background != screen.backgroundKind || c.solid != screen.solidChoice) {  // so does the background, which is remembered here
+        screen.backgroundKind = c.background;
+        screen.solidChoice = c.solid;
+        settings::set(options.settingsFile, "background", background::settingName(c.background));
+        settings::set(options.settingsFile, "solid_colour", std::to_string(c.solid));
+      }
       if(result == menu::Result::Quit) running = false;
       return true;
     }
@@ -225,6 +243,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   };
 
   std::vector<std::uint32_t> pixels;
+  std::array<std::uint8_t, 128> shownRam{};
   int height = 0;
   bool failed = false, stalled = false;
   // How many monitor refreshes (presents) each game frame was on screen: [0]=1 ... [4]=5 or more; and frames never shown.
@@ -264,7 +283,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     long long frameNow = 0;
     {
       std::lock_guard<std::mutex> guard(lock);
-      if(!sharedPixels.empty() && sharedFrame != shownFrame) { pixels = sharedPixels; height = sharedHeight; }
+      if(!sharedPixels.empty() && sharedFrame != shownFrame) { pixels = sharedPixels; height = sharedHeight; shownRam = sharedRam; }
       frameNow = sharedFrame;
     }
     if(frameNow != shownFrame) {  // a new game frame: close the count of the previous one
@@ -275,6 +294,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       shownFrame = frameNow;
       shownCount = 0;
     }
+    screen.ram = shownRam.data();
     if(!pixels.empty() && !screen.show(pixels, height)) { failed = true; running = false; }  // redrawn every time: a presented buffer is not kept
     if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load());
     if(menuSession.isOpen()) drawMenu(renderer, menuSession.menu());

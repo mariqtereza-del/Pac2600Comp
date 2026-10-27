@@ -8,5 +8,5 @@ if not defined VSPATH (echo ERROR: Build Tools not found by vswhere & exit /b 1)
 call "%VSPATH%\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64 -no_logo 2>nul
 cd /d "%~dp0.."
 cmake -S src\host -B build\host -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl || exit /b 2
-cmake --build build\host --target pacman2600 pacman2600_ref test_rom_finder test_layout test_windowstate test_controls test_inputlog test_trace test_menu || exit /b 3
+cmake --build build\host --target pacman2600 pacman2600_ref test_rom_finder test_layout test_windowstate test_controls test_inputlog test_trace test_menu test_background || exit /b 3
 echo BUILD OK

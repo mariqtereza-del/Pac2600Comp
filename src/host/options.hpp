@@ -16,6 +16,7 @@ const char* modeName(layout::Mode m);
 struct Options {
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
+  std::string backdropCheckPng;  // --backdrop-check <png prefix> (Stage I7)
   std::string menuCheckFile, menuShotPng;  // --menu-check <report> / --menu-shot <png> (Stage I5)
   std::string audioCheckFile, audioWav, keysReplayScript, keysReplayCsv, helpCheckPng, padCheckFile;
   std::string recordFile, replayFile;  // input recording (--record) and playback (--replay), Stage D13

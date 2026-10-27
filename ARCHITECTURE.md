@@ -78,6 +78,7 @@ The functions are not in the order of the 6502 code. The order of every step tha
 | `play_window`, `screen`, `layout`, `window_tracker`, `windowstate`, `settings` | the window, the picture modes, fullscreen, remembered position, `settings.ini` |
 | `audio`, `pacer` | sound output; the game runs at the console's 59.9227 frames a second, steered by the sound card |
 | `controls`, `pads`, `inputlog` | keyboard, game pad, recordings and replays |
+| `background`, `backdrop`, `backdrop_check` | what fills the space around the picture (Stage I7, D-012): the choices, colours and small calculations with no window code (`background`); the drawing of the glow, mirror, gradient, arcade panel and TV bezel (`backdrop`); the check that draws every one in the real window (`backdrop_check`) |
 | `menu`, `menu_session`, `menu_view`, `menu_check` (with its header `menu_checks`) | the Escape menu (Stage I5): its choices and explanations, the Select and Reset presses that start a chosen game (`menu`, no window code); the part the window thread and the game thread share, which stops the game while the menu is open (`menu_session`); drawing and the picture test (`menu_view`); the menu-and-game check (`menu_check`; Stage I6 added the two-player scenarios and the turns played on one set of controls) |
 | `headless`, `window_checks`, `trace` | window-less runs and the self-checks used by the tests; the per-frame trace |
 | `native_emulator` | the adapter between the host and `game::Game` |

@@ -106,6 +106,7 @@ function Add-QuickSteps {
   Step 'test_no_rom BL-035' "$L\test_no_rom.exe" @('baseline\BL-035.inputs', 'tests\game\data\BL-035.fingerprints.txt') -Must 'IDENTICAL'
   Step 'test_controls' "$H\test_controls.exe" @() -Must 'ALL TESTS PASSED'
   Step 'test_menu' "$H\test_menu.exe" @() -Must 'ALL TESTS PASSED'
+  Step 'test_background' "$H\test_background.exe" @() -Must 'ALL TESTS PASSED'
   # Stage I5: the Escape menu and the game played together, three starting states and all eight games; the report file says PASS for each (exit 0 = all right)
   $menuDir = Scratch 'menu'
   Step 'menu-check' "$H\pacman2600.exe" @('--menu-check', (Join-Path $menuDir 'menu.txt'), $rom, '--settings', (Join-Path $menuDir 's.ini'))

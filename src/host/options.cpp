@@ -64,6 +64,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--help-check") o.helpCheckPng = next();
     else if(a == "--menu-check") o.menuCheckFile = next();
     else if(a == "--menu-shot") o.menuShotPng = next();
+    else if(a == "--backdrop-check") o.backdropCheckPng = next();
     else if(a == "--pad-check") o.padCheckFile = next();
     else if(a == "--stella-speed") o.stellaSpeed = true;
     else if(a == "--soft-glow") o.softGlow = true;

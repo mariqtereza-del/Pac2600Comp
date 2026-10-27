@@ -35,7 +35,7 @@ target_compile_options(controls PRIVATE /W4 /permissive-)
 target_link_libraries(controls PUBLIC SDL3::SDL3)
 
 # The Escape menu (Stage I5): the choices, their explanations and the presses that start a game; no window code.
-add_library(menu STATIC menu.cpp menu_session.cpp)
+add_library(menu STATIC menu.cpp menu_session.cpp background.cpp)
 target_compile_options(menu PRIVATE /W4 /permissive-)
 target_link_libraries(menu PUBLIC controls)
 
@@ -68,7 +68,7 @@ target_link_libraries(emulator_native PUBLIC game_native)
 
 # The program's parts (Stage G4.7, split out of main.cpp): arguments, ROM choice, screen, pads, pacing, window handling, headless runs.
 # They need an Emulator but not which one: the executables below link the native one or the Stella one.
-add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp pads.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp)
+add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp pads.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp backdrop.cpp backdrop_check.cpp)
 target_compile_options(host_app PRIVATE /W4 /permissive-)
 target_link_libraries(host_app PUBLIC SDL3::SDL3 rom_finder layout windowstate audio controls menu inputlog trace)
 
@@ -117,6 +117,11 @@ target_link_libraries(test_trace PRIVATE trace)
 add_executable(test_menu ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_menu.cpp)
 target_compile_options(test_menu PRIVATE /W4 /permissive-)
 target_link_libraries(test_menu PRIVATE menu)
+
+# Tests for what fills the space around the picture (Stage I7): build/host/test_background.exe
+add_executable(test_background ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_background.cpp)
+target_compile_options(test_background PRIVATE /W4 /permissive-)
+target_link_libraries(test_background PRIVATE menu)
 
 # Put SDL3.dll next to the program so a double-click finds it.
 add_custom_command(TARGET pacman2600 POST_BUILD

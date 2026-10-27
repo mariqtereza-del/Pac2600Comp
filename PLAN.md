@@ -3028,6 +3028,22 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-011, T-I6-1), `TESTING.md`, `ARCHITECTURE.md`, `docs{BS}GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I6: Two players on one set of controls`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I7 - Graphics options: filling the space around the picture** **[Done 2026-10-27]** *(planned and expanded 2026-10-27; third approved feature, D-012)*
+      - **Objective:** a "Graphics options" page in the Escape menu with seven backgrounds for the space around the 12:7 picture (Black, Ambient glow, Mirrored edge, Solid colour, Gradient, Arcade panel, TV bezel); the picture is never changed.
+      - **Why it matters:** the owner asked for it (D-012): on a window that is not the picture's shape there are black bars.
+      - **Prerequisites:** I6 Done (`432f3a8`), clean tree, D-012 recorded.
+      - **What Claude Code will do:** a no-window module for the choices and calculations (`background.*`), the drawing (`backdrop.*`), the menu page, remembering the choice, a real-window check of every background at three window shapes (`--backdrop-check`), a unit test (`test_background`), and looking at the pictures.
+      - **What I must do:** nothing (D-008). Optional: Escape, Graphics options, try them.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the owner's words in D-012.
+      - **Expected result:** each background fills the space, the picture's pixels equal Black's, Black unchanged; every earlier proof unchanged.
+      - **Verification:** `test_background`, `test_menu`, `--backdrop-check` x3 in both programs, the PNGs looked at, host checks, `test_quick`, `test_public`, key-replay comparison.
+      - **Completion criteria:** the picture rectangle is pixel-identical to Black's for every background; the choice is remembered; no frozen file changed.
+      - **Potential problems:** the glow's feel in motion and the arcade panel with two players were not looked at (T-I7-1).
+      - **Recovery:** new files plus small edits in `src\host`; revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-012, T-I7-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I7: Graphics options`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

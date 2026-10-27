@@ -1,6 +1,7 @@
 // The picture in the window, and the checks that look at it (self check, layout check, key list).
 // (Stage G4.7: moved out of main.cpp, the code is unchanged.)
 #pragma once
+#include "backdrop.hpp"
 #include "common.hpp"
 #include "options.hpp"
 
@@ -16,6 +17,10 @@ struct Screen {
   layout::Rect where{};  // where the picture was drawn in the window, in window pixels
   int shownTop = 0, shownHeight = 0;  // which rows of the 228-row picture are shown (all of them, or the game area)
   View view;
+  background::Kind backgroundKind = background::Kind::Black;  // what fills the space around the picture (Stage I7); Black = nothing is drawn
+  int solidChoice = 0;                                         // for the Solid colour background
+  const std::uint8_t* ram = nullptr;                           // the game's 128 bytes, for the arcade panel; may stay null
+  Backdrop backdrop;
   ~Screen() { if(texture) SDL_DestroyTexture(texture); }
 
   bool show(const std::vector<std::uint32_t>& pixels, int height)
@@ -37,6 +42,12 @@ struct Screen {
     SDL_UpdateTexture(texture, nullptr, pixels.data(), Emulator::kWidth * 4);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
+    if(backgroundKind != background::Kind::Black) {
+      BackdropScene scene;
+      scene.renderer = renderer; scene.picture = texture; scene.src = src; scene.where = where; scene.windowW = windowW; scene.windowH = windowH;
+      scene.pixels = pixels.data(); scene.pixelWidth = Emulator::kWidth; scene.firstRow = top; scene.rows = shownRows; scene.ram = ram;
+      backdrop.draw(scene, backgroundKind, solidChoice);
+    }
     SDL_RenderTexture(renderer, texture, &src, &dst);
     shownTop = top;
     shownHeight = shownRows;

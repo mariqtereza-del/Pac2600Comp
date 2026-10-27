@@ -22,6 +22,7 @@
 //                                               no window: presses the keys a Phase C input script asks for, in the real
 //                                               keyboard code, and writes the picture fingerprint of every frame to <csv>
 //        pacman2600 --help-check <png> [rom_file]   the F1 key list in the real window, as a screenshot
+//        pacman2600 --backdrop-check <png prefix> [rom_file]   every background in the real window: the picture untouched, the space filled (Stage I7)
 //        pacman2600 --menu-shot <png> [rom_file]    the Escape menu in the real window, as a screenshot (Stage I5)
 //        pacman2600 --menu-check <report> [rom_file] [--settings <ini>]
 //                                               no window: the menu and the game played together, all eight games (Stage I5)
@@ -78,7 +79,7 @@ int main(int argc, char* argv[])
   if(!SDL_Init(SDL_INIT_VIDEO)) { showError("SDL could not start."); return 1; }
 
   // The remembered window (Stage D7) is used for playing and for --state-report, not for the other checks or when --window is given.
-  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty() || !options.menuShotPng.empty();
+  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty() || !options.menuShotPng.empty() || !options.backdropCheckPng.empty();
   windowstate::State remembered;
   if(!otherCheck && !options.windowGiven) remembered = windowstate::fitToMonitors(windowstate::load(options.settingsFile), monitorAreas());
 
@@ -122,6 +123,8 @@ int main(int argc, char* argv[])
         exitCode = layoutCheck(renderer, options.layoutCheckPng, romPath, view, options.resetAt) ? 0 : 2;
       } else if(!options.helpCheckPng.empty()) {
         exitCode = helpCheck(renderer, options.helpCheckPng, romPath) ? 0 : 2;
+      } else if(!options.backdropCheckPng.empty()) {
+        exitCode = backdropCheck(renderer, options.backdropCheckPng, romPath) ? 0 : 2;
       } else if(!options.menuShotPng.empty()) {
         exitCode = menuShot(renderer, options.menuShotPng, romPath) ? 0 : 2;
       } else if(!options.fullscreenCheckFile.empty()) {

@@ -18,7 +18,7 @@ class Session {
 
   // ---- window thread ----
   bool isOpen() const { return open_.load(); }
-  void open(const controls::Input& switches);  // the choices start where the game and the switches are now
+  void open(const controls::Input& switches, background::Kind kind = background::Kind::Black, int solid = 0);  // the choices start where the game and the switches are now
   Result key(Key key);                           // sends a key to the open menu; StartGame has been queued for the game thread when it returns
   const Menu& menu() const { return menu_; }
 

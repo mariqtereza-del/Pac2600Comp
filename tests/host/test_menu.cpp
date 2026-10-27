@@ -101,6 +101,8 @@ int main()
   m.press(Key::Down); m.press(Key::Right);
   expect(m.choice().blackWhite, "TV type to black and white");
   m.press(Key::Down);
+  expect(m.cursor() == Item::Graphics, "the row after TV type is the Graphics options page (Stage I7)");
+  m.press(Key::Down);
   expect(m.cursor() == Item::Quit && m.press(Key::Right) == Result::None, "Right on Quit does nothing");
   expect(m.press(Key::Enter) == Result::Quit && !m.isOpen(), "Enter on Quit quits and closes");
   m.open(start);

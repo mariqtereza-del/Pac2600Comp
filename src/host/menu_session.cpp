@@ -8,6 +8,7 @@ void Session::open(const controls::Input& switches)
 {
   Choice now;
   now.game = gameOfSelect(static_cast<std::uint8_t>(gameSelect_.load()));
+  now.twoPlayers = twoPlayersOfSelect(static_cast<std::uint8_t>(gameSelect_.load()));
   now.leftA = switches.leftDifficultyA;
   now.rightA = switches.rightDifficultyA;
   now.blackWhite = switches.blackWhite;
@@ -19,7 +20,7 @@ void Session::open(const controls::Input& switches)
 Result Session::key(Key key)
 {
   const Result result = menu_.press(key);
-  if(result == Result::StartGame && allowStart_) pendingPresses_ = pressesNeeded(static_cast<std::uint8_t>(gameSelect_.load()), menu_.choice().game);
+  if(result == Result::StartGame && allowStart_) pendingPresses_ = pressesNeeded(static_cast<std::uint8_t>(gameSelect_.load()), menu_.choice().game, menu_.choice().twoPlayers);
   open_ = menu_.isOpen();
   return result;
 }

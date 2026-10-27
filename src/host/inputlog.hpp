@@ -3,6 +3,7 @@
 // A recording is a small text file:
 //     PacMan2600-inputs 1
 //     rom_sha1=<40 hex digits>      (the ROM it was recorded with)
+//     shared_controls=1             (optional, Stage I6: player 2's turn is played on the same controls, see pads.hpp applyInput)
 //     frames=<number of frames recorded>
 //     <frame> <bits>                (one line each time the input changes; frame 0 is always there;
 //                                    bits = controls::Input::pack, in decimal)
@@ -23,6 +24,7 @@ struct Change {
 struct Recording {
   std::string romSha1;
   long long frames = 0;
+  bool sharedControls = false;  // made with the two players sharing one set of controls (Stage I6); replays must route the input the same way
   std::vector<Change> changes;  // frame numbers strictly increasing, the first one is 0
 
   std::uint32_t bitsAt(long long frame) const;  // the input in force on that frame (0 if there is none)
@@ -34,7 +36,7 @@ class Recorder {
 public:
   void add(std::uint32_t bits);
   long long frames() const { return frames_; }
-  Recording finish(const std::string& romSha1) const;
+  Recording finish(const std::string& romSha1, bool sharedControls = false) const;
 
 private:
   std::vector<Change> changes_;

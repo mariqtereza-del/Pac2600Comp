@@ -144,7 +144,7 @@ int headlessRun(const Options& o)
   for(int f = 0; f < frames; ++f) {
     controls::Input in = controls::Input::unpack(replaying ? replay.bitsAt(f) : 0u);
     if(o.resetAt >= 0 && f >= o.resetAt && f < o.resetAt + 10) in.reset = true;
-    if(replaying) applyInput(emulator, in, false);
+    if(replaying) applyInput(emulator, in, false, replay.sharedControls);
     else emulator.setConsoleReset(in.reset);
     for(const auto& pk : o.pokes)
       if(pk[0] == f) emulator.pokeRam(pk[1], static_cast<std::uint8_t>(pk[2]));

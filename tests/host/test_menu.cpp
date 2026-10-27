@@ -61,6 +61,14 @@ int main()
     expect(gameInfo(g).slowPacman == (slow.count(g) > 0), "game " + std::to_string(g) + " Pac-Man speed");
   }
 
+  // Two players: one more Select press than the same game for one player (the game number byte steps game 1 one player, game 1 two players, game 2 ...).
+  for(int g = 1; g <= kGames; ++g)
+    for(int from = 2; from <= 0x11; ++from) {
+      const int one = pressesNeeded(static_cast<std::uint8_t>(from), g, false), two = pressesNeeded(static_cast<std::uint8_t>(from), g, true);
+      expect(two == (one + 1) % 16, "two players need one press more than one player (game " + std::to_string(g) + ", from " + std::to_string(from) + ")");
+    }
+  expect(pressesNeeded(6, 1, true) == 1 && pressesNeeded(7, 1, false) == 15 && pressesNeeded(7, 1, true) == 0, "game 1 for two players is byte 7");
+
   // The keys.
   Menu m;
   expect(m.press(Key::Down) == Result::None && !m.isOpen(), "a closed menu ignores keys");
@@ -80,6 +88,10 @@ int main()
   expect(m.choice().game == 1, "Right past game 8 wraps to game 1");
   m.press(Key::Left);
   expect(m.choice().game == 8, "Left from game 1 wraps to game 8");
+  m.press(Key::Down); m.press(Key::Right);
+  expect(m.cursor() == Item::Players && m.choice().twoPlayers, "Players row: Right gives two players");
+  m.press(Key::Left);
+  expect(!m.choice().twoPlayers, "and Left gives one player again");
   m.press(Key::Down); m.press(Key::Right);
   expect(m.choice().leftA && !m.choice().rightA, "left difficulty to A");
   m.press(Key::Left);

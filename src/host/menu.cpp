@@ -22,9 +22,9 @@ int gameOfSelect(std::uint8_t gameSelect) { return (stepOf(gameSelect) / 2 + 6) 
 
 bool twoPlayersOfSelect(std::uint8_t gameSelect) { return (stepOf(gameSelect) & 1) != 0; }
 
-int pressesNeeded(std::uint8_t currentGameSelect, int game)
+int pressesNeeded(std::uint8_t currentGameSelect, int game, bool twoPlayers)
 {
-  const int target = (4 + 2 * (std::clamp(game, 1, kGames) - 1)) % 16;  // game 1, one player, is step 4 (byte value 6)
+  const int target = (4 + 2 * (std::clamp(game, 1, kGames) - 1) + (twoPlayers ? 1 : 0)) % 16;  // game 1, one player, is step 4 (byte value 6)
   return (target - stepOf(currentGameSelect) + 16) % 16;
 }
 
@@ -48,7 +48,7 @@ std::vector<std::string> wrap(const std::string& text, int width)
 
 const std::vector<Item>& Menu::items()
 {
-  static const std::vector<Item> all = {Item::Resume, Item::NewGame, Item::Game, Item::LeftDifficulty, Item::RightDifficulty, Item::TvType, Item::Quit};
+  static const std::vector<Item> all = {Item::Resume, Item::NewGame, Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::TvType, Item::Quit};
   return all;
 }
 
@@ -72,6 +72,7 @@ Result Menu::press(Key key)
     case Item::Game:
       choice_.game = (choice_.game - 1 + step + kGames) % kGames + 1;
       return Result::None;
+    case Item::Players: choice_.twoPlayers = !choice_.twoPlayers; return Result::None;
     case Item::LeftDifficulty: choice_.leftA = !choice_.leftA; return Result::None;
     case Item::RightDifficulty: choice_.rightA = !choice_.rightA; return Result::None;
     case Item::TvType: choice_.blackWhite = !choice_.blackWhite; return Result::None;
@@ -91,6 +92,7 @@ std::vector<std::string> Menu::rows() const
       case Item::Resume: std::snprintf(text, sizeof text, "Resume"); break;
       case Item::NewGame: std::snprintf(text, sizeof text, "New game with the choices below"); break;
       case Item::Game: std::snprintf(text, sizeof text, "Game:             < %d of %d >", choice_.game, kGames); break;
+      case Item::Players: std::snprintf(text, sizeof text, "Players:          < %d >", choice_.twoPlayers ? 2 : 1); break;
       case Item::LeftDifficulty: std::snprintf(text, sizeof text, "Left difficulty:  < %c >", choice_.leftA ? 'A' : 'B'); break;
       case Item::RightDifficulty: std::snprintf(text, sizeof text, "Right difficulty: < %c >", choice_.rightA ? 'A' : 'B'); break;
       case Item::TvType: std::snprintf(text, sizeof text, "TV type:          < %s >", choice_.blackWhite ? "Black & white" : "Colour"); break;
@@ -118,7 +120,7 @@ std::vector<std::string> Menu::explanation(int width) const
                 "The game in progress is lost.");
       break;
     case Item::Game: {
-      paragraph("The console's Game Select offers 8 one-player games. They differ in only two things: how fast the ghosts are (the game starts at a level; the "
+      paragraph("The console's Game Select offers 8 games, each for one or two players. They differ in only two things: how fast the ghosts are (the game starts at a level; the "
                 "ghosts get faster with the level, and every maze you clear adds one level, up to level 14) and how fast Pac-Man moves.");
       out.push_back("");
       out.push_back("  Game   Start level   Pac-Man");
@@ -129,9 +131,15 @@ std::vector<std::string> Menu::explanation(int width) const
         out.push_back(line);
       }
       out.push_back("");
-      paragraph("Pac-Man: slower = 0.56 pixel a frame, faster = 0.69 pixel a frame (about 20 percent quicker). Two-player games are not in this menu yet.");
+      paragraph("Pac-Man: slower = 0.56 pixel a frame, faster = 0.69 pixel a frame (about 20 percent quicker). The game number is the same for one or two players (see Players).");
       break;
     }
+    case Item::Players:
+      paragraph("One player, or two players who take turns. In a two-player game player 1 plays until Pac-Man is caught, then player 2 plays on a maze and "
+                "score of their own, and so on until the game is over. Both players use the same keys or pad (on the console, player 2 "
+                "would use the second joystick); the game takes the input of whoever's turn it is.");
+      paragraph("Player 1 plays with the left difficulty switch and player 2 with the right one.");
+      break;
     case Item::LeftDifficulty:
       paragraph("The left switch of the console. B is the usual setting. It is the one that counts for player 1, so for every one-player game.");
       paragraph("A is the harder setting: after a power pill the ghosts stay scared half as long (about 2.7 seconds instead of 5.3, then they flash for 1 second), "

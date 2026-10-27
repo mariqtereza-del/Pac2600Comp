@@ -9,14 +9,15 @@
 namespace menu {
 
 enum class Key { Up, Down, Left, Right, Enter, Escape };
-enum class Item { Resume, NewGame, Game, LeftDifficulty, RightDifficulty, TvType, Quit };
+enum class Item { Resume, NewGame, Game, Players, LeftDifficulty, RightDifficulty, TvType, Quit };
 enum class Result { None, Resume, StartGame, Quit };
 
 inline constexpr int kGames = 8;  // the console's Game Select offers 8 games, each for one or two players (docs\F17_STATES.md)
 
 // What the player has chosen. The difficulty switches and the TV type are real switches: they take effect at once.
 struct Choice {
-  int game = 1;  // 1..8, one player
+  int game = 1;  // 1..8
+  bool twoPlayers = false;  // two players take turns on the same controls (D-011)
   bool leftA = false, rightA = false, blackWhite = false;
 };
 
@@ -31,7 +32,7 @@ GameInfo gameInfo(int game);
 // players, 8 is game 2, ... $11 is game 6 for two players, then 2 (game 7) ... 5 (game 8, two players), then 6 again.
 int gameOfSelect(std::uint8_t gameSelect);  // 1..8 (a byte outside 2..$11 counts as the power-on value 6)
 bool twoPlayersOfSelect(std::uint8_t gameSelect);
-int pressesNeeded(std::uint8_t currentGameSelect, int game);  // Select presses that lead to this game for one player (0..15)
+int pressesNeeded(std::uint8_t currentGameSelect, int game, bool twoPlayers = false);  // Select presses that lead to this game (0..15)
 
 // Cuts a text into lines of at most `width` characters at spaces.
 std::vector<std::string> wrap(const std::string& text, int width);

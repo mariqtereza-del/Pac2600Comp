@@ -9,9 +9,14 @@ namespace host {
 // ---- Keyboard (Stage D10, DECISIONS.md T-D10-1) ----
 
 // Gives the console what the keyboard adds up to. extraReset is for tests that press Reset by frame number.
-void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset)
+bool playerTwoToPlay(const std::uint8_t* ram) { return (ram[0xE6 - 0x80] & 0xC0) == 0xC0; }
+
+void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset, bool sharedControls)
 {
-  emulator.setJoystick(in.up, in.down, in.left, in.right, in.fire);
+  // The fire button stays on the left joystick: the game reads no other, and the game-over restart uses it.
+  const bool toRight = sharedControls && playerTwoToPlay(emulator.ram());
+  emulator.setJoystick(in.up && !toRight, in.down && !toRight, in.left && !toRight, in.right && !toRight, in.fire);
+  emulator.setRightJoystick(in.up && toRight, in.down && toRight, in.left && toRight, in.right && toRight);
   emulator.setConsoleSelect(in.select);
   emulator.setConsoleReset(in.reset || extraReset);
   emulator.setDifficulty(in.leftDifficultyA, in.rightDifficultyA);

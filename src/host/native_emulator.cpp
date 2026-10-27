@@ -19,6 +19,7 @@ struct Emulator::Impl {
   game::Renderer renderer;
   // the inputs
   bool up = false, down = false, left = false, right = false, fire = false, select = false, reset = false;
+  bool rightUp = false, rightDown = false, rightLeft = false, rightRight = false;  // the right joystick (player 2)
   bool leftA = false, rightA = false, blackWhite = false;
   bool softBlend = false;
   mutable testsupport::Bytes memory{};   // the state as the original's 128 bytes, for the trace and the test options (src/testsupport)
@@ -67,6 +68,14 @@ void Emulator::runFrame()
   if(d) swcha &= static_cast<std::uint8_t>(~0x20);
   if(l) swcha &= static_cast<std::uint8_t>(~0x40);
   if(r) swcha &= static_cast<std::uint8_t>(~0x80);
+  // The right joystick is the lower half of the port: up 1, down 2, left 4, right 8 (the same opposite-direction rule).
+  bool ru = m.rightUp, rd = m.rightDown, rl = m.rightLeft, rr = m.rightRight;
+  if(ru && rd) ru = false;
+  if(rl && rr) rl = false;
+  if(ru) swcha &= static_cast<std::uint8_t>(~0x01);
+  if(rd) swcha &= static_cast<std::uint8_t>(~0x02);
+  if(rl) swcha &= static_cast<std::uint8_t>(~0x04);
+  if(rr) swcha &= static_cast<std::uint8_t>(~0x08);
   in.frame.swcha = swcha;
   m.game->runFrame(in, m.renderer);
   m.picture = &m.renderer.finishPicture(m.game->lastFrameLines());
@@ -98,6 +107,11 @@ int Emulator::audioRate() const { return 31440; }
 void Emulator::setJoystick(bool up, bool down, bool left, bool right, bool fire)
 {
   impl_->up = up; impl_->down = down; impl_->left = left; impl_->right = right; impl_->fire = fire;
+}
+
+void Emulator::setRightJoystick(bool up, bool down, bool left, bool right)
+{
+  impl_->rightUp = up; impl_->rightDown = down; impl_->rightLeft = left; impl_->rightRight = right;
 }
 
 void Emulator::setConsoleSelect(bool pressed) { impl_->select = pressed; }

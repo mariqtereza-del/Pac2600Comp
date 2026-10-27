@@ -20,7 +20,9 @@ std::uint32_t Recording::bitsAt(long long frame) const
 std::string Recording::toText() const
 {
   std::ostringstream out;
-  out << "PacMan2600-inputs 1\nrom_sha1=" << romSha1 << "\nframes=" << frames << '\n';
+  out << "PacMan2600-inputs 1\nrom_sha1=" << romSha1 << '\n';
+  if(sharedControls) out << "shared_controls=1\n";
+  out << "frames=" << frames << '\n';
   for(const Change& c : changes) out << c.frame << ' ' << c.bits << '\n';
   return out.str();
 }
@@ -31,10 +33,11 @@ void Recorder::add(std::uint32_t bits)
   ++frames_;
 }
 
-Recording Recorder::finish(const std::string& romSha1) const
+Recording Recorder::finish(const std::string& romSha1, bool sharedControls) const
 {
   Recording r;
   r.romSha1 = romSha1;
+  r.sharedControls = sharedControls;
   r.frames = frames_;
   r.changes = changes_;
   return r;
@@ -55,7 +58,9 @@ bool parse(const std::string& text, Recording& out, std::string& error)
   if(!next() || line != "PacMan2600-inputs 1") { error = "This is not an input recording of this program (the first line is wrong)."; return false; }
   if(!next() || line.rfind("rom_sha1=", 0) != 0 || line.size() != 9 + 40) { error = "The recording does not say which ROM it was made with."; return false; }
   r.romSha1 = line.substr(9);
-  if(!next() || line.rfind("frames=", 0) != 0) { error = "The recording does not say how many frames it holds."; return false; }
+  bool more = next();
+  if(more && line == "shared_controls=1") { r.sharedControls = true; more = next(); }  // optional (Stage I6); recordings made before it do not have it
+  if(!more || line.rfind("frames=", 0) != 0) { error = "The recording does not say how many frames it holds."; return false; }
   char* end = nullptr;
   r.frames = std::strtoll(line.c_str() + 7, &end, 10);
   if(end == line.c_str() + 7 || *end != '\0' || r.frames < 0) { error = "The number of frames in the recording is not a number."; return false; }

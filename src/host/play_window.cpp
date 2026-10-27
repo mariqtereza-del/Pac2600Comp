@@ -33,6 +33,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     if(!inputlog::load(options.replayFile, replay, error)) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, error.c_str(), window); return 0; }
     if(replay.romSha1 != romSha1) { SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, "This recording was made with a different ROM than the one that is loaded.", window); return 0; }
   }
+  // Stage I6 (D-011): live play shares the controls between the two players of a two-player game; a replay does as its recording says.
+  const bool sharedControls = replaying ? replay.sharedControls : true;
   inputlog::Recorder recorder;  // --record: written when the window closes
   std::ofstream traceOut;       // --trace: what the game did on every frame
   if(!options.traceFile.empty()) { traceOut.open(options.traceFile, std::ios::binary); traceOut << trace::header(romSha1); }
@@ -114,7 +116,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         if(options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10) in.reset = true;
         menuSession.apply(in);  // the Select and Reset presses of a new game chosen in the menu (recorded like any other input)
         recorder.add(in.pack());
-        applyInput(emulator, in, false);
+        applyInput(emulator, in, false, sharedControls);
         emulator.runFrame();
         menuSession.publish(emulator.ram());
         if(fingerprints) {
@@ -174,8 +176,9 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         tap(1.0, SDL_SCANCODE_ESCAPE);
         tap(1.5, SDL_SCANCODE_DOWN); tap(1.6, SDL_SCANCODE_DOWN);   // to the Game row
         tap(1.7, SDL_SCANCODE_RIGHT); tap(1.8, SDL_SCANCODE_RIGHT);  // game 3
+        tap(1.85, SDL_SCANCODE_DOWN);                                // the Players row stays at one player (Stage I6)
         tap(1.9, SDL_SCANCODE_DOWN); tap(2.0, SDL_SCANCODE_RIGHT);  // left difficulty to A
-        tap(2.1, SDL_SCANCODE_UP); tap(2.2, SDL_SCANCODE_UP);        // New game
+        tap(2.05, SDL_SCANCODE_UP); tap(2.1, SDL_SCANCODE_UP); tap(2.2, SDL_SCANCODE_UP);  // New game
         tap(3.0, SDL_SCANCODE_RETURN);                               // go
         tap(6.0, SDL_SCANCODE_ESCAPE); tap(6.5, SDL_SCANCODE_ESCAPE);  // open and close again
         tap(7.0, SDL_SCANCODE_ESCAPE); tap(7.2, SDL_SCANCODE_UP); tap(7.4, SDL_SCANCODE_RETURN);  // Quit
@@ -290,7 +293,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   stop = true;
   game.join();
   if(pusher.joinable()) pusher.join();
-  if(!options.recordFile.empty() && !inputlog::save(options.recordFile, recorder.finish(romSha1))) std::fprintf(stderr, "The recording could not be written: %s\n", options.recordFile.c_str());
+  if(!options.recordFile.empty() && !inputlog::save(options.recordFile, recorder.finish(romSha1, sharedControls))) std::fprintf(stderr, "The recording could not be written: %s\n", options.recordFile.c_str());
   if(failed) return 0;
 
   const double elapsed = static_cast<double>(SDL_GetTicksNS() - started) / 1e9;

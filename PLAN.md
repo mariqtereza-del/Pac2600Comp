@@ -3010,7 +3010,23 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Potential problems:** two-player games are NOT offered: in the original player 2 plays on the second joystick, which the keyboard and the pad do not drive, so such a game would be unplayable; this is reported to the owner as a separate decision (proposed stage I6, with extra proof against the original). The menu is for keyboard only in this stage (the pad has no menu button).
       - **Recovery:** new files, small edits in `play_window.cpp`, `options.*`, `main.cpp`, `controls.cpp`; revert the commit.
       - **Documentation updates:** `DECISIONS.md` (D-010, T-I5-1), `docs\GLOSSARY.md`, `TESTING.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
-      - **Git checkpoint:** `Stage I5: The Escape menu`. **Next stage:** I3 continues with the owner's other answers; I6 (two players) only if the owner wants it.
+      - **Git checkpoint:** `Stage I5: The Escape menu`. **Next stage:** I3 continues with the owner's other answers; I6 (two players) is done.
+
+    - **I6 - Two players on one set of controls** **[Done 2026-10-27]** *(planned and expanded 2026-10-27; second approved feature, D-011)*
+      - **Objective:** a two-player game is playable: both players use the same keys or pad and take turns, as the game already does; the Escape menu offers one or two players.
+      - **Why it matters:** the owner decided it (D-011: "the 2 player mode should simply be taking turns on the same controller type"); until now player 2 could not move because the original reads the console's second joystick for player 2 and the keyboard and pad drive only the first.
+      - **Prerequisites:** I5 Done (`5871550`), clean tree, D-011 recorded.
+      - **What Claude Code will do:** route the directions to the right joystick while it is player 2's turn (`pads.*`, both emulators get `setRightJoystick`), keep it off for every recorded and test path (an optional `shared_controls=1` line in recordings made in the window), add the Players row to the menu, and prove the native game's right-joystick path against the original (the gap named in T-I5-1): `--menu-check` extended to 34 scenarios, a new `tools{BS}i6_shared_replay.py`.
+      - **What I must do:** nothing (D-008).
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the owner's sentence in D-011.
+      - **Expected result:** a two-player game where player 2 walks with the same input; the old behaviour and every old recording unchanged.
+      - **Verification:** `--menu-check` 34 of 34 in both programs with equal picture hashes, `i6_shared_replay.py` OK, `test_menu`, `test_inputlog`, `test_quick` 38 of 38, `test_public`, the key-replay comparison 0 differences in 350,460 frames, host checks.
+      - **Completion criteria:** player 2 moves on the same controls and does not when the controls are not shared; native and original agree on every picture and sound of the two-player replays; no frozen file changed.
+      - **Potential problems:** the pad cannot reach the menu (two players are chosen with the keyboard menu, or with Select as before); one frame of lag at the very start of a turn (T-I6-1).
+      - **Recovery:** edits in `src{BS}host` and tests only; revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-011, T-I6-1), `TESTING.md`, `ARCHITECTURE.md`, `docs{BS}GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I6: Two players on one set of controls`. **Next stage:** I3 continues with the owner's other answers.
 
 Two rules for every feature:
 

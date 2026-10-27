@@ -26,8 +26,8 @@ for prog in pacman2600 pacman2600_ref; do
   "$EXE" --pad-check "$P/pad.txt" "$ROM" --settings "$P/s7.ini"; check "$prog pad-check" $? 0; has "$prog pad result" "$P/pad.txt" "result=OK"
   "$EXE" --timed 10 "$P/timed.txt" "$ROM" --mute --reset-at 60 --settings "$P/s8.ini"; check "$prog timed 10 s" $? 0
   "$EXE" --state-report "$P/state.txt" --settings "$P/s5.ini"; check "$prog state-report" $? 0
-  # Stage I5: the Escape menu. No window: the menu and the game played together (24 scenarios); real window: the menu worked through the event queue.
-  "$EXE" --menu-check "$P/menu.txt" "$ROM" --settings "$P/s12.ini"; check "$prog menu-check" $? 0; has "$prog menu-check result" "$P/menu.txt" "scenarios_passed=24"
+  # Stage I5: the Escape menu. No window: the menu and the game played together (34 scenarios); real window: the menu worked through the event queue.
+  "$EXE" --menu-check "$P/menu.txt" "$ROM" --settings "$P/s12.ini"; check "$prog menu-check" $? 0; has "$prog menu-check result" "$P/menu.txt" "scenarios_passed=34"
   "$EXE" --menu-shot "$P/menu.png" "$ROM" --window 1280x960 --settings "$P/s13.ini"; check "$prog menu-shot" $? 0; has "$prog menu-shot result" "$P/menu.png.txt" "result=OK"
   "$EXE" --push-menu --timed 14 "$P/menuwin.txt" "$ROM" --mute --settings "$P/s14.ini"; check "$prog push-menu" $? 0
   has "$prog menu paused the game" "$P/s14.ini.audio.txt" "menu_frames_run_while_open=0"

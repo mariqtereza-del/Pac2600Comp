@@ -35,6 +35,8 @@ public:
   // The left joystick and the console switches (Stage D10). Each call sets the state for the next frames; the
   // difficulty switches are real switches (true = position A), the others are held while true.
   void setJoystick(bool up, bool down, bool left, bool right, bool fire);
+  // The right joystick (Stage I6, T-I6-1): the game reads it for player 2 in a two-player game. Directions only; held while true.
+  void setRightJoystick(bool up, bool down, bool left, bool right);
   void setConsoleSelect(bool pressed);
   void setDifficulty(bool leftA, bool rightA);
   void setBlackWhite(bool blackWhite);  // the Colour / B&W switch

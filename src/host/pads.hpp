@@ -8,7 +8,11 @@ namespace host {
 
 // ---- Keyboard (Stage D10, DECISIONS.md T-D10-1) ----
 // Gives the console what the keyboard adds up to. extraReset is for tests that press Reset by frame number.
-void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset);
+// sharedControls (Stage I6, D-011, T-I6-1): in a two-player game, while it is player 2's turn, the directions go to the console's right joystick,
+// which is the one the game reads for player 2, so both players use the same keys or pad and take turns. Off, the input always goes to the left joystick.
+void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset, bool sharedControls = false);
+// True when the game's memory says a two-player game is on ($E6 bit 6) and it is player 2's turn (bit 7).
+bool playerTwoToPlay(const std::uint8_t* ram);
 
 // ---- Gamepads (Stage D11, DECISIONS.md T-D11-1) ----
 // All the gamepads SDL knows, opened when they appear and closed when they go. What they are doing is read from them

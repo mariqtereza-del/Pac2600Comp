@@ -109,6 +109,8 @@ function Add-QuickSteps {
   # Stage I5: the Escape menu and the game played together, three starting states and all eight games; the report file says PASS for each (exit 0 = all right)
   $menuDir = Scratch 'menu'
   Step 'menu-check' "$H\pacman2600.exe" @('--menu-check', (Join-Path $menuDir 'menu.txt'), $rom, '--settings', (Join-Path $menuDir 's.ini'))
+  # Stage I6: two players on one set of controls, replayed in the native program and the one with the original ROM; pictures and sounds must agree
+  Py 'i6_shared_replay' 'i6_shared_replay.py' @($rom, (Scratch 'i6'))
   Step 'test_layout' "$H\test_layout.exe" @() -Must 'ALL TESTS PASSED'
   Step 'test_inputlog' "$H\test_inputlog.exe" @((Scratch 'inputlog')) -Must 'ALL TESTS PASSED'
   Step 'test_trace' "$H\test_trace.exe" @() -Must 'ALL TESTS PASSED'

@@ -72,6 +72,14 @@ void Emulator::setJoystick(bool up, bool down, bool left, bool right, bool fire)
   impl_->core.setInputEvent(Event::LeftJoystickFire, fire ? 1 : 0);
 }
 
+void Emulator::setRightJoystick(bool up, bool down, bool left, bool right)
+{
+  impl_->core.setInputEvent(Event::RightJoystickUp, up ? 1 : 0);
+  impl_->core.setInputEvent(Event::RightJoystickDown, down ? 1 : 0);
+  impl_->core.setInputEvent(Event::RightJoystickLeft, left ? 1 : 0);
+  impl_->core.setInputEvent(Event::RightJoystickRight, right ? 1 : 0);
+}
+
 void Emulator::setConsoleSelect(bool pressed) { impl_->core.setInputEvent(Event::ConsoleSelect, pressed ? 1 : 0); }
 
 void Emulator::setDifficulty(bool leftA, bool rightA)

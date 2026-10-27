@@ -45,6 +45,14 @@ int main(int argc, char** argv)
   expect(inputlog::parse(r.toText(), back, error), "the text reads back: " + error);
   expect(back.romSha1 == kSha && back.frames == 19 && back.changes.size() == 4, "header and changes survive");
   expect(back.toText() == r.toText(), "writing it again gives the same text");
+
+  // Stage I6: the optional shared_controls line. A recording without it stays byte-for-byte what it was; with it, it survives a round trip.
+  expect(!back.sharedControls && back.toText().find("shared_controls") == std::string::npos, "no shared_controls line unless it was asked for");
+  const inputlog::Recording shared = rec.finish(kSha, true);
+  inputlog::Recording sharedBack;
+  expect(shared.toText().find("\nshared_controls=1\nframes=19\n") != std::string::npos, "the shared_controls line sits between the ROM and the frames");
+  expect(inputlog::parse(shared.toText(), sharedBack, error) && sharedBack.sharedControls && sharedBack.frames == 19 && sharedBack.toText() == shared.toText(),
+         "a recording with shared controls reads back and writes the same");
   bool same = true;
   for(long long f = 0; f < 19; ++f) same = same && back.bitsAt(f) == r.bitsAt(f);
   expect(same, "every frame's input survives");

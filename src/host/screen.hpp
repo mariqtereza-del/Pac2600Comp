@@ -20,7 +20,14 @@ struct Screen {
   background::Kind backgroundKind = background::Kind::Black;  // what fills the space around the picture (Stage I7); Black = nothing is drawn
   const std::uint8_t* ram = nullptr;                           // the game's 128 bytes, for the arcade panel; may stay null
   Backdrop backdrop;
-  ~Screen() { if(texture) SDL_DestroyTexture(texture); }
+  ~Screen() { dropTextures(); }
+  // The renderer is about to be replaced (Stage I10.1): what it made goes with it.
+  void dropTextures()
+  {
+    if(texture) SDL_DestroyTexture(texture);
+    texture = nullptr;
+    backdrop.forget();
+  }
 
   // `moving`: the rectangles of Pac-Man, the pills and the ghosts (smooth motion, Stage I9.4), drawn over `pixels`, which is then the picture without them.
   bool show(const std::vector<std::uint32_t>& pixels, int height, const std::vector<SmoothRect>* moving = nullptr)

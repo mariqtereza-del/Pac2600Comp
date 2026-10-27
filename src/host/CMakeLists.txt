@@ -43,6 +43,10 @@ target_link_libraries(menu PUBLIC controls framerate)
 add_library(framerate STATIC framerate.cpp)
 target_compile_options(framerate PRIVATE /W4 /permissive-)
 
+# HDR output (Stage I10): what the screen says and the decisions and arithmetic that follow, no window code.
+add_library(hdr STATIC hdr.cpp)
+target_compile_options(hdr PRIVATE /W4 /permissive-)
+
 # Input recordings (Stage D13): the file format, no window code.
 add_library(inputlog STATIC inputlog.cpp)
 target_compile_options(inputlog PRIVATE /W4 /permissive-)
@@ -72,9 +76,9 @@ target_link_libraries(emulator_native PUBLIC game_native)
 
 # The program's parts (Stage G4.7, split out of main.cpp): arguments, ROM choice, screen, pads, pacing, window handling, headless runs.
 # They need an Emulator but not which one: the executables below link the native one or the Stella one.
-add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp pads.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp backdrop.cpp backdrop_check.cpp smooth_check.cpp key_pusher.cpp)
+add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp pads.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp backdrop.cpp backdrop_check.cpp smooth_check.cpp key_pusher.cpp hdr_check.cpp render_setup.cpp)
 target_compile_options(host_app PRIVATE /W4 /permissive-)
-target_link_libraries(host_app PUBLIC SDL3::SDL3 rom_finder layout windowstate audio controls menu inputlog trace framerate)
+target_link_libraries(host_app PUBLIC SDL3::SDL3 rom_finder layout windowstate audio controls menu inputlog trace framerate hdr)
 
 # WIN32 = a normal windowed program (no console window when double-clicked).
 # pacman2600 is the game: it plays with the rebuilt game (emulator_native) and contains no Stella.
@@ -121,6 +125,11 @@ target_link_libraries(test_trace PRIVATE trace)
 add_executable(test_framerate ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_framerate.cpp)
 target_compile_options(test_framerate PRIVATE /W4 /permissive-)
 target_link_libraries(test_framerate PRIVATE framerate)
+
+# Tests for the HDR decisions (Stage I10.1): build/host/test_hdr.exe
+add_executable(test_hdr ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_hdr.cpp)
+target_compile_options(test_hdr PRIVATE /W4 /permissive-)
+target_link_libraries(test_hdr PRIVATE hdr)
 
 # Tests for the Escape menu (Stage I5): build/host/test_menu.exe
 add_executable(test_menu ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_menu.cpp)

@@ -61,7 +61,14 @@ constexpr float kCharPx = static_cast<float>(SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE)
 
 }  // namespace
 
-Backdrop::~Backdrop() { if(ambient_) SDL_DestroyTexture(ambient_); }
+Backdrop::~Backdrop() { forget(); }
+
+void Backdrop::forget()
+{
+  if(ambient_) SDL_DestroyTexture(ambient_);
+  ambient_ = nullptr;
+  primed_ = false;
+}
 
 void Backdrop::draw(const BackdropScene& s, background::Kind kind)
 {

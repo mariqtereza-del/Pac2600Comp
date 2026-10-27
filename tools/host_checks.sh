@@ -46,6 +46,13 @@ for prog in pacman2600 pacman2600_ref; do
   for size in 1280x1024 1920x1080 1000x1000; do
     "$EXE" --backdrop-check "$P/bd_$size" "$ROM" --window $size --settings "$P/s15.ini"; check "$prog backdrop-check $size" $? 0; has "$prog backdrop result $size" "$P/bd_$size.txt" "result=OK"
   done
+  # Stage I10.1: HDR. What the screen says is written down; the picture through the HDR renderer equals the standard one in every flat area (or the check says it
+  # was SKIPPED because Windows is not in HDR mode on this computer); the game is the same with HDR on and off. Only the program with the rebuilt game draws in HDR.
+  "$EXE" --hdr-report "$P/hdr_report.txt"; check "$prog hdr-report" $? 0; has "$prog hdr-report result" "$P/hdr_report.txt" "result=OK"
+  if [ "$prog" = pacman2600 ]; then
+    "$EXE" --hdr-check "$P/hdrcmp" "$ROM" --window 1280x960 --settings "$P/s19.ini"; check "$prog hdr-check" $? 0
+    if grep -q "^result=OK" "$P/hdrcmp.txt"; then echo "PASS  $prog HDR picture equals the standard one in flat areas"; elif grep -q "SKIPPED" "$P/hdrcmp.txt"; then echo "PASS  $prog HDR picture check skipped (Windows is not in HDR mode here)"; else echo "FAIL  $prog HDR picture check"; fail=1; fi
+  fi
   # Stage I9.4: the frame rate of the picture. Only the program with the rebuilt game has smooth motion; the reference program keeps to 60.
   if [ "$prog" = pacman2600 ]; then
     for size in 1280x960 1920x1080 1000x1000; do   # a wide window, a tall one and a square one: the moving objects stay inside the picture
@@ -78,6 +85,18 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
     for fps in 60 144 unlocked; do
       "$EXE" --replay "$P/rec1.inputs" --fps $fps --trace "$P/trace_$fps.txt" --timed 8 "$P/rt_$fps.txt" "$ROM" --mute --settings "$P/s18_$fps.ini"; check "$prog replay at frame rate $fps" $? 0
     done
+    for mode in on off; do   # Stage I10.1: HDR on and off give the same game
+      "$EXE" --hdr $mode --replay "$P/rec1.inputs" --trace "$P/trace_hdr_$mode.txt" --timed 8 "$P/rh_$mode.txt" "$ROM" --mute --settings "$P/s20_$mode.ini"; check "$prog replay with HDR $mode" $? 0
+    done
+    python -I -c "
+import sys
+def lines(p):
+    return [l for l in open(p) if l and not l.startswith('#') and not l.startswith('PacMan2600') and not l.startswith('frame') and not l.startswith('rom') ]
+a,b=lines(sys.argv[1]),lines(sys.argv[2])
+n=min(len(a),len(b))
+d=sum(1 for i in range(n) if a[i]!=b[i])
+print('trace with HDR on / off: %d frames compared, %d differences'%(n,d))
+sys.exit(0 if (n>=400 and d==0) else 1)" "$P/trace_hdr_on.txt" "$P/trace_hdr_off.txt"; check "$prog game identical with HDR on and off" $? 0
     python -I -c "
 import sys
 def lines(p):

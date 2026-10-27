@@ -31,6 +31,9 @@ class Backdrop {
   Backdrop(const Backdrop&) = delete;
   Backdrop& operator=(const Backdrop&) = delete;
 
+  // The textures belong to the renderer that made them: when the renderer is replaced they are let go (and made again when next needed).
+  void forget();
+
   // Black draws nothing.
   void draw(const BackdropScene& scene, background::Kind kind);
 

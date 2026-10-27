@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 
   // `late` (the 5th argument): the extra layers are switched on after that many frames, as the window does when the frame rate is changed in the middle of a
   // game; everything is then checked from that frame on (the bonus item, the pills and the score must be right in the layers made from a copy).
-  const int lateAt = argc > 4 ? std::atoi(argv[4]) : 0;
+  const int lateAt = argc > 4 ? std::min(std::atoi(argv[4]), total / 2) : 0;   // (a short game is switched on half way)
   game::Game g;
   game::Layers layers;
   g.setPicture(&layers.full);

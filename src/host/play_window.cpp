@@ -9,6 +9,7 @@
 #include "options.hpp"
 #include "pacer.hpp"
 #include "pads.hpp"
+#include "render_setup.hpp"
 #include "rom_choice.hpp"
 #include "screen.hpp"
 #include "window_tracker.hpp"
@@ -18,7 +19,7 @@ namespace host {
 // The game window: one emulator frame per 1/60 s from a simple clock (temporary; real pacing is Stage D9).
 // With maxSeconds > 0 it stops by itself after that long and returns the frames per second it managed (for tests).
 // Keys 1, 2, 3, 4 choose Sharp, Fill, TV frame, Game area; Alt+Enter toggles fullscreen (temporary; Stage D10 gives the keys their final home).
-double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string& romPath, double maxSeconds, View view, Tracker& tracker, const Options& options)
+double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string& romPath, double maxSeconds, View view, Tracker& tracker, const Options& options)
 {
   std::vector<std::uint8_t> bytes;
   Emulator emulator;
@@ -75,10 +76,22 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   // Stage I9.4: the frame rate of the picture (settings.ini frame_rate=30|60|75|120|144|unlocked, --fps). Above 60 the moving objects are drawn between their places.
   framerate::Rate rate = framerate::fromSetting(options.fps.empty() ? settings::get(options.settingsFile, "frame_rate") : options.fps);
   if(!emulator.smoothAvailable() && framerate::smooth(rate)) rate = framerate::Rate::Fps60;   // the reference program has no smooth motion
+  // Stage I10.1: whether the renderer is in the HDR colour space; made again in the other one when Windows turns HDR on or off (SDL_EVENT_WINDOW_HDR_STATE_CHANGED)
+  const bool hdrWanted = hdrWantedBy(options);
+  bool hdrPipeline = SDL_GetNumberProperty(SDL_GetRendererProperties(renderer), SDL_PROP_RENDERER_OUTPUT_COLORSPACE_NUMBER, 0) == SDL_COLORSPACE_SRGB_LINEAR;
   std::atomic<bool> smoothWanted{framerate::smooth(rate)};
   bool counterOn = settings::get(options.settingsFile, "frame_counter") == "on";   // the pictures-a-second counter (menu, Game options; frame_counter=on|off)
   auto applyVSync = [&]() { SDL_SetRenderVSync(renderer, (options.presentHz > 0 || framerate::unlocked(rate)) ? 0 : 1); };
   applyVSync();   // the screen's own wait is off while the frame rate is unlocked
+  auto adaptToHdr = [&]() {
+    const bool want = hdr::useHdr(hdrWanted, screenStateOf(window));
+    if(want == hdrPipeline) return;
+    screen.dropTextures();
+    SDL_DestroyRenderer(renderer);
+    renderer = createRenderer(window, want, &hdrPipeline);
+    screen.renderer = renderer;
+    if(renderer) applyVSync();
+  };
   const double stepSeconds = 1.0 / frameRate(options);   // the length of one game step
   std::mutex lock;  // guards the shared picture below
   std::vector<std::uint32_t> sharedPixels;
@@ -237,6 +250,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     if(options.stallMs > 0 && !stalled && static_cast<double>(SDL_GetTicksNS() - started) >= 5e9) { SDL_Delay(static_cast<Uint32>(options.stallMs)); stalled = true; }
     for(SDL_Event e; SDL_PollEvent(&e); ) {
       if(e.type == SDL_EVENT_QUIT) running = false;
+      if(e.type == SDL_EVENT_WINDOW_HDR_STATE_CHANGED) adaptToHdr();   // Windows turned HDR on or off for this screen (or the window moved to another)
       if(handleWindowEvent(window, tracker, e)) continue;
       if(menuKey(e, running)) continue;
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat) {
@@ -341,6 +355,8 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     log << audioStatsText(audio, elapsed) << "game_thread_longest_gap_ms=" << longestGapMs << "\ngame_thread_gaps_over_30ms=" << gapsOver30
         << "\ngame_thread_gaps=" << gapLog << "\nclock=" << (usedSoundClock ? "sound card" : "PC timer") << "\naverage_clock_correction_ppm=" << averageCorrectionPpm
         << "\npresents=" << presents << "\npresents_per_second=" << static_cast<double>(presents) / elapsed
+        << "\nhdr_pipeline=" << (hdrPipeline ? "yes" : "no") << "\nwindows_hdr_on=" << (screenStateOf(window).hdrOn ? "yes" : "no")
+        << "\nwindows_hdr_headroom=" << screenStateOf(window).headroom
         << "\nframe_rate=" << framerate::settingName(rate) << "\npictures_shown=" << picturesShown << "\npictures_per_second=" << static_cast<double>(picturesShown) / elapsed
         << "\ngame_frames=" << sharedFrame << "\ngame_frames_per_second=" << static_cast<double>(sharedFrame) / elapsed
         << "\nrefreshes_per_game_frame_1=" << refreshHistogram[0] << "\nrefreshes_per_game_frame_2=" << refreshHistogram[1]

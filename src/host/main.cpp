@@ -43,6 +43,7 @@
 
 #include "common.hpp"
 #include "options.hpp"
+#include "render_setup.hpp"
 #include "rom_choice.hpp"
 #include "screen.hpp"
 #include "pads.hpp"
@@ -59,6 +60,7 @@ int main(int argc, char* argv[])
 {
   const Options options = parseArguments(argc, argv);
   if(!options.findRomFile.empty()) return findRomReport(options);
+  if(!options.hdrReportFile.empty()) return hdrReport(options) ? 0 : 2;
   if(!options.headlessPng.empty()) return headlessRun(options);
   if(!options.keysReplayScript.empty()) return keysReplay(options);
   if(!options.menuCheckFile.empty()) return menuCheck(options);
@@ -79,14 +81,19 @@ int main(int argc, char* argv[])
   if(!SDL_Init(SDL_INIT_VIDEO)) { showError("SDL could not start."); return 1; }
 
   // The remembered window (Stage D7) is used for playing and for --state-report, not for the other checks or when --window is given.
-  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty() || !options.menuShotPng.empty() || !options.backdropCheckPng.empty() || !options.smoothShotPng.empty();
+  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty() || !options.menuShotPng.empty() || !options.backdropCheckPng.empty() || !options.smoothShotPng.empty() || !options.hdrCheckPng.empty();
   windowstate::State remembered;
   if(!otherCheck && !options.windowGiven) remembered = windowstate::fitToMonitors(windowstate::load(options.settingsFile), monitorAreas());
 
   SDL_Window* window = nullptr;
   SDL_Renderer* renderer = nullptr;
   const int startW = remembered.known ? remembered.area.w : options.windowW, startH = remembered.known ? remembered.area.h : options.windowH;
-  if(!SDL_CreateWindowAndRenderer(kTitle, startW, startH, SDL_WINDOW_RESIZABLE, &window, &renderer)) {
+  window = SDL_CreateWindow(kTitle, startW, startH, SDL_WINDOW_RESIZABLE);
+  // Stage I10.1 (D-016): playing, the picture goes through the HDR pipeline when Windows is in HDR mode for the screen (unless it was turned off); every check
+  // keeps the standard renderer, so that their pixels stay what they were.
+  const bool hdrWanted = hdrWantedBy(options);
+  if(window) renderer = createRenderer(window, !otherCheck && hdr::useHdr(hdrWanted, screenStateOf(window)));
+  if(!window || !renderer) {
     showError("The window could not be created.");
     SDL_Quit();
     return 1;
@@ -125,6 +132,8 @@ int main(int argc, char* argv[])
         exitCode = helpCheck(renderer, options.helpCheckPng, romPath) ? 0 : 2;
       } else if(!options.backdropCheckPng.empty()) {
         exitCode = backdropCheck(renderer, options.backdropCheckPng, romPath) ? 0 : 2;
+      } else if(!options.hdrCheckPng.empty()) {
+        exitCode = hdrCheck(window, renderer, options.hdrCheckPng, romPath, view) ? 0 : 2;
       } else if(!options.smoothShotPng.empty()) {
         exitCode = smoothShot(renderer, options.smoothShotPng, romPath, view) ? 0 : 2;
       } else if(!options.menuShotPng.empty()) {

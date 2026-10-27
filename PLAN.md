@@ -3063,7 +3063,7 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-015, T-I9-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** one commit per sub-stage, `Stage I9.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
 
-    - **I10 - HDR output** **[Planned 2026-10-27, not started]** *(fifth approved feature, D-016)*
+    - **I10 - HDR output** **[In progress: I10.1 done 2026-10-27]** *(fifth approved feature, D-016)*
       - **Objective:** when Windows is in HDR mode for the screen, show the game through the HDR pipeline: the picture as it is at normal white, with the power pills, Pac-Man and the ghosts brighter than white by an amount the owner sets with a slider in Game options; HDR on by itself when Windows has it on, with a menu option to turn it off.
       - **Why it matters:** the owner asked for it (D-016). The original has no HDR; this is a modern enhancement, off whenever Windows is not in HDR mode and never changing the game.
       - **Prerequisites:** I9 Done (`2469df3` and `2e66847`), clean tree, D-016 recorded. SDL 3.4.18 (already shipped) can render in HDR (linear colour space, headroom and white level queries); no new library.

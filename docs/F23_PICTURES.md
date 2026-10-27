@@ -4,7 +4,7 @@
 
 ## Result: every picture identical
 
-- **70 of 70 recorded games, 439680 frames: every picture and all memory identical to the emulator's**, the flicker of the ghosts included (240.5 s of work for all of it).
+- **70 of 70 recorded games, 439680 frames: every picture and all memory identical to the emulator's**, the flicker of the ghosts included (232.4 s of work for all of it).
 - Control: poking five life markers into one frame of one game makes the picture difference appear at exactly that frame: True.
 
 ## Not claimed

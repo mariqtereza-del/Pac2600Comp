@@ -6,7 +6,7 @@
 
 - **70 of 70 recorded games, 439680 frames: all 128 memory bytes identical after every frame**, except the bytes that are not game state: the stack bytes `$F6-$FF` (the native game has no stack) and the 11 scratch bytes of the drawing code (F21.26): `$87 CELL_INDEX`, `$C9 CELL_ROW`, `$D2 TEMP_D2`, `$D3 TEMP_D3`, `$D4 TEMP_D4`, `$D5 TEMP_D5`, `$D6 TEMP_D6`, `$D8 SPRITE0_Y`, `$DA TEMP_DA`, `$E1 TEMP_E1`, `$E2 TEMP_E2`.
 - With nothing left out but the stack bytes, the bytes that differ in some frame are exactly those scratch bytes:  (outside the list: none).
-- Running time: 9.3 seconds of work for the 439680 frames (47492 frames a second per core), so the game logic is far faster than needed.
+- Running time: 9.5 seconds of work for the 439680 frames (46494 frames a second per core), so the game logic is far faster than needed.
 
 ## What this ends
 

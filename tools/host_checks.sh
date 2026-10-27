@@ -48,7 +48,9 @@ for prog in pacman2600 pacman2600_ref; do
   done
   # Stage I9.4: the frame rate of the picture. Only the program with the rebuilt game has smooth motion; the reference program keeps to 60.
   if [ "$prog" = pacman2600 ]; then
-    "$EXE" --smooth-shot "$P/smooth" "$ROM" --window 1280x960 --settings "$P/s16.ini"; check "$prog smooth-shot" $? 0; has "$prog smooth-shot result" "$P/smooth.txt" "result=OK"
+    for size in 1280x960 1920x1080 1000x1000; do   # a wide window, a tall one and a square one: the moving objects stay inside the picture
+      "$EXE" --smooth-shot "$P/smooth_$size" "$ROM" --window $size --settings "$P/s16.ini"; check "$prog smooth-shot $size" $? 0; has "$prog smooth-shot result $size" "$P/smooth_$size.txt" "result=OK"
+    done
     for fps in 30 60 144 unlocked; do
       "$EXE" --fps $fps --timed 6 "$P/fps_$fps.txt" "$ROM" --mute --reset-at 60 --settings "$P/s17_$fps.ini"; check "$prog frame rate $fps" $? 0
       has "$prog frame rate $fps was used" "$P/s17_$fps.ini.audio.txt" "frame_rate=$fps"
@@ -70,6 +72,22 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   for v in 1 2 4 8; do has "$prog key direction $v seen" "$P/s9.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0
   "$EXE" --headless "$P/c.png" "$ROM" --replay "$P/rec1.inputs" --fingerprints "$P/C.csv" --settings "$P/s11.ini"; check "$prog replay headless" $? 0
+  # Stage I9.6: the game does not depend on the frame rate. The same recording played in the window at 60 and at 144 (smooth motion on) must give the same
+  # trace, frame for frame: input, switches, picture fingerprint, sound fingerprint and all 128 bytes of memory (only the program with smooth motion).
+  if [ "$prog" = pacman2600 ]; then
+    for fps in 60 144 unlocked; do
+      "$EXE" --replay "$P/rec1.inputs" --fps $fps --trace "$P/trace_$fps.txt" --timed 8 "$P/rt_$fps.txt" "$ROM" --mute --settings "$P/s18_$fps.ini"; check "$prog replay at frame rate $fps" $? 0
+    done
+    python -I -c "
+import sys
+def lines(p):
+    return [l for l in open(p) if l and not l.startswith('#') and not l.startswith('PacMan2600') and not l.startswith('frame') and not l.startswith('rom') ]
+a,b,c=lines(sys.argv[1]),lines(sys.argv[2]),lines(sys.argv[3])
+n=min(len(a),len(b),len(c))
+dab=sum(1 for i in range(n) if a[i]!=b[i]); dac=sum(1 for i in range(n) if a[i]!=c[i])
+print('trace at 60 / 144 / unlocked: %d frames compared, %d differences at 144, %d at unlocked'%(n,dab,dac))
+sys.exit(0 if (n>=400 and dab==0 and dac==0) else 1)" "$P/trace_60.txt" "$P/trace_144.txt" "$P/trace_unlocked.txt"; check "$prog game identical at frame rates 60, 144 and unlocked" $? 0
+  fi
   python -I -c "
 import csv,sys
 def h(p): return [r['hash'] for r in csv.DictReader(open(p))]

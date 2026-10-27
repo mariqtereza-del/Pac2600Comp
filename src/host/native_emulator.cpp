@@ -68,6 +68,7 @@ std::string Emulator::load(const std::string&, const std::vector<std::uint8_t>& 
   impl_->game = std::make_unique<game::Game>();
   impl_->game->setPicture(&impl_->renderer);
   impl_->game->trackObjects(false);
+  (void)game::spriteColumns();   // made once, about 0.1 s: now, so that switching smooth motion on in the middle of a game does not stall the game thread
   return {};
 }
 
@@ -187,10 +188,7 @@ void Emulator::setSmooth(bool on)
   m.snapshot.reset();
   m.game->trackObjects(on);
   if(on) {
-    m.layers.background = m.layers.full;
-    m.layers.bare = m.layers.full;
-    m.game->setBackgroundPicture(&m.layers.background);
-    m.game->setBarePicture(&m.layers.bare);
+    m.layers.enable(*m.game);
     m.smoother = game::Smoother();
   } else {
     m.game->setBackgroundPicture(nullptr);

@@ -3,6 +3,8 @@
 // window (the start, the middle, the end) and each window's pixels are saved as a PNG (<prefix>_s<step>_p<moment>.png). The report says how many window
 // pixels differ between the start and the end of a step (Pac-Man and the ghosts move, the rest of the picture does not), and that the picture without the moving
 // objects is the same at all three moments.
+#include <algorithm>
+
 #include "common.hpp"
 #include "menu_checks.hpp"
 #include "rom_choice.hpp"
@@ -87,9 +89,25 @@ bool smoothShot(SDL_Renderer* renderer, const std::string& pngPrefix, const std:
     movedWindowPixels += differing(shots[0], shots[2]);
     backgroundChanged += differing(plain[0], plain[1]) + differing(plain[1], plain[2]);
   }
+  // The TV type switch on black and white: the moving objects, like the rest, are shades of grey (red, green and blue within 8 of each other), and a picture is saved.
+  emulator.setBlackWhite(true);
+  for(int f = 0; f < 4; ++f) emulator.runFrame();
+  long long greyRects = 0, colouredRects = 0;
+  if(const std::shared_ptr<const SmoothSnapshot> snapshot = emulator.smoothSnapshot()) {
+    snapshot->compose(0.5, moving);
+    for(const SmoothRect& r : moving) {
+      const std::uint32_t red = (r.colour >> 16) & 0xFF, green = (r.colour >> 8) & 0xFF, blue = r.colour & 0xFF;
+      const auto spread = std::max({red, green, blue}) - std::min({red, green, blue});   // the console's grey is not quite exact in the palette
+      (spread <= 8 ? greyRects : colouredRects) += 1;
+    }
+    Shot bw;
+    if(screen.show(snapshot->background, emulator.height(), &moving)) saved += readWindow(renderer, bw, pngPrefix + "_blackwhite.png");
+  }
+  emulator.setBlackWhite(false);
+  report << "black_and_white_moving_rectangles_grey=" << greyRects << "\nblack_and_white_moving_rectangles_coloured=" << colouredRects << '\n';
   report << "steps=" << steps << "\npngs_saved=" << saved << "\nwindow_pixels_that_differ_between_the_start_and_the_end_of_a_step=" << movedWindowPixels
          << "\nbackground_pixels_that_change_during_a_step=" << backgroundChanged << '\n';
-  const bool ok = saved == 9 && movedWindowPixels > 0 && backgroundChanged == 0;
+  const bool ok = saved == 10 && movedWindowPixels > 0 && backgroundChanged == 0 && greyRects > 0 && colouredRects == 0;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   return ok;
 }

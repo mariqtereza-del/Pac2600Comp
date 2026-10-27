@@ -23,7 +23,15 @@ class Layers : public TiaChip {
     bare.writeAtCycle(cycles, reg, value);
   }
 
-  // Connects both layers to a game.
+  // Switches the two extra layers on in the middle of a game, between frames: they start as copies of the game's own layer (the places of the bonus item are
+  // written to the chip once, at power-on, and the copy has them) and from then on get everything the game writes.
+  void enable(Game& game) {
+    background = full;
+    bare = full;
+    attach(game);
+  }
+
+  // Connects the layers to a game.
   void attach(Game& game) { game.setPicture(&full); game.setBackgroundPicture(&background); game.setBarePicture(&bare); }
 };
 

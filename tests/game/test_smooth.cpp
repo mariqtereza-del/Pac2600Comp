@@ -89,10 +89,14 @@ int main(int argc, char** argv) {
     }
   }
 
+  // `late` (the 5th argument): the extra layers are switched on after that many frames, as the window does when the frame rate is changed in the middle of a
+  // game; everything is then checked from that frame on (the bonus item, the pills and the score must be right in the layers made from a copy).
+  const int lateAt = argc > 4 ? std::atoi(argv[4]) : 0;
   game::Game g;
   game::Layers layers;
-  layers.attach(g);
-  g.trackObjects(true);
+  g.setPicture(&layers.full);
+  if (lateAt == 0) layers.attach(g);
+  g.trackObjects(lateAt == 0);
   game::Smoother smoother;
   const game::Smoother::Options faithful{false, false}, smooth{true, true};
   std::vector<game::Rect> rects;
@@ -105,11 +109,12 @@ int main(int argc, char** argv) {
   std::array<bool, 5> haveEnd{};
   bool lastHeld = false;
   for (int f = 0; f < total; ++f) {
+    if (lateAt > 0 && f == lateAt) { layers.enable(g); g.trackObjects(true); }
     if (!g.runFrame(inputsOf(bitsOf[static_cast<std::size_t>(f)]), layers)) { std::printf("frame %d: the game met the one path of the original that no recording runs\n", f); return 1; }
     const Picture full = layers.full.finishPicture(g.lastFrameLines());
     const Picture back = layers.background.finishPicture(g.lastFrameLines());
     const Picture bare = layers.bare.finishPicture(g.lastFrameLines());
-    if (f == 0) continue;
+    if (f == 0 || f <= lateAt) continue;   // (the frame after the switch-on is the first that has its layers)
     const std::vector<game::ObjectsView> ahead = game::lookAhead(g, layers.full, inputsOf(bitsOf[static_cast<std::size_t>(f)]), 4);
     const game::ObjectsView now = g.objects();
     smoother.step(now, ahead, back, bare);

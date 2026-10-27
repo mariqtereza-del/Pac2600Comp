@@ -1,5 +1,7 @@
 #include "controls.hpp"
 
+#include "pad_layout.hpp"
+
 #include <algorithm>
 #include <cstdlib>
 
@@ -78,10 +80,15 @@ void Keyboard::keyDown(SDL_Scancode key, bool repeat)
   if(std::find(down_.begin(), down_.end(), key) == down_.end()) down_.push_back(key);
   for(const Binding& b : bindings()) {
     if(std::find(b.keys.begin(), b.keys.end(), key) == b.keys.end()) continue;
-    if(b.action == Action::LeftDifficulty) leftA_ = !leftA_;
-    if(b.action == Action::RightDifficulty) rightA_ = !rightA_;
-    if(b.action == Action::TvType) bw_ = !bw_;
+    flip(b.action);
   }
+}
+
+void Keyboard::flip(Action action)
+{
+  if(action == Action::LeftDifficulty) leftA_ = !leftA_;
+  if(action == Action::RightDifficulty) rightA_ = !rightA_;
+  if(action == Action::TvType) bw_ = !bw_;
 }
 
 void Keyboard::keyUp(SDL_Scancode key)
@@ -115,7 +122,7 @@ Input Keyboard::input() const
   return i;
 }
 
-std::vector<HelpLine> helpLines(const Input& current, const std::string& controller, bool softBlend, Scheme scheme)
+std::vector<HelpLine> helpLines(const Input& current, const std::string& controller, bool softBlend, Scheme scheme, PadFamily family)
 {
   std::vector<HelpLine> lines;
   for(const Binding& b : bindings()) {
@@ -126,10 +133,7 @@ std::vector<HelpLine> helpLines(const Input& current, const std::string& control
     lines.push_back({keysText(b, scheme), meaning});
   }
   lines.push_back({"Controller", controller});
-  lines.push_back({"  D-pad / left stick", "Joystick"});
-  lines.push_back({"  Cross / Square", "Fire button"});
-  lines.push_back({"  Options", "Game Reset: start a new game"});
-  lines.push_back({"  Share", "Game Select: next game variation"});
+  for(const HelpLine& l : padLines(family)) lines.push_back(l);
   lines.push_back({"1 / 2 / 3 / 4 / 5", "Picture: Sharp / Fill / TV frame / Game area / Framed"});
   lines.push_back({"F7", std::string("Soft glow: smooths the flicker  [now ") + (softBlend ? "on" : "off") + "]"});
   lines.push_back({"Alt + Enter", "Fullscreen on / off"});

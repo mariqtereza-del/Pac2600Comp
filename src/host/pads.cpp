@@ -52,6 +52,8 @@ bool padCheck(const Options& o)
   desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
   desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
   desc.name = "Test pad (virtual)";
+  desc.vendor_id = 0x054c;   // Sony's numbers for a DualShock 4 (v2), so that SDL treats the virtual pad as one (Stage I14)
+  desc.product_id = 0x09cc;
 
   SDL_JoystickID virtualId = 0;
   SDL_Joystick* joystick = nullptr;
@@ -66,12 +68,21 @@ bool padCheck(const Options& o)
   controls::Input lastInput;
   int lastEd = 0, lastSwitches = 0;
   std::set<int> switchesSeen;
+  controls::PadAsks seen;   // what the pad asked of the window since the last time this was cleared (Stage I14)
+  long long clockMs = 0;
+  controls::Keyboard keyboard;
   // Runs frames, taking the pad from the real Pads code each frame; returns nothing, leaves the last readings behind.
   auto run = [&](int frames) {
     for(int f = 0; f < frames; ++f) {
       for(SDL_Event e; SDL_PollEvent(&e); ) pads.handleEvent(e);
       SDL_UpdateJoysticks();
-      lastInput = controls::merge(controls::Input{}, pads.poll());
+      clockMs += 17;
+      const controls::PadAsks a = pads.asks(clockMs);
+      seen.menu = seen.menu || a.menu; seen.leftDifficulty = seen.leftDifficulty || a.leftDifficulty;
+      seen.rightDifficulty = seen.rightDifficulty || a.rightDifficulty; seen.tvType = seen.tvType || a.tvType;
+      seen.nav.insert(seen.nav.end(), a.nav.begin(), a.nav.end());
+      controls::flipSwitches(keyboard, a);
+      lastInput = controls::merge(keyboard.input(), pads.poll());
       applyInput(emulator, lastInput, false);
       emulator.runFrame();
       lastEd = emulator.ram()[0xED - 0x80];  // C6: up 1, down 2, left 4, right 8
@@ -92,6 +103,7 @@ bool padCheck(const Options& o)
   line("plug in a virtual gamepad", plugIn(), SDL_GetError());
   run(30);
   line("the program opened it", pads.count() == realPads + 1, "pads open: " + std::to_string(pads.count()) + " (" + pads.names() + ")");
+  line("known as a PlayStation pad (a DualShock 4)", realPads > 0 || pads.family() == controls::PadFamily::PlayStation, std::string("family: ") + controls::familyTitle(pads.family()));
 
   run(60);  // attract mode
   // Share = Game Select: the select switch (bit 1 of the switch register) goes low while held
@@ -148,6 +160,50 @@ bool padCheck(const Options& o)
   line("Square = fire", lastInput.fire, "");
   button(SDL_GAMEPAD_BUTTON_WEST, false);
   run(2);
+
+  // Stage I14 (D-020): the buttons that ask things of the window. None of them may play the game.
+  newGame();
+  seen = controls::PadAsks{};
+  auto tap = [&](SDL_GamepadButton b) { button(b, true); run(3); button(b, false); run(3); };
+  tap(SDL_GAMEPAD_BUTTON_NORTH);
+  line("Triangle flips the TV type", seen.tvType && lastInput.blackWhite && !lastInput.fire, "");
+  tap(SDL_GAMEPAD_BUTTON_NORTH);
+  line("Triangle again: back to colour", !lastInput.blackWhite, "");
+  tap(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
+  line("L1 flips the left difficulty", seen.leftDifficulty && lastInput.leftDifficultyA && !lastInput.rightDifficultyA, "");
+  tap(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+  line("R1 flips the right difficulty", seen.rightDifficulty && lastInput.rightDifficultyA, "");
+  tap(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
+  tap(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+  line("L1 and R1 again: both back to B", !lastInput.leftDifficultyA && !lastInput.rightDifficultyA, "");
+  seen = controls::PadAsks{};
+  tap(SDL_GAMEPAD_BUTTON_TOUCHPAD);
+  line("Touchpad asks for the menu", seen.menu && !lastInput.fire && lastEd == 0, "");
+  seen = controls::PadAsks{};
+  tap(SDL_GAMEPAD_BUTTON_GUIDE);
+  line("PS button asks for the menu", seen.menu, "");
+  seen = controls::PadAsks{};
+  tap(SDL_GAMEPAD_BUTTON_RIGHT_STICK);
+  line("pressing the right stick does not, on a PlayStation pad", !seen.menu, "");
+  seen = controls::PadAsks{};
+  tap(SDL_GAMEPAD_BUTTON_SOUTH);
+  tap(SDL_GAMEPAD_BUTTON_EAST);
+  line("Cross = do, Circle = back (in the menu)", seen.nav.size() == 2 && seen.nav[0] == controls::Nav::Enter && seen.nav[1] == controls::Nav::Back, "moves: " + std::to_string(seen.nav.size()));
+  seen = controls::PadAsks{};
+  button(SDL_GAMEPAD_BUTTON_DPAD_DOWN, true);
+  run(60);   // about a second
+  button(SDL_GAMEPAD_BUTTON_DPAD_DOWN, false);
+  run(3);
+  bool allDown = !seen.nav.empty();
+  for(controls::Nav n : seen.nav) allDown = allDown && n == controls::Nav::Down;
+  line("D-pad down held for a second: one move, then repeats", allDown && seen.nav.size() >= 5 && seen.nav.size() <= 12, "moves: " + std::to_string(seen.nav.size()));
+  seen = controls::PadAsks{};
+  axis(SDL_GAMEPAD_AXIS_LEFTY, 32767);
+  run(3);
+  axis(SDL_GAMEPAD_AXIS_LEFTY, 0);
+  run(3);
+  line("the stick moves in the menu too", seen.nav.size() == 1 && seen.nav[0] == controls::Nav::Down, "moves: " + std::to_string(seen.nav.size()));
+  run(30);
 
   // Unplug with the stick held right: the direction must go with it
   newGame();

@@ -12,7 +12,8 @@ std::string backgroundText(background::Kind kind);                              
 void appendFrameRateText(std::vector<std::string>& out, int width, bool smoothAvailable);              // the Frame rate row
 void appendCrtText(std::vector<std::string>& out, int width, crt::Filter filter);                      // the CRT filter row
 void appendHdrText(std::vector<std::string>& out, int width, bool windowsHdr, bool slider);            // the HDR row (slider = false) and the HDR highlights row
-void appendControlsText(std::vector<std::string>& out, int width, controls::Scheme scheme, bool keysRow);   // the Control options row and the Keyboard row (lists the keys)
+void appendControlsText(std::vector<std::string>& out, int width, controls::Scheme scheme, bool keysRow, controls::PadFamily pad,
+                        bool padConnected);   // the Control options row and the Keyboard row (lists the keys and the pad's buttons)
 void appendPlayersText(std::vector<std::string>& out, int width, Item item);                          // the Players, Left difficulty and Right difficulty rows
 void appendSoundText(std::vector<std::string>& out, int width, Item item);                             // the Volume, Mute and Sound options rows
 

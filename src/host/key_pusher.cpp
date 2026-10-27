@@ -4,8 +4,81 @@
 
 namespace host {
 
+namespace {
+
+// Stage I14: a virtual DualShock 4 (SDL's own test device, which goes through the same gamepad code as a real pad) is plugged in and played through the real window:
+// the options, the TV type, both difficulties, then the menu by the touchpad, its Control options page with Cross, the D-pad and Circle, closed by the PS button, and
+// opened again to quit.
+std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop)
+{
+  return std::thread([&options, &stop]() {
+      SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");   // the test window may not be in front: SDL would otherwise ignore the pad (test only)
+      SDL_VirtualJoystickDesc desc;
+      SDL_INIT_INTERFACE(&desc);
+      desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
+      desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
+      desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
+      desc.name = "Test DualShock 4 (virtual)";
+      desc.vendor_id = 0x054c;
+      desc.product_id = 0x09cc;
+      const SDL_JoystickID id = SDL_AttachVirtualJoystick(&desc);
+      SDL_Joystick* joystick = id ? SDL_OpenJoystick(id) : nullptr;
+      { std::ofstream note(options.settingsFile + ".pad.txt"); note << "virtual_pad_plugged_in=" << (joystick ? "yes" : "no") << " " << (joystick ? "" : SDL_GetError()) << (char)10; }
+      if(!joystick) return;
+      struct Step { double at; SDL_GamepadButton button; bool down; };
+      std::vector<Step> plan;
+      auto tap = [&](double at, SDL_GamepadButton b) { plan.push_back({at, b, true}); plan.push_back({at + 0.08, b, false}); };
+      tap(0.6, SDL_GAMEPAD_BUTTON_START);            // Options: Game Reset, a game starts
+      tap(3.0, SDL_GAMEPAD_BUTTON_NORTH);            // Triangle: TV type to B&W
+      tap(3.4, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);    // L1: left difficulty to A
+      tap(3.8, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);   // R1: right difficulty to A
+      tap(4.2, SDL_GAMEPAD_BUTTON_TOUCHPAD);         // the touchpad opens the menu
+      for(int i = 0; i < 5; ++i) tap(4.6 + 0.2 * i, SDL_GAMEPAD_BUTTON_DPAD_DOWN);   // down to Control options
+      tap(5.8, SDL_GAMEPAD_BUTTON_SOUTH);            // Cross: open the page
+      tap(6.1, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);       // the keyboard to the arrow keys only
+      tap(6.4, SDL_GAMEPAD_BUTTON_EAST);             // Circle: back to the main page
+      tap(6.8, SDL_GAMEPAD_BUTTON_GUIDE);            // the PS button closes the menu
+      tap(7.4, SDL_GAMEPAD_BUTTON_NORTH);            // Triangle again: TV type back to colour
+      tap(8.0, SDL_GAMEPAD_BUTTON_TOUCHPAD);         // open once more
+      for(int i = 0; i < 6; ++i) tap(8.4 + 0.2 * i, SDL_GAMEPAD_BUTTON_DPAD_DOWN);   // down to Quit
+      tap(10.0, SDL_GAMEPAD_BUTTON_SOUTH);           // Cross: Quit
+      const Uint64 t0 = SDL_GetTicksNS();
+      for(const Step& step : plan) {
+        while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) SDL_Delay(5);
+        if(stop.load()) break;
+        SDL_SetJoystickVirtualButton(joystick, step.button, step.down);
+      }
+      while(!stop.load()) SDL_Delay(20);
+      SDL_CloseJoystick(joystick);
+      SDL_DetachVirtualJoystick(id);
+  });
+}
+
+}  // namespace
+
+void writePushReports(std::ostream& log, const Options& options, const Emulator& emulator, int menuOpens, long long menuFramesRun, std::uint32_t joystickValuesSeen,
+                      const std::set<int>& switchValuesSeen)
+{
+  if(options.pushMenu || options.pushPad) {
+    char flags[16];
+    std::snprintf(flags, sizeof flags, "%02x", emulator.ram()[0xE7 - 0x80]);
+    log << "menu_opens=" << menuOpens << "\nmenu_frames_run_while_open=" << menuFramesRun
+        << "\nfinal_game_number_byte=" << static_cast<int>(emulator.ram()[0x84 - 0x80]) << "\nfinal_players_byte=" << static_cast<int>(emulator.ram()[0xE6 - 0x80])
+        << "\nfinal_level=" << static_cast<int>(emulator.ram()[0x99 - 0x80]) << "\nfinal_game_flags=" << flags
+        << "\nfinal_switches=" << std::hex << static_cast<int>(emulator.consoleSwitches()) << std::dec << '\n';
+  }
+  if(options.pushKeys) {
+    log << "joystick_ram_values_seen=";
+    for(int n = 0; n < 32; ++n) if(joystickValuesSeen & (1u << n)) log << n << ' ';
+    log << "\nconsole_switch_values_seen=";
+    for(int v : switchValuesSeen) { char t[8]; std::snprintf(t, sizeof t, "%02x ", v); log << t; }
+    log << '\n';
+  }
+}
+
 std::thread startKeyPusher(const Options& options, const std::atomic<bool>& stop)
 {
+  if(options.pushPad) return startPadPusher(options, stop);
   if(!(options.pushKeys || options.pushMenu)) return {};
   return std::thread([&options, &stop]() {
       auto key = [](SDL_Scancode code, bool down) {

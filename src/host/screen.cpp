@@ -3,6 +3,7 @@
 #include "screen.hpp"
 #include "options.hpp"
 #include "rom_choice.hpp"
+#include "symbols.hpp"
 
 namespace host {
 
@@ -105,9 +106,9 @@ bool layoutCheck(SDL_Renderer* renderer, const std::string& pngPath, const std::
 }
 
 // The F1 list, drawn over the picture with SDL's built-in text.
-void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std::string& controller, bool softBlend, controls::Scheme scheme)
+void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std::string& controller, bool softBlend, controls::Scheme scheme, controls::PadFamily family)
 {
-  const std::vector<controls::HelpLine> lines = controls::helpLines(current, controller, softBlend, scheme);
+  const std::vector<controls::HelpLine> lines = controls::helpLines(current, controller, softBlend, scheme, family);
   std::size_t keyWidth = 0, meaningWidth = 0;
   for(const auto& l : lines) { keyWidth = std::max(keyWidth, l.keys.size()); meaningWidth = std::max(meaningWidth, l.meaning.size()); }
   const float charSize = static_cast<float>(SDL_DEBUG_TEXT_FONT_CHARACTER_SIZE);
@@ -130,8 +131,8 @@ void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std:
   SDL_RenderDebugText(renderer, x0 + 2 * charSize, y, "KEYS   (F1 closes this list)");
   y += 2 * charSize;
   for(const auto& l : lines) {
-    SDL_RenderDebugText(renderer, x0 + 2 * charSize, y, l.keys.c_str());
-    SDL_RenderDebugText(renderer, x0 + (2 + static_cast<float>(keyWidth) + 2) * charSize, y, l.meaning.c_str());
+    drawSymbolText(renderer, x0 + 2 * charSize, y, l.keys);
+    drawSymbolText(renderer, x0 + (2 + static_cast<float>(keyWidth) + 2) * charSize, y, l.meaning);
     y += charSize;
   }
   SDL_SetRenderScale(renderer, 1.0f, 1.0f);

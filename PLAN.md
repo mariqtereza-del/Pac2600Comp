@@ -3118,6 +3118,19 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-019, T-I13-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I13: Control options (keyboard keys)`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I14 - DualShock 4 support (button names, symbols, the menu on the pad)** **[Done 2026-10-28]** *(ninth approved feature, D-020)*
+      - **Objective:** the DualShock 4 plays the whole program with the right buttons, and the buttons are shown by their names and PlayStation symbols (cross, circle, square, triangle).
+      - **Why it matters:** the owner asked for it (D-020): "support for Dualshock 4 with appropriate buttons and button symbols". D11 already played the game with a pad (D-pad or stick, Cross or Square = fire, Options = Reset, Share = Select) but the menu, the switches and the names were keyboard-only.
+      - **Prerequisites:** I13 Done, clean tree.
+      - **What Claude Code will do:** (1) the pad reaches the Escape menu: the PS button or the touchpad opens and closes it, the D-pad or left stick moves (held = repeats), Cross = do, Circle = back; (2) L1 and R1 flip the left and right difficulty switches and Triangle the TV type, as F5, F6 and F4 do; (3) the F1 list and the Control options page show the pad's buttons by name, with drawn symbols for a PlayStation pad and names for an Xbox pad or any other (SDL's pad type decides); (4) while the menu is open, and until buttons are let go after it closes, the pad does not play. Fire, Reset, Select, the D-pad and the stick are exactly as in D11, so a game played on a pad is unchanged. `controls::PadPresses`, `pad_layout.*`, `pad_driver.*`, `symbols.*`.
+      - **What I must do:** try it with the real DualShock 4 (plugged in or by Bluetooth, DS4Windows not running); say which buttons feel wrong. Nothing else is needed.
+      - **Verification:** `test_controls` (names, symbols, every press and repeat), `pacman2600 --pad-check` (a virtual DualShock 4: every new button, the menu moves with repeat, nothing plays the game), `--menu-shot` (the four symbols are drawn in their colours on the Control options page), `--help-check`, `--push-pad` in the real window (menu opened by the touchpad, Control options reached by D-pad and Cross, a choice made, closed by the PS button, Quit by the pad; the switches flipped by L1, R1 and Triangle; 0 game frames run while the menu was open), the recorded games and every earlier proof unchanged.
+      - **Completion criteria:** no frozen file changed; the game receives exactly what it did from the same pad buttons.
+      - **Potential problems:** SDL ignores a pad while the window is not in front (kept, and the test sets SDL's own hint for it); with DS4Windows running Windows sees an Xbox pad, and the Xbox names are shown.
+      - **Recovery:** revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-020, T-I14-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I14: DualShock 4 support (buttons, symbols, menu on the pad)`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

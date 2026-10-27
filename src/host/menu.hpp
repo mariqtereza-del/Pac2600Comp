@@ -43,6 +43,8 @@ struct Choice {
   int volume = 100;                                        // how loud the sound is played, 0 to 100 (Stage I12); 100 is the sound exactly as the game makes it
   bool muted = false;                                      // no sound is played; the volume keeps its place
   controls::Scheme keyboard = controls::Scheme::Both;      // which keys steer the joystick (Stage I13); takes effect at once
+  controls::PadFamily pad = controls::PadFamily::PlayStation;   // the pad whose buttons the Control options page lists (Stage I14); a DualShock 4 when none is connected
+  bool padConnected = false;                               // for the explanation only
 };
 
 // What differs between the eight games (docs\F16_LEVELS.md, docs\F10_PACMAN.md; checked by `pacman2600 --menu-check`).

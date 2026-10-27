@@ -224,6 +224,16 @@ The owner's words: "Now I need a Control options menu. There needs to be keyboar
 - **How it was read:** until now both sets of keys always worked at once. The page lets the player choose: both (the default, so nothing changes for anyone), only the arrow keys, or only W A S D, and shows the keys. Not read as a request to rebind single keys; the owner is told and can ask for that.
 - **What it must not do:** change the game: only which key presses reach the joystick change.
 
+### D-020 - DualShock 4 support: buttons, symbols and the menu on the pad (2026-10-28, Stage I14)
+
+The owner's words: "Next up, I need support for Dualshock 4 with appropriate buttons and button symbols."
+
+- **Status:** approved by the owner's request; built and proved in Stage I14 (T-I14-1).
+- **How it was read:** the pad already played the game (D11). "Appropriate buttons" = the pad can also open and work the menu and flip the console switches, with the buttons in sensible places; "button symbols" = the buttons are shown as the pad prints them (cross, circle, square, triangle, Options, Share, L1, R1, PS, touchpad).
+- **Buttons:** D-pad or left stick = joystick; Cross or Square = fire; Options = Reset; Share = Select (all as in D11); L1 / R1 = left / right difficulty; Triangle = TV type; PS button or touchpad = open and close the menu; in the menu: D-pad or stick move, Cross = do, Circle = back.
+- **What it must not do:** change the game: the pad's game buttons are exactly those of D11, and the new buttons act only on the window (menu, console switches), as the keys F4 to F6 and Esc do.
+- **Not built (ask if wanted):** the touchpad's touch surface, motion sensors, the light bar's colour, rumble, and changing which button does what.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -374,6 +384,17 @@ The owner's words: "Now I need a Control options menu. There needs to be keyboar
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-I14-1 - DualShock 4: pad presses as edges, symbols as drawn characters (2026-10-28, Stage I14, D-020)
+
+- **Pad family:** SDL's own type of the pad decides the names: PlayStation (PS3, PS4, PS5), Xbox (360, One) or other. With DS4Windows running Windows presents the pad as an Xbox pad, and the Xbox names are shown. With no pad connected the page shows the DualShock 4 names.
+- **Presses:** `controls::PadPresses` (`src\host\pad_layout.*`, no window code) turns the readings of one pad into new presses (a held button asks once; a held direction repeats after 400 ms, then every 90 ms) and `PadDriver` (`pad_driver.*`) hands them to the menu and the switches. The held readings that play the game (`padState`) are not touched. While the menu is open, and until the pad's buttons are let go after it closed, the game gets nothing from the pad, so the Cross that chose Resume does not fire.
+- **Menu button:** PS button or touchpad (an Xbox or other pad: the Guide button or a press on the right stick). When the menu is open the same button backs out of any page and closes it.
+- **Symbols:** SDL's built-in text has no such shapes, so a symbol is one of four control characters in a text (`kCross`, `kCircle`, `kSquare`, `kTriangle`) and `drawSymbolText` (`symbols.*`) draws a small picture in its 8 x 8 cell in the DualShock's colours (blue, red, pink, green). Text wrapping and widths are unchanged (one character each). Reports and tests use `plainSymbols` (the words).
+- **SDL and focus:** SDL ignores a pad while the window is not in front; kept for real play. The test (`--push-pad`) sets SDL's `JOYSTICK_ALLOW_BACKGROUND_EVENTS` hint so that a window started from a script is played.
+- **Proof:** `test_controls` 192 checks; `--pad-check` with a virtual DualShock 4 (vendor and product numbers of the real one); `--menu-shot` saves `<png>.controls.png` and counts each symbol's colour; `--push-pad` in both programs; see `TESTING.md`.
+- **Not tested:** a real DualShock 4 (none was connected here), the real PS button (Steam or Windows may take it before the program sees it; the touchpad works as well).
+- **Reversible:** Yes (Git).
 
 ### T-I13-1 - Control options: a scheme in the keyboard layer (2026-10-27, Stage I13, D-019)
 

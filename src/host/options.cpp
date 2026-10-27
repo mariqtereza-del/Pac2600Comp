@@ -96,6 +96,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--timer-clock") o.timerClock = true;
     else if(a == "--push-keys") o.pushKeys = true;
     else if(a == "--push-menu") o.pushMenu = true;
+    else if(a == "--push-pad") o.pushPad = true;
     else if(a == "--stall-ms") o.stallMs = std::atoi(next().c_str());
     else if(a == "--present-hz") o.presentHz = std::atof(next().c_str());
     else if(a == "--fullscreen-check") o.fullscreenCheckFile = next();

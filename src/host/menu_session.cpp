@@ -23,6 +23,8 @@ void Session::open(const controls::Input& switches, const Window& window)
   now.volume = window.volume;
   now.muted = window.muted;
   now.keyboard = window.keyboard;
+  now.pad = window.pad;
+  now.padConnected = window.padConnected;
   menu_.open(now);
   open_ = true;
 }

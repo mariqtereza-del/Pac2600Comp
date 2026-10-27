@@ -2,6 +2,7 @@
 #include "menu_checks.hpp"
 #include "rom_choice.hpp"
 #include "screen.hpp"
+#include "symbols.hpp"
 
 namespace host {
 
@@ -63,12 +64,42 @@ void drawMenu(SDL_Renderer* renderer, const menu::Menu& menu)
   for(const std::string& row : rows) { SDL_RenderDebugText(renderer, x, y, row.c_str()); y += lineH; }
   y += lineH;
   SDL_SetRenderDrawColor(renderer, 190, 230, 255, 255);
-  for(const std::string& line : words) { SDL_RenderDebugText(renderer, x, y, line.c_str()); y += lineH; }
+  for(const std::string& line : words) { drawSymbolText(renderer, x, y, line); y += lineH; }
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   y = y0 + boxH - 2 * lineH;
   SDL_RenderDebugText(renderer, x, y, menu.page() != menu::Page::Main ? "Up/Down choose   Left/Right change   Enter do   Esc back" : "Up/Down choose   Left/Right change   Enter do   Esc close");
   SDL_SetRenderScale(renderer, 1.0f, 1.0f);
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+}
+
+// Stage I14: the Control options page with a DualShock 4 listed, saved as <png>.controls.png. The four button symbols must be there, each in its own colour.
+static bool controlsShot(SDL_Renderer* renderer, menu::Menu& menu, const menu::Choice& now, const std::string& pngPath, std::ofstream& report, bool& symbolsDrawn, bool& saved)
+{
+  menu::Choice pad = now;
+  pad.padConnected = true;
+  menu.open(pad);
+  for(int i = 0; i < 10 && menu.cursor() != menu::Item::ControlOptions; ++i) menu.press(menu::Key::Down);
+  menu.press(menu::Key::Enter);
+  drawMenu(renderer, menu);
+  SDL_Surface* shot = SDL_RenderReadPixels(renderer, nullptr);
+  if(!shot) { report << "result=cannot read window pixels\n"; return false; }
+  SDL_Surface* rgb = SDL_ConvertSurface(shot, SDL_PIXELFORMAT_XRGB8888);
+  SDL_DestroySurface(shot);
+  if(!rgb) return false;
+  long long symbolPixels[4] = {0, 0, 0, 0};
+  const std::uint32_t symbolColours[4] = {0x6EAAFF, 0xFF5A5A, 0xF58CD7, 0x64E6A0};   // Cross, Circle, Square, Triangle (symbols.cpp)
+  for(int y = 0; y < rgb->h; ++y) {
+    const auto* row = reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(rgb->pixels) + y * rgb->pitch);
+    for(int x = 0; x < rgb->w; ++x)
+      for(int k = 0; k < 4; ++k) if((row[x] & 0x00FFFFFF) == symbolColours[k]) ++symbolPixels[k];
+  }
+  saved = SDL_SavePNG(rgb, (pngPath + ".controls.png").c_str());
+  SDL_DestroySurface(rgb);
+  symbolsDrawn = true;
+  for(long long n : symbolPixels) symbolsDrawn = symbolsDrawn && n >= 8;
+  report << "controls_page=" << (menu.page() == menu::Page::Controls ? "yes" : "no") << "\nsymbol_pixels_cross_circle_square_triangle=" << symbolPixels[0] << ',' << symbolPixels[1]
+         << ',' << symbolPixels[2] << ',' << symbolPixels[3] << "\ncontrols_screenshot_saved=" << (saved ? "yes" : "no") << '\n';
+  return true;
 }
 
 // --menu-shot: 300 frames of the game, the menu opened on the Game row, drawn in the real window, the window's pixels saved. The report counts
@@ -139,7 +170,10 @@ bool menuShot(SDL_Renderer* renderer, const std::string& pngPath, const std::str
   SDL_DestroySurface(rgb2);
   report << "graphics_page=" << (menu.page() == menu::Page::Graphics ? "yes" : "no") << "\ngraphics_near_white_pixels=" << white2
          << "\ngraphics_screenshot_saved=" << (saved2 ? "yes" : "no") << '\n';
-  const bool ok = saved && white > 500 && other > 1000 && menu.page() == menu::Page::Graphics && white2 > 300 && saved2;
+
+  bool symbolsDrawn = false, saved3 = false;
+  if(!controlsShot(renderer, menu, now, pngPath, report, symbolsDrawn, saved3)) return false;
+  const bool ok = saved && white > 500 && other > 1000 && menu.page() == menu::Page::Controls && white2 > 300 && saved2 && saved3 && symbolsDrawn;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   return ok;
 }

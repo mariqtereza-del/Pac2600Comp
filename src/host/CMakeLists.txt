@@ -30,7 +30,7 @@ add_library(layout STATIC layout.cpp)
 target_compile_options(layout PRIVATE /W4 /permissive-)
 
 # The keyboard: key table and state (Stage D10); only SDL's key-code names, no window code.
-add_library(controls STATIC controls.cpp)
+add_library(controls STATIC controls.cpp pad_layout.cpp)
 target_compile_options(controls PRIVATE /W4 /permissive-)
 target_link_libraries(controls PUBLIC SDL3::SDL3)
 
@@ -80,7 +80,7 @@ target_link_libraries(emulator_native PUBLIC game_native)
 
 # The program's parts (Stage G4.7, split out of main.cpp): arguments, ROM choice, screen, pads, pacing, window handling, headless runs.
 # They need an Emulator but not which one: the executables below link the native one or the Stella one.
-add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp pads.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp backdrop.cpp backdrop_check.cpp smooth_check.cpp key_pusher.cpp hdr_check.cpp render_setup.cpp gpu_pass.cpp filter_check.cpp crt_filter.cpp crt_lottes.cpp crt_geom.cpp gpu_graph.cpp gdv_chain.cpp gdv_generated.cpp gdv_luts.cpp)
+add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp symbols.cpp pads.cpp pad_driver.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp backdrop.cpp backdrop_check.cpp smooth_check.cpp key_pusher.cpp hdr_check.cpp render_setup.cpp gpu_pass.cpp filter_check.cpp crt_filter.cpp crt_lottes.cpp crt_geom.cpp gpu_graph.cpp gdv_chain.cpp gdv_generated.cpp gdv_luts.cpp)
 target_compile_options(host_app PRIVATE /W4 /permissive-)
 target_link_libraries(host_app PUBLIC SDL3::SDL3 rom_finder layout windowstate audio controls menu inputlog trace framerate hdr crt d3d11 d3dcompiler dxguid)
 

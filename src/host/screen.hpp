@@ -109,7 +109,7 @@ void drawFrameCounter(SDL_Renderer* renderer, framerate::Rate rate, double pictu
 
 // The F1 list, drawn over the picture with SDL's built-in text.
 void drawHelp(SDL_Renderer* renderer, const controls::Input& current, const std::string& controller, bool softBlend = false,
-              controls::Scheme scheme = controls::Scheme::Both);
+              controls::Scheme scheme = controls::Scheme::Both, controls::PadFamily family = controls::PadFamily::PlayStation);
 
 // --help-check: the F1 list in the real window. 300 frames, then the list is drawn, the window's pixels are read back and
 // saved, and the check counts the near-white pixels (the text), which must exist, and that the picture is still there.

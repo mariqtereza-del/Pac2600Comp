@@ -268,7 +268,7 @@ std::vector<std::string> Menu::explanation(int width) const
       break;
     case Item::ControlOptions:
     case Item::KeyboardKeys:
-      appendControlsText(out, width, choice_.keyboard, cursor() == Item::KeyboardKeys);
+      appendControlsText(out, width, choice_.keyboard, cursor() == Item::KeyboardKeys, choice_.pad, choice_.padConnected);
       break;
     case Item::Volume:
     case Item::Mute:

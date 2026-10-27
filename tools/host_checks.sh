@@ -107,6 +107,18 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
     for v in $yes; do has "$prog keyboard=$scheme: direction $v seen" "$P/sk_$scheme.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
     for v in $no; do hasnot "$prog keyboard=$scheme: direction $v not seen" "$P/sk_$scheme.ini.audio.txt" "joystick_ram_values_seen=.* $v "; done
   done
+  # Stage I14: a virtual DualShock 4 played through the real window (--push-pad): Options starts a game; Triangle, L1 and R1 flip the console switches (Triangle twice:
+  # back to Colour); the touchpad opens the menu, the D-pad and Cross go to Control options, Right chooses the arrow keys, Circle goes back, the PS button closes the
+  # menu; the touchpad opens it again and the D-pad and Cross choose Quit. The game must not run while the menu is open.
+  "$EXE" --push-pad --timed 14 "$P/padwin.txt" "$ROM" --mute --settings "$P/s22.ini"; check "$prog push-pad" $? 0
+  has "$prog pad: the virtual DualShock 4 was plugged in" "$P/s22.ini.pad.txt" "virtual_pad_plugged_in=yes"
+  has "$prog pad: the menu opened twice" "$P/s22.ini.audio.txt" "menu_opens=2"
+  has "$prog pad: the game was paused while the menu was open" "$P/s22.ini.audio.txt" "menu_frames_run_while_open=[01]$"
+  has "$prog pad: L1 flipped the left difficulty" "$P/s22.ini" "left_difficulty=a"
+  has "$prog pad: R1 flipped the right difficulty" "$P/s22.ini" "right_difficulty=a"
+  has "$prog pad: Triangle twice left the TV type at Colour" "$P/s22.ini" "tv_type=colour"
+  has "$prog pad: the menu chose the arrow keys" "$P/s22.ini" "keyboard=arrows"
+  has "$prog pad: Quit from the menu closed the program early" "$P/s22.ini.audio.txt" "seconds=1[01]"
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0
   "$EXE" --headless "$P/c.png" "$ROM" --replay "$P/rec1.inputs" --fingerprints "$P/C.csv" --settings "$P/s11.ini"; check "$prog replay headless" $? 0
   # Stage I9.6: the game does not depend on the frame rate. The same recording played in the window at 60 and at 144 (smooth motion on) must give the same

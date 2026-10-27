@@ -2,6 +2,7 @@
 #include "menu_text.hpp"
 
 #include "menu.hpp"
+#include "pad_layout.hpp"
 
 #include <algorithm>
 
@@ -107,7 +108,7 @@ void appendSoundText(std::vector<std::string>& out, int width, Item item)
 
 
 // The explanation of the Control options rows (Stage I13, D-019): what the Keyboard choice does and, always, every key of the game window as it is now.
-void appendControlsText(std::vector<std::string>& out, int width, controls::Scheme scheme, bool keysRow)
+void appendControlsText(std::vector<std::string>& out, int width, controls::Scheme scheme, bool keysRow, controls::PadFamily pad, bool padConnected)
 {
   auto paragraph = [&](const std::string& text) {
     for(const std::string& line : wrap(text, width)) out.push_back(line);
@@ -129,7 +130,16 @@ void appendControlsText(std::vector<std::string>& out, int width, controls::Sche
     }
   }
   out.push_back("");
-  paragraph("A game pad works as well (D-pad or left stick, Cross or Square = fire, Options = Reset, Share = Select). F1 shows this list in the game; Esc opens this menu.");
+  out.push_back(padConnected ? std::string("Game pad - connected, ") + controls::familyTitle(pad) + ":" : "Game pad - none connected, a DualShock 4 shown:");
+  for(const controls::HelpLine& b : controls::padLines(pad)) {
+    const std::vector<std::string> meaning = wrap(b.meaning, std::max(10, width - 24 - 2));
+    for(std::size_t i = 0; i < meaning.size(); ++i) {
+      const std::string label = i == 0 ? b.keys : std::string();
+      out.push_back(label + std::string(static_cast<std::size_t>(std::max(0, 24 - static_cast<int>(label.size()))), ' ') + meaning[i]);
+    }
+  }
+  out.push_back("");
+  paragraph("A pad and the keyboard work at the same time. F1 shows these lists in the game; Esc (or the pad's menu button) opens this menu.");
 }
 
 

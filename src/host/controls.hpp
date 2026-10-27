@@ -55,6 +55,7 @@ public:
   void keyUp(SDL_Scancode key);
   void releaseAll();  // the window lost focus: no key may stay "held" (the three real switches stay where they are)
   void setSwitches(bool leftA, bool rightA, bool blackWhite);  // where the switches start (remembered from last time)
+  void flip(Action action);   // flips a switch (left or right difficulty, TV type) as its key does; any other action does nothing (Stage I14: pad buttons)
   Input input() const;
 
 private:
@@ -64,11 +65,15 @@ private:
   bool leftA_ = false, rightA_ = false, bw_ = false;
 };
 
+// Which names a pad's buttons carry (Stage I14, pad_layout.hpp): a DualShock 4 (or other PlayStation pad), an Xbox pad, or anything else SDL knows as a gamepad.
+enum class PadFamily { PlayStation, Xbox, Other };
+
 // The lines of the F1 list: key text and meaning (the keys that are not game controls are included).
 struct HelpLine {
   std::string keys, meaning;
 };
-std::vector<HelpLine> helpLines(const Input& current, const std::string& controller = "none", bool softBlend = false, Scheme scheme = Scheme::Both);
+std::vector<HelpLine> helpLines(const Input& current, const std::string& controller = "none", bool softBlend = false, Scheme scheme = Scheme::Both,
+                                PadFamily family = PadFamily::PlayStation);
 
 // ---- Gamepad (Stage D11, DECISIONS.md T-D11-1) ----
 
@@ -78,12 +83,14 @@ std::vector<HelpLine> helpLines(const Input& current, const std::string& control
 struct PadReading {
   bool dpadUp = false, dpadDown = false, dpadLeft = false, dpadRight = false;
   bool cross = false, square = false, options = false, share = false;
+  bool circle = false, triangle = false, l1 = false, r1 = false, home = false, touchpad = false, rightStick = false;   // Stage I14 (D-020): not played with, they ask things of the window
   int stickX = 0, stickY = 0;
 };
 
 // What a pad does to the console.
 struct PadState {
   bool up = false, down = false, left = false, right = false, fire = false, select = false, reset = false;
+  bool any() const { return up || down || left || right || fire || select || reset; }
 };
 
 // The left stick as one of four directions. A push counts once it passes 50 % of the way and stays counted until it

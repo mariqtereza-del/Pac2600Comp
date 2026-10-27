@@ -8,6 +8,7 @@
 #include "key_pusher.hpp"
 #include "options.hpp"
 #include "pacer.hpp"
+#include "pad_driver.hpp"
 #include "pads.hpp"
 #include "render_setup.hpp"
 #include "rom_choice.hpp"
@@ -204,26 +205,16 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   long long menuOpenedAtFrame = 0, menuFramesRun = 0;  // frames the game ran while the menu was open (must be 0; read for the --push-menu report)
   int menuOpens = 0;
   auto framesNow = [&]() { std::lock_guard<std::mutex> guard(lock); return sharedFrame; };
-  auto menuKey = [&](const SDL_Event& e, bool& running) -> bool {
-    if(e.type != SDL_EVENT_KEY_DOWN) return false;
-    const SDL_Scancode code = e.key.scancode;
-    if(!menuSession.isOpen()) {
-      if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
-      keyboard.releaseAll();  // no direction may stay held while the game is stopped
-      menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn,
-                                                                         volumePercent, soundMuted, keyboard.scheme()});
-      menuOpenedAtFrame = framesNow();
-      ++menuOpens;
-      return true;
-    }
-    static const struct { SDL_Scancode a, b; menu::Key key; bool repeats; } keys[] = {
-        {SDL_SCANCODE_UP, SDL_SCANCODE_W, menu::Key::Up, true}, {SDL_SCANCODE_DOWN, SDL_SCANCODE_S, menu::Key::Down, true},
-        {SDL_SCANCODE_LEFT, SDL_SCANCODE_A, menu::Key::Left, true}, {SDL_SCANCODE_RIGHT, SDL_SCANCODE_D, menu::Key::Right, true},
-        {SDL_SCANCODE_RETURN, SDL_SCANCODE_KP_ENTER, menu::Key::Enter, false}, {SDL_SCANCODE_ESCAPE, SDL_SCANCODE_ESCAPE, menu::Key::Escape, false}};
-    for(const auto& k : keys) {
-      if(code != k.a && code != k.b) continue;
-      if(e.key.repeat && !k.repeats) return true;
-      const menu::Result result = menuSession.key(k.key);
+  auto openMenu = [&]() {
+    keyboard.releaseAll();  // no direction may stay held while the game is stopped
+    menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn,
+                                                                       volumePercent, soundMuted, keyboard.scheme(), pads.family(), pads.count() > 0});
+    menuOpenedAtFrame = framesNow();
+    ++menuOpens;
+  };
+  // One key for the open menu, from the keyboard or from the pad; applies what it changed to the window and remembers it.
+  auto menuPress = [&](menu::Key pressed, bool& running) {
+      const menu::Result result = menuSession.key(pressed);
       if(!menuSession.isOpen()) menuFramesRun += framesNow() - menuOpenedAtFrame;
       const menu::Choice& c = menuSession.menu().choice();
       keyboard.setSwitches(c.leftA, c.rightA, c.blackWhite);  // the switches take effect at once; the loop below remembers them in settings.ini
@@ -243,11 +234,29 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       }
       if(c.frameCounter != counterOn) { counterOn = c.frameCounter; remember("frame_counter", counterOn ? "on" : "off"); }
       if(result == menu::Result::Quit) running = false;
+  };
+  auto menuKey = [&](const SDL_Event& e, bool& running) -> bool {
+    if(e.type != SDL_EVENT_KEY_DOWN) return false;
+    const SDL_Scancode code = e.key.scancode;
+    if(!menuSession.isOpen()) {
+      if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
+      openMenu();
+      return true;
+    }
+    static const struct { SDL_Scancode a, b; menu::Key key; bool repeats; } keys[] = {
+        {SDL_SCANCODE_UP, SDL_SCANCODE_W, menu::Key::Up, true}, {SDL_SCANCODE_DOWN, SDL_SCANCODE_S, menu::Key::Down, true},
+        {SDL_SCANCODE_LEFT, SDL_SCANCODE_A, menu::Key::Left, true}, {SDL_SCANCODE_RIGHT, SDL_SCANCODE_D, menu::Key::Right, true},
+        {SDL_SCANCODE_RETURN, SDL_SCANCODE_KP_ENTER, menu::Key::Enter, false}, {SDL_SCANCODE_ESCAPE, SDL_SCANCODE_ESCAPE, menu::Key::Escape, false}};
+    for(const auto& k : keys) {
+      if(code != k.a && code != k.b) continue;
+      if(e.key.repeat && !k.repeats) return true;
+      menuPress(k.key, running);
       return true;
     }
     return false;
   };
 
+  PadDriver padDriver;
   std::vector<std::uint32_t> pixels;
   std::shared_ptr<const SmoothSnapshot> snapshot;  // the smooth picture of the latest game step
   Uint64 snapshotAt = 0;
@@ -288,7 +297,10 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       if(e.type == SDL_EVENT_WINDOW_FOCUS_GAINED) pads.setActive(true);
       pads.handleEvent(e);
     }
-    const controls::Input input = controls::merge(keyboard.input(), pads.poll());  // keyboard and pads together
+    // Stage I14 (D-020): the pad's menu button, menu moves and switch buttons (pad_driver.cpp); the pad does not play while the menu is open.
+    const controls::PadState padNow = padDriver.update(pads, keyboard, PadMenuHooks{[&]() { return menuSession.isOpen(); }, openMenu, [&](menu::Key k) { menuPress(k, running); }},
+                                                       static_cast<long long>(SDL_GetTicks()));
+    const controls::Input input = controls::merge(keyboard.input(), padNow);  // keyboard and pads together
     inputBits = input.pack();
     if(input.leftDifficultyA != savedSwitches.leftDifficultyA || input.rightDifficultyA != savedSwitches.rightDifficultyA || input.blackWhite != savedSwitches.blackWhite) {
       settings::set(options.settingsFile, "left_difficulty", input.leftDifficultyA ? "a" : "b");
@@ -337,7 +349,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       if(frameNow != lastShownFrame && framerate::shownStep(rate, frameNow) == frameNow) ++picturesShown;   // a new picture of the game
     }
     lastShownFrame = frameNow;
-    if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load(), keyboard.scheme());
+    if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load(), keyboard.scheme(), pads.family());
     if(menuSession.isOpen()) drawMenu(renderer, menuSession.menu());
     if(const Uint64 t = SDL_GetTicksNS(); t - markAt >= 500000000ull) {   // pictures a second, over the last half second
       picturesPerSecond = static_cast<double>(picturesShown - picturesAtMark) * 1e9 / static_cast<double>(t - markAt);
@@ -378,21 +390,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         << "\nrefreshes_per_game_frame_3=" << refreshHistogram[2] << "\nrefreshes_per_game_frame_4=" << refreshHistogram[3]
         << "\nrefreshes_per_game_frame_5_or_more=" << refreshHistogram[4] << "\ngame_frames_never_shown=" << framesNeverShown << '\n';
     log << frameTimingText(computeMs, lateMs, firstPictureMs.load(), options.presentHz);   // Stage H6: the game thread's own timing (it has ended, so the lists can be read here)
-    if(options.pushMenu) {
-      char flags[16];
-      std::snprintf(flags, sizeof flags, "%02x", emulator.ram()[0xE7 - 0x80]);
-      log << "menu_opens=" << menuOpens << "\nmenu_frames_run_while_open=" << menuFramesRun
-          << "\nfinal_game_number_byte=" << static_cast<int>(emulator.ram()[0x84 - 0x80]) << "\nfinal_players_byte=" << static_cast<int>(emulator.ram()[0xE6 - 0x80])
-          << "\nfinal_level=" << static_cast<int>(emulator.ram()[0x99 - 0x80]) << "\nfinal_game_flags=" << flags
-          << "\nfinal_switches=" << std::hex << static_cast<int>(emulator.consoleSwitches()) << std::dec << '\n';
-    }
-    if(options.pushKeys) {
-      log << "joystick_ram_values_seen=";
-      for(int n = 0; n < 32; ++n) if(joystickValuesSeen & (1u << n)) log << n << ' ';
-      log << "\nconsole_switch_values_seen=";
-      for(int v : switchValuesSeen) { char t[8]; std::snprintf(t, sizeof t, "%02x ", v); log << t; }
-      log << '\n';
-    }
+    writePushReports(log, options, emulator, menuOpens, menuFramesRun, joystickValuesSeen, switchValuesSeen);
   }
   return static_cast<double>(sharedFrame) / elapsed;
 }

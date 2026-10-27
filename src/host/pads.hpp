@@ -2,6 +2,7 @@
 // (Stage G4.7: moved out of main.cpp, the code is unchanged.)
 #pragma once
 #include "common.hpp"
+#include "pad_layout.hpp"
 #include "options.hpp"
 
 namespace host {
@@ -67,22 +68,28 @@ public:
   {
     controls::PadState total;
     if(!active_) return total;
-    for(Pad& p : pads_) {
-      controls::PadReading r;
-      r.dpadUp = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
-      r.dpadDown = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
-      r.dpadLeft = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
-      r.dpadRight = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
-      r.cross = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_SOUTH);
-      r.square = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_WEST);
-      r.options = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_START);
-      r.share = SDL_GetGamepadButton(p.gamepad, SDL_GAMEPAD_BUTTON_BACK);
-      r.stickX = SDL_GetGamepadAxis(p.gamepad, SDL_GAMEPAD_AXIS_LEFTX);
-      r.stickY = SDL_GetGamepadAxis(p.gamepad, SDL_GAMEPAD_AXIS_LEFTY);
-      total = controls::combine(total, controls::padState(r, p.stick));
-    }
+    for(Pad& p : pads_) total = controls::combine(total, controls::padState(read(p), p.stick));
     return total;
   }
+
+  // What new presses on the open pads ask of the window (Stage I14): the menu, a move in it, a console switch. `nowMs` is any steady clock in milliseconds.
+  // Called once each time round the loop, also while the window is not in front (then the answer is thrown away), so a press made meanwhile is not found later.
+  controls::PadAsks asks(long long nowMs)
+  {
+    controls::PadAsks total;
+    for(Pad& p : pads_) {
+      const controls::PadAsks a = p.presses.update(read(p), nowMs);
+      total.menu = total.menu || a.menu;
+      total.leftDifficulty = total.leftDifficulty || a.leftDifficulty;
+      total.rightDifficulty = total.rightDifficulty || a.rightDifficulty;
+      total.tvType = total.tvType || a.tvType;
+      total.nav.insert(total.nav.end(), a.nav.begin(), a.nav.end());
+    }
+    return active_ ? total : controls::PadAsks{};
+  }
+
+  // The buttons of the first pad open (a DualShock 4 when there is none), for the names in the F1 list and the menu.
+  controls::PadFamily family() const { return pads_.empty() ? controls::PadFamily::PlayStation : pads_.front().family; }
 
 private:
   struct Pad {
@@ -90,7 +97,42 @@ private:
     SDL_JoystickID id = 0;
     std::string name;
     controls::StickDirection stick;
+    controls::PadFamily family = controls::PadFamily::Other;
+    controls::PadPresses presses;
   };
+
+  static controls::PadFamily familyOf(SDL_Gamepad* g)
+  {
+    switch(SDL_GetGamepadType(g)) {
+      case SDL_GAMEPAD_TYPE_PS3: case SDL_GAMEPAD_TYPE_PS4: case SDL_GAMEPAD_TYPE_PS5: return controls::PadFamily::PlayStation;
+      case SDL_GAMEPAD_TYPE_XBOX360: case SDL_GAMEPAD_TYPE_XBOXONE: return controls::PadFamily::Xbox;
+      default: return controls::PadFamily::Other;
+    }
+  }
+
+  static controls::PadReading read(const Pad& p)
+  {
+    auto down = [&](SDL_GamepadButton b) { return SDL_GetGamepadButton(p.gamepad, b); };
+    controls::PadReading r;
+    r.dpadUp = down(SDL_GAMEPAD_BUTTON_DPAD_UP);
+    r.dpadDown = down(SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+    r.dpadLeft = down(SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+    r.dpadRight = down(SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+    r.cross = down(SDL_GAMEPAD_BUTTON_SOUTH);
+    r.square = down(SDL_GAMEPAD_BUTTON_WEST);
+    r.options = down(SDL_GAMEPAD_BUTTON_START);
+    r.share = down(SDL_GAMEPAD_BUTTON_BACK);
+    r.circle = down(SDL_GAMEPAD_BUTTON_EAST);
+    r.triangle = down(SDL_GAMEPAD_BUTTON_NORTH);
+    r.l1 = down(SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
+    r.r1 = down(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+    r.home = down(SDL_GAMEPAD_BUTTON_GUIDE);
+    r.touchpad = down(SDL_GAMEPAD_BUTTON_TOUCHPAD);
+    r.rightStick = down(SDL_GAMEPAD_BUTTON_RIGHT_STICK);
+    r.stickX = SDL_GetGamepadAxis(p.gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+    r.stickY = SDL_GetGamepadAxis(p.gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+    return r;
+  }
 
   void open(SDL_JoystickID id)
   {
@@ -103,6 +145,8 @@ private:
     p.id = id;
     const char* name = SDL_GetGamepadName(g);
     p.name = name ? name : "gamepad";
+    p.family = familyOf(g);
+    p.presses = controls::PadPresses(p.family);
     pads_.push_back(std::move(p));
   }
 

@@ -5,6 +5,7 @@
 #include <string>
 
 #include "../../src/host/controls.hpp"
+#include "../../src/host/pad_layout.hpp"
 
 using controls::Action;
 using controls::Input;
@@ -184,9 +185,9 @@ int main()
     const auto lines = controls::helpLines(now, "Test Pad");
     std::string all;
     for(const auto& l : lines) all += l.keys + " | " + l.meaning + "\n";
-    for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "1 / 2 / 3 / 4 / 5", "[now A]", "[now B]", "Controller", "Test Pad", "D-pad / left stick", "Options", "Share", "Cross / Square"})
+    for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "1 / 2 / 3 / 4 / 5", "[now A]", "[now B]", "Controller", "Test Pad", "D-pad / left stick", "Options", "Share", "L1 / R1", "PS / Touchpad"})
       expect(all.find(needle) != std::string::npos, std::string("the F1 list contains: ") + needle);
-    expect(lines.size() == controls::bindings().size() + 10, "the F1 list has one line per binding, five pad lines and five window keys");
+    expect(lines.size() == controls::bindings().size() + 14, "the F1 list has one line per binding, the controller line and eight pad lines, and five window keys");
     // The soft glow (F7) is named with its position
     auto glowLine = [](const std::vector<controls::HelpLine>& l) { for(const auto& x : l) if(x.keys == "F7") return x.meaning; return std::string(); };
     expect(glowLine(lines).find("[now off]") != std::string::npos, "F7 line says the glow is off by default");
@@ -296,6 +297,98 @@ int main()
     bool listed = false;
     for(const auto& l : controls::helpLines(controls::Input{}, "none", false, Scheme::Wasd)) if(l.keys == "A" && l.meaning == "Joystick left") listed = true;
     expect(listed, "the F1 list shows the chosen keys");
+  }
+
+  // Stage I14 (D-020): the DualShock 4 buttons, their names and symbols, and what presses ask of the window.
+  {
+    using controls::Nav;
+    using controls::PadFamily;
+    using controls::PadReading;
+    // The symbols: four characters that no text uses, turned into words for reports.
+    expect(controls::isSymbol(controls::kCross) && controls::isSymbol(controls::kCircle) && controls::isSymbol(controls::kSquare) && controls::isSymbol(controls::kTriangle),
+           "four symbol characters");
+    expect(!controls::isSymbol('A') && !controls::isSymbol(' '), "ordinary characters are not symbols");
+    expect(controls::plainSymbols(std::string("X ") + controls::kCross + "/" + controls::kSquare + controls::kCircle + controls::kTriangle) == "X Cross/SquareCircleTriangle",
+           "symbols in words");
+    // The names: every family has the same seven things, and only the PlayStation names carry symbols.
+    for(PadFamily f : {PadFamily::PlayStation, PadFamily::Xbox, PadFamily::Other}) {
+      const auto lines = controls::padLines(f);
+      expect(lines.size() == 8, std::string("eight pad lines for ") + controls::familyTitle(f));
+      bool symbols = false;
+      for(const auto& l : lines) for(char c : l.keys + l.meaning) symbols = symbols || controls::isSymbol(c);
+      expect(symbols == (f == PadFamily::PlayStation), std::string("symbols only on PlayStation pads: ") + controls::familyTitle(f));
+    }
+    const auto ps = controls::padLines(PadFamily::PlayStation);
+    expect(controls::plainSymbols(ps[1].keys) == "  Cross / Square" && ps[2].keys == "  Options" && ps[3].keys == "  Share" && ps[4].keys == "  L1 / R1"
+               && controls::plainSymbols(ps[5].keys) == "  Triangle" && ps[6].keys == "  PS / Touchpad", "the DualShock 4 names");
+    expect(controls::plainSymbols(ps[7].meaning) == "D-pad / stick move, Cross do, Circle back", "the menu buttons are named");
+    bool inHelp = false;
+    for(const auto& l : controls::helpLines(controls::Input{}, "x", false, controls::Scheme::Both, PadFamily::Xbox)) inHelp = inHelp || l.keys == "  LB / RB";
+    expect(inHelp, "the F1 list uses the names of the pad family");
+
+    // Presses. 17 ms per turn, as at 60 a second.
+    auto reading = [](auto set) { PadReading r; set(r); return r; };
+    {
+      controls::PadPresses p(PadFamily::PlayStation);
+      long long t = 0;
+      auto turn = [&](const PadReading& r) { t += 17; return p.update(r, t); };
+      expect(!turn(PadReading{}).any(), "nothing pressed asks nothing");
+      expect(turn(reading([](PadReading& r) { r.triangle = true; })).tvType, "Triangle: TV type");
+      expect(!turn(reading([](PadReading& r) { r.triangle = true; })).tvType, "a held button asks once");
+      turn(PadReading{});
+      expect(turn(reading([](PadReading& r) { r.l1 = true; })).leftDifficulty, "L1: left difficulty");
+      turn(PadReading{});
+      expect(turn(reading([](PadReading& r) { r.r1 = true; })).rightDifficulty, "R1: right difficulty");
+      turn(PadReading{});
+      expect(turn(reading([](PadReading& r) { r.home = true; })).menu, "PS button: menu");
+      turn(PadReading{});
+      expect(turn(reading([](PadReading& r) { r.touchpad = true; })).menu, "touchpad: menu");
+      turn(PadReading{});
+      expect(!turn(reading([](PadReading& r) { r.rightStick = true; })).menu, "right stick press: not on a PlayStation pad");
+      turn(PadReading{});
+      const controls::PadAsks enter = turn(reading([](PadReading& r) { r.cross = true; }));
+      expect(enter.nav.size() == 1 && enter.nav[0] == Nav::Enter && !enter.menu, "Cross: Enter");
+      turn(PadReading{});
+      const controls::PadAsks back = turn(reading([](PadReading& r) { r.circle = true; }));
+      expect(back.nav.size() == 1 && back.nav[0] == Nav::Back, "Circle: Back");
+      turn(PadReading{});
+      expect(!turn(reading([](PadReading& r) { r.square = true; r.options = true; r.share = true; })).any(), "fire, Reset and Select ask nothing of the window");
+      turn(PadReading{});
+      // A held direction: at once, nothing for 400 ms, then every 90 ms.
+      const PadReading down = reading([](PadReading& r) { r.dpadDown = true; });
+      int moves = 0;
+      long long firstAt = -1;
+      const long long loopStart = t + 17;
+      for(int i = 0; i < 59; ++i) {   // 59 turns of 17 ms: just over a second
+        const controls::PadAsks a = turn(down);
+        if(!a.nav.empty() && firstAt < 0) firstAt = t;
+        moves += static_cast<int>(a.nav.size());
+        for(Nav n : a.nav) expect(n == Nav::Down, "the repeat is the same direction");
+      }
+      expect(firstAt == loopStart, "the first move comes at once");
+      expect(moves >= 7 && moves <= 9, "one move, then repeats from 400 ms every 90 ms: " + std::to_string(moves));
+      turn(PadReading{});
+      const controls::PadAsks stick = turn(reading([](PadReading& r) { r.stickX = 30000; }));
+      expect(stick.nav.size() == 1 && stick.nav[0] == Nav::Right, "the stick pushed right: one move");
+      expect(turn(reading([](PadReading& r) { r.stickX = 30000; })).nav.empty(), "and none until the repeat time");
+      turn(PadReading{});
+      expect(turn(reading([](PadReading& r) { r.dpadUp = true; r.dpadDown = true; })).nav[0] == Nav::Up, "up and down together: up (one move at a time)");
+    }
+    {
+      controls::PadPresses x(PadFamily::Xbox);
+      expect(x.update(reading([](PadReading& r) { r.rightStick = true; }), 17).menu, "Xbox pad: pressing the right stick opens the menu");
+    }
+    {
+      Keyboard k;
+      controls::PadAsks a;
+      a.tvType = true; a.leftDifficulty = true;
+      controls::flipSwitches(k, a);
+      expect(k.input().blackWhite && k.input().leftDifficultyA && !k.input().rightDifficultyA, "flipSwitches flips only what was asked");
+      k.keyDown(SDL_SCANCODE_F4, false);
+      expect(!k.input().blackWhite, "the key flips the same switch back");
+      k.flip(Action::Fire);
+      expect(!k.input().fire, "flip does nothing for a button that is not a switch");
+    }
   }
 
   // primaryKey is the first key of the binding

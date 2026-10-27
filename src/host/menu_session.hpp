@@ -18,7 +18,14 @@ class Session {
 
   // ---- window thread ----
   bool isOpen() const { return open_.load(); }
-  void open(const controls::Input& switches, background::Kind kind = background::Kind::Black);  // the choices start where the game and the switches are now
+  // What the menu cannot read from the game: the choices of the window (Stage I7 and I9.5).
+  struct Window {
+    background::Kind background = background::Kind::Black;
+    framerate::Rate frameRate = framerate::Rate::Fps60;
+    bool frameCounter = false;
+    bool smoothAvailable = true;
+  };
+  void open(const controls::Input& switches, const Window& window = Window());  // the choices start where the game, the switches and the window are now
   Result key(Key key);                           // sends a key to the open menu; StartGame has been queued for the game thread when it returns
   const Menu& menu() const { return menu_; }
 

@@ -99,7 +99,28 @@ int main()
   expect(!m.choice().leftA, "and back to B");
   m.press(Key::Down); m.press(Key::Enter);
   expect(m.choice().rightA, "Enter also moves a value on (right difficulty to A)");
-  expect(m.cursor() == Item::RightDifficulty, "the Game options page ends with the right difficulty, then Back");
+  expect(m.cursor() == Item::RightDifficulty, "the right difficulty is followed by the frame rate and the frame counter (Stage I9.5)");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::FrameRate && m.choice().frameRate == framerate::Rate::Fps60, "the frame rate row starts at 60");
+  m.press(Key::Right);
+  expect(m.choice().frameRate == framerate::Rate::Fps75, "Right: 75");
+  m.press(Key::Right); m.press(Key::Right); m.press(Key::Right);
+  expect(m.choice().frameRate == framerate::Rate::Unlocked, "75, 120, 144, Unlocked");
+  m.press(Key::Right);
+  expect(m.choice().frameRate == framerate::Rate::Fps30, "Unlocked goes round to 30");
+  m.press(Key::Left);
+  expect(m.choice().frameRate == framerate::Rate::Unlocked, "and Left goes back");
+  m.press(Key::Enter);
+  expect(m.choice().frameRate == framerate::Rate::Fps30, "Enter also moves it on");
+  bool named = false;
+  for(const std::string& r : m.rows()) if(r.find("Frame rate:") != std::string::npos && r.find("< 30 >") != std::string::npos) named = true;
+  expect(named, "the row shows the frame rate");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::FrameCounter && !m.choice().frameCounter, "the frame counter row starts off");
+  m.press(Key::Right);
+  expect(m.choice().frameCounter, "Right: the counter is on");
+  m.press(Key::Left);
+  expect(!m.choice().frameCounter, "and off again");
   m.press(Key::Down);
   expect(m.cursor() == Item::Back && m.press(Key::Right) == Result::None && m.page() == Page::GameOptions, "Right on Back does nothing");
   expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::GameOptions, "Enter on Back returns to the main page, on Game options");
@@ -148,6 +169,18 @@ int main()
   expect(has(row("> 5"), " 8 ") && has(row("> 5"), "faster"), "the table marks game 5 (level 8, faster)");
   expect(has(row("  1 "), " 8 ") && has(row("  1 "), "slower") && has(row("  7 "), " 4 ") && has(row("  7 "), "slower"), "games 1 and 7 are slower");
   expect(has(row("  2 "), "10") && has(row("  2 "), "faster") && has(row("  3 "), " 4 ") && has(row("  6 "), "10"), "games 2, 3 and 6 as in the table");
+
+  // A program without smooth motion (the reference program) goes round 30 and 60 only.
+  Choice limited;
+  limited.smoothAvailable = false;
+  m.open(limited);
+  m.press(Key::Down); m.press(Key::Down); m.press(Key::Enter);
+  m.press(Key::Down); m.press(Key::Down); m.press(Key::Down); m.press(Key::Down);
+  expect(m.cursor() == Item::FrameRate && m.choice().frameRate == framerate::Rate::Fps60, "the frame rate row of a program without smooth motion starts at 60");
+  m.press(Key::Right);
+  expect(m.choice().frameRate == framerate::Rate::Fps30, "60 goes round to 30, past the smooth ones");
+  m.press(Key::Right);
+  expect(m.choice().frameRate == framerate::Rate::Fps60, "and back to 60");
 
   // Wrapping.
   const auto lines = wrap("one two three four five six seven", 9);

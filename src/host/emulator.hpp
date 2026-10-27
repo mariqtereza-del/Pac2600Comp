@@ -20,7 +20,7 @@ class SmoothSnapshot {
 public:
   virtual ~SmoothSnapshot() = default;
   std::vector<std::uint32_t> background;  // kWidth x height colours, the picture without Pac-Man and the ghosts
-  // The moving objects `progress` (0 up to 1) of the way through the step, with no delay: Pac-Man, the power pills, the four ghosts.
+  // The moving objects `progress` (0 up to 1) of the way through the step, with no delay: Pac-Man, the power pills and the ghost of this step (the original draws one ghost a step, which is its flicker).
   virtual void compose(double progress, std::vector<SmoothRect>& out) const = 0;
 };
 

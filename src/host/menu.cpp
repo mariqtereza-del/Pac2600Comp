@@ -54,7 +54,7 @@ const std::vector<Item>& Menu::items()
 
 const std::vector<Item>& Menu::gameItems()
 {
-  static const std::vector<Item> all = {Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::Back};
+  static const std::vector<Item> all = {Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::FrameRate, Item::FrameCounter, Item::Back};
   return all;
 }
 
@@ -107,6 +107,11 @@ Result Menu::press(Key key)
     case Item::LeftDifficulty: choice_.leftA = !choice_.leftA; return Result::None;
     case Item::RightDifficulty: choice_.rightA = !choice_.rightA; return Result::None;
     case Item::TvType: choice_.blackWhite = !choice_.blackWhite; return Result::None;
+    case Item::FrameRate:
+      do choice_.frameRate = framerate::next(choice_.frameRate, step);
+      while(!choice_.smoothAvailable && framerate::smooth(choice_.frameRate));   // a program without smooth motion goes round 30 and 60 only
+      return Result::None;
+    case Item::FrameCounter: choice_.frameCounter = !choice_.frameCounter; return Result::None;
     case Item::Resume: if(key == Key::Enter) { open_ = false; return Result::Resume; } return Result::None;
     case Item::NewGame: if(key == Key::Enter) { open_ = false; return Result::StartGame; } return Result::None;
     case Item::Quit: if(key == Key::Enter) { open_ = false; return Result::Quit; } return Result::None;
@@ -133,6 +138,8 @@ std::vector<std::string> Menu::rows() const
       case Item::Players: std::snprintf(text, sizeof text, "Players:          < %d >", choice_.twoPlayers ? 2 : 1); break;
       case Item::LeftDifficulty: std::snprintf(text, sizeof text, "Left difficulty:  < %c >", choice_.leftA ? 'A' : 'B'); break;
       case Item::RightDifficulty: std::snprintf(text, sizeof text, "Right difficulty: < %c >", choice_.rightA ? 'A' : 'B'); break;
+      case Item::FrameRate: std::snprintf(text, sizeof text, "Frame rate:       < %s >", framerate::title(choice_.frameRate)); break;
+      case Item::FrameCounter: std::snprintf(text, sizeof text, "Frame counter:    < %s >", choice_.frameCounter ? "On" : "Off"); break;
       case Item::TvType: std::snprintf(text, sizeof text, "TV type:      < %s >", choice_.blackWhite ? "Black & white" : "Colour"); break;
       case Item::GameOptions: std::snprintf(text, sizeof text, "Game options..."); break;
       case Item::Graphics: std::snprintf(text, sizeof text, "Graphics options..."); break;
@@ -165,6 +172,18 @@ static std::string backgroundText(background::Kind kind)
   return "";
 }
 
+// The table of the eight games in the explanation of the Game row: the start level and Pac-Man's speed, the chosen game marked.
+static void appendGameTable(std::vector<std::string>& out, int chosen)
+{
+      out.push_back("  Game   Start level   Pac-Man");
+      for(int g = 1; g <= kGames; ++g) {
+        const GameInfo info = gameInfo(g);
+        char line[64];
+        std::snprintf(line, sizeof line, "%s%d      %2d            %s", g == chosen ? "> " : "  ", g, info.startLevel, info.slowPacman ? "slower" : "faster");
+        out.push_back(line);
+      }
+}
+
 // The explanation of the marked row. Times are frames at the console's 59.92 a second. All of it comes from the original program's code
 // (docs\F9_INPUT.md, F10, F15, F16); the game number, level and Pac-Man's speed are also checked by `pacman2600 --menu-check`.
 std::vector<std::string> Menu::explanation(int width) const
@@ -185,13 +204,7 @@ std::vector<std::string> Menu::explanation(int width) const
       paragraph("The console's Game Select offers 8 games, each for one or two players. They differ in only two things: how fast the ghosts are (the game starts at a level; the "
                 "ghosts get faster with the level, and every maze you clear adds one level, up to level 14) and how fast Pac-Man moves.");
       out.push_back("");
-      out.push_back("  Game   Start level   Pac-Man");
-      for(int g = 1; g <= kGames; ++g) {
-        const GameInfo info = gameInfo(g);
-        char line[64];
-        std::snprintf(line, sizeof line, "%s%d      %2d            %s", g == choice_.game ? "> " : "  ", g, info.startLevel, info.slowPacman ? "slower" : "faster");
-        out.push_back(line);
-      }
+      appendGameTable(out, choice_.game);
       out.push_back("");
       paragraph("Pac-Man: slower = 0.56 pixel a frame, faster = 0.69 pixel a frame (about 20 percent quicker). The game number is the same for one or two players (see Players).");
       break;
@@ -210,6 +223,18 @@ std::vector<std::string> Menu::explanation(int width) const
     case Item::RightDifficulty:
       paragraph("The right switch of the console. It counts only for player 2 in a two-player game, so in a one-player game it changes nothing. "
                 "A is the harder setting, as for the left switch.");
+      break;
+    case Item::FrameRate:
+      paragraph("How often the window shows a new picture. The game itself always runs at the console's own speed, with the same sound, whatever you choose: "
+                "this only changes how smooth the movement looks.");
+      out.push_back("");
+      paragraph("60 shows the game's own pictures, one for each step of the game, exactly as the original console does (the usual setting). 30 shows every second one. "
+                "75, 120, 144 and Unlocked also draw Pac-Man, the ghosts and the power pills in between, so they glide instead of jumping a pixel at a time; "
+                "the ghosts still flicker as in the original, and nothing is ever shown later than the original shows it. A screen cannot show more pictures "
+                "than its own refresh rate. Unlocked draws as often as the window can.");
+      break;
+    case Item::FrameCounter:
+      paragraph("Shows a small counter in the top left corner of the window: how many different pictures are shown each second. Nothing else changes.");
       break;
     case Item::TvType:
       paragraph("The console's TV Type switch. Colour is the usual setting. Black & white makes the game use shades of grey, as it did on a black and white TV. "

@@ -184,9 +184,9 @@ int main()
     const auto lines = controls::helpLines(now, "Test Pad");
     std::string all;
     for(const auto& l : lines) all += l.keys + " | " + l.meaning + "\n";
-    for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "F8", "F9", "1 / 2 / 3 / 4 / 5", "[now A]", "[now B]", "Controller", "Test Pad", "D-pad / left stick", "Options", "Share", "Cross / Square"})
+    for(const char* needle : {"Up arrow / W", "Space / Z", "F2", "F3", "F5", "F6", "Alt + Enter", "F1", "Esc", "1 / 2 / 3 / 4 / 5", "[now A]", "[now B]", "Controller", "Test Pad", "D-pad / left stick", "Options", "Share", "Cross / Square"})
       expect(all.find(needle) != std::string::npos, std::string("the F1 list contains: ") + needle);
-    expect(lines.size() == controls::bindings().size() + 12, "the F1 list has one line per binding, five pad lines and seven window keys (F8 and F9 since Stage I9.4)");
+    expect(lines.size() == controls::bindings().size() + 10, "the F1 list has one line per binding, five pad lines and five window keys");
     // The soft glow (F7) is named with its position
     auto glowLine = [](const std::vector<controls::HelpLine>& l) { for(const auto& x : l) if(x.keys == "F7") return x.meaning; return std::string(); };
     expect(glowLine(lines).find("[now off]") != std::string::npos, "F7 line says the glow is off by default");

@@ -37,7 +37,7 @@ target_link_libraries(controls PUBLIC SDL3::SDL3)
 # The Escape menu (Stage I5): the choices, their explanations and the presses that start a game; no window code.
 add_library(menu STATIC menu.cpp menu_session.cpp background.cpp)
 target_compile_options(menu PRIVATE /W4 /permissive-)
-target_link_libraries(menu PUBLIC controls)
+target_link_libraries(menu PUBLIC controls framerate)
 
 # The frame rate of the picture (Stage I9.4): the choices and the arithmetic, no window code.
 add_library(framerate STATIC framerate.cpp)

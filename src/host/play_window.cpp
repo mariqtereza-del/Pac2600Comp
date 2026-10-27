@@ -76,6 +76,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   framerate::Rate rate = framerate::fromSetting(options.fps.empty() ? settings::get(options.settingsFile, "frame_rate") : options.fps);
   if(!emulator.smoothAvailable() && framerate::smooth(rate)) rate = framerate::Rate::Fps60;   // the reference program has no smooth motion
   std::atomic<bool> smoothWanted{framerate::smooth(rate)};
+  bool counterOn = settings::get(options.settingsFile, "frame_counter") == "on";   // the pictures-a-second counter (menu, Game options; frame_counter=on|off)
   auto applyVSync = [&]() { SDL_SetRenderVSync(renderer, (options.presentHz > 0 || framerate::unlocked(rate)) ? 0 : 1); };
   applyVSync();   // the screen's own wait is off while the frame rate is unlocked
   const double stepSeconds = 1.0 / frameRate(options);   // the length of one game step
@@ -180,7 +181,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
     if(!menuSession.isOpen()) {
       if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
       keyboard.releaseAll();  // no direction may stay held while the game is stopped
-      menuSession.open(keyboard.input(), screen.backgroundKind);
+      menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable()});
       menuOpenedAtFrame = framesNow();
       ++menuOpens;
       return true;
@@ -200,6 +201,16 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         screen.backgroundKind = c.background;
         settings::set(options.settingsFile, "background", background::settingName(c.background));
       }
+      if(c.frameRate != rate) {   // the frame rate takes effect at once and is remembered
+        rate = c.frameRate;
+        smoothWanted = framerate::smooth(rate);
+        applyVSync();
+        settings::set(options.settingsFile, "frame_rate", framerate::settingName(rate));
+      }
+      if(c.frameCounter != counterOn) {
+        counterOn = c.frameCounter;
+        settings::set(options.settingsFile, "frame_counter", counterOn ? "on" : "off");
+      }
       if(result == menu::Result::Quit) running = false;
       return true;
     }
@@ -210,8 +221,6 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
   std::shared_ptr<const SmoothSnapshot> snapshot;  // the smooth picture of the latest game step
   Uint64 snapshotAt = 0;
   std::vector<SmoothRect> moving;
-  bool counterOn = false;          // F9: the pictures-a-second counter stays on
-  Uint64 overlayUntil = 0;         // F8: the frame rate is shown for a few seconds
   long long picturesShown = 0, picturesAtMark = 0;
   Uint64 markAt = SDL_GetTicksNS();
   double picturesPerSecond = 0;
@@ -236,14 +245,6 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
         if(e.key.key == SDLK_3) { screen.view.mode = layout::Mode::TvFrame; retitle(); }
         if(e.key.key == SDLK_4) { screen.view.mode = layout::Mode::GameArea; retitle(); }
         if(e.key.key == SDLK_5) { screen.view.mode = layout::Mode::Framed; retitle(); }
-        if(e.key.scancode == SDL_SCANCODE_F8 && emulator.smoothAvailable()) {   // the frame rate: the next one in the list (the menu row comes in Stage I9.5)
-          rate = framerate::next(rate);
-          smoothWanted = framerate::smooth(rate);
-          applyVSync();
-          settings::set(options.settingsFile, "frame_rate", framerate::settingName(rate));
-          overlayUntil = SDL_GetTicksNS() + 4000000000ull;
-        }
-        if(e.key.scancode == SDL_SCANCODE_F9) { counterOn = !counterOn; overlayUntil = 0; }
         if(e.key.scancode == SDL_SCANCODE_F7) { softBlend = !softBlend.load(); settings::set(options.settingsFile, "soft_glow", softBlend.load() ? "on" : "off"); }
       }
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat && e.key.scancode == SDL_SCANCODE_F1) helpOn = !helpOn;
@@ -305,7 +306,7 @@ double playWindow(SDL_Window* window, SDL_Renderer* renderer, const std::string&
       picturesAtMark = picturesShown;
       markAt = t;
     }
-    if(counterOn || SDL_GetTicksNS() < overlayUntil) {
+    if(counterOn) {
       char text[96];
       std::snprintf(text, sizeof text, "Frame rate %s%s   %.0f pictures a second", framerate::title(rate), framerate::smooth(rate) ? " (smooth)" : "", picturesPerSecond);
       SDL_SetRenderScale(renderer, 2.0f, 2.0f);

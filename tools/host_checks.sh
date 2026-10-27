@@ -38,6 +38,10 @@ for prog in pacman2600 pacman2600_ref; do
   has "$prog menu set left difficulty A" "$P/s14.ini.audio.txt" "final_game_flags=20"
   has "$prog menu Quit closed the program" "$P/s14.ini.audio.txt" "seconds=8"
   has "$prog graphics page remembered the background" "$P/s14.ini" "background=mirror"
+  # Stage I9.5: the frame rate and the counter are rows of Game options (75 in the program with smooth motion, 30 in the reference program, which has only 30 and 60)
+  want=75; [ "$prog" = pacman2600_ref ] && want=30
+  has "$prog menu remembered the frame rate" "$P/s14.ini" "frame_rate=$want"
+  has "$prog menu remembered the frame counter" "$P/s14.ini" "frame_counter=on"
   # Stage I7: every background in the real window at three window shapes (tall, wide, square); the picture is never touched and the space is filled
   for size in 1280x1024 1920x1080 1000x1000; do
     "$EXE" --backdrop-check "$P/bd_$size" "$ROM" --window $size --settings "$P/s15.ini"; check "$prog backdrop-check $size" $? 0; has "$prog backdrop result $size" "$P/bd_$size.txt" "result=OK"

@@ -301,6 +301,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       shownCount = 0;
     }
     screen.ram = shownRam.data();
+    screen.gameFrame = frameNow;
     const bool smoothNow = screen.crt == crt::Filter::Off && framerate::smooth(rate) && snapshot && !snapshot->background.empty();
     if(smoothNow) {   // the picture without the moving objects, and Pac-Man, the pills and the ghosts between their places (no delay: each is on its way to where the original shows it next)
       const double nowSeconds = static_cast<double>(SDL_GetTicksNS()) / 1e9;

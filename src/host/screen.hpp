@@ -27,6 +27,7 @@ struct Screen {
   Backdrop backdrop;
   crt::Filter crt = crt::Filter::Off;   // the CRT filter the picture goes through (Stage I11, D-017); Off = the picture as it always was
   CrtFilter crtEngine;
+  long long gameFrame = 0;            // the game's frame number of the picture shown (a filter that remembers earlier frames needs it)
   std::string crtError;               // why the filter could not be used, if it could not (the picture is then drawn without it)
   ~Screen() { dropTextures(); }
   // The renderer is about to be replaced (Stage I10.1): what it made goes with it.
@@ -74,7 +75,7 @@ struct Screen {
       backdrop.draw(scene, backgroundKind);
     }
     SDL_Texture* filtered = nullptr;
-    if(crt != crt::Filter::Off && where.w > 0 && where.h > 0) filtered = crtEngine.run(renderer, crt, pixels, height, top, shownRows, where.w, where.h, crtError);
+    if(crt != crt::Filter::Off && where.w > 0 && where.h > 0) filtered = crtEngine.run(renderer, crt, pixels, height, top, shownRows, where.w, where.h, gameFrame, crtError);
     if(filtered) SDL_RenderTexture(renderer, filtered, nullptr, &dst);   // one texel to a pixel of the screen
     else SDL_RenderTexture(renderer, texture, &src, &dst);
     if(!filtered && moving && !moving->empty()) {

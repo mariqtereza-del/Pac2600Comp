@@ -4,7 +4,7 @@ namespace crt {
 
 namespace {
 struct Entry { const char* setting; const char* title; bool implemented; };
-constexpr Entry kEntries[kFilters] = {{"off", "Off", true}, {"lottes", "CRT-Lottes", true}, {"geom", "CRT-Geom", true}, {"gdv-ntsc", "GDV NTSC 2600", false}};
+constexpr Entry kEntries[kFilters] = {{"off", "Off", true}, {"lottes", "CRT-Lottes", true}, {"geom", "CRT-Geom", true}, {"gdv-ntsc", "GDV NTSC 2600", true}};
 }  // namespace
 
 const char* settingName(Filter filter) { return kEntries[static_cast<int>(filter)].setting; }

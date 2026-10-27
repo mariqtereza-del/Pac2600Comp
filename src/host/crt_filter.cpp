@@ -6,6 +6,7 @@ namespace host {
 
 void CrtFilter::close()
 {
+  gdv_.close();
   if(source_) SDL_DestroyTexture(source_);
   if(target_) SDL_DestroyTexture(target_);
   source_ = target_ = nullptr;
@@ -23,8 +24,10 @@ struct Constants {
 };
 }  // namespace
 
-SDL_Texture* CrtFilter::run(SDL_Renderer* renderer, crt::Filter filter, const std::vector<std::uint32_t>& pixels, int height, int top, int rows, int outWidth, int outHeight, std::string& error)
+SDL_Texture* CrtFilter::run(SDL_Renderer* renderer, crt::Filter filter, const std::vector<std::uint32_t>& pixels, int height, int top, int rows, int outWidth, int outHeight, long long frame,
+                             std::string& error)
 {
+  if(filter == crt::Filter::GuestNtsc) return gdv_.run(renderer, pixels, top, rows, outWidth, outHeight, frame, error);
   if(renderer != renderer_) {
     close();
     if(!gpu_.open(renderer)) { error = "the renderer is not a Direct3D 11 one"; return nullptr; }

@@ -228,3 +228,5 @@ Every project term in one line of plain English. New terms are added in the stag
 | HLSL / slang | The two shader languages in this project: slang (the libretro collection's form, text files in `third_party\shaders`) is read as source; HLSL (Direct3D's language) is what the program runs, written from the slang. |
 | Pass | One step of a CRT filter: a shader reads a picture and draws a new one. Filters are chains of passes (the GDV one has 19). |
 | CRT filter | A look that imitates a cathode-ray tube television or monitor: scanlines, a screen mask, glow and a little curvature. In Graphics options; off by default. The filters are real shaders (CRT-Lottes, later CRT-Geom and GDV NTSC 2600) ported from the libretro collection. (Stage I11, D-017) |
+| Feedback (shader) | A picture a pass drew one frame earlier, handed back to the shader as an input. The GDV filter uses it for the afterglow (a bright spot fading away) and for the average brightness. |
+| Translator | A small program of ours (`tools\i11_slang_to_hlsl.py`) that rewrites the libretro shaders from slang into HLSL so that the GDV filter runs here. It is run by hand; its output is checked into Git. |

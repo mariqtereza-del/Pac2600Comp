@@ -51,7 +51,7 @@ for prog in pacman2600 pacman2600_ref; do
   done
   # Stage I11.2: the CRT-Lottes filter in the real window (standard and, where Windows is in HDR mode, HDR): not black, not the plain picture
   if [ "$prog" = pacman2600 ]; then
-    for filter in lottes geom; do
+    for filter in lottes geom gdv-ntsc; do
       "$EXE" --crt-shot "$P/crt_$filter" "$ROM" --crt $filter --window 1280x960 --settings "$P/s23_$filter.ini"; check "$prog crt-shot $filter" $? 0; has "$prog crt-shot $filter result" "$P/crt_$filter.txt" "^result=OK"
     done
   fi

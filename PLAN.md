@@ -3044,6 +3044,25 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-012, T-I7-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I7: Graphics options`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I8 - Game options page; TV type moves to Graphics options** **[Done 2026-10-27]** *(D-013 and D-014, T-I8-1; includes I7b, the maze-colour Solid background)*
+      - **Result:** the Escape menu's main page is Resume, New game, Game options, Graphics options, Quit; tests and pictures in `DECISIONS.md` T-I8-1. **Git checkpoint:** `Stage I8: Game options page (includes I7b maze-colour background)` (`f4847f8`).
+
+    - **I9 - Smooth motion: an FPS option in Game options** **[Planned 2026-10-27, not started]** *(fourth approved feature, D-015)*
+      - **Objective:** a "Frame rate" row in Game options (30, 60, 75, 120, 144, Unlocked; default 60) that makes the motion on screen smoother while the game's own pace and sound stay exactly as the original's.
+      - **Why it matters:** the owner asked for it (D-015). The game makes 59.92 pictures a second and moves in whole pixels, so more frames of the same pictures would change nothing; smoothness needs the moving objects drawn between their last two positions.
+      - **Prerequisites:** I8 Done (`f4847f8`), clean tree, D-015 recorded.
+      - **What Claude Code will do:** in sub-stages, each proved before the next. I9.1: render the picture with the moving objects left out (the native `game::Renderer` with the sprites off) and prove that background plus the original sprites equals the original picture. I9.2: read the five objects' positions and shapes from the game state each step. I9.3: a smooth presenter in the host that draws Pac-Man and all four ghosts between their last two positions, one game step behind, at the chosen rate (30 and 60 show the true pictures). I9.4: the menu row, remembering it, text about the extra 17 ms of delay. I9.5: pictures and measurements.
+      - **What I must do:** nothing (D-008). Optional: look at it in motion.
+      - **Exact instructions / Required input:** none.
+      - **Claude Code prompt:** the owner's words in D-015.
+      - **Expected result:** at 60 (default) everything is as it is today, pixel for pixel; at 75-Unlocked the maze, wafers and status bar are the game's own picture and only the moving objects are drawn in between; game memory, sound and recordings are identical at every setting.
+      - **Verification:** the existing proofs unchanged (lockstep, recordings, key replay, `test_quick`, `test_public`, preservation check); new: background plus sprites equals the original picture on the 70 recorded games; sound WAV byte-identical at every setting; frames shown per second measured at each setting.
+      - **Completion criteria:** the sound and game state do not depend on the setting; 60 is pixel-identical to today; no frozen file changed.
+      - **Potential problems:** one game step (about 17 ms) more delay at the smooth settings; soft edges on moving sprites; Unlocked uses all of the graphics card; how it feels in motion cannot be proved by a machine (D-008 makes that optional).
+      - **Recovery:** new files plus small edits in `src\host`; the setting is off at 60; revert the commits.
+      - **Documentation updates:** `DECISIONS.md` (D-015, T-I9-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** one commit per sub-stage, `Stage I9.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

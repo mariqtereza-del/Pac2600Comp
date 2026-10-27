@@ -184,6 +184,13 @@ The owner's words, exactly: "I want the "Game", "Players", "Left difficulty" and
 - **Status:** approved, built as Stage I8.
 - **What it means for the program:** the main page of the Escape menu is now Resume, New game, Game options..., Graphics options..., Quit. "Game options" holds Game, Players, Left difficulty, Right difficulty and Back; "Graphics options" holds Background, TV type, Hide this menu and Back. Enter opens a page, Esc or Back returns to the main page with the cursor on the row that opened the page. Nothing in the game changes; the choices act as before (the switches at once, "New game" starts with the game and players chosen).
 
+### D-015 — Smooth motion: an FPS option in Game options (2026-10-27, planned as Stage I9)
+
+The owner's words, exactly: "Now, is it posssible to have an FPS option in the "Game Options" page. 30, 60, 75, 120, 144 and Unlocked." Then, asked what it should do: "Everything in the game's pacing should feel the same, but the larger the FPS = the smoother the animation." and, about sound: "The pitch and pace of the sound should not be changed from the original. It should not bug out if the animation is smoother." The owner approved the plan below: "I approve".
+
+- **Status:** approved; planned in `PLAN.md` as Stage I9 (sub-stages I9.1 to I9.5); not built yet.
+- **What it means for the program:** the game keeps its own speed (59.92 steps a second) and sound at every setting. The setting changes only how often the window shows a picture, and at 75, 120, 144 and Unlocked the moving objects (Pac-Man and the four ghosts, all drawn every frame instead of one ghost at a time) are drawn between their last two positions; the maze, wafers and status bar are the game's own picture. 30 and 60 show the game's own pictures. Default 60 = today's look, exactly. Cost accepted: about one game step (17 ms) more delay at the smooth settings, and soft edges on moving sprites. Kept in separate code, off by default (Rule 3, the `1.0.0-preservation` tag).
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)

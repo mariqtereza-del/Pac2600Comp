@@ -122,7 +122,14 @@ int main()
   m.press(Key::Left);
   expect(!m.choice().frameCounter, "and off again");
   m.press(Key::Down);
-  expect(m.cursor() == Item::Hdr && m.choice().hdr, "the HDR row follows the counter, on at the start (Stage I10, D-016)");
+  expect(m.cursor() == Item::Back && m.press(Key::Right) == Result::None && m.page() == Page::GameOptions, "Right on Back does nothing");
+  expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::GameOptions, "Enter on Back returns to the main page, on Game options");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Graphics && m.press(Key::Enter) == Result::None && m.page() == Page::Graphics, "the Graphics options page");
+  m.press(Key::Down); m.press(Key::Right);
+  expect(m.cursor() == Item::TvType && m.choice().blackWhite, "TV type is on the Graphics options page: black and white");
+  m.press(Key::Down);
+  expect(m.cursor() == Item::Hdr && m.choice().hdr, "the HDR row follows the TV type on the Graphics options page, on at the start (Stage I10, D-016)");
   m.press(Key::Right);
   expect(!m.choice().hdr, "Right: HDR off");
   m.press(Key::Left);
@@ -142,13 +149,7 @@ int main()
   expect(bar, "the row shows the slider as a bar and a percentage");
   for(int i = 0; i < 20; ++i) m.press(Key::Enter);
   expect(m.choice().hdrStrength == 0, "Enter goes round from 100 to 0");
-  m.press(Key::Down);
-  expect(m.cursor() == Item::Back && m.press(Key::Right) == Result::None && m.page() == Page::GameOptions, "Right on Back does nothing");
-  expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::GameOptions, "Enter on Back returns to the main page, on Game options");
-  m.press(Key::Down);
-  expect(m.cursor() == Item::Graphics && m.press(Key::Enter) == Result::None && m.page() == Page::Graphics, "the Graphics options page");
-  m.press(Key::Down); m.press(Key::Right);
-  expect(m.cursor() == Item::TvType && m.choice().blackWhite, "TV type is on the Graphics options page: black and white");
+
   expect(m.press(Key::Escape) == Result::None && m.page() == Page::Main && m.cursor() == Item::Graphics, "Escape goes back to the main page");
   m.press(Key::Down);
   expect(m.cursor() == Item::Quit && m.press(Key::Right) == Result::None, "Right on Quit does nothing");

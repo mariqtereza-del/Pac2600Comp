@@ -54,13 +54,13 @@ const std::vector<Item>& Menu::items()
 
 const std::vector<Item>& Menu::gameItems()
 {
-  static const std::vector<Item> all = {Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::FrameRate, Item::FrameCounter, Item::Hdr, Item::HdrHighlights, Item::Back};
+  static const std::vector<Item> all = {Item::Game, Item::Players, Item::LeftDifficulty, Item::RightDifficulty, Item::FrameRate, Item::FrameCounter, Item::Back};
   return all;
 }
 
 const std::vector<Item>& Menu::graphicsItems()
 {
-  static const std::vector<Item> all = {Item::Background, Item::TvType, Item::Preview, Item::Back};
+  static const std::vector<Item> all = {Item::Background, Item::TvType, Item::Hdr, Item::HdrHighlights, Item::Preview, Item::Back};
   return all;
 }
 

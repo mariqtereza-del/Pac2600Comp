@@ -23,4 +23,19 @@ float highlightScale(float strength, const ScreenState& screen, bool hdrInUse);
 inline constexpr float kMostBrightness = 4.0f;
 float ceilingOf(const ScreenState& screen);
 
+// A colour in linear light (1.0 = normal white in each channel).
+struct Rgb {
+  float r, g, b;
+};
+
+// The brightness (luminance) of a colour in linear light.
+float luminance(const Rgb& c);
+
+// The colour a highlight is drawn in: `scale` times as bright as `c`, and still the same colour. Only multiplying every channel by the scale makes a pale colour
+// look white once it is much brighter than its surroundings (the owner saw the ghosts turn white at 25 percent), so the colour is also made a little more vivid as it
+// gets brighter: its channels are pushed away from grey by 1 + 0.6 (1 - 1/scale) (1 at scale 1, 1.26 at 1.75, 1.45 at 4), channels that would go below 0 are held
+// at 0, and the result is brought back to `scale` times the brightness of `c` (less only for a colour so vivid that a channel would pass `scale`, which is held to it, so
+// that nothing goes above what the screen can show).
+Rgb highlightColour(const Rgb& c, float scale);
+
 }  // namespace hdr

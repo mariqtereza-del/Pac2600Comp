@@ -15,7 +15,7 @@ enum class Key { Up, Down, Left, Right, Enter, Escape };
 enum class Item { Resume, NewGame, GameOptions, Graphics, Quit,  // the main page
                   Game, Players, LeftDifficulty, RightDifficulty,  // the "Game options" page (Stage I8)
                   FrameRate, FrameCounter,                 // and its next two rows (Stage I9.5)
-                  Hdr, HdrHighlights,                      // and the last two before Back (Stage I10, D-016)
+                  Hdr, HdrHighlights,                      // on the "Graphics options" page, after the TV type (Stage I10, D-016)
                   Background, TvType, Preview,                     // the "Graphics options" page (Stage I7; the TV type moved there in I8)
                   Back };                                          // the last row of both pages
 enum class Page { Main, GameOptions, Graphics };

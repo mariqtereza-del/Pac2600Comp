@@ -1,4 +1,5 @@
 // The HDR decisions and arithmetic (Stage I10.1, D-016). No window, no ROM. Expected values are worked out by hand from the rules in hdr.hpp.
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <string>
@@ -47,6 +48,31 @@ int main()
     const float s = static_cast<float>(i) / 20.0f;
     expect(highlightScale(s, on, true) <= on.headroom && highlightScale(s, on, true) >= 1.0f, "the highlight never goes above the screen's headroom or below white");
   }
+
+  // the colour of a highlight: as bright as the slider says, and still the same colour (more vivid, not whiter)
+  const Rgb pastelGreen{0.178f, 0.791f, 0.175f};   // a ghost of the game
+  const Rgb yellow{0.610f, 0.429f, 0.068f};        // Pac-Man
+  for(float scale : {1.0f, 1.75f, 2.5f, 4.0f}) {
+    for(const Rgb& c : {pastelGreen, yellow}) {
+      const Rgb h = highlightColour(c, scale);
+      expect(std::fabs(luminance(h) - scale * luminance(c)) < 0.01f * scale, "a highlight is exactly the scale times as bright (scale " + std::to_string(scale) + ")");
+      expect(h.r >= 0 && h.g >= 0 && h.b >= 0, "no channel below 0");
+      expect(std::max({h.r, h.g, h.b}) <= scale + 1e-4f, "no channel above the scale");
+    }
+  }
+  expect(near(highlightColour(pastelGreen, 1.0f).g, pastelGreen.g) && near(highlightColour(pastelGreen, 1.0f).r, pastelGreen.r), "scale 1 leaves the colour as it is");
+  {
+    // whiter or not: the share of the weakest channel in the colour must not grow, so a pale colour does not turn white
+    auto whiteness = [](const Rgb& c) { return std::min({c.r, c.g, c.b}) / std::max({c.r, c.g, c.b}); };
+    expect(whiteness(highlightColour(pastelGreen, 1.75f)) < whiteness(pastelGreen) && whiteness(highlightColour(pastelGreen, 4.0f)) < whiteness(highlightColour(pastelGreen, 1.75f)),
+           "the brighter a pale green is made, the less white it is (it was white at 25 percent when only multiplied)");
+    expect(whiteness(highlightColour(yellow, 4.0f)) <= whiteness(yellow), "and the yellow too");
+    const Rgb plain = {pastelGreen.r * 1.75f, pastelGreen.g * 1.75f, pastelGreen.b * 1.75f};
+    expect(whiteness(highlightColour(pastelGreen, 1.75f)) < whiteness(plain), "more vivid than the same colour just multiplied");
+  }
+  expect(highlightColour(Rgb{0, 0, 0}, 4.0f).g == 0.0f, "black stays black");
+  const Rgb primary = highlightColour(Rgb{0.0f, 1.0f, 0.0f}, 4.0f);
+  expect(primary.g <= 4.0f + 1e-4f && primary.r == 0.0f, "a pure green is held to the scale");
 
   std::printf("%d checks, %d failures\n", checks, failures);
   if(failures == 0) std::printf("ALL TESTS PASSED\n");

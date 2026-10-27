@@ -207,6 +207,58 @@ bool readLinear(SDL_Renderer* renderer, std::vector<float>& out, int& w, int& h,
 
 }  // namespace
 
+// What the three pictures (slider 0, 50, 100) must show: each moving rectangle in the colour the arithmetic gives, only the moving objects changed, and nothing above
+// the ceiling. The numbers go to the report.
+static bool judgeHighlights(std::ofstream& report, const std::vector<float> pictures[3], int w, int h, const float maxValue[3], const int strengths[3], const hdr::ScreenState& state,
+                            const Screen& screen, const std::vector<SmoothRect>& moving)
+{
+  // Each moving rectangle, at its centre: the colour measured in the picture at 0 must be its own colour, and at 50 and at 100 the colour that hdr::highlightColour
+  // gives for that scale, in the same brightness ratio and the same hue.
+  bool ok = true;
+  long long rectsChecked = 0, rectsWrong = 0;
+  for(const SmoothRect& r : moving) {
+    const int px = screen.where.x + static_cast<int>((r.x + r.w / 2) * static_cast<float>(screen.where.w) / 160.0f);
+    const int py = screen.where.y + static_cast<int>((r.y - static_cast<float>(screen.shownTop) + r.h / 2) * static_cast<float>(screen.where.h) / static_cast<float>(screen.shownHeight));
+    if(px < 0 || py < 0 || px >= w || py >= h) continue;
+    const std::size_t j = static_cast<std::size_t>((py * w + px) * 3);
+    const hdr::Rgb own{Screen::decode(r.colour >> 16), Screen::decode(r.colour >> 8), Screen::decode(r.colour)};
+    for(int i = 0; i < 3; ++i) {
+      const float scale = hdr::highlightScale(static_cast<float>(strengths[i]) / 100.0f, state, true);
+      const hdr::Rgb want = hdr::highlightColour(own, scale);
+      ++rectsChecked;
+      auto close = [](float a2, float b2) { return std::fabs(a2 - b2) <= 0.01f + 0.02f * std::fabs(b2); };
+      if(!(close(pictures[static_cast<std::size_t>(i)][j], want.r) && close(pictures[static_cast<std::size_t>(i)][j + 1], want.g) && close(pictures[static_cast<std::size_t>(i)][j + 2], want.b))) ++rectsWrong;
+    }
+    if(rectsChecked <= 6) {   // the first few, to read
+      const hdr::Rgb top = hdr::highlightColour(own, hdr::highlightScale(1.0f, state, true));
+      char line[200];
+      std::snprintf(line, sizeof line, "rect_colour_%06x: plain %.3f %.3f %.3f   at 100: %.3f %.3f %.3f   (measured %.3f %.3f %.3f)%c", r.colour & 0xFFFFFF, own.r, own.g, own.b, top.r, top.g, top.b,
+                    pictures[2][j], pictures[2][j + 1], pictures[2][j + 2], 10);
+      report << line;
+    }
+  }
+  report << "rectangles_checked=" << rectsChecked << "\nrectangles_not_the_colour_the_arithmetic_gives=" << rectsWrong << '\n';
+  ok = ok && rectsChecked >= 9 && rectsWrong == 0;
+  // against the plain picture (slider 0): only the moving objects change, and by the brightness the slider says (a channel held to the scale is the one exception)
+  for(int i = 1; i < 3; ++i) {
+    const float scale = hdr::highlightScale(static_cast<float>(strengths[i]) / 100.0f, state, true);
+    long long same = 0, brighter = 0, wrong = 0;
+    for(std::size_t j = 0; j < pictures[0].size(); j += 3) {
+      const hdr::Rgb a2{pictures[0][j], pictures[0][j + 1], pictures[0][j + 2]}, b2{pictures[static_cast<std::size_t>(i)][j], pictures[static_cast<std::size_t>(i)][j + 1], pictures[static_cast<std::size_t>(i)][j + 2]};
+      if(std::fabs(a2.r - b2.r) <= 0.0005f && std::fabs(a2.g - b2.g) <= 0.0005f && std::fabs(a2.b - b2.b) <= 0.0005f) { ++same; continue; }
+      ++brighter;
+      const float ya = hdr::luminance(a2), yb = hdr::luminance(b2);
+      const bool capped = std::max({b2.r, b2.g, b2.b}) >= scale * 0.98f;
+      if(!(ya > 0.01f && yb > 0.0f && (capped ? yb <= ya * scale * 1.03f : (yb > ya * scale * 0.97f && yb < ya * scale * 1.03f)))) ++wrong;
+    }
+    report << "strength_" << strengths[i] << "_pixels_unchanged=" << same << "\nstrength_" << strengths[i] << "_pixels_brighter=" << brighter << "\nstrength_" << strengths[i]
+           << "_pixels_brighter_by_other_than_the_slider=" << wrong << '\n';
+    ok = ok && brighter > 100 && wrong == 0 && maxValue[i] <= hdr::ceilingOf(state) * 1.02f;
+  }
+  ok = ok && maxValue[0] <= 1.02f;   // the plain picture is never above normal white
+  return ok;
+}
+
 // --hdr-highlights: Pac-Man, the pills and the ghost drawn brighter than white (Stage I10.3). The same moment of a game is drawn with the slider at 0, 50 and 100;
 // against the picture with the slider at 0 only the moving objects may differ, each of them by exactly the scale the arithmetic gives, and nothing may go above the
 // most the screen can show.
@@ -250,30 +302,7 @@ bool hdrHighlights(SDL_Window* window, SDL_Renderer*& renderer, const std::strin
     for(float v : pictures[i]) maxValue[i] = std::max(maxValue[i], v);
     report << "strength_" << strengths[i] << "_scale=" << scale << "\nstrength_" << strengths[i] << "_brightest_value=" << maxValue[i] << '\n';
   }
-  // against the plain picture (slider 0): what differs, and by how much
-  bool ok = true;
-  for(int i = 1; i < 3; ++i) {
-    const float scale = hdr::highlightScale(static_cast<float>(strengths[i]) / 100.0f, state, true);
-    long long same = 0, brighter = 0, wrong = 0;
-    for(std::size_t j = 0; j < pictures[0].size(); j += 3) {
-      float ratioLow = 1e9f, ratioHigh = 0;
-      bool anyLit = false, anyChanged = false;
-      for(int c = 0; c < 3; ++c) {
-        const float a = pictures[0][j + static_cast<std::size_t>(c)], b = pictures[i][j + static_cast<std::size_t>(c)];
-        if(std::fabs(a - b) > 0.0005f) anyChanged = true;
-        if(a > 0.02f) { anyLit = true; ratioLow = std::min(ratioLow, b / a); ratioHigh = std::max(ratioHigh, b / a); }
-      }
-      if(!anyChanged) ++same;
-      else {
-        ++brighter;
-        if(!(anyLit && ratioLow > scale * 0.97f && ratioHigh < scale * 1.03f)) ++wrong;   // every lit channel is scale times what it was
-      }
-    }
-    report << "strength_" << strengths[i] << "_pixels_unchanged=" << same << "\nstrength_" << strengths[i] << "_pixels_brighter=" << brighter << "\nstrength_" << strengths[i]
-           << "_pixels_changed_by_other_than_the_scale=" << wrong << '\n';
-    ok = ok && brighter > 100 && wrong == 0 && maxValue[i] <= hdr::ceilingOf(state) * 1.02f;
-  }
-  ok = ok && maxValue[0] <= 1.02f;   // the plain picture is never above normal white
+  const bool ok = judgeHighlights(report, pictures, w, h, maxValue, strengths, state, screen, moving);
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   return ok;
 }

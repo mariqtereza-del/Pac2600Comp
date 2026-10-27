@@ -111,14 +111,15 @@ int main()
   m.press(Key::Left);
   expect(!m.choice().blackWhite, "Left: colour again");
   m.press(Key::Down);
-  expect(m.cursor() == Item::Preview && !m.previewing(), "third row: hide the menu"); 
+  m.press(Key::Down); m.press(Key::Down);   // past the two HDR rows (Stage I10)
+  expect(m.cursor() == Item::Preview && !m.previewing(), "fifth row: hide the menu");
   m.press(Key::Right);
   expect(!m.previewing(), "Right does not hide the menu");
   m.press(Key::Enter);
   expect(m.previewing() && m.isOpen(), "Enter hides the menu for a look");
   expect(m.press(Key::Left) == Result::None && !m.previewing() && m.choice().background == Kind::Bezel, "any key brings it back and does nothing else");
   m.press(Key::Down);
-  expect(m.cursor() == Item::Back, "fourth row: back");
+  expect(m.cursor() == Item::Back, "sixth row: back");
   expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::Graphics, "Enter on Back returns to the main page, on the Graphics row");
   expect(m.choice().background == Kind::Bezel, "the choice is kept");
   m.press(Key::Enter);

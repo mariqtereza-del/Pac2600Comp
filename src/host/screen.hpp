@@ -3,7 +3,10 @@
 #pragma once
 #include "backdrop.hpp"
 #include "common.hpp"
+#include <cmath>
+
 #include "framerate.hpp"
+#include "hdr.hpp"
 #include "options.hpp"
 
 namespace host {
@@ -31,6 +34,14 @@ struct Screen {
   }
 
   // `moving`: the rectangles of Pac-Man, the pills and the ghosts (smooth motion, Stage I9.4), drawn over `pixels`, which is then the picture without them.
+  // The standard (sRGB) value of a channel as linear light, and back (the back direction goes on above 1, which is what the HDR renderer reads as brighter than white).
+  static float decode(std::uint32_t channel)
+  {
+    const float v = static_cast<float>(channel & 0xFF) / 255.0f;
+    return v <= 0.04045f ? v / 12.92f : std::pow((v + 0.055f) / 1.055f, 2.4f);
+  }
+  static float encode(float linear) { return linear <= 0.0031308f ? 12.92f * linear : 1.055f * std::pow(linear, 1.0f / 2.4f) - 0.055f; }
+
   // `highlight` (Stage I10, D-016): in the HDR pipeline the moving objects are drawn this many times brighter than the same colour at normal white.
   bool show(const std::vector<std::uint32_t>& pixels, int height, const std::vector<SmoothRect>* moving = nullptr, float highlight = 1.0f)
   {
@@ -62,14 +73,17 @@ struct Screen {
       const float scaleX = dst.w / static_cast<float>(Emulator::kWidth), scaleY = dst.h / static_cast<float>(shownRows);
       const SDL_Rect clip{where.x, where.y, where.w, where.h};
       SDL_SetRenderClipRect(renderer, &clip);   // nothing outside the picture, whatever the rows of the moving objects
-      if(highlight != 1.0f) SDL_SetRenderColorScale(renderer, highlight);   // a linear multiple of the colour: brighter than white in the HDR pipeline
       for(const SmoothRect& r : *moving) {
-        SDL_SetRenderDrawColor(renderer, static_cast<Uint8>(r.colour >> 16), static_cast<Uint8>(r.colour >> 8), static_cast<Uint8>(r.colour), 255);
+        if(highlight > 1.0f) {   // brighter than white: the colour in linear light, made `highlight` times as bright and kept vivid, handed over as the renderer expects it
+          const hdr::Rgb c = hdr::highlightColour({decode(r.colour >> 16), decode(r.colour >> 8), decode(r.colour)}, highlight);
+          SDL_SetRenderDrawColorFloat(renderer, encode(c.r), encode(c.g), encode(c.b), 1.0f);
+        } else {
+          SDL_SetRenderDrawColor(renderer, static_cast<Uint8>(r.colour >> 16), static_cast<Uint8>(r.colour >> 8), static_cast<Uint8>(r.colour), 255);
+        }
         const SDL_FRect d{dst.x + r.x * scaleX, dst.y + (r.y - static_cast<float>(top)) * scaleY, r.w * scaleX, r.h * scaleY};
         SDL_RenderFillRect(renderer, &d);
       }
       SDL_SetRenderClipRect(renderer, nullptr);
-      SDL_SetRenderColorScale(renderer, 1.0f);
     }
     shownTop = top;
     shownHeight = shownRows;

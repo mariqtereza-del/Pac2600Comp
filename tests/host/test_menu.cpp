@@ -133,10 +133,12 @@ int main()
   m.press(Key::Right);
   expect(m.choice().crt == crt::Filter::Lottes, "Right: CRT-Lottes (the first port)");
   m.press(Key::Right);
-  expect(m.choice().crt == crt::Filter::Off, "and round to Off again, past the filters that are not ported yet");
+  expect(m.choice().crt == crt::Filter::Geom, "Right: CRT-Geom (the second port, Stage I11.3)");
+  m.press(Key::Right);
+  expect(m.choice().crt == crt::Filter::Off, "and round to Off again, past the filter that is not ported yet");
   m.press(Key::Left);
-  expect(m.choice().crt == crt::Filter::Lottes, "Left goes back");
-  m.press(Key::Left);
+  expect(m.choice().crt == crt::Filter::Geom, "Left goes back");
+  m.press(Key::Left); m.press(Key::Left);
   expect(m.choice().crt == crt::Filter::Off, "to Off");
   m.press(Key::Down);
   expect(m.cursor() == Item::Hdr && m.choice().hdr, "the HDR row follows the TV type on the Graphics options page, on at the start (Stage I10, D-016)");

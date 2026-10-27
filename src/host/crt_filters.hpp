@@ -10,6 +10,7 @@
 namespace crt {
 
 const char* lottesHlsl();   // crt_lottes.cpp
+const char* geomHlsl();     // crt_geom.cpp
 
 }  // namespace crt
 

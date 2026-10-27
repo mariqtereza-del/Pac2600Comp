@@ -3079,7 +3079,7 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-016, T-I10-n), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** one commit per sub-stage, `Stage I10.n: <title>`. **Next stage:** I3 continues with the owner's other answers.
 
-    - **I11 - CRT filters (ported shaders)** **[In progress: I11.1 and I11.2 done 2026-10-27]** *(sixth approved feature, D-017)*
+    - **I11 - CRT filters (ported shaders)** **[In progress: I11.1 to I11.3 done 2026-10-27]** *(sixth approved feature, D-017)*
       - **Objective:** a "CRT filter" row in Graphics options with: Off (today's picture, the default), GDV NTSC 2600 (crt-guest-advanced NTSC), CRT-Lottes and CRT-Geom, each the real shader ported, working with HDR, the smooth picture and every window shape.
       - **Why it matters:** the owner asked for it (D-017) and chose to port the real shaders.
       - **Prerequisites:** I10 Done, clean tree, D-017 recorded, **the owner's approval to download the shader sources** (GPL / public domain files from the libretro slang-shaders collection, kept in `third_party\shaders` with their licences, never executed); the Retro Crisis preset file if the owner has it.

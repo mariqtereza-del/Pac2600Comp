@@ -32,7 +32,7 @@ SDL_Texture* CrtFilter::run(SDL_Renderer* renderer, crt::Filter filter, const st
   }
   int& shader = shader_[static_cast<int>(filter)];
   if(shader < 0) {
-    const char* text = filter == crt::Filter::Lottes ? crt::lottesHlsl() : nullptr;
+    const char* text = filter == crt::Filter::Lottes ? crt::lottesHlsl() : filter == crt::Filter::Geom ? crt::geomHlsl() : nullptr;
     if(!text) { error = "this filter is not ported yet"; return nullptr; }
     shader = gpu_.compile(text, error);
     if(shader < 0) return nullptr;
@@ -71,8 +71,20 @@ SDL_Texture* CrtFilter::run(SDL_Renderer* renderer, crt::Filter filter, const st
     std::memcpy(c.p1, p1, sizeof p1);
     std::memcpy(c.p2, p2, sizeof p2);
   }
-  c.p3[0] = inputLinear;
-  c.p3[1] = 1.0f;   // scaleInLinearGamma
+  if(filter == crt::Filter::Geom) {   // the defaults of crt-geom.slang
+    const float p0[4] = {2.4f, 2.2f, 1.5f, 2.0f};          // CRTgamma, monitorgamma, d, R
+    const float p1[4] = {0.03f, 1000.0f, 100.0f, 100.0f};  // cornersize, cornersmooth, overscan_x, overscan_y
+    const float p2[4] = {0.3f, 0.0f, 1.0f, 0.3f};          // DOTMASK, DOTMASK_brightboost, SHARPER, scanline_weight
+    const float p3[4] = {0.0f, 1.0f, 1.0f, inputLinear};   // lum, interlace_detect, CURVATURE, inputLinear
+    std::memcpy(c.p0, p0, sizeof p0);
+    std::memcpy(c.p1, p1, sizeof p1);
+    std::memcpy(c.p2, p2, sizeof p2);
+    std::memcpy(c.p3, p3, sizeof p3);
+  }
+  if(filter == crt::Filter::Lottes) {
+    c.p3[0] = inputLinear;
+    c.p3[1] = 1.0f;   // scaleInLinearGamma
+  }
   if(!gpu_.run(shader, source_, target_, &c, sizeof c, error)) return nullptr;
   return target_;
 }

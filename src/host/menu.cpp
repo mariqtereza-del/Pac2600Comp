@@ -222,7 +222,10 @@ static void appendCrtText(std::vector<std::string>& out, int width, crt::Filter 
       paragraph("CRT-Lottes: the shader of Timothy Lottes (public domain), in the style of a good arcade monitor: crisp scanlines, a visible shadow mask, a soft glow around "
                 "bright parts and slightly curved glass.");
       break;
-    case crt::Filter::Geom: paragraph("CRT-Geom: the classic curved-screen shader (cgwg and others)."); break;
+    case crt::Filter::Geom:
+      paragraph("CRT-Geom: the classic curved-screen shader of cgwg, Themaister and DOLLS (GPL): strongly rounded glass with shaded corners, scanlines whose width follows the "
+                "brightness of the picture, smooth horizontal blending between pixels and a fine vertical-stripe screen mask.");
+      break;
     case crt::Filter::GuestNtsc: paragraph("GDV NTSC 2600: the crt-guest-advanced shader (guest.r and Dr. Venom) with its NTSC colour."); break;
   }
   out.push_back("");

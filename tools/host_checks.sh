@@ -51,7 +51,9 @@ for prog in pacman2600 pacman2600_ref; do
   done
   # Stage I11.2: the CRT-Lottes filter in the real window (standard and, where Windows is in HDR mode, HDR): not black, not the plain picture
   if [ "$prog" = pacman2600 ]; then
-    "$EXE" --crt-shot "$P/crt" "$ROM" --crt lottes --window 1280x960 --settings "$P/s23.ini"; check "$prog crt-shot lottes" $? 0; has "$prog crt-shot lottes result" "$P/crt.txt" "^result=OK"
+    for filter in lottes geom; do
+      "$EXE" --crt-shot "$P/crt_$filter" "$ROM" --crt $filter --window 1280x960 --settings "$P/s23_$filter.ini"; check "$prog crt-shot $filter" $? 0; has "$prog crt-shot $filter result" "$P/crt_$filter.txt" "^result=OK"
+    done
   fi
   # Stage I11.1: our own shaders on SDL's Direct3D 11 renderer (standard and, where Windows is in HDR mode, HDR): identical to the plain picture where nothing changes
   if [ "$prog" = pacman2600 ]; then

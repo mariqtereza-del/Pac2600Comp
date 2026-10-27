@@ -49,6 +49,10 @@ for prog in pacman2600 pacman2600_ref; do
   for size in 1280x1024 1920x1080 1000x1000; do
     "$EXE" --backdrop-check "$P/bd_$size" "$ROM" --window $size --settings "$P/s15.ini"; check "$prog backdrop-check $size" $? 0; has "$prog backdrop result $size" "$P/bd_$size.txt" "result=OK"
   done
+  # Stage I11.2: the CRT-Lottes filter in the real window (standard and, where Windows is in HDR mode, HDR): not black, not the plain picture
+  if [ "$prog" = pacman2600 ]; then
+    "$EXE" --crt-shot "$P/crt" "$ROM" --crt lottes --window 1280x960 --settings "$P/s23.ini"; check "$prog crt-shot lottes" $? 0; has "$prog crt-shot lottes result" "$P/crt.txt" "^result=OK"
+  fi
   # Stage I11.1: our own shaders on SDL's Direct3D 11 renderer (standard and, where Windows is in HDR mode, HDR): identical to the plain picture where nothing changes
   if [ "$prog" = pacman2600 ]; then
     "$EXE" --filter-check "$P/flt" "$ROM" --window 1280x960 --settings "$P/s22.ini"; check "$prog filter-check" $? 0; has "$prog filter-check result" "$P/flt.txt" "^result=OK"

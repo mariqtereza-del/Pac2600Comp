@@ -69,12 +69,14 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--hdr-report") o.hdrReportFile = next();
     else if(a == "--hdr-check") o.hdrCheckPng = next();
     else if(a == "--filter-check") o.filterCheckPng = next();
+    else if(a == "--crt-shot") o.crtShotPng = next();
     else if(a == "--hdr-highlights") o.hdrHighlightsPng = next();
     else if(a == "--hdr") o.hdr = next();
     else if(a == "--pad-check") o.padCheckFile = next();
     else if(a == "--stella-speed") o.stellaSpeed = true;
     else if(a == "--soft-glow") o.softGlow = true;
     else if(a == "--fps") o.fps = next();
+    else if(a == "--crt") o.crt = next();
     else if(a == "--ram-seed") o.ramSeed = std::atoll(next().c_str());
     else if(a == "--trace") o.traceFile = next();
     else if(a == "--poke") {
@@ -111,6 +113,7 @@ Options parseArguments(int argc, char* argv[])
     else if(a == "--fingerprints") o.fingerprintFile = next();
     else if(a == "--settings") o.settingsFile = next();
     else if(a == "--roms-dir") o.romsDir = next();
+    else if(a.rfind("--", 0) == 0) { if(o.unknownOption.empty()) o.unknownOption = a; }   // not an option of this program: said so, not taken for the ROM file
     else if(o.romArg.empty()) o.romArg = a;
   }
   const char* base = SDL_GetBasePath();  // folder of the program, with a trailing slash

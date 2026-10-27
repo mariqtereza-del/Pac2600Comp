@@ -37,7 +37,7 @@ target_link_libraries(controls PUBLIC SDL3::SDL3)
 # The Escape menu (Stage I5): the choices, their explanations and the presses that start a game; no window code.
 add_library(menu STATIC menu.cpp menu_session.cpp background.cpp)
 target_compile_options(menu PRIVATE /W4 /permissive-)
-target_link_libraries(menu PUBLIC controls framerate)
+target_link_libraries(menu PUBLIC controls framerate crt)
 
 # The frame rate of the picture (Stage I9.4): the choices and the arithmetic, no window code.
 add_library(framerate STATIC framerate.cpp)
@@ -46,6 +46,10 @@ target_compile_options(framerate PRIVATE /W4 /permissive-)
 # HDR output (Stage I10): what the screen says and the decisions and arithmetic that follow, no window code.
 add_library(hdr STATIC hdr.cpp)
 target_compile_options(hdr PRIVATE /W4 /permissive-)
+
+# The CRT filter choices (Stage I11): the names and the order, no window code.
+add_library(crt STATIC crt.cpp)
+target_compile_options(crt PRIVATE /W4 /permissive-)
 
 # Input recordings (Stage D13): the file format, no window code.
 add_library(inputlog STATIC inputlog.cpp)
@@ -76,9 +80,9 @@ target_link_libraries(emulator_native PUBLIC game_native)
 
 # The program's parts (Stage G4.7, split out of main.cpp): arguments, ROM choice, screen, pads, pacing, window handling, headless runs.
 # They need an Emulator but not which one: the executables below link the native one or the Stella one.
-add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp pads.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp backdrop.cpp backdrop_check.cpp smooth_check.cpp key_pusher.cpp hdr_check.cpp render_setup.cpp gpu_pass.cpp filter_check.cpp)
+add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp pads.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp backdrop.cpp backdrop_check.cpp smooth_check.cpp key_pusher.cpp hdr_check.cpp render_setup.cpp gpu_pass.cpp filter_check.cpp crt_filter.cpp crt_lottes.cpp)
 target_compile_options(host_app PRIVATE /W4 /permissive-)
-target_link_libraries(host_app PUBLIC SDL3::SDL3 rom_finder layout windowstate audio controls menu inputlog trace framerate hdr d3d11 d3dcompiler dxguid)
+target_link_libraries(host_app PUBLIC SDL3::SDL3 rom_finder layout windowstate audio controls menu inputlog trace framerate hdr crt d3d11 d3dcompiler dxguid)
 
 # WIN32 = a normal windowed program (no console window when double-clicked).
 # pacman2600 is the game: it plays with the rebuilt game (emulator_native) and contains no Stella.
@@ -125,6 +129,16 @@ target_link_libraries(test_trace PRIVATE trace)
 add_executable(test_framerate ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_framerate.cpp)
 target_compile_options(test_framerate PRIVATE /W4 /permissive-)
 target_link_libraries(test_framerate PRIVATE framerate)
+
+# Tests for the CRT filter choices (Stage I11.2): build/host/test_crt.exe
+add_executable(test_crt ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_crt.cpp)
+target_compile_options(test_crt PRIVATE /W4 /permissive-)
+target_link_libraries(test_crt PRIVATE crt)
+
+# Test of the command line (after Stage I11.2: an option the program does not know is not a ROM file): build/host/test_options.exe
+add_executable(test_options ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_options.cpp options.cpp)
+target_compile_options(test_options PRIVATE /W4 /permissive-)
+target_link_libraries(test_options PRIVATE SDL3::SDL3 layout crt)
 
 # Tests for the HDR decisions (Stage I10.1): build/host/test_hdr.exe
 add_executable(test_hdr ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_hdr.cpp)

@@ -150,6 +150,12 @@ bool GpuPasses::open(SDL_Renderer* renderer)
   return true;
 }
 
+void GpuPasses::forgetTextures()
+{
+  impl_->views.clear();
+  impl_->targets.clear();
+}
+
 bool GpuPasses::readsEightBitAsLinear() const
 {
   return impl_->renderer && SDL_GetNumberProperty(SDL_GetRendererProperties(impl_->renderer), SDL_PROP_RENDERER_OUTPUT_COLORSPACE_NUMBER, 0) == SDL_COLORSPACE_SRGB_LINEAR;

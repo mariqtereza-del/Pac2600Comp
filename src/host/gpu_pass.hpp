@@ -32,6 +32,9 @@ class GpuPasses {
   // textures that are decoded as they are read) or as the standard (encoded) values (the standard renderer). Float textures are linear light in both.
   bool readsEightBitAsLinear() const;
 
+  // The views kept for the textures that were used are let go (call when a texture that was used has been destroyed: a new one could have the same address).
+  void forgetTextures();
+
   // Draws `input` through shader `shader` over the whole of `output` (an SDL texture made as a render target, SDL_TEXTUREACCESS_TARGET). `constants` (a multiple of 16 bytes,
   // at most 4096) are the contents of the constant buffer. False with a message in `error` if it could not.
   bool run(int shader, SDL_Texture* input, SDL_Texture* output, const void* constants, int constantBytes, std::string& error);

@@ -2,6 +2,9 @@
 // when Windows is in HDR mode, in the HDR one. The game's picture goes through a shader that changes nothing (it only turns the colours to linear light, which is what the
 // texture it draws into holds) and the result is drawn next to the plain picture: every flat pixel must be the same; and through a shader that inverts the colours, which must
 // change them. No ROM is needed except for the picture, which is the game's own.
+#include <algorithm>
+#include <cmath>
+
 #include "common.hpp"
 #include "gpu_pass.hpp"
 #include "options.hpp"
@@ -106,6 +109,74 @@ bool filterCheck(SDL_Window* window, SDL_Renderer*& renderer, const std::string&
            << "_largest_difference_in_flat_areas=" << same.largestInside << '\n' << name << "_edge_pixels=" << same.edges << '\n' << name << "_edge_pixels_that_differ_by_more_than_one_step="
            << same.edgesDifferent << '\n' << name << "_pixels_changed_by_the_invert_shader=" << invertedDifferent << '\n';
     const bool good = same.inside > 100000 && same.insideDifferent == 0 && invertedDifferent > 100000;
+    report << name << "_result=" << (good ? "OK" : "FAIL") << '\n';
+    ok = ok && good;
+  }
+  report << "result=" << (ok ? "OK" : "FAIL") << '\n';
+  return ok;
+}
+
+
+// --crt-shot: the picture through a CRT filter in the real window, in the standard colour space and, when Windows is in HDR mode, in the HDR one. Saved as PNGs (<prefix>_<sdr
+// or hdr>_<filter>.png) and measured: the filter must not leave the picture black or unchanged, must make scanlines (the brightness of the rows of the picture varies from row to
+// row where the plain picture's does not), and the picture with the filter off must be what it always was.
+bool crtShot(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view, crt::Filter filter)
+{
+  std::ofstream report(pngPrefix + ".txt");
+  std::vector<std::uint8_t> bytes;
+  if(!report || !readRomBytes(romPath, bytes)) return false;
+  Emulator emulator;
+  if(const std::string error = emulator.load(fileNameOf(romPath), bytes); !error.empty()) { report << "result=" << error << '\n'; return false; }
+  for(int f = 0; f < 700; ++f) emulator.runFrame();
+  const std::vector<std::uint32_t> picture = emulator.colours();
+  const hdr::ScreenState state = screenStateOf(window);
+  report << "filter=" << crt::settingName(filter) << "\nwindows_hdr_on=" << (state.hdrOn ? "yes" : "no") << '\n';
+  bool ok = true;
+  const int passes = hdr::useHdr(true, state) ? 2 : 1;
+  for(int pass = 0; pass < passes; ++pass) {
+    const char* name = pass == 0 ? "sdr" : "hdr";
+    SDL_DestroyRenderer(renderer);
+    bool gotHdr = false;
+    renderer = createRenderer(window, pass == 1, &gotHdr);
+    if(!renderer || (pass == 1 && !gotHdr)) { report << name << "_result=the renderer could not be made\n"; return false; }
+    Screen screen;
+    screen.renderer = renderer;
+    screen.view = view;
+    Pixels plain, filtered;
+    std::string format;
+    screen.crt = crt::Filter::Off;
+    for(int i = 0; i < 3; ++i) screen.show(picture, emulator.height());
+    if(!readAsStandard(renderer, plain, pngPrefix + "_" + name + "_off.png", format, state.sdrWhite)) { report << name << "_result=cannot read the window\n"; ok = false; continue; }
+    screen.crt = filter;
+    for(int i = 0; i < 3; ++i) screen.show(picture, emulator.height());
+    if(!screen.crtError.empty()) { report << name << "_result=the filter could not run: " << screen.crtError << '\n'; ok = false; continue; }
+    if(!readAsStandard(renderer, filtered, pngPrefix + "_" + name + "_" + crt::settingName(filter) + ".png", format, state.sdrWhite)) { report << name << "_result=cannot read the window\n"; ok = false; continue; }
+    // the picture's own area (where the plain picture is not black): the mean brightness, and how much the rows differ from each other
+    auto rowsOf = [&](const Pixels& px, double& mean, double& spread) {
+      std::vector<double> rows;
+      for(int y = screen.where.y; y < screen.where.y + screen.where.h && y < px.h; ++y) {
+        double sum = 0;
+        for(int x = screen.where.x; x < screen.where.x + screen.where.w && x < px.w; ++x) {
+          const std::uint32_t c = px.xrgb[static_cast<std::size_t>(y * px.w + x)];
+          sum += 0.2126 * ((c >> 16) & 0xFF) + 0.7152 * ((c >> 8) & 0xFF) + 0.0722 * (c & 0xFF);
+        }
+        rows.push_back(sum / std::max(1, screen.where.w));
+      }
+      mean = 0;
+      for(double r : rows) mean += r;
+      mean /= std::max<std::size_t>(1, rows.size());
+      double var = 0;
+      for(double r : rows) var += (r - mean) * (r - mean);
+      spread = std::sqrt(var / std::max<std::size_t>(1, rows.size()));
+    };
+    double meanOff, spreadOff, meanOn, spreadOn;
+    rowsOf(plain, meanOff, spreadOff);
+    rowsOf(filtered, meanOn, spreadOn);
+    long long different = 0;
+    for(std::size_t i = 0; i < plain.xrgb.size() && i < filtered.xrgb.size(); ++i) different += plain.xrgb[i] != filtered.xrgb[i];
+    report << name << "_mean_brightness_off=" << meanOff << '\n' << name << "_mean_brightness_filtered=" << meanOn << '\n' << name << "_row_to_row_spread_off=" << spreadOff << '\n' << name
+           << "_row_to_row_spread_filtered=" << spreadOn << '\n' << name << "_pixels_changed_by_the_filter=" << different << '\n';
+    const bool good = meanOn > 10.0 && meanOn < 250.0 && different > 100000;
     report << name << "_result=" << (good ? "OK" : "FAIL") << '\n';
     ok = ok && good;
   }

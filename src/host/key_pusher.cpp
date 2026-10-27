@@ -38,7 +38,7 @@ std::thread startKeyPusher(const Options& options, const std::atomic<bool>& stop
         tap(2.05, SDL_SCANCODE_DOWN); tap(2.1, SDL_SCANCODE_DOWN); tap(2.15, SDL_SCANCODE_RIGHT);  // Stage I9.5: the frame rate one step on (75; 30 in the reference program)
         tap(2.2, SDL_SCANCODE_DOWN); tap(2.25, SDL_SCANCODE_RIGHT);                                // and the frame counter on
         tap(2.27, SDL_SCANCODE_ESCAPE); tap(2.29, SDL_SCANCODE_DOWN); tap(2.31, SDL_SCANCODE_RETURN);   // Stage I10: to the Graphics options page
-        tap(2.33, SDL_SCANCODE_DOWN); tap(2.35, SDL_SCANCODE_DOWN); tap(2.37, SDL_SCANCODE_RIGHT);     // past the TV type, HDR off
+        tap(2.33, SDL_SCANCODE_DOWN); tap(2.34, SDL_SCANCODE_DOWN); tap(2.36, SDL_SCANCODE_DOWN); tap(2.37, SDL_SCANCODE_RIGHT);   // past the TV type and the CRT filter, HDR off
         tap(2.39, SDL_SCANCODE_DOWN); tap(2.41, SDL_SCANCODE_RIGHT); tap(2.43, SDL_SCANCODE_RIGHT);    // and the highlights 10 more (60)
         tap(2.45, SDL_SCANCODE_ESCAPE); tap(2.5, SDL_SCANCODE_UP); tap(2.55, SDL_SCANCODE_UP);   // back to the main page (on Game options), up to New game
         tap(3.0, SDL_SCANCODE_RETURN);                               // go

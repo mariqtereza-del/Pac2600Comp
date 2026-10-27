@@ -57,6 +57,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   retitle();
   // Stage I7: what fills the space around the picture, remembered in settings.ini (background=black|glow|mirror|solid|gradient|arcade|bezel)
   screen.backgroundKind = background::fromSetting(settings::get(options.settingsFile, "background"));
+  screen.crt = crt::fromSetting(options.crt.empty() ? settings::get(options.settingsFile, "crt_filter") : options.crt);   // Stage I11: the CRT filter (menu, Graphics options)
 
   // The game and its sound run on their own thread (DECISIONS.md T-D8-2), so that a window that is being dragged or
   // resized, which freezes this thread on Windows, cannot starve the sound card. This thread only shows the pictures.
@@ -202,7 +203,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     if(!menuSession.isOpen()) {
       if(code != SDL_SCANCODE_ESCAPE || e.key.repeat) return false;
       keyboard.releaseAll();  // no direction may stay held while the game is stopped
-      menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), hdrWanted, hdrPercent, screenState.hdrOn});
+      menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn});
       menuOpenedAtFrame = framesNow();
       ++menuOpens;
       return true;
@@ -222,26 +223,12 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         screen.backgroundKind = c.background;
         settings::set(options.settingsFile, "background", background::settingName(c.background));
       }
-      if(c.hdr != hdrWanted) {   // HDR on or off takes effect at once and is remembered
-        hdrWanted = c.hdr;
-        settings::set(options.settingsFile, "hdr", hdrWanted ? "on" : "off");
-        adaptToHdr();
-      }
-      if(c.hdrStrength != hdrPercent) {   // the brightness of the highlights, in percent
-        hdrPercent = c.hdrStrength;
-        settings::set(options.settingsFile, "hdr_highlights", std::to_string(hdrPercent));
-        updateSmoothWanted();
-      }
-      if(c.frameRate != rate) {   // the frame rate takes effect at once and is remembered
-        rate = c.frameRate;
-        updateSmoothWanted();
-        applyVSync();
-        settings::set(options.settingsFile, "frame_rate", framerate::settingName(rate));
-      }
-      if(c.frameCounter != counterOn) {
-        counterOn = c.frameCounter;
-        settings::set(options.settingsFile, "frame_counter", counterOn ? "on" : "off");
-      }
+      auto remember = [&](const char* key, const std::string& value) { settings::set(options.settingsFile, key, value); };   // every choice takes effect at once and is remembered
+      if(c.crt != screen.crt) { screen.crt = c.crt; remember("crt_filter", crt::settingName(screen.crt)); }
+      if(c.hdr != hdrWanted) { hdrWanted = c.hdr; remember("hdr", hdrWanted ? "on" : "off"); adaptToHdr(); }
+      if(c.hdrStrength != hdrPercent) { hdrPercent = c.hdrStrength; remember("hdr_highlights", std::to_string(hdrPercent)); updateSmoothWanted(); }
+      if(c.frameRate != rate) { rate = c.frameRate; updateSmoothWanted(); applyVSync(); remember("frame_rate", framerate::settingName(rate)); }
+      if(c.frameCounter != counterOn) { counterOn = c.frameCounter; remember("frame_counter", counterOn ? "on" : "off"); }
       if(result == menu::Result::Quit) running = false;
       return true;
     }
@@ -314,7 +301,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       shownCount = 0;
     }
     screen.ram = shownRam.data();
-    const bool smoothNow = framerate::smooth(rate) && snapshot && !snapshot->background.empty();
+    const bool smoothNow = screen.crt == crt::Filter::Off && framerate::smooth(rate) && snapshot && !snapshot->background.empty();
     if(smoothNow) {   // the picture without the moving objects, and Pac-Man, the pills and the ghosts between their places (no delay: each is on its way to where the original shows it next)
       const double nowSeconds = static_cast<double>(SDL_GetTicksNS()) / 1e9;
       const long long grid = framerate::pictureIndex(rate, nowSeconds);   // the picture of this moment of the clock: made once, kept until the next
@@ -328,7 +315,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
       if(!screen.show(lastSnapshot->background, height, &moving, highlight())) { failed = true; running = false; }
     } else {
       lastSnapshot.reset();
-      const bool brighter = highlight() > 1.0f && shownSnapshot && !shownSnapshot->background.empty();
+      const bool brighter = screen.crt == crt::Filter::Off && highlight() > 1.0f && shownSnapshot && !shownSnapshot->background.empty();
       if(brighter) {   // 30 and 60 with HDR highlights: the game's own picture, its moving objects drawn again brighter on top (the same pixels, composed exactly as the original)
         shownSnapshot->compose(0.0, false, moving);
         if(!screen.show(shownSnapshot->background, height, &moving, highlight())) { failed = true; running = false; }

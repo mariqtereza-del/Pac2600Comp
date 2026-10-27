@@ -2,6 +2,7 @@
 // (Stage G4.7: moved out of main.cpp, the code is unchanged.)
 #pragma once
 #include "backdrop.hpp"
+#include "crt_filters.hpp"
 #include "common.hpp"
 #include <cmath>
 
@@ -24,6 +25,9 @@ struct Screen {
   background::Kind backgroundKind = background::Kind::Black;  // what fills the space around the picture (Stage I7); Black = nothing is drawn
   const std::uint8_t* ram = nullptr;                           // the game's 128 bytes, for the arcade panel; may stay null
   Backdrop backdrop;
+  crt::Filter crt = crt::Filter::Off;   // the CRT filter the picture goes through (Stage I11, D-017); Off = the picture as it always was
+  CrtFilter crtEngine;
+  std::string crtError;               // why the filter could not be used, if it could not (the picture is then drawn without it)
   ~Screen() { dropTextures(); }
   // The renderer is about to be replaced (Stage I10.1): what it made goes with it.
   void dropTextures()
@@ -31,6 +35,7 @@ struct Screen {
     if(texture) SDL_DestroyTexture(texture);
     texture = nullptr;
     backdrop.forget();
+    crtEngine.close();
   }
 
   // `moving`: the rectangles of Pac-Man, the pills and the ghosts (smooth motion, Stage I9.4), drawn over `pixels`, which is then the picture without them.
@@ -68,8 +73,11 @@ struct Screen {
       scene.pixels = pixels.data(); scene.pixelWidth = Emulator::kWidth; scene.firstRow = top; scene.rows = shownRows; scene.ram = ram;
       backdrop.draw(scene, backgroundKind);
     }
-    SDL_RenderTexture(renderer, texture, &src, &dst);
-    if(moving && !moving->empty()) {
+    SDL_Texture* filtered = nullptr;
+    if(crt != crt::Filter::Off && where.w > 0 && where.h > 0) filtered = crtEngine.run(renderer, crt, pixels, height, top, shownRows, where.w, where.h, crtError);
+    if(filtered) SDL_RenderTexture(renderer, filtered, nullptr, &dst);   // one texel to a pixel of the screen
+    else SDL_RenderTexture(renderer, texture, &src, &dst);
+    if(!filtered && moving && !moving->empty()) {
       const float scaleX = dst.w / static_cast<float>(Emulator::kWidth), scaleY = dst.h / static_cast<float>(shownRows);
       const SDL_Rect clip{where.x, where.y, where.w, where.h};
       SDL_SetRenderClipRect(renderer, &clip);   // nothing outside the picture, whatever the rows of the moving objects

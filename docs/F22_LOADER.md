@@ -5,10 +5,10 @@
 ## Result: OK
 
 - ROM check tests (`tests\game\test_rom_check.cpp`): 13 ok, 0 failed. They check three standard SHA-1 test values, that the right ROM is accepted, that one changed bit is refused (fingerprint), one byte short / long / empty is refused (size), a missing file and a foreign file are refused.
-- The native game of F21.27 (memory, picture and sound of every recorded game): native game, scratch and stack bytes left out: 70 of 70 games identical, 439680 frames, 9.7 s of work.
+- The native game of F21.27 (memory, picture and sound of every recorded game): native game, scratch and stack bytes left out: 70 of 70 games identical, 439680 frames, 10.3 s of work.
 - **The game needs no ROM:** `lockstep_native` given a ROM path that does not exist ends IDENTICAL (True). `test_no_rom`, a program with no ROM code in it, reproduces the recorded pictures and sounds of the fingerprint files in `tests\game\data` (BL-001: result: IDENTICAL (700 frames); BL-035: result: IDENTICAL (3000 frames)).
 - **The window program is the gate:** a wrong file is refused (exit 4, no picture): True; the right ROM is accepted (exit 0, picture): True.
-- Source scan: 139 files under `src`; runs of 8 consecutive numbers that equal 8 consecutive cartridge bytes (at least 4 different values): **none** outside `src/game/data/tables.cpp`. Since G5b (D-009, Rule 7 as reworded) that one file holds the game's data tables (34 tables, 508 bytes), and every run found in it lies inside a listed table (299 runs, 0 stray). Everywhere else the source holds addresses and logic, not Atari's data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: True).
+- Source scan: 144 files under `src`; runs of 8 consecutive numbers that equal 8 consecutive cartridge bytes (at least 4 different values): **none** outside `src/game/data/tables.cpp`. Since G5b (D-009, Rule 7 as reworded) that one file holds the game's data tables (34 tables, 508 bytes), and every run found in it lies inside a listed table (299 runs, 0 stray). Everywhere else the source holds addresses and logic, not Atari's data. The scan was first shown to work on a control (8 cartridge bytes written as 0x.., decimal and $.. are all found: True).
 
 ## Not claimed
 

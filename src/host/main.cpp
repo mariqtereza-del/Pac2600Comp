@@ -59,6 +59,12 @@ using namespace host;
 int main(int argc, char* argv[])
 {
   const Options options = parseArguments(argc, argv);
+  if(!options.unknownOption.empty()) {   // a mistyped option, or one of a newer program than this one: say so plainly instead of looking for a ROM file of that name
+    std::fprintf(stderr, "This program does not know the option %s\n", options.unknownOption.c_str());
+    const std::string text = "This program does not know the option " + options.unknownOption + ".\n\nIf the option belongs to a newer version of the program, build it again (tools\\build_host.cmd).";
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, kTitle, text.c_str(), nullptr);
+    return 1;
+  }
   if(!options.findRomFile.empty()) return findRomReport(options);
   if(!options.hdrReportFile.empty()) return hdrReport(options) ? 0 : 2;
   if(!options.headlessPng.empty()) return headlessRun(options);
@@ -81,7 +87,7 @@ int main(int argc, char* argv[])
   if(!SDL_Init(SDL_INIT_VIDEO)) { showError("SDL could not start."); return 1; }
 
   // The remembered window (Stage D7) is used for playing and for --state-report, not for the other checks or when --window is given.
-  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty() || !options.menuShotPng.empty() || !options.backdropCheckPng.empty() || !options.smoothShotPng.empty() || !options.hdrCheckPng.empty() || !options.hdrHighlightsPng.empty() || !options.filterCheckPng.empty();
+  const bool otherCheck = !options.selfCheckFile.empty() || !options.layoutCheckPng.empty() || !options.fullscreenCheckFile.empty() || !options.helpCheckPng.empty() || !options.menuShotPng.empty() || !options.backdropCheckPng.empty() || !options.smoothShotPng.empty() || !options.hdrCheckPng.empty() || !options.hdrHighlightsPng.empty() || !options.filterCheckPng.empty() || !options.crtShotPng.empty();
   windowstate::State remembered;
   if(!otherCheck && !options.windowGiven) remembered = windowstate::fitToMonitors(windowstate::load(options.settingsFile), monitorAreas());
 
@@ -132,6 +138,8 @@ int main(int argc, char* argv[])
         exitCode = helpCheck(renderer, options.helpCheckPng, romPath) ? 0 : 2;
       } else if(!options.backdropCheckPng.empty()) {
         exitCode = backdropCheck(renderer, options.backdropCheckPng, romPath) ? 0 : 2;
+      } else if(!options.crtShotPng.empty()) {
+        exitCode = crtShot(window, renderer, options.crtShotPng, romPath, view, crt::fromSetting(options.crt)) ? 0 : 2;
       } else if(!options.filterCheckPng.empty()) {
         exitCode = filterCheck(window, renderer, options.filterCheckPng, romPath, view) ? 0 : 2;
       } else if(!options.hdrHighlightsPng.empty()) {

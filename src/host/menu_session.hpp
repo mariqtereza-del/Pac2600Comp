@@ -24,6 +24,7 @@ class Session {
     framerate::Rate frameRate = framerate::Rate::Fps60;
     bool frameCounter = false;
     bool smoothAvailable = true;
+    crt::Filter crt = crt::Filter::Off;
     bool hdr = true;
     int hdrStrength = 50;
     bool hdrWindows = false;

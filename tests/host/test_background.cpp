@@ -111,7 +111,7 @@ int main()
   m.press(Key::Left);
   expect(!m.choice().blackWhite, "Left: colour again");
   m.press(Key::Down);
-  m.press(Key::Down); m.press(Key::Down);   // past the two HDR rows (Stage I10)
+  m.press(Key::Down); m.press(Key::Down); m.press(Key::Down);   // past the CRT filter and the two HDR rows (Stages I11 and I10)
   expect(m.cursor() == Item::Preview && !m.previewing(), "fifth row: hide the menu");
   m.press(Key::Right);
   expect(!m.previewing(), "Right does not hide the menu");

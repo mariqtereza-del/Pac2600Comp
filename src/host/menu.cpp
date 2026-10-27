@@ -60,7 +60,7 @@ const std::vector<Item>& Menu::gameItems()
 
 const std::vector<Item>& Menu::graphicsItems()
 {
-  static const std::vector<Item> all = {Item::Background, Item::TvType, Item::Hdr, Item::HdrHighlights, Item::Preview, Item::Back};
+  static const std::vector<Item> all = {Item::Background, Item::TvType, Item::Crt, Item::Hdr, Item::HdrHighlights, Item::Preview, Item::Back};
   return all;
 }
 
@@ -112,6 +112,7 @@ Result Menu::press(Key key)
       while(!choice_.smoothAvailable && framerate::smooth(choice_.frameRate));   // a program without smooth motion goes round 30 and 60 only
       return Result::None;
     case Item::FrameCounter: choice_.frameCounter = !choice_.frameCounter; return Result::None;
+    case Item::Crt: choice_.crt = crt::next(choice_.crt, step); return Result::None;
     case Item::Hdr: choice_.hdr = !choice_.hdr; return Result::None;
     case Item::HdrHighlights:   // a slider in steps of 5; Left and Right stop at the ends, Enter goes round
       if(key == Key::Enter) choice_.hdrStrength = (choice_.hdrStrength + 5) % 105;
@@ -145,6 +146,7 @@ std::vector<std::string> Menu::rows() const
       case Item::RightDifficulty: std::snprintf(text, sizeof text, "Right difficulty: < %c >", choice_.rightA ? 'A' : 'B'); break;
       case Item::FrameRate: std::snprintf(text, sizeof text, "Frame rate:       < %s >", framerate::title(choice_.frameRate)); break;
       case Item::FrameCounter: std::snprintf(text, sizeof text, "Frame counter:    < %s >", choice_.frameCounter ? "On" : "Off"); break;
+      case Item::Crt: std::snprintf(text, sizeof text, "CRT filter:   < %s >", crt::title(choice_.crt)); break;
       case Item::Hdr: std::snprintf(text, sizeof text, "HDR:              < %s >", choice_.hdr ? "On" : "Off"); break;
       case Item::HdrHighlights: {
         const int filled = choice_.hdrStrength / 5;   // 20 steps
@@ -203,6 +205,29 @@ static void appendFrameRateText(std::vector<std::string>& out, int width, bool s
     paragraph("THIS IS THE REFERENCE PROGRAM (pacman2600_ref.exe, the one with the emulator inside, used only by the tests): it has no smooth motion, so only 30 and 60 "
               "are offered. Start pacman2600.exe for all six.");
   }
+}
+
+// The explanation of the CRT filter row. The filters are the real shaders of the libretro collection, ported to HLSL (third_party\shaders, DECISIONS.md D-017).
+static void appendCrtText(std::vector<std::string>& out, int width, crt::Filter filter)
+{
+  auto paragraph = [&](const std::string& text) {
+    for(const std::string& line : wrap(text, width)) out.push_back(line);
+  };
+  paragraph("Makes the picture look as it did on a cathode-ray tube television or monitor: scanlines, the glow of the phosphor, a screen mask, a little curvature. "
+            "Off is the program's own picture, as it always was.");
+  out.push_back("");
+  switch(filter) {
+    case crt::Filter::Off: paragraph("Off: no filter."); break;
+    case crt::Filter::Lottes:
+      paragraph("CRT-Lottes: the shader of Timothy Lottes (public domain), in the style of a good arcade monitor: crisp scanlines, a visible shadow mask, a soft glow around "
+                "bright parts and slightly curved glass.");
+      break;
+    case crt::Filter::Geom: paragraph("CRT-Geom: the classic curved-screen shader (cgwg and others)."); break;
+    case crt::Filter::GuestNtsc: paragraph("GDV NTSC 2600: the crt-guest-advanced shader (guest.r and Dr. Venom) with its NTSC colour."); break;
+  }
+  out.push_back("");
+  paragraph("While a filter is on, the picture is the game's own at 60 steps a second: the smooth glide between steps (Frame rate) and the HDR highlights are not shown "
+            "inside a filter yet. The game itself is never changed.");
 }
 
 // The explanation of the two HDR rows. The original game has no HDR: the picture stays exactly as it was, at normal white, and only Pac-Man, the ghosts and the
@@ -282,6 +307,9 @@ std::vector<std::string> Menu::explanation(int width) const
       break;
     case Item::FrameCounter:
       paragraph("Shows a small counter in the top left corner of the window: how many different pictures are shown each second. Nothing else changes.");
+      break;
+    case Item::Crt:
+      appendCrtText(out, width, choice_.crt);
       break;
     case Item::Hdr:
     case Item::HdrHighlights:

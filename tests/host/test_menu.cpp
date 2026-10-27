@@ -129,6 +129,16 @@ int main()
   m.press(Key::Down); m.press(Key::Right);
   expect(m.cursor() == Item::TvType && m.choice().blackWhite, "TV type is on the Graphics options page: black and white");
   m.press(Key::Down);
+  expect(m.cursor() == Item::Crt && m.choice().crt == crt::Filter::Off, "the CRT filter row follows the TV type, off at the start (Stage I11)");
+  m.press(Key::Right);
+  expect(m.choice().crt == crt::Filter::Lottes, "Right: CRT-Lottes (the first port)");
+  m.press(Key::Right);
+  expect(m.choice().crt == crt::Filter::Off, "and round to Off again, past the filters that are not ported yet");
+  m.press(Key::Left);
+  expect(m.choice().crt == crt::Filter::Lottes, "Left goes back");
+  m.press(Key::Left);
+  expect(m.choice().crt == crt::Filter::Off, "to Off");
+  m.press(Key::Down);
   expect(m.cursor() == Item::Hdr && m.choice().hdr, "the HDR row follows the TV type on the Graphics options page, on at the start (Stage I10, D-016)");
   m.press(Key::Right);
   expect(!m.choice().hdr, "Right: HDR off");

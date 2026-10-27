@@ -2,6 +2,7 @@
 // (Stage G4.7: moved out of main.cpp, the code is unchanged.)
 #pragma once
 #include "common.hpp"
+#include "crt.hpp"
 
 namespace host {
 
@@ -14,10 +15,12 @@ struct View {
 const char* modeName(layout::Mode m);
 
 struct Options {
+  std::string unknownOption;   // the first argument that starts with "--" and is not an option of this program (it used to be taken for the ROM file and reported as a file not found)
   std::string selfCheckFile, findRomFile, romArg, settingsFile, romsDir;
   std::string headlessPng, rawFile, fingerprintFile, layoutCheckPng, timedReport, fullscreenCheckFile, stateReportFile;
   std::string hdr;               // --hdr on|off (Stage I10.1): HDR output on or off for this run; empty = the remembered choice (settings.ini hdr=, on unless turned off)
   std::string hdrHighlightsPng;  // --hdr-highlights <png prefix> (Stage I10.3)
+  std::string crtShotPng;        // --crt-shot <png prefix> (Stage I11.2): the picture through the CRT filter given with --crt
   std::string filterCheckPng;    // --filter-check <png prefix> (Stage I11.1)
   std::string hdrCheckPng;       // --hdr-check <png prefix> (Stage I10.1)
   std::string hdrReportFile;     // --hdr-report <file> (Stage I10.1)
@@ -29,6 +32,7 @@ struct Options {
   std::vector<std::array<int, 3>> pokes;  // --poke <frame>:<hex address>:<hex value> (headless only, TEST ONLY, Stage E8): memory edits before a frame
   std::string traceFile;               // --trace <file>: what the game did on every frame (Stage E1, docs\BASELINE.md)
   long long ramSeed = -1;              // --ram-seed N: power-on memory filled from seed N (-1 = zeros)
+  std::string crt;                     // --crt off|lottes|... (Stage I11): the CRT filter for this run; empty = the remembered one (settings.ini crt_filter=)
   std::string fps;                     // --fps 30|60|75|120|144|unlocked (Stage I9.4): the frame rate of the picture; empty = the remembered one (settings.ini frame_rate=)
   bool softGlow = false;               // --soft-glow: Stella's phosphor glow on (headless tests of F7)
   bool stellaSpeed = false;            // --stella-speed: 60.000 frames a second like Stella, instead of the console's own 59.92 (comparison only)
@@ -58,6 +62,9 @@ bool hdrWantedBy(const Options& o);
 
 // --hdr-highlights (Stage I10.3): Pac-Man, the pills and the ghost drawn brighter than white at three slider positions, checked in numbers; `renderer` is replaced.
 bool hdrHighlights(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view);
+
+// --crt-shot (Stage I11.2): the picture through a CRT filter in the real window, measured; `renderer` is replaced.
+bool crtShot(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view, crt::Filter filter);
 
 // --filter-check (Stage I11.1): our own pixel shaders on SDL's Direct3D 11 renderer, standard and HDR; `renderer` is replaced.
 bool filterCheck(SDL_Window* window, SDL_Renderer*& renderer, const std::string& pngPrefix, const std::string& romPath, const View& view);

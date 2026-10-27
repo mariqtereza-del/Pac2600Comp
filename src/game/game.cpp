@@ -34,6 +34,10 @@ bool Game::runFrame(const FrameInputs& in, TiaChip& chip) {
   chip.position(kTopLogicLine);
   if (!topLogic(state_, in.console, chip)) return false;
   // lines 0-33 are blank, the maze from line 35, the score and the life markers below it (F18)
+  if (background_) {   // the picture without the moving objects, from a copy made before the drawing code changes the scratch bytes
+    GameState copy = state_;
+    drawBackground(copy, 16 - shift_, *background_, 34 - shift_);
+  }
   const PictureEnd end = drawPicture(state_, 16 - shift_, picture_ ? *picture_ : nullSink, 34 - shift_);
   chip.timeBase(end.line, end.clock);
   FrameInput flags = in.frame;

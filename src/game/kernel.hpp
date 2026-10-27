@@ -40,4 +40,8 @@ struct PictureEnd {
 // maze itself starts on `kernelStartLine`, 34 as a rule: one line earlier after a frame whose frame start ran one line long, see game.cpp).
 PictureEnd drawPicture(GameState& st, int startLine, TimedChip& chip, int kernelStartLine = 34);
 
+// Stage I9.1 (D-015): the same picture without Pac-Man and the ghosts (maze, wafers, power pills, bonus item, score and life markers stay). Used on a copy of
+// the state, for the smooth presenter; the game itself never uses it.
+PictureEnd drawBackground(GameState& st, int startLine, TimedChip& chip, int kernelStartLine = 34);
+
 }  // namespace game

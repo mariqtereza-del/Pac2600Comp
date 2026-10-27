@@ -35,6 +35,10 @@ class Game {
   // Where the drawing code's writes to the video chip go (not owned). Without one the drawing still runs, so the game's memory is the same.
   void setPicture(TimedChip* sink) { picture_ = sink; }
 
+  // Stage I9.1: a second sink that is given the picture without Pac-Man and the ghosts, drawn from a copy of the state (so the game, its memory and its sound
+  // are the same with or without it). The logic's own writes to the chip must reach this sink too (see Layers, layers.hpp).
+  void setBackgroundPicture(TimedChip* sink) { background_ = sink; }
+
   // The number of scanlines of the frame just played (262 as a rule, 43 for the first, 263 or 261 around a frame whose frame start ran one line long).
   int lastFrameLines() const { return lastLines_; }
 
@@ -46,6 +50,7 @@ class Game {
   GameState state_{};
   bool started_ = false;
   TimedChip* picture_ = nullptr;
+  TimedChip* background_ = nullptr;
   int shift_ = 0;         // 1 when the vertical timer of the last frame start ended one line early: this frame's numbering starts one line later
   int lastLines_ = 0;
 };

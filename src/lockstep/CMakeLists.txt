@@ -21,3 +21,5 @@ list(REMOVE_ITEM NOROM_SRCS native_main.cpp)
 add_executable(test_no_rom ../../tests/game/test_no_rom.cpp ${NOROM_SRCS})
 # Stage H2: unit tests of the game modules with made-up states (no ROM, no recording).
 add_executable(test_game_modules ../../tests/game/test_game_modules.cpp ${NOROM_SRCS})
+# Stage I9.1: the picture in two layers (with and without Pac-Man and the ghosts).
+add_executable(test_layers ../../tests/game/test_layers.cpp ${NOROM_SRCS})

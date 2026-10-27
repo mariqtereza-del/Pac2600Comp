@@ -22,12 +22,14 @@ struct Beam {
   TimedChip& chip;
   int line;
   int clock = 0;
+  bool hideSprites = false;   // Stage I9.1: the picture without Pac-Man and the ghosts (GRP0 and GRP1 are written as 0 while it is set)
   void adv(int cycles) {
     clock += 3 * cycles;
     while (clock >= 228) { clock -= 228; ++line; }
   }
   void w(uint16_t site, uint8_t reg, uint8_t value, int cycles) {
     adv(cycles);
+    if (hideSprites && (reg == GRP0 || reg == GRP1)) value = 0;
     chip.write({line, clock, reg, value, site});
   }
   void wsync() {   // STA WSYNC: the write is the third cycle; the processor then waits for the start of the next line
@@ -50,6 +52,9 @@ class Kernel {
   void scoreLine();     // the score digits (SCORE_DIGITS, $F3EE) and the clearing of the sprite registers
   void lifeMarkers();   // the life markers ($F48E)
   PictureEnd end() const { return {b.line, b.clock}; }
+  // Stage I9.1: while set, the maze part of the picture is made without Pac-Man and the ghosts (the two players of the chip, which the maze rows use
+  // for nothing else); the score and the life markers need the same registers and are never hidden.
+  void hideMovingObjects(bool hide) { b.hideSprites = hide; }
 
  private:
   GameState& st;

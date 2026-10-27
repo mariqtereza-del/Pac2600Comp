@@ -40,6 +40,7 @@ Both are built together by `tools\build_host.cmd`. The ROM is not an input of th
  |   sound\sound_logic   which sound plays when                                                  |
  |                                                                                               |
  |   renderer   turns the drawing code's timed writes into the picture (tia_video)               |
+ |   layers     the picture twice: as the game makes it, and without Pac-Man and the ghosts (I9.1) |
  |   tia_video  the video chip's behaviour:  writes in, 160 x 228 picture out                    |
  |   tia_audio  the sound chip's behaviour:  writes in, samples out                              |
  |   chips      the interfaces the game talks to      inputs   what the game is told each frame  |

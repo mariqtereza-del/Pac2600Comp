@@ -1,17 +1,18 @@
 # Gate D checks that need no human (Stage D16, docs\GATE_D.md). Runs the RELEASE ZIP's own program, unzipped into a fresh folder.
 #
-#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\d16_gate_check.ps1 [-Zip out\Pac2600Comp-0.1.0-windows.zip] [-Work out\gate-d] [-Rom rom\pacman.a26]
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools\d16_gate_check.ps1 [-Zip out\Pac2600Comp-<version>-windows.zip] [-Work out\gate-d] [-Rom rom\pacman.a26]
 #
 # The ROM is only given to the program by path (--find-rom, --self-check ... <rom>); it is never copied anywhere.
 # Output: one PASS/FAIL line per check, a report in <Work>\report.txt, exit code 0 only if every check passed.
 param(
-  [string]$Zip = 'out\Pac2600Comp-0.1.0-windows.zip',
+  [string]$Zip = '',   # empty: the zip of the version in the file VERSION
   [string]$Work = 'out\gate-d',
   [string]$Rom = 'rom\pacman.a26'
 )
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location $root
+if (-not $Zip) { $Zip = 'out\Pac2600Comp-' + (Get-Content (Join-Path $root 'VERSION') -TotalCount 1).Trim() + '-windows.zip' }   # Stage J8
 $Zip = (Resolve-Path $Zip).Path
 $Rom = (Resolve-Path $Rom).Path
 if (Test-Path $Work) { Write-Host "FAIL: $Work already exists; give a new folder name with -Work (nothing is deleted)"; exit 1 }
@@ -54,7 +55,7 @@ $exeHash = (Get-FileHash -Algorithm SHA256 $exe).Hash.ToLower()
 Check 'release: Pac2600Comp.exe is the one BUILD-INFO.txt names' ($info.Contains($exeHash)) "SHA-256 $($exeHash.Substring(0, 16))..."
 $commit = [regex]::Match($info, 'Git commit: (\w+)').Groups[1].Value
 Check 'release: built from a committed tree' (($commit.Length -eq 40) -and -not $info.Contains('TEST BUILD')) "commit $($commit.Substring(0, 10))"
-foreach ($f in 'SDL3.dll', 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll', 'README.txt', 'NOTICE.txt', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.txt', 'licences\Stella-License.txt', 'licences\SDL3-LICENSE.txt', 'source\BUILDING.txt', 'roms\PUT_YOUR_ROM_HERE.txt', 'Record a game.cmd', 'Replay a game.cmd') {
+foreach ($f in 'SDL3.dll', 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll', 'README.txt', 'NOTICE.txt', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.txt', 'CHANGELOG.txt', 'licences\Stella-License.txt', 'licences\SDL3-LICENSE.txt', 'source\BUILDING.txt', 'roms\PUT_YOUR_ROM_HERE.txt', 'Record a game.cmd', 'Replay a game.cmd') {
   Check "release: has $f" (Test-Path (Join-Path $dir $f)) ''
 }
 

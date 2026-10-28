@@ -18,7 +18,7 @@ Everything beyond that is **optional and off by default**, and none of it change
 - a menu, volume and mute, achievements and statistics, two players taking turns on one set of controls;
 - recording a game and playing it back exactly.
 
-How it works is in [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md), how the game was preserved in [docs/PRESERVATION.md](docs/PRESERVATION.md).
+How it works is in [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md), how the game was preserved in [docs/PRESERVATION.md](docs/PRESERVATION.md). What changed in each version is in [CHANGELOG.md](CHANGELOG.md).
 
 ## Screenshots
 

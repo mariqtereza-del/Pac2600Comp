@@ -3363,7 +3363,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** set the trigger back to `workflow_dispatch` (one line) or disable the workflow on the Actions page.
     - **Documentation updates:** `DECISIONS.md` (D-031, T-J7-1), `BUILDING.md`, `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J7: Automatic checks on GitHub`. **Next stage:** J8 (versions and changelog).
-8. **[Not started] J8 — Versions and changelog.** Numbers like 1.2.0 (big.feature.fix), with `CHANGELOG.md` newest first.
+8. **[Done 2026-10-29, D-032, T-J8-1] J8 — Versions and changelog.** Numbers like 1.2.0 (big.feature.fix), with `CHANGELOG.md` newest first.
+    **J8 in full (16 headings):**
+    - **Objective:** give the project one version number in one place, a changelog (newest first), and a rule for what the three numbers mean; the release and its zip name use that number.
+    - **Why it matters:** people who report a problem or compare releases need to say which version they have; the release script still said 0.1.0.
+    - **Prerequisites:** J7 Done, clean tree (checked).
+    - **What Claude Code will do:** add the file `VERSION` (1.0.0, the owner's choice) and `CHANGELOG.md` (the scheme big.feature.fix, then 1.0.0 unreleased, 0.5.0 and 0.1.0 as the milestones the old tags mark); make `tools\make_release.ps1` and `tools\d16_gate_check.ps1` read `VERSION` and hold no number of their own; put `CHANGELOG.txt` in the release and `VERSION` and `CHANGELOG.md` in the source zip; link the changelog from the README; write `tools\j8_version_check.py`. The program itself is not changed (D-029); the version is in the zip name, the folder name, `BUILD-INFO.txt` and `README.txt`.
+    - **What I must do:** nothing more (the number was chosen: 1.0.0).
+    - **Exact instructions:** `python -I tools\j8_version_check.py` must say `result: OK`.
+    - **Required input:** the version number, given: 1.0.0.
+    - **Claude Code prompt:** "1.0.0."
+    - **Expected result:** `Pac2600Comp-1.0.0-windows.zip` made without typing a number, carrying the changelog.
+    - **Verification:** the checker passes and fails on seven kinds of mistake; a real release from the committed tree and its 31-check gate (default zip name read from `VERSION`); `test_quick`; `src\` unchanged.
+    - **Completion criteria:** the release is named by `VERSION`; the changelog's newest entry equals it.
+    - **Potential problems:** the changelog is a summary written from the project's records; the date of 1.0.0 stays "unreleased" until J11.
+    - **Recovery:** revert the commit.
+    - **Documentation updates:** `VERSION`, `CHANGELOG.md`, `DECISIONS.md` (D-032, T-J8-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J8: Versions and changelog`. **Next stage:** J9 (release packaging).
 9. **[Not started] J9 — Release packaging.** The release zip built by script, scanned for ROMs, unzipped and played on your PC from a fresh folder. The README explains Windows SmartScreen's "unknown publisher" warning, since the `.exe` isn't signed.
 10. **[Not started] J10 — Issues and contributions.** A short issue template asking for version, Windows version and ROM fingerprint (never the ROM itself); `CONTRIBUTING.md` only if you want outside contributions.
 11. **[Not started] J11 — Final gate: go public.** You switch the repository to public and publish the release. Checklist: J1 decision recorded, no ROM anywhere in history (Claude Code scans all past commits), licences present, release verified, `PROJECT_STATUS.md` says Done.

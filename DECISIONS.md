@@ -343,6 +343,15 @@ Asked by Claude Code before switching on; the owner answered "Yes, switch it on 
 - **How to stop it:** change the `on:` part of the workflow to `workflow_dispatch:` alone, or disable the workflow on the Actions page.
 - **Reversible:** Yes.
 
+### D-032 - The first public version is 1.0.0 (2026-10-29, Stage J8)
+
+The owner's choice, after Claude Code offered 1.0.0 ("if you consider the program finished") or 0.9.0: "1.0.0."
+
+- **Status:** approved by the owner.
+- **Numbers:** big.feature.fix (see `CHANGELOG.md`): big only if the default game would change or kept files would stop working; feature for something new that is off by default; fix for repairs, documents, tests and build changes.
+- **Tags:** a published release is tagged `vX.Y.Z`; `v0.1.0`, `0.5.0-native` and `1.0.0-preservation` stay as milestones (the last one is the permanent baseline of the game). The tag `v1.0.0` is made at the final gate (J11), after the owner's approval, and pushing a tag needs the owner's approval too.
+- **Reversible:** Yes until published.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -493,6 +502,15 @@ Asked by Claude Code before switching on; the owner answered "Yes, switch it on 
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-J8-1 - One place for the version, and what the changelog rests on (2026-10-29, Stage J8, D-032)
+
+- **One place:** the file `VERSION` (one line, `1.0.0`). `tools\make_release.ps1` reads it when no `-Version` is given (`-Version` still overrides, for a try), and `tools\d16_gate_check.ps1` reads it to find the zip; neither holds a number. `tools\j8_version_check.py` (in `test_quick` and `test_public`) checks the file, the changelog's order, that the newest entry equals `VERSION`, that only the newest may be unreleased, that the scripts hold no number of their own, that the release carries `CHANGELOG.txt` and the source zip `VERSION` and `CHANGELOG.md`, and that the README links the changelog; proved on seven mistakes.
+- **Not in the program:** the program shows no version (a text inside the game would break D-029 and needs a rebuild and the whole proof again). The version is found in the zip's name, its folder, `BUILD-INFO.txt` (which also has the Git commit) and `README.txt`. For a bug report (J10) the owner can read it there. A Windows file-properties version would be a build change; left for later if wanted.
+- **The changelog:** written from the project's records (the stages D to I and J, `docs\GATE_F.md`): the headline numbers (439,680 and 2,400,000 frames), the options added since the baseline, the fixes, and the milestones that the two old tags mark (`v0.1.0`, 2026-10-25, the first working program; `0.5.0-native`, 2026-10-26, the emulator out of the played program). The entry for 1.0.0 has no date: it says \"unreleased\" until J11.
+- **A flaw the first run showed:** the real release cannot be tried before the commit, because its source zip is made with `git archive HEAD` and the two new files were not yet committed (\"pathspec 'VERSION' did not match\"); the script stopped cleanly and left a 0-byte `out\Pac2600Comp-1.0.0-test-source.zip` (ignored by Git; not deleted, deleting needs the owner's say). The order is: commit, then the release.
+- **Under D-029:** `src\` is unchanged.
+- **Reversible:** Yes (Git).
 
 ### T-J7-1 - Rehearsing the workflow in a fresh clone; what it found (2026-10-29, Stage J7, D-031)
 

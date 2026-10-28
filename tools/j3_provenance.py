@@ -62,6 +62,7 @@ RULES = [
     (".github/*", "config"),
     (".gitignore", "config"),
     (".gitattributes", "config"),
+    ("VERSION", "config"),
 ]
 
 ADDRESS = re.compile(r"(?:\$F[0-9A-Fa-f]{3}\b|\b0x[Ff][0-9A-Fa-f]{3}\b|\bL_F[0-9A-F]{3}\b)")

@@ -20,6 +20,7 @@ static std::string pageTitle(const menu::Menu& menu)
     case menu::Page::Sound: return "SOUND OPTIONS   (the game is paused)";
     case menu::Page::Controls: return "CONTROL OPTIONS   (the game is paused)";
     case menu::Page::Achievements: return "ACHIEVEMENTS   (" + std::to_string(menu.choice().progress.count()) + " of " + std::to_string(achievements::kCount) + " unlocked)";
+    case menu::Page::Statistics: return "STATISTICS   (the game is paused)";
     case menu::Page::Main: break;
   }
   return "MENU   (the game is paused)";
@@ -153,6 +154,41 @@ static bool achievementsShot(SDL_Renderer* renderer, menu::Menu& menu, const men
   return ok;
 }
 
+// Stage I21: the Statistics page with some totals, saved as <png>.stats.png. The page must be open and show text (near-white pixels).
+static bool statsShot(SDL_Renderer* renderer, menu::Menu& menu, const menu::Choice& now, const std::string& pngPath, std::ofstream& report)
+{
+  menu::Choice c = now;
+  c.totals.games = 12;
+  c.totals.playFrames = 60 * 3725;
+  c.totals.highScore = 12345;
+  c.totals.wafers = 1234;
+  c.totals.powerPills = 40;
+  c.totals.ghostsEaten = 77;
+  c.totals.deaths = 21;
+  c.totals.mostLives = 6;
+  c.totals.longestGameFrames = 60 * 640;
+  menu.open(c);
+  for(int i = 0; i < 10 && menu.cursor() != menu::Item::Statistics; ++i) menu.press(menu::Key::Down);
+  menu.press(menu::Key::Enter);
+  menu.press(menu::Key::Down);
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+  SDL_RenderClear(renderer);   // a clean picture: the page alone, not drawn over the one before
+  drawMenu(renderer, menu);
+  SDL_Surface* shot = SDL_RenderReadPixels(renderer, nullptr);
+  SDL_Surface* rgb = shot ? SDL_ConvertSurface(shot, SDL_PIXELFORMAT_XRGB8888) : nullptr;
+  if(shot) SDL_DestroySurface(shot);
+  if(!rgb) { report << "result=cannot read window pixels\n"; return false; }
+  long long white = 0;
+  for(int y = 0; y < rgb->h; ++y) {
+    const auto* row = reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(rgb->pixels) + y * rgb->pitch);
+    for(int x = 0; x < rgb->w; ++x) white += (row[x] & 0x00FFFFFF) == 0xFFFFFF;
+  }
+  const bool saved = SDL_SavePNG(rgb, (pngPath + ".stats.png").c_str());
+  SDL_DestroySurface(rgb);
+  report << "stats_page_white_pixels=" << white << "\nstats_screenshot_saved=" << (saved ? "yes" : "no") << '\n';
+  return saved && white > 500 && menu.page() == menu::Page::Statistics;
+}
+
 // --menu-shot: 300 frames of the game, the menu opened on the Game row, drawn in the real window, the window's pixels saved. The report counts
 // the near-white pixels (the text), which must exist, and the pixels of the dimmed picture behind the box, which must exist too.
 bool menuShot(SDL_Renderer* renderer, const std::string& pngPath, const std::string& romPath)
@@ -226,7 +262,7 @@ bool menuShot(SDL_Renderer* renderer, const std::string& pngPath, const std::str
   if(!controlsShot(renderer, menu, now, pngPath, report, symbolsDrawn, saved3)) return false;
   if(!controlsShot(renderer, menu, now, pngPath, report, xboxDrawn, saved4, controls::PadFamily::Xbox)) return false;
   const bool onControlsPage = menu.page() == menu::Page::Controls;   // (the Achievements picture below moves the menu to another page)
-  const bool achievementsOk = achievementsShot(renderer, menu, now, pngPath, report);
+  const bool achievementsOk = achievementsShot(renderer, menu, now, pngPath, report) && statsShot(renderer, menu, now, pngPath, report);   // (Stages I20 and I21)
   const bool ok = achievementsOk && saved && white > 500 && other > 1000 && onControlsPage && white2 > 300 && saved2 && saved3 && symbolsDrawn && saved4 && xboxDrawn;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   return ok;

@@ -12,6 +12,7 @@
 #include "crt.hpp"
 #include "framerate.hpp"
 #include "pad_feedback.hpp"
+#include "stats.hpp"
 
 namespace menu {
 
@@ -24,8 +25,9 @@ enum class Item { Resume, NewGame, GameOptions, Graphics, Quit,  // the main pag
                   SoundOptions, Volume, Mute,                      // the "Sound options" page (Stage I12): a row on the main page, then a slider and a mute button
                   ControlOptions, KeyboardKeys, RumbleMotors,                    // the "Control options" page (Stage I13): a row on the main page, then the choice of keys
                   Achievements, Achievement,                       // the "Achievements" page (Stage I20): a row on the main page, then a row for each achievement
+                  Statistics, Stat,                                // the "Statistics" page (Stage I21): a row on the main page, then a read-only row for each total
                   Back };                                          // the last row of every page
-enum class Page { Main, GameOptions, Graphics, Sound, Controls, Achievements };
+enum class Page { Main, GameOptions, Graphics, Sound, Controls, Achievements, Statistics };
 enum class Result { None, Resume, StartGame, Quit };
 
 inline constexpr int kGames = 8;  // the console's Game Select offers 8 games, each for one or two players (docs\F17_STATES.md)
@@ -50,6 +52,7 @@ struct Choice {
   bool padConnected = false;                               // for the explanation only
   feedback::Rumble rumble = feedback::Rumble::Off;         // how strongly the pad rumbles at the game's events (Stage I15); takes effect at once
   achievements::Progress progress;                         // which achievements are unlocked, for the Achievements page (Stage I20); not changed by the menu
+  stats::Totals totals;                                    // the player's totals, for the Statistics page (Stage I21); not changed by the menu
 };
 
 // What differs between the eight games (docs\F16_LEVELS.md, docs\F10_PACMAN.md; checked by `pacman2600 --menu-check`).
@@ -83,6 +86,7 @@ class Menu {
   static const std::vector<Item>& soundItems();     // the rows of the "Sound options" page
   static const std::vector<Item>& controlItems();   // the rows of the "Control options" page
   static const std::vector<Item>& achievementItems();   // the rows of the "Achievements" page: one for each achievement, then Back (Stage I20)
+  static const std::vector<Item>& statItems();          // the rows of the "Statistics" page: one for each total, then Back (Stage I21)
   int cursorIndex() const { return cursor_; }         // the number of the marked row on the page (the achievement rows all have the same Item)
   const std::vector<Item>& shown() const;
   Page page() const { return page_; }

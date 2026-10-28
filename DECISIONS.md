@@ -280,6 +280,16 @@ The owner's words: "I want to add achievements. All of the ones from retroachiev
 - **Menu:** the main page's "Achievements..." row (with how many are unlocked) opens a page of 14 rows, each [x] or [ ], with the description, the day it was unlocked and the credit; a notice appears in the window when one unlocks.
 - **What it must not do:** change the game.
 
+### D-026 - Statistics page: the player's own totals, kept offline (2026-10-28, Stage I21)
+
+Claude Code listed ideas for modernizing the program; the owner answered: "A stats page would suffice."
+
+- **Status:** approved by the owner's answer; built and proved in Stage I21 (T-I21-1).
+- **What it shows:** games played, time played, high score, wafers, power pills, ghosts eaten, deaths, the most extra lives held at once and the longest game.
+- **Offline and read-only:** worked out from the game's memory after every frame, saved as `stat_<name>=N` lines in `settings.ini`; nothing is sent anywhere and the game is not changed. A replayed recording is not counted.
+- **Menu:** the main page's "Statistics..." row (under Achievements) opens a page of read-only rows.
+- **Left out on purpose:** a "reset statistics" button (a destructive action nobody asked for) and a high score per game number (the game number is not reliably in the game's memory while it is played).
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -430,6 +440,15 @@ The owner's words: "I want to add achievements. All of the ones from retroachiev
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-I21-1 - Statistics from the game's memory: what counts as a game (2026-10-28, Stage I21, D-026)
+
+- **Detection:** `stats::Tracker::update(ram)` after every game frame (the game thread; `stats::Watch` hands a copy of the totals to the window thread under a lock, `StatsDriver` saves them). The same event finder as the rumble and the achievements gives wafers (+1), power pills (+5), ghosts eaten (+20/40/80/160) and deaths (`$E7` bit 6). Score = `background::fullScoreOf` of each player; lives = `background::livesOf`.
+- **What starts a game:** `$82` (the title-screen byte) falling to 0, or either player's score falling while a game is in play (Game Reset pressed in the middle of a game). Measured on the 70 recorded games before it was chosen: `$82` going from non-zero to 0 gives exactly one start per game (BL-001 at frame 60, BL-048 at 240 and 2400, the long games BL-050 to BL-069 one per game); the other signal tried, `$E7` becoming `$88`, also fires again after every death (about 550 frames later) and was rejected; the only recorded game in which a score falls is BL-058 (Game Reset on frame 450, the score 64 to 0), which the second rule counts as a second game. Each player's score is watched on its own, so a change of turn in a two-player game is not a fall.
+- **Not counted, on purpose:** the power-on zeros (nothing counts until the title screen has been seen once: `$82` reads 0 before the game sets it); a Game Reset before anything was eaten (it cannot be told from a game that goes on); a replayed recording (`StatsDriver(settingsFile, counting = !replaying)`); the time the menu is open (the game does not run then, `menu_frames_run_while_open=0`).
+- **Saved:** `stat_<id>=N` in `settings.ini` (`games`, `play_frames`, `high_score`, `wafers`, `power_pills`, `ghosts_eaten`, `deaths`, `most_lives`, `longest_game_frames`), one key each, other lines kept, only the lines that changed are written, at most every 10 seconds and when the window function ends (the destructor of `StatsDriver`, after the game thread has stopped). A line that is missing or not a number counts as 0. Time is shown from frames at the console's own 59.9227 a second (T-D14-2).
+- **Proof:** `test_stats` (78 checks; with the local traces BL-001 = 1 game, BL-048 = 2 games and 5 deaths, BL-058 = 2 games, BL-046 = 152 wafers, 5 power pills, 8 ghosts: the same 5 and 8 the rumble test expects); `test_menu` (the page: rows, separators, Back, Escape); `--menu-check` 34 scenarios in both programs; `--menu-shot` (the page picture); the real window: a game started with Reset and 9 lives and 1,200 points poked in (TEST ONLY) saved 1 game, 480 frames, high score 1,201, most lives 9, one death; a second run went on to 2 games and 720 frames; a replayed recording changed nothing. The game is untouched: the feature only reads memory, no frozen file changed, `test_quick` 53 of 53.
+- **Reversible:** Yes (Git).
 
 ### T-I20-1 - Achievements from the game's memory; and what the ninth life taught (2026-10-28, Stage I20, D-025)
 

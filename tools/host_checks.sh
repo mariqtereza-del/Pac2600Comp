@@ -157,6 +157,13 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   hasnot "$prog achievement four_ghosts is not unlocked" "$P/s29.ini" "achievement_four_ghosts"
   "$EXE" --reset-at 60 --timed 5 "$P/ach2.txt" "$ROM" --mute --settings "$P/s29.ini"; check "$prog achievements are remembered" $? 0
   has "$prog an earlier unlock is still there" "$P/s29.ini" "achievement_score_10000=20"
+  # Stage I21: the statistics of the same two runs: two games (the second run carries on from the first), the best score, the most lives, written to settings.ini; then a replayed
+  # recording, which is not the player's own play, must leave them unchanged.
+  has "$prog statistics: two games are counted" "$P/s29.ini" "stat_games=2"
+  has "$prog statistics: the high score is the poked 10,000 (and a wafer)" "$P/s29.ini" "stat_high_score=1000[0-9]"
+  has "$prog statistics: the most extra lives is 9" "$P/s29.ini" "stat_most_lives=9"
+  "$EXE" --replay "$P/rec1.inputs" --timed 5 "$P/ach3.txt" "$ROM" --mute --settings "$P/s29.ini"; check "$prog a replay in the window with saved statistics" $? 0
+  has "$prog statistics: a replayed recording is not counted" "$P/s29.ini" "stat_games=2$"
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0
   "$EXE" --headless "$P/c.png" "$ROM" --replay "$P/rec1.inputs" --fingerprints "$P/C.csv" --settings "$P/s11.ini"; check "$prog replay headless" $? 0
   # Stage I9.6: the game does not depend on the frame rate. The same recording played in the window at 60 and at 144 (smooth motion on) must give the same

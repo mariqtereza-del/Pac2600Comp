@@ -227,7 +227,7 @@ int main()
   expect(m.choice().rumble == feedback::Rumble::Off, "and round to off");
   m.press(Key::Down);
   expect(m.cursor() == Item::Back && m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::ControlOptions, "Back returns to the main page, on Control options");
-  m.press(Key::Down); m.press(Key::Down);   // past the Achievements row (Stage I20) to Quit
+  m.press(Key::Down); m.press(Key::Down); m.press(Key::Down);   // past the Achievements and Statistics rows (Stages I20 and I21) to Quit
   expect(m.cursor() == Item::Quit && m.press(Key::Right) == Result::None, "Right on Quit does nothing");
   expect(m.press(Key::Enter) == Result::Quit && !m.isOpen(), "Enter on Quit quits and closes");
   m.open(start);
@@ -240,10 +240,10 @@ int main()
   expect(m.press(Key::Enter) == Result::StartGame && !m.isOpen() && m.choice().game == 5, "Enter on New game starts, with the choice");
 
   // The rows and the explanations: one marked row, every row has an explanation, none too wide, the facts of the games are in it.
-  for(int page = 0; page < 6; ++page) {  // the main page, then Game options, Graphics options, Sound options, Control options and Achievements
+  for(int page = 0; page < 7; ++page) {  // the main page, then Game options, Graphics options, Sound options, Control options, Achievements and Statistics
     m.open(start);
     if(page > 0) { for(int i = 0; i < 1 + page; ++i) m.press(Key::Down); m.press(Key::Enter); }
-    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : page == 2 ? Menu::graphicsItems() : page == 3 ? Menu::soundItems() : page == 4 ? Menu::controlItems() : Menu::achievementItems();
+    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : page == 2 ? Menu::graphicsItems() : page == 3 ? Menu::soundItems() : page == 4 ? Menu::controlItems() : page == 5 ? Menu::achievementItems() : Menu::statItems();
     expect(m.rows().size() == items.size(), "one text row per item, page " + std::to_string(page));
     for(std::size_t i = 0; i < items.size(); ++i) {
       int marked = 0;
@@ -382,6 +382,42 @@ int main()
     expect(m.press(Key::Enter) == Result::None && m.page() == Page::Achievements, "Enter on an achievement does nothing");
     while(m.cursor() != Item::Back) m.press(Key::Down);
     expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::Achievements, "Back returns to the main page, on the Achievements row");
+    m.press(Key::Enter);
+    expect(m.press(Key::Escape) == Result::None && m.page() == Page::Main && m.isOpen(), "Escape on the page goes back");
+  }
+
+  // Stage I21: the Statistics page. Nine read-only rows and Back; the values come from the totals the menu was opened with.
+  {
+    menu::Choice withTotals = start;
+    withTotals.totals.games = 12;
+    withTotals.totals.playFrames = 60 * 3725;   // 3,725 seconds at about 60 frames a second: a little over an hour
+    withTotals.totals.highScore = 12345;
+    withTotals.totals.wafers = 1234567;
+    m.open(withTotals);
+    for(int i = 0; i < 7; ++i) m.press(Key::Down);
+    expect(m.cursor() == Item::Statistics, "the Statistics row follows Achievements");
+    expect(m.press(Key::Right) == Result::None && m.page() == Page::Main, "Right does not open the page (only Enter does)");
+    bool summaryShown = false;
+    std::string summary;
+    for(const std::string& w : m.explanation(60)) summary += w + " ";   // the lines are cut at 60 columns: look at the whole text
+    summaryShown = summary.find("12 games") != std::string::npos && summary.find("12,345") != std::string::npos;
+    expect(summaryShown, "the main page's explanation gives the games and the high score");
+    expect(m.press(Key::Enter) == Result::None && m.page() == Page::Statistics && m.cursorIndex() == 0, "Enter opens the page on the first row");
+    expect(m.rows().size() == 10 && Menu::statItems().size() == 10, "nine totals and Back");
+    const std::vector<std::string> rows = m.rows();
+    expect(rows[0].find("> Games played:") == 0 && rows[0].find("12") != std::string::npos, "the first row is the games played: " + rows[0]);
+    expect(rows[2].find("High score:") != std::string::npos && rows[2].find("12,345") != std::string::npos, "the high score has a thousands separator: " + rows[2]);
+    expect(rows[3].find("1,234,567") != std::string::npos, "so do the wafers: " + rows[3]);
+    expect(rows[1].find("Time played:") != std::string::npos && rows[1].find("1 h 02 min") != std::string::npos, "the time is in hours and minutes: " + rows[1]);
+    bool explained = false, privacy = false;
+    for(const std::string& w : m.explanation(60)) {
+      if(w.find("started") != std::string::npos) explained = true;
+      if(w.find("Nothing is sent") != std::string::npos) privacy = true;
+    }
+    expect(explained && privacy, "the explanation says what is counted and that nothing is sent anywhere");
+    expect(m.press(Key::Enter) == Result::None && m.page() == Page::Statistics && m.press(Key::Left) == Result::None && m.page() == Page::Statistics, "Enter and Left on a total do nothing");
+    while(m.cursor() != Item::Back) m.press(Key::Down);
+    expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::Statistics, "Back returns to the main page, on the Statistics row");
     m.press(Key::Enter);
     expect(m.press(Key::Escape) == Result::None && m.page() == Page::Main && m.isOpen(), "Escape on the page goes back");
   }

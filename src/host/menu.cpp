@@ -50,7 +50,7 @@ std::vector<std::string> wrap(const std::string& text, int width)
 
 const std::vector<Item>& Menu::items()
 {
-  static const std::vector<Item> all = {Item::Resume, Item::NewGame, Item::GameOptions, Item::Graphics, Item::SoundOptions, Item::ControlOptions, Item::Achievements, Item::Quit};
+  static const std::vector<Item> all = {Item::Resume, Item::NewGame, Item::GameOptions, Item::Graphics, Item::SoundOptions, Item::ControlOptions, Item::Achievements, Item::Statistics, Item::Quit};
   return all;
 }
 
@@ -64,6 +64,16 @@ const std::vector<Item>& Menu::achievementItems()
 {
   static const std::vector<Item> all = [] {
     std::vector<Item> rows(achievements::kCount, Item::Achievement);
+    rows.push_back(Item::Back);
+    return rows;
+  }();
+  return all;
+}
+
+const std::vector<Item>& Menu::statItems()
+{
+  static const std::vector<Item> all = [] {
+    std::vector<Item> rows(stats::kCount, Item::Stat);
     rows.push_back(Item::Back);
     return rows;
   }();
@@ -96,6 +106,7 @@ const std::vector<Item>& Menu::shown() const
     case Page::Sound: return soundItems();
     case Page::Controls: return controlItems();
     case Page::Achievements: return achievementItems();
+    case Page::Statistics: return statItems();
     case Page::Main: break;
   }
   return items();
@@ -131,6 +142,8 @@ Result Menu::press(Key key)
     case Item::ControlOptions: if(key == Key::Enter) { page_ = Page::Controls; cursor_ = 0; } return Result::None;
     case Item::Achievements: if(key == Key::Enter) { page_ = Page::Achievements; cursor_ = 0; } return Result::None;
     case Item::Achievement: return Result::None;
+    case Item::Statistics: if(key == Key::Enter) { page_ = Page::Statistics; cursor_ = 0; } return Result::None;
+    case Item::Stat: return Result::None;
     case Item::KeyboardKeys: choice_.keyboard = controls::nextScheme(choice_.keyboard, step); return Result::None;
     case Item::RumbleMotors: choice_.rumble = feedback::nextRumble(choice_.rumble, step); return Result::None;
     case Item::Volume:   // a slider in steps of 5, like the HDR highlights: Left and Right stop at the ends, Enter goes round
@@ -165,7 +178,7 @@ Result Menu::press(Key key)
 
 void Menu::leaveSubPage()
 {
-  const Item opener = page_ == Page::GameOptions ? Item::GameOptions : page_ == Page::Sound ? Item::SoundOptions : page_ == Page::Controls ? Item::ControlOptions : page_ == Page::Achievements ? Item::Achievements : Item::Graphics;
+  const Item opener = page_ == Page::GameOptions ? Item::GameOptions : page_ == Page::Sound ? Item::SoundOptions : page_ == Page::Controls ? Item::ControlOptions : page_ == Page::Achievements ? Item::Achievements : page_ == Page::Statistics ? Item::Statistics : Item::Graphics;
   page_ = Page::Main;
   cursor_ = static_cast<int>(std::find(items().begin(), items().end(), opener) - items().begin());
 }
@@ -214,6 +227,8 @@ std::vector<std::string> Menu::rows() const
       case Item::Preview: std::snprintf(text, sizeof text, "Hide this menu to look at the background"); break;
       case Item::Back: std::snprintf(text, sizeof text, "Back to the main menu"); break;
       case Item::Achievements: std::snprintf(text, sizeof text, "Achievements...  (%d of %d)", choice_.progress.count(), achievements::kCount); break;
+      case Item::Statistics: std::snprintf(text, sizeof text, "Statistics..."); break;
+      case Item::Stat: std::snprintf(text, sizeof text, "%s", stats::rowText(static_cast<int>(index), choice_.totals).c_str()); break;
       case Item::Achievement: std::snprintf(text, sizeof text, "[%c] %s", choice_.progress.has(static_cast<int>(index)) ? 'x' : ' ', achievements::definition(static_cast<int>(index)).title); break;
     }
     out.push_back(std::string(static_cast<int>(index) == cursor_ ? "> " : "  ") + text);
@@ -296,10 +311,8 @@ std::vector<std::string> Menu::explanation(int width) const
     case Item::SoundOptions:
       appendSoundText(out, width, cursor());
       break;
-    case Item::Achievements:
-    case Item::Achievement:
-      appendAchievementText(out, width, cursor() == Item::Achievement ? cursor_ : -1, choice_.progress);
-      break;
+    case Item::Achievements: case Item::Achievement: appendAchievementText(out, width, cursor() == Item::Achievement ? cursor_ : -1, choice_.progress); break;
+    case Item::Statistics: case Item::Stat: appendStatsText(out, width, cursor() == Item::Stat ? cursor_ : -1, choice_.totals); break;
     case Item::TvType:
       paragraph("The console's TV Type switch. Colour is the usual setting. Black & white makes the game use shades of grey, as it did on a black and white TV. "
                 "Nothing else changes. It takes effect at once.");

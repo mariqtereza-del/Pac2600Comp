@@ -178,6 +178,23 @@ void appendAchievementText(std::vector<std::string>& out, int width, int index, 
             "computer from the game's memory; it does not connect to RetroAchievements, and it never changes the game.");
 }
 
+// The explanation of a row of the Statistics page (index 0 to 8: what is counted and the value), or of the row on the main page (-1) (Stage I21, D-026).
+void appendStatsText(std::vector<std::string>& out, int width, int index, const stats::Totals& totals)
+{
+  auto paragraph = [&](const std::string& text) {
+    for(const std::string& line : wrap(text, width)) out.push_back(line);
+  };
+  if(index < 0) {
+    paragraph(std::string("Your totals: ") + stats::groupedText(totals.games) + " games, " + stats::timeText(totals.playFrames) + " played, a high score of " +
+              stats::groupedText(totals.highScore) + ". Enter opens the page.");
+  } else {
+    paragraph(stats::definition(index).explanation);
+  }
+  out.push_back("");
+  paragraph("The totals are counted on this computer while you play, and kept between runs in settings.ini. A recording that is replayed is not counted. Nothing is sent "
+            "anywhere, and the game itself is never changed.");
+}
+
 // The explanation of the Players and the two difficulty rows (moved out of menu.cpp in Stage I13).
 void appendPlayersText(std::vector<std::string>& out, int width, Item item)
 {

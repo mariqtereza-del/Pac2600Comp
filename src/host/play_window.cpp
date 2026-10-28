@@ -6,6 +6,7 @@
 #include "menu_session.hpp"
 #include "framerate.hpp"
 #include "achievement_driver.hpp"
+#include "stats_driver.hpp"
 #include "key_pusher.hpp"
 #include "options.hpp"
 #include "pacer.hpp"
@@ -74,7 +75,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   int rendererRemakes = 0;   // how often the renderer was made again (HDR switched, or a lost graphics device; reported for the tests)
   Pads pads;  PadDriver padDriver;   // the pad: menu button, menu moves and switches (Stage I14)
   feedback::Hub feedbackHub;  FeedbackDriver padFeedback(options.settingsFile);   // what the game did, for the pad's rumble and light bar (Stage I15)
-  AchievementDriver achievementDriver(options.settingsFile);   // the achievements (Stage I20)
+  AchievementDriver achievementDriver(options.settingsFile);  StatsDriver statsDriver(options.settingsFile, !replaying);   // I20, I21 (no replays); saved when this function ends
   menu::Session menuSession(!replaying);  // the Escape menu (Stage I5); a replay decides what the console is given, so it cannot start a game
   if(!pads.start()) std::fprintf(stderr, "Gamepads could not start; the keyboard still works.\n");
   bool helpOn = false;
@@ -165,7 +166,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         applyInput(emulator, in, false, sharedControls);
         emulator.runFrame();
         menuSession.publish(emulator.ram());
-        feedbackHub.gameFrame(emulator.ram(), in.leftDifficultyA, in.rightDifficultyA);  achievementDriver.gameFrame(emulator.ram());
+        feedbackHub.gameFrame(emulator.ram(), in.leftDifficultyA, in.rightDifficultyA);  achievementDriver.gameFrame(emulator.ram());  statsDriver.gameFrame(emulator.ram());
         if(fingerprints) {
           char hash[17];
           std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
@@ -207,7 +208,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   auto openMenu = [&]() {
     keyboard.releaseAll();  // no direction may stay held while the game is stopped
     menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn,
-                                                                       volumePercent, soundMuted, keyboard.scheme(), pads.family(), pads.count() > 0, padFeedback.rumble(), achievementDriver.progress()});
+                                                                       volumePercent, soundMuted, keyboard.scheme(), pads.family(), pads.count() > 0, padFeedback.rumble(), achievementDriver.progress(), statsDriver.totals()});
     menuOpenedAtFrame = framesNow();
     ++menuOpens;
   };
@@ -299,7 +300,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     // Stage I14 (D-020): the pad's menu button, menu moves and switch buttons (pad_driver.cpp); the pad does not play while the menu is open.
     const controls::PadState padNow = padDriver.update(pads, keyboard, PadMenuHooks{[&]() { return menuSession.isOpen(); }, openMenu, [&](menu::Key k) { menuPress(k, running); }},
                                                        static_cast<long long>(SDL_GetTicks()));
-    padFeedback.update(pads, feedbackHub);  achievementDriver.update(static_cast<long long>(SDL_GetTicks()));
+    padFeedback.update(pads, feedbackHub);  achievementDriver.update(static_cast<long long>(SDL_GetTicks()));  statsDriver.update(static_cast<long long>(SDL_GetTicks()));
     const controls::Input input = controls::merge(keyboard.input(), padNow);  // keyboard and pads together
     inputBits = input.pack();
     if(input.leftDifficultyA != savedSwitches.leftDifficultyA || input.rightDifficultyA != savedSwitches.rightDifficultyA || input.blackWhite != savedSwitches.blackWhite) {

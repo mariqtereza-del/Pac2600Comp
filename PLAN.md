@@ -3196,6 +3196,23 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-025, T-I20-1), `TESTING.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `docs\EMBEDDED_DATA.md` (made by the tool), `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I20: Achievements`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I21 - Statistics page** **[Done 2026-10-28]** *(fourteenth approved feature, D-026)*
+      - **Objective:** a "Statistics" page in the Escape menu that keeps count of the player's own play across runs: games played, time played, high score, wafers, power pills, ghosts eaten, deaths, most extra lives held and the longest game.
+      - **Why it matters:** the owner picked it from the list of modernization ideas: "A stats page would suffice." It uses the same safe method as the achievements: it only reads the game's memory.
+      - **Prerequisites:** I20 Done, clean tree (checked at the start of the session).
+      - **What Claude Code will do:** `stats::Tracker` (`stats.*`, no window code) reads the game's memory after every frame, using the same event finder as the rumble and the achievements; `stats::Watch` hands the numbers from the game thread to the window thread; `StatsDriver` (`stats_driver.*`) loads them from `settings.ini` (`stat_<name>=N`), saves them at most every 10 seconds and when the window closes, and does not count a replayed recording. The menu gets "Statistics..." under Achievements and a read-only page of rows.
+      - **What I must do:** nothing (D-008). Looking at the page is optional.
+      - **Exact instructions:** none for the owner; the commands are in `TESTING.md`.
+      - **Required input:** none.
+      - **Claude Code prompt:** "A stats page would suffice."
+      - **Expected result:** the page shows the totals; they survive closing the program; the game itself is unchanged.
+      - **Verification:** `test_stats` (synthetic memory, the saved numbers, the hand-over, and the local recorded games when the folder of traces is given), `test_menu`, `--menu-check`, `--menu-shot`, `test_quick`, and the preservation suite unchanged.
+      - **Completion criteria:** no frozen file changed; the game's behaviour is unchanged (it only reads memory); `test_quick` says `result: OK`.
+      - **Potential problems:** a game started with Reset in the middle of another game; two players (the score that counts is the player to play's); the first frames after power-on read as zeros.
+      - **Recovery:** revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-026, T-I21-n), `TESTING.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I21: Statistics page`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

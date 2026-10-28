@@ -3312,7 +3312,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit.
     - **Documentation updates:** `LICENSE`, `THIRD_PARTY_NOTICES.md`, `DECISIONS.md` (T-J5-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J5: Licences and credits`. **Next stage:** J6 (create the private repository; needs the owner at github.com).
-6. **[Not started] J6 — Create the repository, private.** You create it on github.com while Claude Code tells you each click. Claude Code shows the exact file list for the first push; you check for `.a26` files; you approve the push. Sign-in happens in your browser, never by typing a password into Claude Code.
+6. **[In progress 2026-10-28: prepared; waiting for the owner to create the empty private repository] J6 — Create the repository, private.** You create it on github.com while Claude Code tells you each click. Claude Code shows the exact file list for the first push; you check for `.a26` files; you approve the push. Sign-in happens in your browser, never by typing a password into Claude Code.
+    **J6 in full (16 headings):**
+    - **Objective:** put the project into a **private** GitHub repository, as an off-site backup and the home of Stages J7 to J10; nothing public.
+    - **Why it matters:** the first push sends all 170 commits to GitHub's servers and cannot be fully taken back; the owner must see exactly what goes and approve it.
+    - **Prerequisites:** J5 Done, clean tree (checked); the owner has a GitHub account (`mariqtereza-del`) and chose the name `Pac2600Comp` (D-030).
+    - **What Claude Code will do:** prepare and prove what a push contains (`tools\j6_prepush_check.py`: every commit scanned for the game file; the file list); tell the owner every click; after the owner has made the empty repository, add it as `origin` (a setting of this repository only), show the exact file list, and push **only after the owner approves in that moment**.
+    - **What I must do:** on github.com, signed in as `mariqtereza-del`, create an EMPTY **private** repository named `Pac2600Comp` (no README, no `.gitignore`, no licence file), tell Claude Code, then check the file list for any `.a26` and approve the push; GitHub's sign-in window opens in the browser (Git Credential Manager): sign in there, never type a password to Claude Code.
+    - **Exact instructions:** given in the session, click by click.
+    - **Required input:** the repository's address, `https://github.com/mariqtereza-del/Pac2600Comp` (Claude Code can work it out from the account and name, and asks the owner to confirm).
+    - **Claude Code prompt:** "My github account is mariqtereza-del. The name should be Pac2600Comp."
+    - **Expected result:** a private repository holding all commits of `main`; no ROM; visibility Private.
+    - **Verification:** `j6_prepush_check` OK (170 commits, 7,304 objects, no ROM); after the push, `git ls-remote` shows the same commit as the local `main`, and the owner sees "Private" on the repository page.
+    - **Completion criteria:** pushed with the owner's approval; the remote's `main` equals the local `main`; recorded in `DECISIONS.md`.
+    - **Potential problems:** GitHub may refuse a push that would show a private e-mail address (the commits carry `mariqtereza@gmail.com`); a repository made with a README gives a first commit that needs a merge; the sign-in window may be behind another window.
+    - **Recovery:** the owner can delete the repository on github.com at any time; nothing on this PC changes except the `origin` setting, which `git remote remove origin` takes away (to be done only with the owner's say).
+    - **Documentation updates:** `DECISIONS.md` (D-030, T-J6-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J6: Private GitHub repository` (the preparation is committed first and then pushed; the status commit that records the push follows). **Next stage:** J7 (automatic checks on GitHub).
 7. **[Not started] J7 — Automatic checks on GitHub.** A GitHub Actions workflow builds the game and runs the ROM-free tests on every change.
 8. **[Not started] J8 — Versions and changelog.** Numbers like 1.2.0 (big.feature.fix), with `CHANGELOG.md` newest first.
 9. **[Not started] J9 — Release packaging.** The release zip built by script, scanned for ROMs, unzipped and played on your PC from a fresh folder. The README explains Windows SmartScreen's "unknown publisher" warning, since the `.exe` isn't signed.

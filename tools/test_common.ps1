@@ -134,6 +134,7 @@ function Add-QuickSteps {
   # rules of the project
   Py 'g2_conventions --strict' 'g2_conventions_check.py' @('--strict') -Must 'result: CLEAN'
   Py 'g7_gate_check' 'g7_gate_check.py' @($rom)
+  Py 'j6_prepush_check' 'j6_prepush_check.py' @($rom) -Must 'result: OK'
   Py 'j3_provenance --check' 'j3_provenance.py' @('--check') -Must 'result: OK'
   Py 'j4_docs_check' 'j4_docs_check.py' @() -Must 'result: OK'
   Py 'j5_notices_check' 'j5_notices_check.py' @() -Must 'result: OK'

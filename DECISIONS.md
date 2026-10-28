@@ -323,6 +323,16 @@ The owner's words, after Stage J2: "Don't change any of the wording inside the g
 - **Already done under it:** the window title became "Pac2600Comp" in J2 (D-028), because the owner chose the name for the window; nothing else inside the game was changed.
 - **Reversible:** Yes.
 
+### D-030 - The GitHub account, the repository name and visibility (2026-10-28, Stage J6)
+
+The owner's words: "My github account is mariqtereza-del. The name should be Pac2600Comp."
+
+- **Status:** approved by the owner.
+- **Account:** `mariqtereza-del` (the same name is the author of every commit). **Repository:** `Pac2600Comp`, address `https://github.com/mariqtereza-del/Pac2600Comp`.
+- **Visibility:** **Private** (D-027: private first; the decision to go public is J11). Created by the owner on github.com, empty (no README, no `.gitignore`, no licence file).
+- **Approvals:** every `git push` and every other action on GitHub is approved by the owner at the moment it happens (CLAUDE.md, "Always ask first"). Sign-in is done by the owner in the browser.
+- **Reversible:** Yes while the repository is private: the owner can delete it on github.com.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -473,6 +483,15 @@ The owner's words, after Stage J2: "Don't change any of the wording inside the g
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-J6-1 - What a first push sends, and the proof that no game file is in it (2026-10-28, Stage J6, D-030)
+
+- **What it sends:** all 170 commits of `main` (7,304 objects, a `.git` of 31 MB), whose newest commit holds 3,799 files, 81 MB (third party 3,267 files, `src` 172, `baseline` 140, `tools` 98, `docs` 65, `tests` 42, top folder 14, `.github` 1). The largest file is 9 MB (GitHub refuses 100 MB).
+- **The history check:** `tools\j6_prepush_check.py` looks at every commit, because a file committed once and deleted later is still pushed. Result: no file was ever named like a ROM or archive (except Stella's own pinned `template.dmg.gz`), and none of 3,209 versions of files of 4,096 bytes or more is the game file or holds it whole. The tool was proved on an invented 4,096-byte file (the real ROM was not copied anywhere): found as a deleted copy, wrapped inside a bigger file and by a `.a26` name; a clean repository passes. Part of `test_quick` (under 1 second).
+- **What this does not cover:** a game file hidden by compression or encoding inside a commit would not be found by content (the names of archives are checked); nothing like that exists in the history as far as names go.
+- **Personal data:** all 170 commits carry the author `mariqtereza-del <mariqtereza@gmail.com>`; 18 of our own files mention the account name or a path on this PC. This is harmless in a private repository the owner alone sees, and is to be decided at J11 before anything is public (options then: GitHub's no-reply address for new commits, which does not change old ones without rewriting history, which needs the owner's approval).
+- **`gh` (GitHub's command-line tool) is not installed and was not installed** (CLAUDE.md: never install without asking). The owner makes the repository on the website; Git's own Credential Manager (`credential.helper = manager`) opens the browser for the sign-in at the first push.
+- **Reversible:** Yes.
 
 ### T-J5-1 - Licence file, notices and credits: what they say and what was found (2026-10-28, Stage J5, D-027)
 

@@ -261,6 +261,15 @@ The owner's words: "No need for other controller settings. Dualsense works perfe
 - **What it must not do:** change the game.
 - **Not built (ask if wanted):** the triggers (the Xbox One pad's trigger motors, and the triggers as buttons).
 
+### D-024 - Ultrawide screens: reviewed, nothing changed (2026-10-28, Stage I19)
+
+The owner asked what to do about ultra widescreen support, was shown what the program does at 3440 x 1440 (21:9) and 5120 x 1440 (32:9) and answered: "Keep it as it is. I don't have the means to test ultrawide."
+
+- **Status:** decided by the owner: no change. Nothing was built, so no code or test changed.
+- **What was seen (by machine, window sizes only; no ultrawide screen exists here):** the picture stays centred in its 12:7 shape, never stretched; the backgrounds fill the side bars; the picture takes about 60 % of the width at 21:9 and 40 % at 32:9. The CRT filters draw only over the picture's own area, so their cost does not grow with the window.
+- **Open, not checked (nobody asked for a fix):** at 5120 x 1440 the Arcade panel's life icons at the bottom right looked cut off in the saved picture (`--backdrop-check` at that size); and the Ambient glow looks like a smear on a very wide window.
+- **Ideas offered and not taken:** an Arcade panel laid out for wide windows, a "Picture size" row in Graphics options (Authentic / Wide / Stretch to fit; the picture modes are still only on keys 1 to 5), tests at more window shapes. They can be asked for later; the maze is never extended sideways (it would change the game).
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)

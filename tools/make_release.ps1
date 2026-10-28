@@ -160,13 +160,15 @@ foreach ($f in $runtimeFiles) { if (-not (Test-Path (Join-Path $crt.FullName $f)
 $licenceStella = Join-Path $root 'third_party\stella\License.txt'
 $copyrightStella = Join-Path $root 'third_party\stella\Copyright.txt'
 $licenceSdl = Join-Path $root 'third_party\SDL3\LICENSE.txt'
-foreach ($f in @($licenceStella, $copyrightStella, $licenceSdl)) { if (-not (Test-Path $f)) { Fail "missing $f" } }
+$licenceOurs = Join-Path $root 'LICENSE'
+$noticesOurs = Join-Path $root 'THIRD_PARTY_NOTICES.md'
+foreach ($f in @($licenceStella, $copyrightStella, $licenceSdl, $licenceOurs, $noticesOurs)) { if (-not (Test-Path $f)) { Fail "missing $f" } }
 
 if (-not (Test-Path $out)) { New-Item -ItemType Directory -Path $out | Out-Null }
 
 # The source code: only the folders that are needed to build the program (not the project notes), straight from Git.
 $sourceZip = Join-Path $out "Pac2600Comp-$Version-source.zip"
-git -C $root archive --format=zip -o $sourceZip HEAD src tests third_party tools/build_host.cmd tools/build_third_party.cmd
+git -C $root archive --format=zip -o $sourceZip HEAD src tests third_party tools/build_host.cmd tools/build_third_party.cmd LICENSE THIRD_PARTY_NOTICES.md
 if ($LASTEXITCODE -ne 0) { Fail 'git archive failed' }
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -229,8 +231,9 @@ FILES THE PROGRAM WRITES
 
 LICENCES AND SOURCE
   This program is distributed under the GNU General Public License, version 2 or later. It contains no emulator, but its picture colours
-  are the colour table of Stella 7.0 and its CRT filters are ports of GPL shaders (CRT-Geom, GDV NTSC); it also uses SDL 3.4.18 (zlib
-  licence). The Stella licence text is in licences\Stella-License.txt. The complete source code of this program, with Stella and SDL, is in
+  are the colour table of Stella 7.0 and its CRT filters are ports of shaders (CRT-Geom, GDV NTSC, CRT-Lottes: see the notices); it also uses SDL 3.4.18 (zlib
+  licence). The licence of this program is in LICENSE.txt, the notices and credits of everything from others are in THIRD_PARTY_NOTICES.txt,
+  and the Stella licence text is in licences\Stella-License.txt. The complete source code of this program, with Stella and SDL, is in
       source\Pac2600Comp-$Version-source.zip     (how to build it: source\BUILDING.txt)
   The three Microsoft runtime files (msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll) are Microsoft's
   Visual C++ runtime, shipped next to the program as Microsoft allows.
@@ -315,6 +318,8 @@ try {
   Add-File $zip $exe 'Pac2600Comp.exe'
   Add-File $zip $sdl 'SDL3.dll'
   foreach ($f in $runtimeFiles) { Add-File $zip (Join-Path $crt.FullName $f) $f }
+  Add-File $zip $licenceOurs 'LICENSE.txt'
+  Add-File $zip $noticesOurs 'THIRD_PARTY_NOTICES.txt'
   Add-File $zip $licenceStella 'licences/Stella-License.txt'
   Add-File $zip $copyrightStella 'licences/Stella-Copyright.txt'
   Add-File $zip $licenceSdl 'licences/SDL3-LICENSE.txt'

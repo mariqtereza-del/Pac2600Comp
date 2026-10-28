@@ -3295,7 +3295,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit.
     - **Documentation updates:** `README.md`, `BUILDING.md`, `docs\HOW_IT_WORKS.md`, `docs\PRESERVATION.md`, `DECISIONS.md` (T-J4-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J4: Public documentation`. **Next stage:** J5 (licences and credits).
-5. **[Not started] J5 — Licences and credits.** `LICENSE` for our code (your choice from J1, explained), `THIRD_PARTY_NOTICES.md` for SDL3 and Stella, and credits to Atari, the original programmer and the Stella team.
+5. **[Done 2026-10-28, T-J5-1] J5 — Licences and credits.** `LICENSE` for our code (your choice from J1, explained), `THIRD_PARTY_NOTICES.md` for SDL3 and Stella, and credits to Atari, the original programmer and the Stella team.
+    **J5 in full (16 headings):**
+    - **Objective:** a `LICENSE` file for our own code (GNU GPL version 2 or later, as the owner chose in D-027), `THIRD_PARTY_NOTICES.md` for everything we include from others, and credits to the makers of the original game and of Stella.
+    - **Why it matters:** the GPL and the zlib licence require their notices to travel with the program; a visitor must be able to see who made what and under which terms.
+    - **Prerequisites:** J4 Done (D-027 decided the licence), clean tree (checked).
+    - **What Claude Code will do:** read the licence statements in the pinned sources (Stella, SDL3, each of the 26 shader files); write `LICENSE` (a short notice and the full GPL version 2 text, copied from Stella's `License.txt`); write `THIRD_PARTY_NOTICES.md` with the shader table made by the tool from the files themselves; put both into the release and the source zip; write `tools\j5_notices_check.py`; take the two pending notes out of the README check.
+    - **What I must do:** nothing required. (The credits line says "the Pac2600Comp authors" unless the owner names someone.)
+    - **Exact instructions:** `python -I tools\j5_notices_check.py` must say `result: OK`.
+    - **Required input:** none.
+    - **Claude Code prompt:** "Do only the single next stage named in PROJECT_STATUS.md."
+    - **Expected result:** the licence and notices exist, are in the release zip, and every shader file is accounted for with what it says about itself, "not stated" where it says nothing (nothing is invented).
+    - **Verification:** `j5_notices_check`, `j4_docs_check` (links now resolve), `test_quick`, a real release and its 31-check gate; `git diff` over `src\` and `baseline\` empty (D-029).
+    - **Completion criteria:** the notices match the files; no frozen file changed; nothing inside the game changed.
+    - **Potential problems:** three NTSC shader passes say only "based on Themaister's NTSC shader" and four lookup-table pictures say nothing about their licence; they are reported as not stated, for the owner to know before publishing.
+    - **Recovery:** revert the commit.
+    - **Documentation updates:** `LICENSE`, `THIRD_PARTY_NOTICES.md`, `DECISIONS.md` (T-J5-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J5: Licences and credits`. **Next stage:** J6 (create the private repository; needs the owner at github.com).
 6. **[Not started] J6 — Create the repository, private.** You create it on github.com while Claude Code tells you each click. Claude Code shows the exact file list for the first push; you check for `.a26` files; you approve the push. Sign-in happens in your browser, never by typing a password into Claude Code.
 7. **[Not started] J7 — Automatic checks on GitHub.** A GitHub Actions workflow builds the game and runs the ROM-free tests on every change.
 8. **[Not started] J8 — Versions and changelog.** Numbers like 1.2.0 (big.feature.fix), with `CHANGELOG.md` newest first.

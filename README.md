@@ -74,6 +74,6 @@ See [BUILDING.md](BUILDING.md). Building needs no game file; playing and some of
 
 ## Licence and credits
 
-Pac2600Comp's own code is licensed under the **GNU General Public License, version 2 or later**: see [LICENSE](LICENSE). It contains the colour table of the Stella emulator and ports of the CRT-Geom and GDV NTSC shaders (all GPL version 2 or later), CRT-Lottes (public domain), and uses SDL3 (zlib licence). Credits and the notices of each are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The achievements are those of the RetroAchievements set for this game; the program does not connect to RetroAchievements.
+Pac2600Comp's own code is licensed under the **GNU General Public License, version 2 or later**: see [LICENSE](LICENSE). It contains the colour table of the Stella emulator (GPL version 2 or later), ports of the CRT-Geom shader and most of the GDV NTSC shaders (GPL version 2 or later), CRT-Lottes (public domain), a few NTSC shader passes whose files state no licence, and uses SDL3 (zlib licence). Credits and the notices of each are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The achievements are those of the RetroAchievements set for this game; the program does not connect to RetroAchievements.
 
 The program comes **without any warranty**, to the extent the law allows.

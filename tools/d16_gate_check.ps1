@@ -54,7 +54,7 @@ $exeHash = (Get-FileHash -Algorithm SHA256 $exe).Hash.ToLower()
 Check 'release: Pac2600Comp.exe is the one BUILD-INFO.txt names' ($info.Contains($exeHash)) "SHA-256 $($exeHash.Substring(0, 16))..."
 $commit = [regex]::Match($info, 'Git commit: (\w+)').Groups[1].Value
 Check 'release: built from a committed tree' (($commit.Length -eq 40) -and -not $info.Contains('TEST BUILD')) "commit $($commit.Substring(0, 10))"
-foreach ($f in 'SDL3.dll', 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll', 'README.txt', 'NOTICE.txt', 'licences\Stella-License.txt', 'licences\SDL3-LICENSE.txt', 'source\BUILDING.txt', 'roms\PUT_YOUR_ROM_HERE.txt', 'Record a game.cmd', 'Replay a game.cmd') {
+foreach ($f in 'SDL3.dll', 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll', 'README.txt', 'NOTICE.txt', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.txt', 'licences\Stella-License.txt', 'licences\SDL3-LICENSE.txt', 'source\BUILDING.txt', 'roms\PUT_YOUR_ROM_HERE.txt', 'Record a game.cmd', 'Replay a game.cmd') {
   Check "release: has $f" (Test-Path (Join-Path $dir $f)) ''
 }
 

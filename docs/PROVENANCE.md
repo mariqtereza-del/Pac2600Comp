@@ -1,6 +1,6 @@
 # Provenance of every file in Git (Stage J3)
 
-Made by `python -I tools\j3_provenance.py rom\pacman.a26`; do not edit by hand. It lists what Git holds (3796 files), not what is only on this PC (section 5).
+Made by `python -I tools\j3_provenance.py rom\pacman.a26`; do not edit by hand. It lists what Git holds (3799 files), not what is only on this PC (section 5).
 The categories follow the plan: our own code, ROM-derived material, emulator code, third-party libraries, documentation, build tools and generated files, plus test data, measuring tools and settings.
 This is a factual list, not legal advice (see `docs\LEGAL_BRIEFING.md`; the owner's position is D-028).
 
@@ -14,11 +14,11 @@ This is a factual list, not legal advice (see `docs\LEGAL_BRIEFING.md`; the owne
 | emulator | 1057 | 25,881,425 | Stella 7.0, GPL v2 or any later version, unchanged (D-002) | the reference emulator, used by the test tools and the reference program only |
 | emulator-tool | 8 | 67,833 | ours, links Stella (GPL) | the measuring tools that run the original game inside Stella |
 | third-party | 2208 | 49,938,758 | SDL3 (zlib) and the libretro shader sources (per file: GPL v2 or later, public domain) | libraries and shader sources, unchanged |
-| build-tool | 85 | 773,685 | ours | scripts that build, test, release and check the project |
+| build-tool | 86 | 781,571 | ours | scripts that build, test, release and check the project |
 | test-data | 147 | 311,928 | ours | recorded joystick inputs, entries and frozen files of the preservation suite (no ROM bytes) |
-| documentation | 77 | 1,443,129 | ours | the notes and documents of the project |
+| documentation | 79 | 1,479,115 | ours | the notes and documents of the project |
 | config | 3 | 1,932 | ours | Git and GitHub settings |
-| **total** | 3796 | 81,308,351 |  |  |
+| **total** | 3799 | 81,352,223 |  |  |
 
 Every tracked file is in exactly one category, and no file fits no rule (the tool stops otherwise).
 

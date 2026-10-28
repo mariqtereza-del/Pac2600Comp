@@ -136,6 +136,7 @@ function Add-QuickSteps {
   Py 'g7_gate_check' 'g7_gate_check.py' @($rom)
   Py 'j3_provenance --check' 'j3_provenance.py' @('--check') -Must 'result: OK'
   Py 'j4_docs_check' 'j4_docs_check.py' @() -Must 'result: OK'
+  Py 'j5_notices_check' 'j5_notices_check.py' @() -Must 'result: OK'
   Py 'h1_testing_check' 'h1_testing_check.py'
   Py 'h7_preservation_check' 'h7_preservation_check.py'
   Py 'h7_preservation drill' 'h7_preservation_check.py' @('--drill', (Join-Path (Scratch 'h7_drill') 'run')) -Must 'drill result: OK'
@@ -172,6 +173,7 @@ function Add-PublicSteps {
   Py 'g7_gate_check --no-rom' 'g7_gate_check.py' @('--no-rom')
   Py 'j3_provenance --check' 'j3_provenance.py' @('--check') -Must 'result: OK'
   Py 'j4_docs_check' 'j4_docs_check.py' @() -Must 'result: OK'
+  Py 'j5_notices_check' 'j5_notices_check.py' @() -Must 'result: OK'
   Py 'h1_testing_check' 'h1_testing_check.py'
   Py 'h7_preservation_check' 'h7_preservation_check.py'
 }

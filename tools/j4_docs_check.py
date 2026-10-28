@@ -13,7 +13,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PUBLIC = ["README.md", "BUILDING.md", "docs/HOW_IT_WORKS.md", "docs/PRESERVATION.md"]
-PENDING = {"LICENSE", "THIRD_PARTY_NOTICES.md"}   # created by Stage J5; the check passes without them until then
+PENDING = set()   # links to files that a later stage creates (none now: LICENSE and THIRD_PARTY_NOTICES.md came with Stage J5)
 
 ADDRESS = re.compile(r"(?:\$F[0-9A-Fa-f]{3}\b|\b0x[Ff][0-9A-Fa-f]{3}\b|\bL_F[0-9A-F]{3}\b)")
 HEX_RUN = re.compile(r"(?:\b[0-9A-Fa-f]{2}\b[ ,]+){8,}\b[0-9A-Fa-f]{2}\b")

@@ -58,6 +58,7 @@ RULES = [
     ("tools/*.txt", "build-tool"),
     ("docs/*", "documentation"),
     ("*.md", "documentation"),
+    ("LICENSE", "documentation"),
     (".github/*", "config"),
     (".gitignore", "config"),
     (".gitattributes", "config"),

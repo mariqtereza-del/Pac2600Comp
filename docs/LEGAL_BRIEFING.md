@@ -70,3 +70,7 @@ A middle way that the plan already contains (J6): **put the project in a private
 3. Keep `docs\`, `reference\` and the raw listings out of anything shared (they stay local).
 
 If you prefer (c), say so and Phase J stops here: the project is complete and safe on your PC.
+
+## 8. Update from Stage J5 (2026-10-28)
+
+Section 2.4 says the CRT-Geom and GDV NTSC filters are GPL version 2 or later. Reading the 26 shader files one by one showed that this is true of CRT-Geom and of most of the GDV passes (14 files), but that **11 files state no licence**: the three NTSC passes ("based on Themaister's NTSC shader"), `stock.slang`, the four lookup-table pictures and the three preset lists. CRT-Lottes states public domain. The table is in `THIRD_PARTY_NOTICES.md`. The conclusion that our own code can be GPL version 2 or later stands, because of Stella's colour table, CRT-Geom and guest(r)'s files. The unstated files are a point to ask a lawyer about, or to settle by asking the libretro project or by leaving the GDV filter out of a public release (D-027 and T-J5-1).

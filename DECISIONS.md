@@ -484,6 +484,13 @@ The owner's words: "My github account is mariqtereza-del. The name should be Pac
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
 
+### T-J6-2 - The GitHub workflow is switched to manual before the first push (2026-10-28, Stage J6, D-030)
+
+- **Found:** `.github\workflows\public-tests.yml` (written in H4, never run on GitHub) was set to run on every push and pull request. The first push would therefore have started a job on GitHub's Windows servers, which the owner had not approved and which nobody knows will work (whether the build script finds the compiler there is untested).
+- **Done:** its trigger is now `workflow_dispatch` (it runs only when someone clicks \"Run workflow\" on the repository's Actions page), with a comment saying why. GitHub reads the workflow from the newest pushed commit, so no run starts when the history is pushed. Stage J7 puts the push trigger back, after the owner's approval, and tests the workflow for the first time.
+- **Why not push first and see:** a failing first run sends the owner e-mails and uses the free Actions minutes (Windows runners count double on private repositories) for nothing; and an action on GitHub needs the owner's approval first.
+- **Reversible:** Yes (one line).
+
 ### T-J6-1 - What a first push sends, and the proof that no game file is in it (2026-10-28, Stage J6, D-030)
 
 - **What it sends:** all 170 commits of `main` (7,304 objects, a `.git` of 31 MB), whose newest commit holds 3,799 files, 81 MB (third party 3,267 files, `src` 172, `baseline` 140, `tools` 98, `docs` 65, `tests` 42, top folder 14, `.github` 1). The largest file is 9 MB (GitHub refuses 100 MB).

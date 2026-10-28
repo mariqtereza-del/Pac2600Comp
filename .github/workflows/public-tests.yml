@@ -1,8 +1,11 @@
 # The public test set (Stage H4): runs on GitHub on every push and pull request, with NO ROM and no reference folder.
 # UNTESTED ON GITHUB: this file was written locally and has never run there (nothing is pushed). Whether the build script finds the
 # compiler on a GitHub runner is not known until the first real run (Stage J). The same commands run locally with tools\test_public.ps1.
+#
+# SWITCHED TO MANUAL (Stage J6, T-J6-2): until the owner approves automatic runs, this workflow runs only when someone clicks "Run workflow" on the Actions page,
+# so that the first push does not start a job on GitHub's servers. Stage J7 puts `on: [push, pull_request]` back, with the owner's approval.
 name: public-tests
-on: [push, pull_request]
+on: workflow_dispatch
 permissions:
   contents: read
 jobs:

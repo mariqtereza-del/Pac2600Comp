@@ -313,6 +313,16 @@ The owner's words: "The name should be Pac2600Comp. Consulting with lawyers in m
 - **Still true:** our own code is GPL v2 or later if published (D-027); the repository is private first, and every push is approved by the owner.
 - **Reversible:** Yes (a rename is a text change).
 
+### D-029 - No change to the wording inside the game (2026-10-28, Stage J3)
+
+The owner's words, after Stage J2: "Don't change any of the wording inside the game."
+
+- **Status:** approved by the owner (an instruction).
+- **Meaning:** every text the program shows (the menu and its explanations, the notices, the achievements and statistics, the help list, the message boxes, the words drawn on the picture backgrounds such as "PAC-MAN" on the Arcade panel and the TV bezel) stays exactly as it is. Claude Code changes such a text only when the owner asks for that text.
+- **What may still be written freely:** files outside the running game: the release `README.txt` and `NOTICE.txt`, `BUILDING.md`, the documents in `docs\`, the notes. (J4 rewrites the public documentation under this rule.)
+- **Already done under it:** the window title became "Pac2600Comp" in J2 (D-028), because the owner chose the name for the window; nothing else inside the game was changed.
+- **Reversible:** Yes.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -463,6 +473,16 @@ The owner's words: "The name should be Pac2600Comp. Consulting with lawyers in m
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-J3-1 - The content audit: how files are classified and what it found (2026-10-28, Stage J3)
+
+- **Tool:** `python -I tools\j3_provenance.py rom\pacman.a26` (standard library only) writes `docs\PROVENANCE.md`; `--check` only classifies, needs no ROM and is part of `test_quick` and `test_public`. It reads `git ls-files`, so it lists exactly what Git holds, puts each file into the first matching rule of an ordered list, and fails if a file fits no rule or a tracked file ends in `.a26 .bin .rom .rar .7z .zip .tar .gz` (one pinned exception: Stella's `template.dmg.gz`). It runs Gate G for the ROM scan and checks that the only ROM-derived file is `src\game\data\tables.cpp`.
+- **Result:** 3,790 tracked files: own code 192, ROM-derived data 1, generated 18, emulator (Stella, unchanged) 1,057, measuring tools that link Stella 8, third-party 2,208 (SDL3 and the libretro shaders), build tools 83, test data 147, documentation 73, settings 3. No unclassified file, no ROM-like file, no binary file outside `third_party\` (the libraries' own pictures and fonts). Gate G 9 of 9.
+- **Notes that name ROM addresses:** 112 files (documentation 34, our own code 43 as `ORIGINAL: $Fxxx` comments, build tools 32, others). They name where things are in the cartridge's program; none contains cartridge code as bytes.
+- **A real finding:** `docs\ROM_IDENTITY.md` line 153 quotes the last 23 bytes of the cartridge file as text (`Bytes $FFE9-$FFFF: ...`): table data and the reset vector. It is not program code and the byte-window scan of Gate G cannot see text, which is why this audit looks for it. It is ROM-derived content in a note. Nothing was changed in J3 (the stage only reads); the owner decides at J11 whether the line stays, and it is harmless in a private repository. A reader who wants the line gone before J11 can have it replaced by the SHA-1 and the size, which is all the document needs.
+- **False alarms removed while building the tool:** long decimal constants (random-number seeds, the 64-bit hash start value) and the shaders' decimal lookup tables (`src\host\gdv_*.cpp`) looked like hex bytes; the detector now needs at least one hex letter in a long string and skips the two generated shader files.
+- **Under D-029:** nothing inside the game was changed in J3.
+- **Reversible:** Yes (Git); the tool only reads, and writes only `docs\PROVENANCE.md`.
 
 ### T-J2-1 - Where the new name is applied, and what keeps its old name (2026-10-28, Stage J2, D-028)
 

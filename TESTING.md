@@ -36,6 +36,7 @@ The five key traces use five different inputs: BL-046 and BL-049 replay the same
 | `test_no_rom` for 11 recorded games (BL-001, 003, 035, 044, 047, 048, 062, 063, 067, 068, 070; 40,000 frames in all) | the game, in a program with no ROM code in it, replays the tracked input and gives the same picture and sound fingerprint on every frame as the original did: title screen and Select, a whole first level, the power pill and eaten ghosts, the end of the level and the new map, a game to game over, two players, both console switches, random joystick and buttons, ghosts walking home |
 | `g2_conventions_check --strict` | file, function and line limits; `ORIGINAL:` tags |
 | `g7_gate_check --no-rom` | no ROM or archive in Git; only the start-up check opens a file; Rule 7 text; no markers; architecture complete (checks 2 and 3 of the gate need the ROM and are skipped, and the output says so) |
+| `j3_provenance --check` | every file Git holds has a category (`docs\PROVENANCE.md`); no ROM-like or archive file is tracked |
 | `h1_testing_check` | this page lists every test and tool |
 | `h7_preservation_check` | the frozen preservation files (`tests\preservation\MANIFEST.txt`) are present and unchanged; the manifest only grew; where Git and the tag `1.0.0-preservation` exist, the frozen files equal the tag's (otherwise those two checks are skipped and the output says so) |
 
@@ -124,6 +125,7 @@ Each re-derives a rule of the game from the golden traces and checks it on every
 | --- | --- | --- | --- |
 | `g2_conventions_check.py --strict` | file, function and line limits; every `ORIGINAL:` tag links to evidence | no ROM | under 1 s |
 | `g7_gate_check.py` | no ROM or cartridge code in Git or the program; tables equal the list; Rule 7 text; architecture complete (`--no-rom`: the six checks that need no ROM) | ROM optional | 2 s |
+| `j3_provenance.py` | Stage J3: `python -I tools\j3_provenance.py rom\pacman.a26` writes `docs\PROVENANCE.md` (every tracked file in one category, the notes that name ROM addresses, the lines that hold bytes as text, the binary files, Gate G) and must say `result: OK`; `--check` only classifies and needs no ROM | ROM optional (`--check` needs none) | 20 s (1 s with `--check`) |
 | `h1_testing_check.py` | this page lists every test | no ROM | under 1 s |
 | `h7_preservation_check.py [--add] [--drill <new folder>]` (Stage H7) | the preservation suite is frozen (see `tests\preservation\README.md`): 151 listed files (70 baseline entries, 70 input files, 11 fingerprint files) unchanged, the manifest only grows, the 142 files that exist at the tag `1.0.0-preservation` equal it, new files are reported. `--drill` damages copies in a scratch Git repository six ways (edit, edit with the manifest, delete, shorten the manifest, add an unlisted file, then `--add`) and each must be caught | no ROM | check 5 s; the drill 39 s (measured in H7) |
 | `g5a_data_list.py`, `g5b_make_tables.py`, `g5c_make_fingerprints.py` | generators of the table list, `tables.cpp` and the fingerprint files; they rewrite files, so not run as tests | needs the ROM | not timed |

@@ -3261,7 +3261,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit; the zips in `out\` are scratch.
     - **Documentation updates:** `DECISIONS.md` (D-028, T-J2-1), `PLAN.md`, `PROJECT_STATUS.md`, `BUILDING.md`, `CLAUDE.md`.
     - **Git checkpoint:** `Stage J2: Project name Pac2600Comp`. **Next stage:** J3 (content audit).
-3. **[Not started] J3 — Content audit.** Every file classified as: our own code, our notes containing ROM addresses, ROM-derived material (must be none in public), emulator code, third-party library, documentation, build tool, generated file. Output: `docs\PROVENANCE.md`.
+3. **[Done 2026-10-28, T-J3-1] J3 — Content audit.** Every file classified as: our own code, our notes containing ROM addresses, ROM-derived material (must be none in public), emulator code, third-party library, documentation, build tool, generated file. Output: `docs\PROVENANCE.md`.
+    **J3 in full (16 headings):**
+    - **Objective:** know what every tracked file is and where it came from: our own code, notes that name ROM addresses, ROM-derived material, emulator code, third-party libraries, documentation, build tools, generated files. Output: `docs\PROVENANCE.md`.
+    - **Why it matters:** before anything leaves this PC (even to a private repository) the owner needs to see exactly what would go, and that no ROM or cartridge code is among it (Rule 7).
+    - **Prerequisites:** J2 Done, clean tree (checked).
+    - **What Claude Code will do:** write `tools\j3_provenance.py` (standard library only), which reads the Git file list, puts each file into one category by fixed rules, stops if a file fits no rule, finds the notes that name ROM addresses (`$F000` to `$FFFF`) or hold runs of hex bytes, lists the binary files Git holds, runs the Gate G ROM scan, and writes `docs\PROVENANCE.md`; then record the findings and the recommendation in `DECISIONS.md`.
+    - **What I must do:** read the summary; the question of which notes may be public is for J11 and is only prepared here.
+    - **Exact instructions:** `python -I tools\j3_provenance.py rom\pacman.a26`.
+    - **Required input:** none (the ROM is only read, by the scan).
+    - **Claude Code prompt:** "Do only the single next stage named in PROJECT_STATUS.md."
+    - **Expected result:** every tracked file classified, no unclassified file, no ROM-like file, the tables of D-009 listed as the only ROM-derived material.
+    - **Verification:** the tool says `result: OK`; Gate G (9 of 9); `test_quick`; the totals add up to the number of tracked files.
+    - **Completion criteria:** `docs\PROVENANCE.md` exists and was made by the tool; no frozen file changed; nothing inside the game changed (D-029).
+    - **Potential problems:** a rule that puts a file in the wrong category (the tool lists every rule and the first file it caught); notes that name ROM addresses may be more than the owner expects.
+    - **Recovery:** revert the commit; the tool only reads.
+    - **Documentation updates:** `docs\PROVENANCE.md`, `DECISIONS.md` (D-029, T-J3-1), `TESTING.md`, `PLAN.md`, `PROJECT_STATUS.md`, `CLAUDE.md`.
+    - **Git checkpoint:** `Stage J3: Content audit`. **Next stage:** J4 (public documentation).
 4. **[Not started] J4 — Public documentation.** `README.md` (what it is, the ROM requirement in the first screen, how to play), `BUILDING.md`, `docs\HOW_IT_WORKS.md`, and the preservation write-up from `RE_NOTES.md` with any content J1 excluded removed.
 5. **[Not started] J5 — Licences and credits.** `LICENSE` for our code (your choice from J1, explained), `THIRD_PARTY_NOTICES.md` for SDL3 and Stella, and credits to Atari, the original programmer and the Stella team.
 6. **[Not started] J6 — Create the repository, private.** You create it on github.com while Claude Code tells you each click. Claude Code shows the exact file list for the first push; you check for `.a26` files; you approve the push. Sign-in happens in your browser, never by typing a password into Claude Code.

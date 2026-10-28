@@ -3222,12 +3222,28 @@ Two rules for every feature:
 
 Publish only what you have decided is safe to publish, in a private repository first, and never with a ROM. Every `git push` and every GitHub action is approved by you at the moment it happens.
 
-1. **[Not started] J1 — Legal and licensing decision (yours).** Claude Code prepares a plain-words briefing; it is not legal advice. The points it must cover:
+1. **[Done 2026-10-28, D-027] J1 — Legal and licensing decision (yours).** Claude Code prepares a plain-words briefing; it is not legal advice. The points it must cover:
     - **The ROM** is Atari's copyrighted program. Never distributed. Settled.
     - **The reconstructed source** was written by studying Atari's code. It may be treated as a derivative of it. The EU software directive (which applies in Bulgaria) allows decompiling only in narrow cases, mainly for compatibility between programs, so this needs real legal advice before publishing.
     - **The name "Pac-Man"** is a Bandai Namco trademark. The project name and icon should not use it (J2).
     - **Stella's code** is GPL-licensed. Any release containing it (the Phase 1 build, the test tool) must offer its source under the GPL. The native game build no longer contains it. Package listings disagree on whether Stella is "GPL 2 only" or "GPL 2 or later"; Claude Code reads the licence file in the pinned source to settle it.
     - **Your options:** (a) publish full source and `.exe`; (b) publish the host, tools and docs but keep the reconstructed game logic private; (c) publish nothing. You choose after reading the briefing, ideally after asking a lawyer.
+    **J1 in full (16 headings):**
+    - **Objective:** you decide what may be published and under which licence; Claude Code prepares the plain-words briefing `docs\LEGAL_BRIEFING.md`.
+    - **Why it matters:** the project contains Atari-derived data, rewritten game code, GPL code (Stella's colour table, two shader ports) and a trademarked name; the wrong publication cannot be taken back.
+    - **Prerequisites:** I21 Done, clean tree (checked).
+    - **What Claude Code will do:** read the pinned licence files (Stella: "version 2 or any later version"; shaders: GPL v2 or later, CRT-Lottes public domain; SDL3: zlib), list what each part requires, write the briefing and the options, record your decision in `DECISIONS.md` (D-027).
+    - **What I must do:** read the briefing, ideally ask a lawyer, and choose.
+    - **Exact instructions:** open `docs\LEGAL_BRIEFING.md`; answer the question Claude Code asks.
+    - **Required input:** your choice among (a) full source and program under GPL v2 or later, (b) host only (not workable, see the briefing), (c) nothing public; and whether Phase J goes on with a private repository.
+    - **Claude Code prompt:** "Start phase J."
+    - **Expected result:** a recorded decision (D-027) and a licence for our own code.
+    - **Verification:** the licence statements are quoted from the files in `third_party\`; no file of the project changes except documents.
+    - **Completion criteria:** D-027 written by you; Rule 10: J2 does not start before.
+    - **Potential problems:** the briefing is not legal advice; the rewritten-code question is open in law.
+    - **Recovery:** nothing outside documents changes; revert the commit.
+    - **Documentation updates:** `docs\LEGAL_BRIEFING.md`, `DECISIONS.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J1: Legal and licensing decision`. **Next stage:** J2 (project name).
 2. **[Not started] J2 — Project name.** A name without the trademark, like you did with PacArcadeComp. Applied to the `.exe`, window title, zip names and repository.
 3. **[Not started] J3 — Content audit.** Every file classified as: our own code, our notes containing ROM addresses, ROM-derived material (must be none in public), emulator code, third-party library, documentation, build tool, generated file. Output: `docs\PROVENANCE.md`.
 4. **[Not started] J4 — Public documentation.** `README.md` (what it is, the ROM requirement in the first screen, how to play), `BUILDING.md`, `docs\HOW_IT_WORKS.md`, and the preservation write-up from `RE_NOTES.md` with any content J1 excluded removed.

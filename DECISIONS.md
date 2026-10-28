@@ -290,6 +290,17 @@ Claude Code listed ideas for modernizing the program; the owner answered: "A sta
 - **Menu:** the main page's "Statistics..." row (under Achievements) opens a page of read-only rows.
 - **Left out on purpose:** a "reset statistics" button (a destructive action nobody asked for) and a high score per game number (the game number is not reliably in the game's memory while it is played).
 
+### D-027 - Licence and publication: GPL v2 or later, private repository first (2026-10-28, Stage J1)
+
+The owner read `docs\LEGAL_BRIEFING.md` (Claude Code's plain-words briefing, not legal advice) and chose: "GPL v2+, private repo first".
+
+- **Status:** approved by the owner; this settles Stage J1.
+- **Our own code:** if it is ever published, it is licensed **GNU GPL version 2 or later**. This is the only licence that fits what the program contains: the colour table made from Stella's source and the ports of the CRT-Geom and GDV shaders are GPL v2 or later (Stella: "version 2, or any later version", read in `third_party\stella\Copyright.txt`); CRT-Lottes is public domain; SDL3 is zlib.
+- **Phase J goes on** with J2 to J10 using a **private** GitHub repository that only the owner can see. Every `git push` and every GitHub action is still approved by the owner at the moment it happens. Pushing files to a private repository still stores them on GitHub's servers.
+- **Not decided yet:** whether to make the repository public and publish a release (that is J11, to be decided after the owner has asked a lawyer, in particular about the rewritten game code and the 512 bytes of tables, which the briefing marks "ask a lawyer").
+- **Nothing is public.** No repository exists. The ROM is never published (Rule 7).
+- **Reversible:** Yes, until something is made public.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)

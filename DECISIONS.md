@@ -243,6 +243,15 @@ The owner's words: "I would like light bar colours and rumble." Then: "I don't w
 - **Rumble:** a row on the Control options page: Off (the default), Light, Strong; a wafer (a tiny tap, added after the owner found nothing was felt for the pellets), a power pill, a ghost eaten and Pac-Man being caught each give a pulse. The owner did not ask for it to be always on, so it stays a choice.
 - **What it must not do:** change the game: both are outputs, worked out from the game's memory after each frame, never the other way round.
 
+### D-022 - DualSense support; the Mirrored edge background removed (2026-10-28, Stage I17)
+
+The owner's words: "Remove the 'Mirrored Edge' display style. Add controller support for the Dualsense, making sure all features of the Dualshock 4 are covered."
+
+- **Status:** approved by the owner's request; built and proved in Stage I17 (T-I17-1).
+- **Mirrored edge:** removed from the Background row (D-012 listed it). The other five choices and Black stay. A remembered `background=mirror` is taken as Black.
+- **DualSense:** every DualShock 4 feature (D-020, D-021) works with it: D-pad or left stick, Cross or Square = fire, Options = Reset, Create (its Share button) = Select, L1 / R1 = the difficulty switches, Triangle = TV type, PS button or touchpad = the menu, the symbols, the light bar that follows the game, and the rumble.
+- **Not built (ask if wanted):** the DualSense's adaptive triggers, its microphone mute button, its player lights and speaker, and the touch surface.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -393,6 +402,15 @@ The owner's words: "I would like light bar colours and rumble." Then: "I don't w
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-I17-1 - DualSense as a PlayStation pad with its own names; Mirrored edge taken out (2026-10-28, Stage I17, D-022)
+
+- **Pad type:** SDL tells a DualSense apart (`SDL_GAMEPAD_TYPE_PS5`). `controls::PadFamily::DualSense` is new; `isPlayStation(family)` is true for it and for the DualShock 4 (`PlayStation`), and every rule about "a PlayStation pad" (the symbols, the menu on the PS button and the touchpad, no menu on the right stick, the light bar of `Pads::setLight`) uses it. SDL maps the buttons of both pads onto the same names (D-pad, South, East, West, North, shoulders, Start, Back, Guide, Touchpad), so nothing else differs; the DualSense's Create button is SDL's "Back", the DualShock 4's Share.
+- **Names:** `padLines(DualSense)` is the DualShock 4's list with "Create" in place of "Share"; `familyTitle` says "PlayStation (DualSense)". The Control options page and the F1 list show them when a DualSense is connected.
+- **Tests:** `--pad-model ds4|dualsense` (test only) sets the vendor and product numbers of the virtual pad (Sony's 054c:09cc and 054c:0ce6), for `--pad-check` and `--push-pad`; `host_checks.sh` runs both.
+- **Mirrored edge:** `Kind::Mirror`, `Backdrop::mirror` and `tilesNeeded` and their tests are removed; `Kind` has six members, so the ones after it have new numbers, which nothing stores (settings keep names).
+- **Not tested:** a real DualSense (none here; the virtual pad goes through SDL's gamepad code but not through its DualSense driver, so the light bar and rumble of the real pad are only as good as SDL's driver for it).
+- **Reversible:** Yes (Git).
 
 ### T-I16-1 - A lost graphics device must not take the program down: pin Direct3D, remake the renderer (2026-10-28, Stage I16)
 

@@ -60,9 +60,10 @@ bool padCheck(const Options& o)
   desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
   desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
   desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
-  desc.name = "Test pad (virtual)";
-  desc.vendor_id = 0x054c;   // Sony's numbers for a DualShock 4 (v2), so that SDL treats the virtual pad as one (Stage I14)
-  desc.product_id = 0x09cc;
+  const VirtualPadModel model = virtualPadModel(o.padModel);
+  desc.name = model.name;
+  desc.vendor_id = model.vendor;    // Sony's numbers for a DualShock 4 (v2) or a DualSense, so that SDL treats the virtual pad as one (Stages I14, I17)
+  desc.product_id = model.product;
 
   SDL_JoystickID virtualId = 0;
   SDL_Joystick* joystick = nullptr;
@@ -112,7 +113,7 @@ bool padCheck(const Options& o)
   line("plug in a virtual gamepad", plugIn(), SDL_GetError());
   run(30);
   line("the program opened it", pads.count() == realPads + 1, "pads open: " + std::to_string(pads.count()) + " (" + pads.names() + ")");
-  line("known as a PlayStation pad (a DualShock 4)", realPads > 0 || pads.family() == controls::PadFamily::PlayStation, std::string("family: ") + controls::familyTitle(pads.family()));
+  line(std::string("known as a ") + controls::familyTitle(model.family) + " pad", realPads > 0 || pads.family() == model.family, std::string("family: ") + controls::familyTitle(pads.family()));
 
   run(60);  // attract mode
   // Share = Game Select: the select switch (bit 1 of the switch register) goes low while held

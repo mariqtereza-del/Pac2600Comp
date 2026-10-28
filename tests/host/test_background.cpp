@@ -21,8 +21,8 @@ int main()
 {
   using namespace background;
 
-  // The choices: seven (the Solid colour one has no colour to choose: it is the maze colour), each with its own setting name, written and read back; anything unknown is Black.
-  expect(kKinds == 7, "seven backgrounds (the owner's list without the player's own image)");
+  // The choices: six (the Solid colour one has no colour to choose: it is the maze colour), each with its own setting name, written and read back; anything unknown is Black.
+  expect(kKinds == 6, "six backgrounds (the owner's list without the player's own image, and without the Mirrored edge, removed on request)");
   std::vector<std::string> seen;
   for(int i = 0; i < kKinds; ++i) {
     const Kind k = static_cast<Kind>(i);
@@ -80,9 +80,7 @@ int main()
   at(0xE6) = 0xC0;
   expect(twoPlayers(ram.data()) && playerToPlay(ram.data()) == 1, "two players, player 2's turn");
 
-  // Tiles of the mirror.
-  expect(tilesNeeded(0, 100) == 0 && tilesNeeded(-5, 100) == 0 && tilesNeeded(1, 100) == 1 && tilesNeeded(100, 100) == 1 && tilesNeeded(101, 100) == 2, "mirror tiles needed");
-  expect(tilesNeeded(100000, 10) == 6 && tilesNeeded(10, 0) == 0, "mirror tiles are capped, and a zero-size picture needs none");
+  expect(fromSetting("mirror") == Kind::Black, "a remembered Mirrored edge (removed) comes up as Black");
 
   // The page of the menu.
   using menu::Item; using menu::Key; using menu::Page; using menu::Result;
@@ -100,8 +98,8 @@ int main()
   expect(shownTitle, "the Background row shows the current choice");
   m.press(Key::Right);
   expect(m.choice().background == Kind::Glow, "Right: Ambient glow");
-  for(int i = 0; i < 6; ++i) m.press(Key::Right);
-  expect(m.choice().background == Kind::Black, "seven steps round the list are back at Black");
+  for(int i = 0; i < 5; ++i) m.press(Key::Right);
+  expect(m.choice().background == Kind::Black, "six steps round the list are back at Black");
   m.press(Key::Left);
   expect(m.choice().background == Kind::Bezel, "Left from Black wraps to the TV bezel");
   m.press(Key::Down);

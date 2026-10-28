@@ -59,7 +59,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     SDL_SetWindowTitle(window, title.c_str());
   };
   retitle();
-  // Stage I7: what fills the space around the picture, remembered in settings.ini (background=black|glow|mirror|solid|gradient|arcade|bezel)
+  // Stage I7: what fills the space around the picture, remembered in settings.ini (background=black|glow|solid|gradient|arcade|bezel)
   screen.backgroundKind = background::fromSetting(settings::get(options.settingsFile, "background"));
   screen.crt = crt::fromSetting(options.crt.empty() ? settings::get(options.settingsFile, "crt_filter") : options.crt);   // Stage I11: the CRT filter (menu, Graphics options)
 

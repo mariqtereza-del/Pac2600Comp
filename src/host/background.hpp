@@ -9,10 +9,10 @@
 
 namespace background {
 
-enum class Kind { Black, Glow, Mirror, Solid, Gradient, Arcade, Bezel };
-inline constexpr int kKinds = 7;
+enum class Kind { Black, Glow, Solid, Gradient, Arcade, Bezel };
+inline constexpr int kKinds = 6;
 
-const char* settingName(Kind kind);          // "black", "glow", "mirror", "solid", "gradient", "arcade", "bezel" (settings.ini)
+const char* settingName(Kind kind);          // "black", "glow", "solid", "gradient", "arcade", "bezel" (settings.ini)
 Kind fromSetting(const std::string& text);   // anything else (also an empty text) is Black
 const char* title(Kind kind);                // as the menu shows it
 Kind next(Kind kind, int step);              // the menu's Left/Right, wrapping round
@@ -42,6 +42,5 @@ int playerToPlay(const std::uint8_t* ram);  // 0 or 1
 bool twoPlayers(const std::uint8_t* ram);
 
 // How many whole copies of a picture `size` long are needed to cover a bar of `bar` length (at least 0, at most 6).
-int tilesNeeded(int bar, int size);
 
 }  // namespace background

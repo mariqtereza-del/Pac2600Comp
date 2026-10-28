@@ -56,7 +56,7 @@ bool backdropCheck(SDL_Renderer* renderer, const std::string& pngPrefix, const s
   int windowW = 0, windowH = 0;
 
   struct Case { background::Kind kind; std::string name; };
-  const std::vector<Case> cases = {{background::Kind::Black, "black"}, {background::Kind::Glow, "glow"}, {background::Kind::Mirror, "mirror"}, {background::Kind::Solid, "solid"},
+  const std::vector<Case> cases = {{background::Kind::Black, "black"}, {background::Kind::Glow, "glow"}, {background::Kind::Solid, "solid"},
                                    {background::Kind::Gradient, "gradient"}, {background::Kind::Arcade, "arcade"}, {background::Kind::Bezel, "bezel"}};
 
   for(const Case& c : cases) {

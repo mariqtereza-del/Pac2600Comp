@@ -40,7 +40,7 @@ for prog in pacman2600 pacman2600_ref; do
   has "$prog menu set the level" "$P/s14.ini.audio.txt" "final_level=4"
   has "$prog menu set left difficulty A" "$P/s14.ini.audio.txt" "final_game_flags=20"
   has "$prog menu Quit closed the program" "$P/s14.ini.audio.txt" "seconds=8"
-  has "$prog graphics page remembered the background" "$P/s14.ini" "background=mirror"
+  has "$prog graphics page remembered the background" "$P/s14.ini" "background=solid"
   # Stage I9.5: the frame rate and the counter are rows of Game options (75 in the program with smooth motion, 30 in the reference program, which has only 30 and 60)
   want=75; [ "$prog" = pacman2600_ref ] && want=30
   has "$prog menu remembered the frame rate" "$P/s14.ini" "frame_rate=$want"
@@ -113,6 +113,14 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   "$EXE" --push-pad --timed 14 "$P/padwin.txt" "$ROM" --mute --settings "$P/s22.ini"; check "$prog push-pad" $? 0
   has "$prog pad: the light bar was set to Pac-Man yellow (a DualShock 4 is plugged in; nothing was chosen)" "$P/s22.ini.pad.txt" "light_bar_yellow_sent=[1-9]"
   # Stage I15: the rumble, in a recorded game with three deaths (BL-048: nobody plays): the first death comes at about 13 s, so one pulse is required
+  # Stage I17: the same pad as a DualSense (SDL's PlayStation 5 type): its own name for the Select button (Create), the same light bar, rumble and menu
+  "$EXE" --pad-check "$P/pad_ds5.txt" "$ROM" --pad-model dualsense --settings "$P/s25.ini"; check "$prog pad-check with a virtual DualSense" $? 0; has "$prog DualSense pad result" "$P/pad_ds5.txt" "result=OK"
+  has "$prog DualSense is known as a DualSense" "$P/pad_ds5.txt" "known as a PlayStation (DualSense) pad: ok"
+  "$EXE" --push-pad --pad-model dualsense --timed 14 "$P/padwin_ds5.txt" "$ROM" --mute --settings "$P/s26.ini"; check "$prog push-pad with a virtual DualSense" $? 0
+  has "$prog DualSense: the menu opened twice by its touchpad and PS button" "$P/s26.ini.audio.txt" "menu_opens=2"
+  has "$prog DualSense: the light bar was set to Pac-Man yellow" "$P/s26.ini.pad.txt" "light_bar_yellow_sent=[1-9]"
+  has "$prog DualSense: L1 flipped the left difficulty" "$P/s26.ini" "left_difficulty=a"
+  has "$prog DualSense: the menu chose the arrow keys" "$P/s26.ini" "keyboard=arrows"
   printf 'rumble=strong\n' > "$P/s23.ini"
   "$EXE" --push-pad --replay baseline/BL-048.inputs --timed 16 "$P/padrumble.txt" "$ROM" --mute --settings "$P/s23.ini"; check "$prog push-pad rumble in a recorded game" $? 0
   has "$prog pad: the first death rumbled" "$P/s23.ini.pad.txt" "rumble_pulses=[1-9]"

@@ -14,7 +14,6 @@ std::string backgroundText(background::Kind kind)
   switch(kind) {
     case background::Kind::Black: return "Black: nothing is drawn, as on the original TV. This is the usual setting.";
     case background::Kind::Glow: return "Ambient glow: the picture's own colours, enlarged and blurred, glow behind it and follow the action, like the backlight of a modern TV.";
-    case background::Kind::Mirror: return "Mirrored edge: the picture is reflected as in a mirror on every side, darkened.";
     case background::Kind::Solid: return "Solid colour: one flat colour, the colour of the maze (the blue it is drawn on, not its walls), as it is right now.";
     case background::Kind::Gradient: return "Gradient: the colour of the maze, fairly bright next to the picture and fading to black at the edge of the window.";
     case background::Kind::Arcade:
@@ -152,7 +151,7 @@ void appendFeedbackText(std::vector<std::string>& out, int width, bool padConnec
   paragraph("Makes the pad rumble when something happens in the game: a tiny tap for each wafer, a short tick for a power pill, a thump for a ghost eaten and a long rumble when Pac-Man is "
             "caught. Light is gentle, Strong is firm. It takes effect at once and is remembered.");
   out.push_back("");
-  paragraph("The light bar of a DualShock 4 is always on and follows the game: yellow, blue while the ghosts are scared (flashing white when they are about to "
+  paragraph("The light bar of a DualShock 4 or a DualSense is always on and follows the game: yellow, blue while the ghosts are scared (flashing white when they are about to "
             "recover), a white flash when a ghost is eaten and red when Pac-Man is caught.");
   out.push_back("");
   paragraph(padConnected ? "A pad is connected. A pad without motors simply ignores the rumble."

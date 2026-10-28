@@ -39,7 +39,6 @@ class Backdrop {
 
  private:
   void glow(const BackdropScene& s);
-  void mirror(const BackdropScene& s);
   void gradient(const BackdropScene& s, background::Rgb colour);
   void arcade(const BackdropScene& s);
   void bezel(const BackdropScene& s);

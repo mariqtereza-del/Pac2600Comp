@@ -1,6 +1,7 @@
 // Test only (Stages I5 and D10): a helper thread that presses keys in the real window's event queue, as the operating system would (--push-keys, --push-menu).
 // (Stage I9.4: cut out of play_window.cpp, the code is unchanged.)
 #include "key_pusher.hpp"
+#include "pads.hpp"
 
 #include <windows.h>
 #include <initializer_list>
@@ -44,9 +45,10 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
       desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
       desc.naxes = SDL_GAMEPAD_AXIS_COUNT;
       desc.nbuttons = SDL_GAMEPAD_BUTTON_COUNT;
-      desc.name = "Test DualShock 4 (virtual)";
-      desc.vendor_id = 0x054c;
-      desc.product_id = 0x09cc;
+      const VirtualPadModel model = virtualPadModel(options.padModel);
+      desc.name = model.name;
+      desc.vendor_id = model.vendor;
+      desc.product_id = model.product;
       const SDL_JoystickID id = SDL_AttachVirtualJoystick(&desc);
       SDL_Joystick* joystick = id ? SDL_OpenJoystick(id) : nullptr;
       { std::ofstream note(options.settingsFile + ".pad.txt"); note << "virtual_pad_plugged_in=" << (joystick ? "yes" : "no") << " " << (joystick ? "" : SDL_GetError()) << (char)10; }
@@ -146,7 +148,7 @@ std::thread startKeyPusher(const Options& options, const std::atomic<bool>& stop
         tap(2.45, SDL_SCANCODE_ESCAPE); tap(2.5, SDL_SCANCODE_UP); tap(2.55, SDL_SCANCODE_UP);   // back to the main page (on Game options), up to New game
         tap(3.0, SDL_SCANCODE_RETURN);                               // go
         tap(6.0, SDL_SCANCODE_ESCAPE); tap(6.5, SDL_SCANCODE_ESCAPE);  // open and close again
-        tap(6.6, SDL_SCANCODE_ESCAPE);                                // Stage I7: open the menu, go to Graphics options, choose the Mirrored edge, back, close
+        tap(6.6, SDL_SCANCODE_ESCAPE);                                // Stage I7: open the menu, go to Graphics options, choose the second background on from Black (Solid colour since the Mirrored edge was removed), back, close
         for(int i = 0; i < 3; ++i) tap(6.7 + 0.1 * i, SDL_SCANCODE_DOWN);
         tap(7.4, SDL_SCANCODE_RETURN); tap(7.5, SDL_SCANCODE_RIGHT); tap(7.6, SDL_SCANCODE_RIGHT);
         tap(7.7, SDL_SCANCODE_ESCAPE); tap(7.8, SDL_SCANCODE_ESCAPE);

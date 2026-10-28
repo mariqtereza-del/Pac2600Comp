@@ -3157,6 +3157,19 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (T-I16-1), `TESTING.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I16: Do not crash when the graphics device is lost`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I17 - DualSense support; the Mirrored edge background removed** **[Done 2026-10-28]** *(eleventh approved feature, D-022)*
+      - **Objective:** (1) the "Mirrored edge" choice of the Background row is gone; (2) the PlayStation 5 pad (DualSense) works with everything the DualShock 4 has: the buttons and symbols, the menu on the pad, the three switches, the light bar and the rumble.
+      - **Why it matters:** the owner asked for it (D-022): "Remove the 'Mirrored Edge' display style. Add controller support for the Dualsense, making sure all features of the Dualshock 4 are covered."
+      - **Prerequisites:** I16 Done, clean tree.
+      - **What Claude Code will do:** (1) remove Mirrored edge from `background.*`, `backdrop.*`, the menu text and the tests (six backgrounds; a remembered `background=mirror` comes up as Black, as any unknown value does); (2) SDL knows the DualSense as its own type: `PadFamily::DualSense` shares everything with the PlayStation family (`isPlayStation`: symbols, PS button and touchpad menu, light bar, rumble) and differs only in its names: its Share button is called Create, and it is named "PlayStation (DualSense)" in the F1 list and the Control options page. A test option `--pad-model dualsense` makes the tests' virtual pad a DualSense (Sony's vendor and product numbers).
+      - **What I must do:** try it with the real DualSense (cable or Bluetooth) and say what feels wrong.
+      - **Verification:** `test_background` (six kinds; an old `mirror` setting is Black), `--backdrop-check` (six pictures), `test_controls` (the DualSense names and menu buttons), `--pad-check --pad-model dualsense` (known as a DualSense; every button, the menu moves, the light bar and the rumble reach it), `--push-pad --pad-model dualsense` in the real window (touchpad and PS button open the menu, switches flip, the light bar goes yellow), both programs; every earlier proof unchanged.
+      - **Completion criteria:** no frozen file changed; the game is untouched; the DualShock 4 behaves as before.
+      - **Potential problems:** the DualSense has features the DualShock 4 does not (adaptive triggers, a microphone mute button, player lights, a speaker): not built; the DualSense's own light bar and rumble go through SDL's driver for it, which was tested here only with a virtual pad.
+      - **Recovery:** revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-022, T-I17-1), `TESTING.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I17: DualSense support; Mirrored edge removed`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

@@ -16,6 +16,20 @@ void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset, 
 // True when the game's memory says a two-player game is on ($E6 bit 6) and it is player 2's turn (bit 7).
 bool playerTwoToPlay(const std::uint8_t* ram);
 
+// The virtual pad of the tests (--pad-check, --push-pad): a DualShock 4, or with --pad-model dualsense a DualSense. Sony's vendor and product numbers make SDL take it for the
+// real thing (Stage I17).
+struct VirtualPadModel {
+  Uint16 vendor = 0x054c, product = 0x09cc;
+  const char* name = "Test DualShock 4 (virtual)";
+  controls::PadFamily family = controls::PadFamily::PlayStation;
+};
+inline VirtualPadModel virtualPadModel(const std::string& model)
+{
+  VirtualPadModel m;
+  if(model == "dualsense") { m.product = 0x0ce6; m.name = "Test DualSense (virtual)"; m.family = controls::PadFamily::DualSense; }
+  return m;
+}
+
 // ---- Gamepads (Stage D11, DECISIONS.md T-D11-1) ----
 // All the gamepads SDL knows, opened when they appear and closed when they go. What they are doing is read from them
 // each time round the loop (not remembered from events), so an unplugged pad can never leave a button "held".
@@ -95,7 +109,7 @@ public:
   {
     lightUsed_ = true;
     for(Pad& p : pads_)
-      if(p.family == controls::PadFamily::PlayStation && (!p.lightSent || !(p.light == colour))) { SDL_SetGamepadLED(p.gamepad, colour.r, colour.g, colour.b); p.light = colour; p.lightSent = true; }
+      if(controls::isPlayStation(p.family) && (!p.lightSent || !(p.light == colour))) { SDL_SetGamepadLED(p.gamepad, colour.r, colour.g, colour.b); p.light = colour; p.lightSent = true; }
   }
 
   // A pulse of the rumble motors (a pad without them ignores it); nothing while the window is not in front.
@@ -123,7 +137,8 @@ private:
   static controls::PadFamily familyOf(SDL_Gamepad* g)
   {
     switch(SDL_GetGamepadType(g)) {
-      case SDL_GAMEPAD_TYPE_PS3: case SDL_GAMEPAD_TYPE_PS4: case SDL_GAMEPAD_TYPE_PS5: return controls::PadFamily::PlayStation;
+      case SDL_GAMEPAD_TYPE_PS3: case SDL_GAMEPAD_TYPE_PS4: return controls::PadFamily::PlayStation;
+      case SDL_GAMEPAD_TYPE_PS5: return controls::PadFamily::DualSense;
       case SDL_GAMEPAD_TYPE_XBOX360: case SDL_GAMEPAD_TYPE_XBOXONE: return controls::PadFamily::Xbox;
       default: return controls::PadFamily::Other;
     }

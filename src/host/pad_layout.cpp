@@ -21,7 +21,7 @@ std::string plainSymbols(const std::string& text)
 
 const char* familyTitle(PadFamily family)
 {
-  return family == PadFamily::PlayStation ? "PlayStation (DualShock 4)" : family == PadFamily::Xbox ? "Xbox" : "other game pad";
+  return family == PadFamily::PlayStation ? "PlayStation (DualShock 4)" : family == PadFamily::DualSense ? "PlayStation (DualSense)" : family == PadFamily::Xbox ? "Xbox" : "other game pad";
 }
 
 std::vector<HelpLine> padLines(PadFamily family)
@@ -29,10 +29,11 @@ std::vector<HelpLine> padLines(PadFamily family)
   const std::string cross(1, kCross), circle(1, kCircle), square(1, kSquare), triangle(1, kTriangle);
   switch(family) {
     case PadFamily::PlayStation:
+    case PadFamily::DualSense:
       return {{"  D-pad / left stick", "Joystick"},
               {"  " + cross + " / " + square, "Fire button"},
               {"  Options", "Game Reset: start a new game"},
-              {"  Share", "Game Select: next game variation"},
+              {family == PadFamily::DualSense ? "  Create" : "  Share", "Game Select: next game variation"},
               {"  L1 / R1", "Left / right difficulty switch A / B"},
               {"  " + triangle, "TV type switch Colour / B&W"},
               {"  PS / Touchpad", "Menu: open and close"},
@@ -62,7 +63,7 @@ std::vector<HelpLine> padLines(PadFamily family)
 PadAsks PadPresses::update(const PadReading& r, long long nowMs)
 {
   PadAsks asks;
-  auto menuButton = [&](const PadReading& p) { return p.home || p.touchpad || (family_ != PadFamily::PlayStation && p.rightStick); };
+  auto menuButton = [&](const PadReading& p) { return p.home || p.touchpad || (!isPlayStation(family_) && p.rightStick); };
   asks.menu = menuButton(r) && !menuButton(before_);
   asks.leftDifficulty = r.l1 && !before_.l1;
   asks.rightDifficulty = r.r1 && !before_.r1;

@@ -311,17 +311,35 @@ int main()
     expect(controls::plainSymbols(std::string("X ") + controls::kCross + "/" + controls::kSquare + controls::kCircle + controls::kTriangle) == "X Cross/SquareCircleTriangle",
            "symbols in words");
     // The names: every family has the same seven things, and only the PlayStation names carry symbols.
-    for(PadFamily f : {PadFamily::PlayStation, PadFamily::Xbox, PadFamily::Other}) {
+    for(PadFamily f : {PadFamily::PlayStation, PadFamily::DualSense, PadFamily::Xbox, PadFamily::Other}) {
       const auto lines = controls::padLines(f);
       expect(lines.size() == 8, std::string("eight pad lines for ") + controls::familyTitle(f));
       bool symbols = false;
       for(const auto& l : lines) for(char c : l.keys + l.meaning) symbols = symbols || controls::isSymbol(c);
-      expect(symbols == (f == PadFamily::PlayStation), std::string("symbols only on PlayStation pads: ") + controls::familyTitle(f));
+      expect(symbols == controls::isPlayStation(f), std::string("symbols only on PlayStation pads (DualShock 4 and DualSense): ") + controls::familyTitle(f));
     }
     const auto ps = controls::padLines(PadFamily::PlayStation);
     expect(controls::plainSymbols(ps[1].keys) == "  Cross / Square" && ps[2].keys == "  Options" && ps[3].keys == "  Share" && ps[4].keys == "  L1 / R1"
                && controls::plainSymbols(ps[5].keys) == "  Triangle" && ps[6].keys == "  PS / Touchpad", "the DualShock 4 names");
     expect(controls::plainSymbols(ps[7].meaning) == "D-pad / stick move, Cross do, Circle back", "the menu buttons are named");
+    // The DualSense: the same buttons and symbols, but its Share button is called Create.
+    const auto ds5 = controls::padLines(PadFamily::DualSense);
+    expect(controls::plainSymbols(ds5[1].keys) == "  Cross / Square" && ds5[2].keys == "  Options" && ds5[3].keys == "  Create" && ds5[4].keys == "  L1 / R1" && ds5[6].keys == "  PS / Touchpad",
+           "the DualSense names: Create instead of Share, the rest as on the DualShock 4");
+    for(std::size_t i = 0; i < ps.size(); ++i) if(i != 3) expect(ps[i].keys == ds5[i].keys && ps[i].meaning == ds5[i].meaning, "the other DualSense lines are the DualShock 4's");
+    expect(std::string(controls::familyTitle(PadFamily::DualSense)).find("DualSense") != std::string::npos && std::string(controls::familyTitle(PadFamily::PlayStation)).find("DualShock 4") != std::string::npos,
+           "each pad is named by its own name");
+    expect(controls::isPlayStation(PadFamily::PlayStation) && controls::isPlayStation(PadFamily::DualSense) && !controls::isPlayStation(PadFamily::Xbox) && !controls::isPlayStation(PadFamily::Other),
+           "both PlayStation pads count as PlayStation pads (light bar, touchpad and PS button)");
+    {
+      controls::PadPresses d(PadFamily::DualSense);
+      auto rd = [](auto set) { PadReading r; set(r); return r; };
+      expect(!d.update(rd([](PadReading& r) { r.rightStick = true; }), 17).menu, "DualSense: pressing the right stick does not open the menu (it has a touchpad and a PS button)");
+      d.update(PadReading{}, 34);
+      expect(d.update(rd([](PadReading& r) { r.touchpad = true; }), 51).menu, "DualSense: the touchpad opens the menu");
+      d.update(PadReading{}, 68);
+      expect(d.update(rd([](PadReading& r) { r.home = true; }), 85).menu, "DualSense: the PS button opens the menu");
+    }
     bool inHelp = false;
     for(const auto& l : controls::helpLines(controls::Input{}, "x", false, controls::Scheme::Both, PadFamily::Xbox)) inHelp = inHelp || l.keys == "  LB / RB";
     expect(inHelp, "the F1 list uses the names of the pad family");

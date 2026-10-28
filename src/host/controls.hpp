@@ -66,7 +66,9 @@ private:
 };
 
 // Which names a pad's buttons carry (Stage I14, pad_layout.hpp): a DualShock 4 (or other PlayStation pad), an Xbox pad, or anything else SDL knows as a gamepad.
-enum class PadFamily { PlayStation, Xbox, Other };
+// DualSense (PlayStation 5) is a PlayStation pad with its own names (Create instead of Share); isPlayStation is true for both.
+enum class PadFamily { PlayStation, DualSense, Xbox, Other };
+inline bool isPlayStation(PadFamily family) { return family == PadFamily::PlayStation || family == PadFamily::DualSense; }
 
 // The lines of the F1 list: key text and meaning (the keys that are not game controls are included).
 struct HelpLine {

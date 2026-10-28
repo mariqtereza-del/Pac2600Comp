@@ -79,7 +79,6 @@ void Backdrop::draw(const BackdropScene& s, background::Kind kind)
   const background::Rgb maze = needsMaze ? background::mazeColour(s.pixels, s.pixelWidth, s.firstRow, s.rows) : background::defaultMazeColour();
   switch(kind) {
     case Kind::Glow: glow(s); break;
-    case Kind::Mirror: mirror(s); break;
     case Kind::Solid:
       setColour(s.renderer, maze);
       SDL_RenderClear(s.renderer);
@@ -113,24 +112,6 @@ void Backdrop::glow(const BackdropScene& s)
   SDL_UpdateTexture(ambient_, nullptr, grid, kGridCols * 4);
   SDL_RenderTexture(s.renderer, ambient_, nullptr, nullptr);
   SDL_SetRenderDrawColor(s.renderer, 0, 0, 0, 120);  // dimmed, so the picture stays the brightest thing in the window
-  SDL_RenderFillRect(s.renderer, nullptr);
-}
-
-// The picture, reflected as in a mirror on every side (and again beyond that, if the space is larger than the picture), darkened.
-void Backdrop::mirror(const BackdropScene& s)
-{
-  const layout::Rect& w = s.where;
-  if(w.w <= 0 || w.h <= 0) return;
-  const int nx = background::tilesNeeded(w.x, w.w), nx2 = background::tilesNeeded(s.windowW - (w.x + w.w), w.w);
-  const int ny = background::tilesNeeded(w.y, w.h), ny2 = background::tilesNeeded(s.windowH - (w.y + w.h), w.h);
-  for(int j = -ny; j <= ny2; ++j)
-    for(int i = -nx; i <= nx2; ++i) {
-      if(i == 0 && j == 0) continue;  // the picture itself comes afterwards
-      const SDL_FRect dst{static_cast<float>(w.x + i * w.w), static_cast<float>(w.y + j * w.h), static_cast<float>(w.w), static_cast<float>(w.h)};
-      const int flip = ((i & 1) ? SDL_FLIP_HORIZONTAL : 0) | ((j & 1) ? SDL_FLIP_VERTICAL : 0);
-      SDL_RenderTextureRotated(s.renderer, s.picture, &s.src, &dst, 0.0, nullptr, static_cast<SDL_FlipMode>(flip));
-    }
-  SDL_SetRenderDrawColor(s.renderer, 0, 0, 0, 150);
   SDL_RenderFillRect(s.renderer, nullptr);
 }
 

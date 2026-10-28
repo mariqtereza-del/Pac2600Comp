@@ -9,7 +9,7 @@ namespace background {
 
 namespace {
 struct Entry { const char* setting; const char* title; };
-constexpr Entry kEntries[kKinds] = {{"black", "Black"},       {"glow", "Ambient glow"},   {"mirror", "Mirrored edge"}, {"solid", "Solid colour"},
+constexpr Entry kEntries[kKinds] = {{"black", "Black"},       {"glow", "Ambient glow"}, {"solid", "Solid colour"},
                                     {"gradient", "Gradient"}, {"arcade", "Arcade panel"}, {"bezel", "TV bezel"}};
 }  // namespace
 
@@ -85,11 +85,5 @@ int livesOf(const std::uint8_t* ram) { return ram[0x82 - 0x80] != 0 ? 0 : std::m
 int playerToPlay(const std::uint8_t* ram) { return (ram[0xE6 - 0x80] & 0x80) != 0 ? 1 : 0; }
 
 bool twoPlayers(const std::uint8_t* ram) { return (ram[0xE6 - 0x80] & 0x40) != 0; }
-
-int tilesNeeded(int bar, int size)
-{
-  if(bar <= 0 || size <= 0) return 0;
-  return std::min(6, (bar + size - 1) / size);
-}
 
 }  // namespace background

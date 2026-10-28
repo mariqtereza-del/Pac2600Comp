@@ -301,6 +301,18 @@ The owner read `docs\LEGAL_BRIEFING.md` (Claude Code's plain-words briefing, not
 - **Nothing is public.** No repository exists. The ROM is never published (Rule 7).
 - **Reversible:** Yes, until something is made public.
 
+### D-028 - The public name is Pac2600Comp; the owner's legal position and the rights notice (2026-10-28, Stage J2)
+
+The owner's words: "The name should be Pac2600Comp. Consulting with lawyers in my area has concluded that this is a legal gray area that poses no immediate concern should it get published, given that no rom is shared. If the respective right-holders on a certain project decide that I need to remove it, I have to legally oblige. In the current scenario, it only needs to be illustrated that this belongs to the respective rights-holders."
+
+- **Status:** approved by the owner; settles Stage J2 and the "ask a lawyer" points of `docs\LEGAL_BRIEFING.md` as far as the owner is concerned.
+- **The name:** **Pac2600Comp**, used for the window title, the program inside the release (`Pac2600Comp.exe`), the release and source zip names, the release texts, and the repository (J6).
+- **The owner's legal position (the owner's statement, relayed by the owner; Claude Code has not seen the advice and does not give legal advice):** local lawyers consider it a legal grey area with no immediate concern if published, as long as no ROM is shared; if a rights holder asks for removal, the owner will comply.
+- **What follows in the project:** (1) the rights notice below is in the release (top of `README.txt` and `NOTICE.txt`); (2) the ROM is still never published (Rule 7); (3) a takedown request means: stop distributing and remove the repository and releases, which the owner decides and does; (4) the rights notice wording is Claude Code's draft and can be changed by the owner or a lawyer.
+- **The rights notice:** "Pac2600Comp is an unofficial, fan-made program. It is not made, endorsed or sponsored by any rights holder. PAC-MAN is a trademark of Bandai Namco Entertainment Inc. The Atari 2600 game 'Pac-Man' (1981), its program, pictures and sounds belong to their respective rights holders (Atari and Bandai Namco). Atari and the Atari 2600 are trademarks of their owners. All other names are the property of their owners. The game itself is NOT included in this program: you need your own legal copy."
+- **Still true:** our own code is GPL v2 or later if published (D-027); the repository is private first, and every push is approved by the owner.
+- **Reversible:** Yes (a rename is a text change).
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -451,6 +463,15 @@ The owner read `docs\LEGAL_BRIEFING.md` (Claude Code's plain-words briefing, not
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-J2-1 - Where the new name is applied, and what keeps its old name (2026-10-28, Stage J2, D-028)
+
+- **Applied (what people see):** `kTitle` in `src\host\common.hpp` (window title and message boxes; the window self-check compares against the same constant and says `title=Pac2600Comp`); `tools\make_release.ps1` (zip `Pac2600Comp-<version>-windows.zip`, its top folder, the source zip, the report, `BUILD-INFO.txt`, the program inside the zip named `Pac2600Comp.exe`, the README and the two `.cmd` helpers); `tools\d16_gate_check.ps1` (default zip name, the program name, and `NOTICE.txt` in the list of expected files); `BUILDING.md` and `CLAUDE.md` (the zip name). New in the release: `NOTICE.txt` and the notice at the top of `README.txt`.
+- **Kept on purpose (internal names):** the build targets and files `pacman2600.exe` / `pacman2600_ref.exe` and the folder names (about 60 scripts, tests and notes call them; renaming them gains nothing public and risks the proofs); the first lines of trace and recording files, `PacMan2600-trace 1` and `PacMan2600-inputs 1` (a file format: the frozen preservation files in `baseline\` and `tests\` start with them, and a changed header would make them unreadable); the names of the ROM file and tools. Only the release renames the program.
+- **Left for the owner's eye (not changed, not asked for):** the word "PAC-MAN" drawn as a title by two of the picture backgrounds (Arcade panel, TV bezel; `src\host\backdrop.cpp`), and in the game's own text where the game is meant ("Pac-Man moves faster", the menu and the achievements, which are named as in the RetroAchievements set). These describe the game being played; the owner decides whether to change them.
+- **Left for J4:** the release `README.txt` still has older key text (for example Esc quitting; Esc now opens the menu) and does not yet describe the menu, the new options or the statistics; J4 rewrites the public documentation.
+- **Proof:** `tools\make_release.ps1 -AllowDirty` made `out\Pac2600Comp-0.1.0-test-windows.zip` (3,499 files scanned, nothing that could be a ROM); `tools\d16_gate_check.ps1` unzipped it into a new folder and ran `Pac2600Comp.exe`: 30 of 31 checks passed (pictures at four sizes, fullscreen, sound with 0 underruns, keys, pad, replays, ROM search, 1,860 and 9,800 frames against Stella with 0 differences); the 31st, "built from a committed tree", fails on a test zip by design and is run again on the real release after the commit.
+- **Reversible:** Yes (Git).
 
 ### T-I21-1 - Statistics from the game's memory: what counts as a game (2026-10-28, Stage I21, D-026)
 

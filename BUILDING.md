@@ -31,7 +31,7 @@ It must end with `result: OK`. The rule checks ask Git which files belong to the
 1. Commit your work (the script refuses a tree with uncommitted changes; `-AllowDirty` makes a test zip).
 2. `powershell -NoProfile -ExecutionPolicy Bypass -File tools\make_release.ps1`
 
-It writes `out\PacMan2600-<version>-windows.zip` and a report beside it. Before the zip gets its final name it is scanned (also inside the source zip it contains) for anything that could be the game file or an archive of it; a hit leaves a `.partial` file and stops. `make_release.ps1 -TestScan` shows that the scan refuses what it should.
+It writes `out\Pac2600Comp-<version>-windows.zip` and a report beside it. Before the zip gets its final name it is scanned (also inside the source zip it contains) for anything that could be the game file or an archive of it; a hit leaves a `.partial` file and stops. `make_release.ps1 -TestScan` shows that the scan refuses what it should.
 `tools\d16_gate_check.ps1 -Zip <zip> -Work <new folder> -Rom <game file>` unzips the release into a new folder and runs the program through 31 checks.
 
 ## Playing

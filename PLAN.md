@@ -3244,7 +3244,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** nothing outside documents changes; revert the commit.
     - **Documentation updates:** `docs\LEGAL_BRIEFING.md`, `DECISIONS.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J1: Legal and licensing decision`. **Next stage:** J2 (project name).
-2. **[Not started] J2 — Project name.** A name without the trademark, like you did with PacArcadeComp. Applied to the `.exe`, window title, zip names and repository.
+2. **[Done 2026-10-28, D-028] J2 — Project name.** A name without the trademark, like you did with PacArcadeComp. Applied to the `.exe`, window title, zip names and repository.
+    **J2 in full (16 headings):**
+    - **Objective:** give the program its public name without the trademark, and put the rights notice into the release.
+    - **Why it matters:** the name is on the window, the file, the zip and the repository, and the owner wants it clear that the game belongs to its rights holders (D-028).
+    - **Prerequisites:** J1 Done (D-027), clean tree (checked).
+    - **What Claude Code will do:** apply **Pac2600Comp** to the window title, the program in the release, the zip names and the texts; add the rights notice (README top and `NOTICE.txt`); keep the internal names that the frozen files and scripts depend on (T-J2-1); record the owner's legal position as the owner's statement.
+    - **What I must do:** nothing more (the name and the legal position were given).
+    - **Exact instructions:** none.
+    - **Required input:** the name (given: Pac2600Comp) and the rights-notice approach (given).
+    - **Claude Code prompt:** "The name should be Pac2600Comp. ..."
+    - **Expected result:** the window says Pac2600Comp; the zip, the folder and the program in it carry the name; the release has the notice.
+    - **Verification:** `--self-check` says `title=Pac2600Comp`; a test release zip, scanned for ROMs and run from a fresh folder by the 31-check gate; `test_quick`; after the commit a real release and the gate again.
+    - **Completion criteria:** no frozen file changed; the gate passes on the real release.
+    - **Potential problems:** the word PAC-MAN still appears inside the program where the game is meant (listed in T-J2-1); the README text is old (J4).
+    - **Recovery:** revert the commit; the zips in `out\` are scratch.
+    - **Documentation updates:** `DECISIONS.md` (D-028, T-J2-1), `PLAN.md`, `PROJECT_STATUS.md`, `BUILDING.md`, `CLAUDE.md`.
+    - **Git checkpoint:** `Stage J2: Project name Pac2600Comp`. **Next stage:** J3 (content audit).
 3. **[Not started] J3 — Content audit.** Every file classified as: our own code, our notes containing ROM addresses, ROM-derived material (must be none in public), emulator code, third-party library, documentation, build tool, generated file. Output: `docs\PROVENANCE.md`.
 4. **[Not started] J4 — Public documentation.** `README.md` (what it is, the ROM requirement in the first screen, how to play), `BUILDING.md`, `docs\HOW_IT_WORKS.md`, and the preservation write-up from `RE_NOTES.md` with any content J1 excluded removed.
 5. **[Not started] J5 — Licences and credits.** `LICENSE` for our code (your choice from J1, explained), `THIRD_PARTY_NOTICES.md` for SDL3 and Stella, and credits to Atari, the original programmer and the Stella team.

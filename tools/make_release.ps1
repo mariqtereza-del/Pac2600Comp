@@ -1,4 +1,4 @@
-# Builds out\PacMan2600-<version>-windows.zip (Stage D15, DECISIONS.md T-D15-1).
+# Builds out\Pac2600Comp-<version>-windows.zip (Stage D15, DECISIONS.md T-D15-1).
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tools\make_release.ps1 [-Version 0.1.0]
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tools\make_release.ps1 -TestScan
@@ -84,7 +84,7 @@ function Scan-Zip([string]$path) {
 # -TestScan: the scan must refuse bad zips and accept a good one. All files are invented; the real ROM is never used.
 # ---------------------------------------------------------------------------------------------------------------
 function New-TestZip([string]$path, [hashtable]$files) {
-  $top = 'PacMan2600-test'
+  $top = 'Pac2600Comp-test'
   $fs = [IO.File]::Open($path, 'Create')
   $zip = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
   foreach ($name in $files.Keys) {
@@ -137,7 +137,7 @@ if (-not $git) { Fail 'git was not found' }
 $dirty = [bool](git -C $root status --porcelain)
 if ($dirty -and -not $AllowDirty) { Fail 'the Git tree has uncommitted changes: commit first, so the zip is exactly what Git holds' }
 if ($dirty) { $Version = "$Version-test"; Write-Host 'WARNING: uncommitted changes: this is a TEST zip, not a release' -ForegroundColor Yellow }
-$top = "PacMan2600-$Version-windows"
+$top = "Pac2600Comp-$Version-windows"
 $commit = (git -C $root rev-parse HEAD).Trim()
 $commitDate = (git -C $root log -1 --format=%cI).Trim()
 
@@ -165,7 +165,7 @@ foreach ($f in @($licenceStella, $copyrightStella, $licenceSdl)) { if (-not (Tes
 if (-not (Test-Path $out)) { New-Item -ItemType Directory -Path $out | Out-Null }
 
 # The source code: only the folders that are needed to build the program (not the project notes), straight from Git.
-$sourceZip = Join-Path $out "PacMan2600-$Version-source.zip"
+$sourceZip = Join-Path $out "Pac2600Comp-$Version-source.zip"
 git -C $root archive --format=zip -o $sourceZip HEAD src tests third_party tools/build_host.cmd tools/build_third_party.cmd
 if ($LASTEXITCODE -ne 0) { Fail 'git archive failed' }
 
@@ -173,8 +173,13 @@ if ($LASTEXITCODE -ne 0) { Fail 'git archive failed' }
 # The text files
 # ---------------------------------------------------------------------------------------------------------------
 $readme = @"
-PAC-MAN FOR PC (Atari 2600 version)   version $Version
+Pac2600Comp   version $Version
 =====================================================
+
+Pac2600Comp is an unofficial, fan-made program. It is not made, endorsed or sponsored by any rights holder.
+PAC-MAN is a trademark of Bandai Namco Entertainment Inc. The Atari 2600 game "Pac-Man" (1981), its program, pictures and sounds
+belong to their respective rights holders (Atari and Bandai Namco). Atari and the Atari 2600 are trademarks of their owners.
+All other names are the property of their owners. The game itself is NOT included in this program: you need your own legal copy.
 
 This program plays the Atari 2600 game Pac-Man (1981) on your PC. It runs the game with its own rebuilt
 game code (proved identical to the original game, picture and sound, frame for frame, against the Stella emulator), at the speed of a real 1981 NTSC console (59.92 pictures a second),
@@ -186,7 +191,7 @@ The program only accepts the original file; its fingerprint (SHA-1) must be
 
 HOW TO START
   1. Unzip this folder somewhere you can write to (for example your Documents or Desktop; not "Program Files").
-  2. Start pacman2600.exe. The first time, it asks for your game file; or put the file into the "roms" folder
+  2. Start Pac2600Comp.exe. The first time, it asks for your game file; or put the file into the "roms" folder
      here beforehand. The program remembers where it was, and where you left the window.
   3. Press F3 (or the Options button on a PS4 pad) to start a game.
 
@@ -210,25 +215,35 @@ RECORDING (to keep a game and watch it again, or for testers)
   Double-click  "Replay a game.cmd"   to play the newest recording back from power-on; the game comes out exactly the
                 same. To replay another recording, drag its file onto "Replay a game.cmd". When a recording ends, the
                 keyboard takes over again.
-  By hand (Command Prompt, in this folder):   pacman2600.exe --record "C:\some folder\my.inputs"
-                                              pacman2600.exe --replay "C:\some folder\my.inputs"
+  By hand (Command Prompt, in this folder):   Pac2600Comp.exe --record "C:\some folder\my.inputs"
+                                              Pac2600Comp.exe --replay "C:\some folder\my.inputs"
   A name without a folder is saved in the folder the Command Prompt was in, not beside the program.
 
 FILES THE PROGRAM WRITES
-  settings.ini next to pacman2600.exe: the path of your game file, the window place and size, the three switches, the soft glow.
+  settings.ini next to Pac2600Comp.exe: the path of your game file, the window place and size, the three switches, the soft glow.
 
 LICENCES AND SOURCE
   This program contains no emulator, but its picture colours are the colour table of Stella 7.0 (GNU General Public License version 2)
   and it uses SDL 3.4.18 (zlib licence). Because of the GPL, this program is distributed under the GNU General Public License version 2:
   see licences\Stella-License.txt. The complete source code of this program, with Stella and SDL, is in
-      source\PacMan2600-$Version-source.zip     (how to build it: source\BUILDING.txt)
+      source\Pac2600Comp-$Version-source.zip     (how to build it: source\BUILDING.txt)
   The three Microsoft runtime files (msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll) are Microsoft's
   Visual C++ runtime, shipped next to the program as Microsoft allows.
-  Pac-Man is a game by its rights holders. This program is not made by or connected to them.
+  The rights notice is in NOTICE.txt (and at the top of this file).
+"@
+
+$rightsNotice = @"
+Pac2600Comp  -  rights notice
+=============================
+
+Pac2600Comp is an unofficial, fan-made program. It is not made, endorsed or sponsored by any rights holder.
+PAC-MAN is a trademark of Bandai Namco Entertainment Inc. The Atari 2600 game "Pac-Man" (1981), its program, pictures and sounds
+belong to their respective rights holders (Atari and Bandai Namco). Atari and the Atari 2600 are trademarks of their owners.
+All other names are the property of their owners. The game itself is NOT included in this program: you need your own legal copy.
 "@
 
 $building = @"
-Building this program from the source in PacMan2600-$Version-source.zip
+Building this program from the source in Pac2600Comp-$Version-source.zip
 -------------------------------------------------------------------
 Needs: Windows 10 or 11 (64 bit); Visual Studio Build Tools with the "Desktop development with C++" part
 (the MSVC compiler 14.51 was used), which brings CMake and Ninja.
@@ -244,7 +259,7 @@ setlocal
 cd /d "%~dp0"
 if not exist "recordings" mkdir "recordings"
 for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "STAMP=%%i"
-start "" "%~dp0pacman2600.exe" --record "%~dp0recordings\play-%STAMP%.inputs"
+start "" "%~dp0Pac2600Comp.exe" --record "%~dp0recordings\play-%STAMP%.inputs"
 echo Recording. Close the game with Esc; the recording is saved in the "recordings" folder next to the program.
 timeout /t 5 >nul
 "@
@@ -261,7 +276,7 @@ if "%FILE%"=="" (
   pause
   exit /b 1
 )
-start "" "%~dp0pacman2600.exe" --replay "%FILE%"
+start "" "%~dp0Pac2600Comp.exe" --replay "%FILE%"
 "@
 
 $romNote = @"
@@ -273,7 +288,7 @@ The program also finds it by asking you the first time it starts.
 # ---------------------------------------------------------------------------------------------------------------
 # Build the zip (as .partial)
 # ---------------------------------------------------------------------------------------------------------------
-$zipPath = Join-Path $out "PacMan2600-$Version-windows.zip"
+$zipPath = Join-Path $out "Pac2600Comp-$Version-windows.zip"
 $partial = "$zipPath.partial"
 $hashes = New-Object System.Collections.ArrayList
 
@@ -292,19 +307,20 @@ function Add-Text($zip, [string]$text, [string]$name) {
 $fs = [IO.File]::Open($partial, 'Create')
 $zip = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
 try {
-  Add-File $zip $exe 'pacman2600.exe'
+  Add-File $zip $exe 'Pac2600Comp.exe'
   Add-File $zip $sdl 'SDL3.dll'
   foreach ($f in $runtimeFiles) { Add-File $zip (Join-Path $crt.FullName $f) $f }
   Add-File $zip $licenceStella 'licences/Stella-License.txt'
   Add-File $zip $copyrightStella 'licences/Stella-Copyright.txt'
   Add-File $zip $licenceSdl 'licences/SDL3-LICENSE.txt'
-  Add-File $zip $sourceZip "source/PacMan2600-$Version-source.zip"
+  Add-File $zip $sourceZip "source/Pac2600Comp-$Version-source.zip"
   Add-Text $zip $readme 'README.txt'
+  Add-Text $zip $rightsNotice 'NOTICE.txt'
   Add-Text $zip $romNote 'roms/PUT_YOUR_ROM_HERE.txt'
   Add-Text $zip $recordCmd 'Record a game.cmd'
   Add-Text $zip $replayCmd 'Replay a game.cmd'
   Add-Text $zip $building 'source/BUILDING.txt'
-  $info = "PacMan2600 $Version`n" + $(if ($dirty) { "TEST BUILD: made with uncommitted changes; the source zip is the last commit, not exactly this program`n" } else { '' }) + "Git commit: $commit`nCommit date: $commitDate`nMicrosoft runtime from: $($crt.FullName)`nSHA-256 of the files:`n" + ($hashes -join "`n") + "`n"
+  $info = "Pac2600Comp $Version`n" + $(if ($dirty) { "TEST BUILD: made with uncommitted changes; the source zip is the last commit, not exactly this program`n" } else { '' }) + "Git commit: $commit`nCommit date: $commitDate`nMicrosoft runtime from: $($crt.FullName)`nSHA-256 of the files:`n" + ($hashes -join "`n") + "`n"
   Add-Text $zip $info 'BUILD-INFO.txt'
 } finally {
   $zip.Dispose()
@@ -316,7 +332,7 @@ try {
 # ---------------------------------------------------------------------------------------------------------------
 $passed = Scan-Zip $partial
 $report = New-Object System.Collections.ArrayList
-[void]$report.Add("PacMan2600 $Version release report")
+[void]$report.Add("Pac2600Comp $Version release report")
 [void]$report.Add("commit $commit")
 [void]$report.Add("files scanned (zip and the source zip inside it): $script:scanFiles")
 [void]$report.Add("4096-byte files that are plain text (allowed): $($script:scanTextLike4k.Count)")
@@ -328,6 +344,6 @@ if (-not $passed) { Fail "the scan found a problem; the unfinished file is $part
 Move-Item -Force -Path $partial -Destination $zipPath
 $size = (Get-Item $zipPath).Length
 [void]$report.Add("result=OK $zipPath ($size bytes)")
-$report | Set-Content -Path (Join-Path $out "PacMan2600-$Version-windows.report.txt") -Encoding ASCII
+$report | Set-Content -Path (Join-Path $out "Pac2600Comp-$Version-windows.report.txt") -Encoding ASCII
 Write-Host "result=OK $zipPath ($size bytes)"
 exit 0

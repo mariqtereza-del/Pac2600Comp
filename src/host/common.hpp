@@ -31,7 +31,7 @@
 
 namespace host {
 
-inline constexpr const char* kTitle = "pacman2600 (working name)";  // real name is chosen in Stage J2
+inline constexpr const char* kTitle = "Pac2600Comp";  // the public name (Stage J2, D-028); the program and its files keep the internal name pacman2600
 
 inline constexpr int kWindowW = 1280, kWindowH = 960;  // first window size; 4:3 like the picture
 

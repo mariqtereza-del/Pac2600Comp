@@ -111,6 +111,24 @@ def main():
             else:
                 problems.append("%s: the link %s leads nowhere" % (name, target))
 
+    # The pictures of the README (Stage J4.1): real PNG files of a sensible size, each with a description, and among them the menu and a CRT filter.
+    images = re.findall(r"!\[([^\]]*)\]\(([^)\s]+)\)", texts["README.md"])
+    check(len(images) >= 4, "README.md shows %d pictures, expected at least 4" % len(images))
+    check(any("menu" in target.lower() for _, target in images), "README.md shows no picture of the menu")
+    check(any("crt" in target.lower() for _, target in images), "README.md shows no picture of a CRT filter")
+    for alt, target in images:
+        check(len(alt.strip()) >= 10, "the picture %s has no description (alt text)" % target)
+        full = os.path.join(ROOT, target)
+        if not os.path.exists(full):
+            continue   # the link check above reports it
+        with open(full, "rb") as f:
+            head = f.read(24)
+        check(head[:8] == b"\x89PNG\r\n\x1a\n", "%s is not a PNG file" % target)
+        if head[:8] == b"\x89PNG\r\n\x1a\n":
+            width = int.from_bytes(head[16:20], "big")
+            check(width >= 640, "%s is only %d pixels wide" % (target, width))
+        check(os.path.getsize(full) <= 1500000, "%s is larger than 1.5 MB" % target)
+
     # Nothing in them that belongs only to the owner or to the cartridge.
     for name, body in texts.items():
         for number, line in enumerate(body.splitlines(), 1):

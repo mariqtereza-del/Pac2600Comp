@@ -3295,6 +3295,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit.
     - **Documentation updates:** `README.md`, `BUILDING.md`, `docs\HOW_IT_WORKS.md`, `docs\PRESERVATION.md`, `DECISIONS.md` (T-J4-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J4: Public documentation`. **Next stage:** J5 (licences and credits).
+4.1. **[Done 2026-10-29, T-J4.1-1] J4.1 — README screenshots** (added by the owner).
+    **J4.1 in full (16 headings; added at the owner's request, 2026-10-29):**
+    - **Objective:** the README shows pictures: the game in play, one of the CRT filters (next to the same picture with it off) and the menu.
+    - **Why it matters:** the README is the page GitHub shows; the owner asked: "I want the description to have screenshots, including the menu and one of the CRT filters."
+    - **Prerequisites:** J6 Done, clean tree (checked); the built program and the game-file copy `rom\pacman.a26`.
+    - **What Claude Code will do:** make five pictures with the program's own screenshot options (`tools\j41_screenshots.ps1`, scratch settings, standard colours), look at each, put them in `docs\images`, add a "Screenshots" section to `README.md`, and let `tools\j4_docs_check.py` check them (files exist, real PNG, wide enough, at most 1.5 MB, each with a description, one of the menu and one of a CRT filter).
+    - **What I must do:** push the new commit with GitHub Desktop when ready (Claude Code asks first and stays out of GitHub); looking at the pictures is welcome.
+    - **Exact instructions:** `powershell -NoProfile -ExecutionPolicy Bypass -File tools\j41_screenshots.ps1`; `python -I tools\j4_docs_check.py`.
+    - **Required input:** none.
+    - **Claude Code prompt:** "Before we proceed, I want the description to have screenshots, including the menu and one of the CRT filters."
+    - **Expected result:** a README that shows the game, the menu and a CRT filter, with pictures that are the program's real output.
+    - **Verification:** each picture looked at; `j4_docs_check` passes and fails when the menu or CRT picture or a description is missing; `test_quick`; `src\` unchanged (D-029).
+    - **Completion criteria:** five pictures in `docs\images`, the checker green, committed.
+    - **Potential problems:** the pictures show the game's own graphics (the rights notice covers it, and the README says so); the CRT picture is 1.07 MB; the menu pages shown carry the program's default choices.
+    - **Recovery:** revert the commit; the pictures can be made again with the script.
+    - **Documentation updates:** `README.md`, `DECISIONS.md` (T-J4.1-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J4.1: README screenshots`. **Next stage:** J7 (automatic checks on GitHub).
 5. **[Done 2026-10-28, T-J5-1] J5 — Licences and credits.** `LICENSE` for our code (your choice from J1, explained), `THIRD_PARTY_NOTICES.md` for SDL3 and Stella, and credits to Atari, the original programmer and the Stella team.
     **J5 in full (16 headings):**
     - **Objective:** a `LICENSE` file for our own code (GNU GPL version 2 or later, as the owner chose in D-027), `THIRD_PARTY_NOTICES.md` for everything we include from others, and credits to the makers of the original game and of Stella.

@@ -20,6 +20,26 @@ Everything beyond that is **optional and off by default**, and none of it change
 
 How it works is in [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md), how the game was preserved in [docs/PRESERVATION.md](docs/PRESERVATION.md).
 
+## Screenshots
+
+The game in play, with the default look: the picture in its true 12:7 pixel shape, with a black border.
+
+![The game in play: Pac-Man, a scared ghost, the score and a spare life, in the default look with a black border](docs/images/gameplay.png)
+
+One of the CRT filters (CRT-Lottes, chosen in the menu under Graphics options), next to the same picture with the filter off:
+
+| CRT filter off (the default) | CRT-Lottes |
+|---|---|
+| ![The maze with the CRT filter off: sharp square pixels](docs/images/crt-off.png) | ![The same maze through the CRT-Lottes filter: curved glass, scan lines and glow](docs/images/crt-lottes.png) |
+
+The menu (Esc) pauses the game and explains every row. Its Game options page (game 1 to 8, players, difficulty switches, frame rate) and its Graphics options page (background, TV type, CRT filter, HDR):
+
+![The Esc menu on its Game options page, with the table of the eight games](docs/images/menu-game-options.png)
+
+![The Esc menu on its Graphics options page, with background, TV type, CRT filter and HDR rows](docs/images/menu-graphics-options.png)
+
+The pictures are the program's own screenshots (made again with `tools\j41_screenshots.ps1`). The game's graphics shown in them belong to their rights holders, as the notice at the top says.
+
 ## Getting started
 
 1. Unzip the release somewhere you can write to (your Documents or Desktop; not "Program Files").

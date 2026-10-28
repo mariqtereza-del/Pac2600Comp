@@ -484,6 +484,18 @@ The owner's words: "My github account is mariqtereza-del. The name should be Pac
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
 
+### T-J4.1-1 - Screenshots in the README (2026-10-29, Stage J4.1)
+
+- **Owner's request:** \"Before we proceed, I want the description to have screenshots, including the menu and one of the CRT filters.\" Read as the README (the page GitHub shows under the file list); the short \"About\" box of a repository cannot hold pictures.
+- **The five pictures** (`docs\images`, all made by the program itself with `tools\j41_screenshots.ps1`, never drawn by hand): `gameplay.png` (the game in play, the exact original picture, from `--smooth-shot`, step 1, progress 0), `crt-off.png` and `crt-lottes.png` (the same picture without and through the CRT-Lottes filter, from `--crt-shot`, standard colours, 1280 x 960), `menu-game-options.png` and `menu-graphics-options.png` (the Escape menu, from `--menu-shot`). Sizes: 26 KB, 27 KB, 1,067 KB, 47 KB, 45 KB.
+- **Why these:** the owner asked for the menu and one CRT filter; a filter is easier to judge next to the same picture with it off; the game in play shows what the program is. Windows is in HDR mode on the owner's PC, so the tool also wrote HDR pictures; the standard-colour ones are used because that is what almost every viewer sees.
+- **Left out on purpose:** the Statistics and Achievements pages of `--menu-shot`: that tool fills them with example numbers (12 games, 6 achievements) that would look like real results.
+- **Checked:** each picture was looked at (the game in play, the filtered and unfiltered maze, the two menu pages: no personal data in them; the window title is not part of a screenshot). `j4_docs_check` now also checks the README's pictures and fails if the menu or a CRT picture is missing, a picture has no description, a file is not a PNG, is under 640 pixels wide or over 1.5 MB (proved on three alterations).
+- **Rights:** the pictures show the game's graphics; the README's notice covers them and the section says they belong to their rights holders.
+- **Under D-029:** nothing inside the game changed (`src\` untouched).
+- **Not on GitHub yet:** the commit must be pushed by the owner (GitHub Desktop) for the README on GitHub to show the pictures.
+- **Reversible:** Yes (Git).
+
 ### T-J6-3 - The first push, done by the owner with GitHub Desktop (2026-10-29, Stage J6, D-030)
 
 - **Route:** the owner chose to push with GitHub Desktop (already signed in) instead of the command line. Claude Code set `origin` to `https://github.com/mariqtereza-del/Pac2600Comp.git` (a setting of this repository only), proved the push contents, and stayed out of GitHub; no `git push` and no other action on GitHub was run by Claude Code.

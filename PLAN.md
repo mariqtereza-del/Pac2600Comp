@@ -3346,7 +3346,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** the owner can delete the repository on github.com at any time; nothing on this PC changes except the `origin` setting, which `git remote remove origin` takes away (to be done only with the owner's say).
     - **Documentation updates:** `DECISIONS.md` (D-030, T-J6-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J6: Private GitHub repository` (the preparation is committed first and then pushed; the status commit that records the push follows). **Next stage:** J7 (automatic checks on GitHub).
-7. **[Not started] J7 — Automatic checks on GitHub.** A GitHub Actions workflow builds the game and runs the ROM-free tests on every change.
+7. **[In progress 2026-10-29] J7 — Automatic checks on GitHub.** A GitHub Actions workflow builds the game and runs the ROM-free tests on every change.
+    **J7 in full (16 headings):**
+    - **Objective:** GitHub builds the game's test programs and runs the tests that need no game file on every push to `main` and on every pull request, and shows a green tick or a red cross.
+    - **Why it matters:** a change that breaks the build or a proof is caught on a clean machine that has none of this PC's leftovers; the workflow written in H4 has never run anywhere.
+    - **Prerequisites:** J6 Done (the private repository exists and holds `main`), clean tree (checked: `main` equals `origin/main`).
+    - **What Claude Code will do:** make the build scripts find the C++ compiler on a full Visual Studio as well as on the Build Tools; update the workflow (the Python version the tests were made with, a time limit, cancelling superseded runs, a read-only token, and on a failure the failing logs printed into the run so no download is needed); prove the same steps first on a fresh `git clone --depth 1` of this repository in a new folder; then, with the owner's approval, switch the trigger on in one commit.
+    - **What I must do:** approve switching automatic runs on (they use the free GitHub minutes of the private repository, Windows counts double); push the commit with GitHub Desktop; tell Claude Code what the Actions page shows (green tick, or red cross and the text of the failing step).
+    - **Exact instructions:** given in the session once the commit is ready.
+    - **Required input:** the owner's approval and, after the push, the result of the first run.
+    - **Claude Code prompt:** "Do only the single next stage named in PROJECT_STATUS.md."
+    - **Expected result:** a green run of `public-tests` on GitHub for the pushed commit.
+    - **Verification:** the dry run in a fresh shallow clone (build, then `tools\test_public.ps1`, `result: OK`, with its time); `test_quick` here; then the owner's report of the first real run. Claude Code does not read GitHub (no sign-in on this PC for it), so the real result is only as certain as the owner's report.
+    - **Completion criteria:** the first run on GitHub is green, or the stage is reported open with the failing step named.
+    - **Potential problems:** the runner's compiler may differ from the one used here; CRLF conversion of checked-out files; Python 3.14 unavailable on the runner; Actions minutes (a Windows minute counts twice); a workflow that fails sends the owner an e-mail.
+    - **Recovery:** set the trigger back to `workflow_dispatch` (one line) or disable the workflow on the Actions page.
+    - **Documentation updates:** `DECISIONS.md` (D-031, T-J7-1), `BUILDING.md`, `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J7: Automatic checks on GitHub`. **Next stage:** J8 (versions and changelog).
 8. **[Not started] J8 — Versions and changelog.** Numbers like 1.2.0 (big.feature.fix), with `CHANGELOG.md` newest first.
 9. **[Not started] J9 — Release packaging.** The release zip built by script, scanned for ROMs, unzipped and played on your PC from a fresh folder. The README explains Windows SmartScreen's "unknown publisher" warning, since the `.exe` isn't signed.
 10. **[Not started] J10 — Issues and contributions.** A short issue template asking for version, Windows version and ROM fingerprint (never the ROM itself); `CONTRIBUTING.md` only if you want outside contributions.

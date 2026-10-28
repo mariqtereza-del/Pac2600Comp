@@ -1,21 +1,50 @@
-# The public test set (Stage H4): runs on GitHub on every push and pull request, with NO ROM and no reference folder.
-# UNTESTED ON GITHUB: this file was written locally and has never run there (nothing is pushed). Whether the build script finds the
-# compiler on a GitHub runner is not known until the first real run (Stage J). The same commands run locally with tools\test_public.ps1.
-#
-# SWITCHED TO MANUAL (Stage J6, T-J6-2): until the owner approves automatic runs, this workflow runs only when someone clicks "Run workflow" on the Actions page,
-# so that the first push does not start a job on GitHub's servers. Stage J7 puts `on: [push, pull_request]` back, with the owner's approval.
+# The public test set (Stage H4, switched on in Stage J7): builds the game's test programs and runs the tests that need NO game file and no reference folder
+# (tools\test_public.ps1), on GitHub's Windows machine, so that a change that breaks the build or a proof shows up on a clean machine.
+# It runs on every push to main and on every pull request. A Windows minute counts twice against the free minutes of a private repository; a run takes
+# a few minutes. To stop automatic runs, change the `on:` part to `workflow_dispatch:` alone (then it runs only when someone clicks "Run workflow").
 name: public-tests
-on: workflow_dispatch
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 permissions:
-  contents: read
+  contents: read          # the workflow can only read the repository
+concurrency:
+  group: public-tests-${{ github.ref }}
+  cancel-in-progress: true   # a newer push makes an unfinished older run pointless
 jobs:
   public:
     runs-on: windows-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'   # the version the tools were made and tried with
+      - name: What this machine has
+        shell: cmd
+        run: |
+          python --version
+          git --version
+          cmake --version
+          "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -property displayName
+          "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
       - name: Build the test programs
         shell: cmd
         run: tools\build_lockstep.cmd
       - name: Run the public tests
         shell: cmd
         run: powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_public.ps1
+      - name: Print the failing steps (only when something failed)
+        if: failure()
+        shell: powershell
+        run: |
+          Get-ChildItem build\test_runs -Recurse -Filter summary.txt -ErrorAction SilentlyContinue | ForEach-Object { Get-Content $_.FullName }
+          Get-ChildItem build\test_runs -Recurse -Filter *.log -ErrorAction SilentlyContinue | ForEach-Object {
+            $text = Get-Content $_.FullName -Raw
+            if ($text -notmatch 'result: OK|result: IDENTICAL|result: CLEAN|ALL TESTS PASSED|BUILD OK|equals the stored') {
+              '===== ' + $_.Name
+              (Get-Content $_.FullName | Select-Object -Last 40)
+            }
+          }

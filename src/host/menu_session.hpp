@@ -34,6 +34,7 @@ class Session {
     controls::PadFamily pad = controls::PadFamily::PlayStation;   // Stage I14
     bool padConnected = false;
     feedback::Rumble rumble = feedback::Rumble::Off;   // Stage I15
+    achievements::Progress progress;                   // Stage I20
   };
   void open(const controls::Input& switches, const Window& window = Window());  // the choices start where the game, the switches and the window are now
   Result key(Key key);                           // sends a key to the open menu; StartGame has been queued for the game thread when it returns

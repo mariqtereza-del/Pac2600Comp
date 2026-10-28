@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "achievements.hpp"
 #include "background.hpp"
 #include "controls.hpp"
 #include "crt.hpp"
@@ -22,8 +23,9 @@ enum class Item { Resume, NewGame, GameOptions, Graphics, Quit,  // the main pag
                   Background, TvType, Preview,                     // the "Graphics options" page (Stage I7; the TV type moved there in I8)
                   SoundOptions, Volume, Mute,                      // the "Sound options" page (Stage I12): a row on the main page, then a slider and a mute button
                   ControlOptions, KeyboardKeys, RumbleMotors,                    // the "Control options" page (Stage I13): a row on the main page, then the choice of keys
+                  Achievements, Achievement,                       // the "Achievements" page (Stage I20): a row on the main page, then a row for each achievement
                   Back };                                          // the last row of every page
-enum class Page { Main, GameOptions, Graphics, Sound, Controls };
+enum class Page { Main, GameOptions, Graphics, Sound, Controls, Achievements };
 enum class Result { None, Resume, StartGame, Quit };
 
 inline constexpr int kGames = 8;  // the console's Game Select offers 8 games, each for one or two players (docs\F17_STATES.md)
@@ -47,6 +49,7 @@ struct Choice {
   controls::PadFamily pad = controls::PadFamily::PlayStation;   // the pad whose buttons the Control options page lists (Stage I14); a DualShock 4 when none is connected
   bool padConnected = false;                               // for the explanation only
   feedback::Rumble rumble = feedback::Rumble::Off;         // how strongly the pad rumbles at the game's events (Stage I15); takes effect at once
+  achievements::Progress progress;                         // which achievements are unlocked, for the Achievements page (Stage I20); not changed by the menu
 };
 
 // What differs between the eight games (docs\F16_LEVELS.md, docs\F10_PACMAN.md; checked by `pacman2600 --menu-check`).
@@ -79,6 +82,8 @@ class Menu {
   static const std::vector<Item>& graphicsItems();  // the rows of the "Graphics options" page
   static const std::vector<Item>& soundItems();     // the rows of the "Sound options" page
   static const std::vector<Item>& controlItems();   // the rows of the "Control options" page
+  static const std::vector<Item>& achievementItems();   // the rows of the "Achievements" page: one for each achievement, then Back (Stage I20)
+  int cursorIndex() const { return cursor_; }         // the number of the marked row on the page (the achievement rows all have the same Item)
   const std::vector<Item>& shown() const;
   Page page() const { return page_; }
   bool previewing() const { return previewing_; }  // the menu is hidden so that the background can be looked at; any key brings it back

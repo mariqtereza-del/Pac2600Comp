@@ -5,6 +5,7 @@
 #include "menu_checks.hpp"
 #include "menu_session.hpp"
 #include "framerate.hpp"
+#include "achievement_driver.hpp"
 #include "key_pusher.hpp"
 #include "options.hpp"
 #include "pacer.hpp"
@@ -44,13 +45,11 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
 
   AudioOutput audio;
   if(!audio.open(soundRate(options, emulator), options.mute)) std::fprintf(stderr, "%s\nThe game goes on without sound.\n", audio.problem().c_str());
-
   // Stage I12: the volume and the mute button (menu, Sound options; settings.ini volume=0..100, sound_muted=on|off). They change the played samples only.
   const std::string volumeSetting = settings::get(options.settingsFile, "volume");
   int volumePercent = volumeSetting.empty() ? 100 : std::clamp(std::atoi(volumeSetting.c_str()), 0, 100);
   bool soundMuted = settings::get(options.settingsFile, "sound_muted") == "on";
   audio.setVolume(volumePercent, soundMuted);
-
   Screen screen;
   screen.renderer = renderer;
   screen.view = view;
@@ -62,7 +61,6 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   // Stage I7: what fills the space around the picture, remembered in settings.ini (background=black|glow|solid|gradient|arcade|bezel)
   screen.backgroundKind = background::fromSetting(settings::get(options.settingsFile, "background"));
   screen.crt = crt::fromSetting(options.crt.empty() ? settings::get(options.settingsFile, "crt_filter") : options.crt);   // Stage I11: the CRT filter (menu, Graphics options)
-
   // The game and its sound run on their own thread (DECISIONS.md T-D8-2), so that a window that is being dragged or
   // resized, which freezes this thread on Windows, cannot starve the sound card. This thread only shows the pictures.
   std::atomic<bool> stop{false};
@@ -76,6 +74,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   int rendererRemakes = 0;   // how often the renderer was made again (HDR switched, or a lost graphics device; reported for the tests)
   Pads pads;  PadDriver padDriver;   // the pad: menu button, menu moves and switches (Stage I14)
   feedback::Hub feedbackHub;  FeedbackDriver padFeedback(options.settingsFile);   // what the game did, for the pad's rumble and light bar (Stage I15)
+  AchievementDriver achievementDriver(options.settingsFile);   // the achievements (Stage I20)
   menu::Session menuSession(!replaying);  // the Escape menu (Stage I5); a replay decides what the console is given, so it cannot start a game
   if(!pads.start()) std::fprintf(stderr, "Gamepads could not start; the keyboard still works.\n");
   bool helpOn = false;
@@ -130,7 +129,6 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   computeMs.reserve(1 << 16);
   lateMs.reserve(1 << 16);
   std::atomic<double> firstPictureMs{-1};  // from the start of this function to the first picture handed to the window
-
   std::thread game([&]() {
     auto pacer = std::make_unique<Pacer>(audio, options.timerClock, frameRate(options));
     usedSoundClock = pacer->usesSoundClock();
@@ -161,12 +159,13 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         // A replay gives the console what was recorded; when it has run out, the keyboard and pads take over again.
         controls::Input in = controls::Input::unpack(replaying && frames < replay.frames ? replay.bitsAt(frames) : inputBits.load());
         if(options.resetAt >= 0 && frames >= options.resetAt && frames < options.resetAt + 10) in.reset = true;
+        for(const auto& pk : options.pokes) if(pk[0] == frames) emulator.pokeRam(pk[1], static_cast<std::uint8_t>(pk[2]));   // TEST ONLY (--poke), as in headless mode
         menuSession.apply(in);  // the Select and Reset presses of a new game chosen in the menu (recorded like any other input)
         recorder.add(in.pack());
         applyInput(emulator, in, false, sharedControls);
         emulator.runFrame();
         menuSession.publish(emulator.ram());
-        feedbackHub.gameFrame(emulator.ram(), in.leftDifficultyA, in.rightDifficultyA);
+        feedbackHub.gameFrame(emulator.ram(), in.leftDifficultyA, in.rightDifficultyA);  achievementDriver.gameFrame(emulator.ram());
         if(fingerprints) {
           char hash[17];
           std::snprintf(hash, sizeof hash, "%016llx", static_cast<unsigned long long>(emulator.pictureFingerprint()));
@@ -201,7 +200,6 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   });
 
   std::thread pusher = startKeyPusher(options, stop);   // test only: --push-keys, --push-menu
-
   // Stage I5: Escape opens the menu (and closes it); while it is open the arrow keys (or WASD), Enter and Escape belong to it. True = the key was used.
   long long menuOpenedAtFrame = 0, menuFramesRun = 0;  // frames the game ran while the menu was open (must be 0; read for the --push-menu report)
   int menuOpens = 0;
@@ -209,7 +207,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   auto openMenu = [&]() {
     keyboard.releaseAll();  // no direction may stay held while the game is stopped
     menuSession.open(keyboard.input(), menu::Session::Window{screen.backgroundKind, rate, counterOn, emulator.smoothAvailable(), screen.crt, hdrWanted, hdrPercent, screenState.hdrOn,
-                                                                       volumePercent, soundMuted, keyboard.scheme(), pads.family(), pads.count() > 0, padFeedback.rumble()});
+                                                                       volumePercent, soundMuted, keyboard.scheme(), pads.family(), pads.count() > 0, padFeedback.rumble(), achievementDriver.progress()});
     menuOpenedAtFrame = framesNow();
     ++menuOpens;
   };
@@ -301,7 +299,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     // Stage I14 (D-020): the pad's menu button, menu moves and switch buttons (pad_driver.cpp); the pad does not play while the menu is open.
     const controls::PadState padNow = padDriver.update(pads, keyboard, PadMenuHooks{[&]() { return menuSession.isOpen(); }, openMenu, [&](menu::Key k) { menuPress(k, running); }},
                                                        static_cast<long long>(SDL_GetTicks()));
-    padFeedback.update(pads, feedbackHub);
+    padFeedback.update(pads, feedbackHub);  achievementDriver.update(static_cast<long long>(SDL_GetTicks()));
     const controls::Input input = controls::merge(keyboard.input(), padNow);  // keyboard and pads together
     inputBits = input.pack();
     if(input.leftDifficultyA != savedSwitches.leftDifficultyA || input.rightDifficultyA != savedSwitches.rightDifficultyA || input.blackWhite != savedSwitches.blackWhite) {
@@ -353,6 +351,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     lastShownFrame = frameNow;
     if(helpOn) drawHelp(renderer, input, pads.names(), softBlend.load(), keyboard.scheme(), pads.family());
     if(menuSession.isOpen()) drawMenu(renderer, menuSession.menu());
+    achievementDriver.draw(renderer, static_cast<long long>(SDL_GetTicks()));   // the notice of an unlock, over everything
     if(const Uint64 t = SDL_GetTicksNS(); t - markAt >= 500000000ull) {   // pictures a second, over the last half second
       picturesPerSecond = static_cast<double>(picturesShown - picturesAtMark) * 1e9 / static_cast<double>(t - markAt);
       picturesAtMark = picturesShown;

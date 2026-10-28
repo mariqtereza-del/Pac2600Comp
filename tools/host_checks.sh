@@ -150,6 +150,13 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   "$EXE" --push-crt --timed 20 "$P/crtwin.txt" "$ROM" --mute --settings "$P/s24.ini"; check "$prog push-crt with device resets" $? 0
   has "$prog crt: the renderer was made again after each reset" "$P/s24.ini.audio.txt" "renderer_remade=[5-9]"
   has "$prog crt: the filter row was worked (net 8 steps round four filters: back to Lottes)" "$P/s24.ini" "crt_filter=lottes"
+  # Stage I20: the achievements in the real window. A game is started by Reset (frame 60); in play the extra lives are poked to 9 (frame 300) and the score to 10,000 (frame 320)
+  # (TEST ONLY: --poke): the ten scores and the three lives must be unlocked and written to settings.ini with their day, the one for four ghosts must not.
+  "$EXE" --reset-at 60 --poke 300:98:09 --poke 320:CC:00 --poke 320:CE:00 --poke 320:D0:01 --timed 9 "$P/ach.txt" "$ROM" --mute --settings "$P/s29.ini"; check "$prog achievements in the window" $? 0
+  for id in score_500 score_1000 score_2500 score_4000 score_5000 score_10000 lives_4 lives_5 lives_9; do has "$prog achievement $id unlocked" "$P/s29.ini" "achievement_$id=20"; done
+  hasnot "$prog achievement four_ghosts is not unlocked" "$P/s29.ini" "achievement_four_ghosts"
+  "$EXE" --reset-at 60 --timed 5 "$P/ach2.txt" "$ROM" --mute --settings "$P/s29.ini"; check "$prog achievements are remembered" $? 0
+  has "$prog an earlier unlock is still there" "$P/s29.ini" "achievement_score_10000=20"
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0
   "$EXE" --headless "$P/c.png" "$ROM" --replay "$P/rec1.inputs" --fingerprints "$P/C.csv" --settings "$P/s11.ini"; check "$prog replay headless" $? 0
   # Stage I9.6: the game does not depend on the frame rate. The same recording played in the window at 60 and at 144 (smooth motion on) must give the same
@@ -192,10 +199,21 @@ dab=sum(1 for i in range(nab) if a[i]!=b[i]); dac=sum(1 for i in range(nac) if a
 print('replay compare: window %d frames %d differences; headless %d frames %d differences'%(nab,dab,nac,dac))
 sys.exit(0 if (dab==0 and dac==0 and nab>=400 and nac>=700) else 1)" "$P/A.csv" "$P/B.csv" "$P/C.csv"; check "$prog replay equals recording" $? 0
 done
+# Stage I20: 8 and 9 extra lives against the original. The reference program (the emulator inside) plays the recorded game BL-048 with the lives poked in at frame 500 (TEST ONLY: --poke)
+# and writes the trace; the native game, in lockstep with that trace, must give the same memory, picture and sound in all 1,500 frames. (Before I20 a game with 9 lives stopped the program,
+# and the ninth life marker was drawn one pixel wide instead of four.)
+if [ -x build/lockstep/lockstep_native.exe ]; then
+  for lives in 08 09; do
+    build/host/pacman2600_ref.exe --headless "$W/lives$lives.png" "$ROM" --replay baseline/BL-048.inputs --frames 1500 --poke "500:98:$lives" --trace "$W/lives$lives.trace" --settings "$W/lives$lives.ini" > /dev/null 2>&1
+    build/lockstep/lockstep_native.exe "$ROM" baseline/BL-048.inputs "$W/lives$lives.trace" --pictures --sound --poke "500:98:$lives" > "$W/lives$lives.log" 2>&1
+    has "native game with $lives extra lives is identical to the original (memory, picture, sound)" "$W/lives$lives.log" "result: IDENTICAL"
+  done
+fi
 if [ -f reference/baseline/BL-046.trace ]; then   # Stage I15: the events found in the recorded game BL-046 are the 5 power pills and 8 ghosts its entry counts
   build/host/test_feedback.exe reference/baseline/BL-046.trace 5 8 > "$W/feedback_bl046.log" 2>&1; check "test_feedback on the recorded game BL-046" $? 0
 fi
-for t in test_controls test_d3d_pin test_feedback test_inputlog test_layout test_menu test_rom_finder test_trace test_windowstate; do
+if [ -f reference/baseline/BL-056.trace ]; then build/host/test_achievements.exe reference/baseline > "$W/achievements_baseline.log" 2>&1; check "test_achievements on the recorded games" $? 0; fi   # (needs the local traces)
+for t in test_achievements test_controls test_d3d_pin test_feedback test_inputlog test_layout test_menu test_rom_finder test_trace test_windowstate; do
   case $t in
     test_rom_finder) mkdir -p "$W/t_$t"; build/host/$t.exe "$W/t_$t" "$ROM" >"$W/$t.log" 2>&1 ;;
     test_inputlog|test_windowstate) mkdir -p "$W/t_$t"; build/host/$t.exe "$W/t_$t" >"$W/$t.log" 2>&1 ;;

@@ -37,6 +37,7 @@ void blockAverages(const std::uint32_t* pixels, int width, int firstRow, int row
 // game's "blank" pattern, counts as 0), the lives of the player whose turn it is, which player that is, and whether a two-player game is on.
 // Lives are 0 while the game is not in play ($82 not 0: title screen or game over).
 int scoreOf(const std::uint8_t* ram, int player);
+int fullScoreOf(const std::uint8_t* ram, int player);   // the six digits of the score ($CC/$CE/$D0 or $CD/$CF/$D1), 0 to 999999; a blank pattern counts as 0 (Stage I20)
 int livesOf(const std::uint8_t* ram);
 int playerToPlay(const std::uint8_t* ram);  // 0 or 1
 bool twoPlayers(const std::uint8_t* ram);

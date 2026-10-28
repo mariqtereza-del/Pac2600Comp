@@ -69,8 +69,8 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
       tap(6.8, SDL_GAMEPAD_BUTTON_GUIDE);            // the PS button closes the menu
       tap(7.4, SDL_GAMEPAD_BUTTON_NORTH);            // Triangle again: TV type back to colour
       tap(8.0, xbox ? SDL_GAMEPAD_BUTTON_GUIDE : SDL_GAMEPAD_BUTTON_TOUCHPAD);   // open once more
-      for(int i = 0; i < 6; ++i) tap(8.4 + 0.2 * i, SDL_GAMEPAD_BUTTON_DPAD_DOWN);   // down to Quit
-      tap(10.0, SDL_GAMEPAD_BUTTON_SOUTH);           // Cross: Quit
+      for(int i = 0; i < 7; ++i) tap(8.4 + 0.2 * i, SDL_GAMEPAD_BUTTON_DPAD_DOWN);   // down to Quit (past Achievements, Stage I20)
+      tap(10.2, SDL_GAMEPAD_BUTTON_SOUTH);           // Cross: Quit
       if(!options.replayFile.empty()) plan.clear();   // with --replay the pad is only plugged in: a recording plays the game, and the pad's rumble and light are looked at
       const Uint64 t0 = SDL_GetTicksNS();
       for(const Step& step : plan) {
@@ -158,7 +158,8 @@ std::thread startKeyPusher(const Options& options, const std::atomic<bool>& stop
         tap(8.33, SDL_SCANCODE_RETURN); tap(8.35, SDL_SCANCODE_LEFT); tap(8.37, SDL_SCANCODE_LEFT);
         tap(8.39, SDL_SCANCODE_DOWN); tap(8.41, SDL_SCANCODE_RIGHT); tap(8.43, SDL_SCANCODE_ESCAPE);
         tap(8.45, SDL_SCANCODE_DOWN); tap(8.47, SDL_SCANCODE_RETURN); tap(8.49, SDL_SCANCODE_RIGHT); tap(8.51, SDL_SCANCODE_ESCAPE);   // Stage I13: Control options, the keyboard to the arrow keys only, back
-        tap(8.55, SDL_SCANCODE_DOWN); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
+        tap(8.53, SDL_SCANCODE_DOWN); tap(8.55, SDL_SCANCODE_RETURN); tap(8.57, SDL_SCANCODE_DOWN); tap(8.59, SDL_SCANCODE_ESCAPE);   // Stage I20: the Achievements page, one row down, back
+        tap(8.61, SDL_SCANCODE_DOWN); tap(8.65, SDL_SCANCODE_RETURN);  // Quit
       }
       if(options.pushCrt) {   // Stage I16: Graphics options, the CRT filter row; Right 14 times (round the four filters three times and a bit), Left 6 times, with a pause for the picture each time
         plan.clear();

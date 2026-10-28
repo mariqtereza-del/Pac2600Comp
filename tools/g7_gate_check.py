@@ -7,7 +7,7 @@ Needs the local files reference\f6\coverage_all.txt and the built build\host\pac
 Reads the ROM, changes nothing. Prints one line per check and 'result: OK' or 'result: FAILED'.
 
  1  Git holds no ROM: no tracked .a26/.bin/.rom/archive, nothing under rom\ or reference\, no tracked file with the ROM's SHA-1 or its size.
- 2  The tables in tables.cpp are the list of docs\EMBEDDED_DATA.md (names, addresses, sizes; 34 tables, 508 bytes), are the ROM's bytes at those
+ 2  The tables in tables.cpp are the list of docs\EMBEDDED_DATA.md (names, addresses, sizes; 34 tables, 512 bytes), are the ROM's bytes at those
     addresses, and none of their bytes is program code in the F6 map.
  3  The program code of the cartridge is nowhere: no run of 8 consecutive code bytes (4 or more different values) is in pacman2600.exe or in a
     tracked source file (as 0x.. numbers).
@@ -78,8 +78,8 @@ def check_tables(rom):
     problems = []
     if listed != mine:
         problems.append('tables.cpp and docs\\EMBEDDED_DATA.md differ')
-    if len(tables) != 34 or sum(t[3] for t in tables) != 508:
-        problems.append('%d tables, %d bytes (expected 34, 508)' % (len(tables), sum(t[3] for t in tables)))
+    if len(tables) != 34 or sum(t[3] for t in tables) != 512:
+        problems.append('%d tables, %d bytes (expected 34, 512)' % (len(tables), sum(t[3] for t in tables)))
     fmap = {}
     for line in (ROOT / 'reference/f6/coverage_all.txt').read_text().split('\n'):
         m = re.match(r'^(F[0-9A-F]{3})  (\S+)$', line)
@@ -98,7 +98,7 @@ def check_tables(rom):
             used.add(x)
             if fmap.get(x) in ('C', 'c'):
                 problems.append('%s: $%04X is program code in the F6 map' % (n, x))
-    check('2 the 34 tables (508 bytes) are the documented ones, equal the ROM there, are all data', not problems, '; '.join(problems[:4]))
+    check('2 the 34 tables (512 bytes) are the documented ones, equal the ROM there, are all data', not problems, '; '.join(problems[:4]))
     return used
 
 

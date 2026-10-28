@@ -1,6 +1,7 @@
 // Drawing the Escape menu, and the menu screenshot test (Stage I5, T-I5-1). Text is SDL's built-in 8 x 8 pixel debug text, as in the F1 list.
 #include "menu_checks.hpp"
 #include "rom_choice.hpp"
+#include "achievement_driver.hpp"
 #include "screen.hpp"
 #include "symbols.hpp"
 
@@ -8,6 +9,20 @@ namespace host {
 
 namespace {
 constexpr int kTextColumns = 64;  // width of the explanation, in characters
+}
+
+// The title of the page (Stage I20: one place; the Achievements page also says how many are unlocked).
+static std::string pageTitle(const menu::Menu& menu)
+{
+  switch(menu.page()) {
+    case menu::Page::Graphics: return "GRAPHICS OPTIONS   (the game is paused)";
+    case menu::Page::GameOptions: return "GAME OPTIONS   (the game is paused)";
+    case menu::Page::Sound: return "SOUND OPTIONS   (the game is paused)";
+    case menu::Page::Controls: return "CONTROL OPTIONS   (the game is paused)";
+    case menu::Page::Achievements: return "ACHIEVEMENTS   (" + std::to_string(menu.choice().progress.count()) + " of " + std::to_string(achievements::kCount) + " unlocked)";
+    case menu::Page::Main: break;
+  }
+  return "MENU   (the game is paused)";
 }
 
 // Draws the menu: the whole window dimmed, then a box with the title, the rows, the explanation of the marked row and the keys.
@@ -58,8 +73,7 @@ void drawMenu(SDL_Renderer* renderer, const menu::Menu& menu)
   SDL_RenderRect(renderer, &box);
   const float x = x0 + 2 * charSize;
   float y = y0 + lineH;
-  SDL_RenderDebugText(renderer, x, y, graphicsPage ? "GRAPHICS OPTIONS   (the game is paused)" : menu.page() == menu::Page::GameOptions ? "GAME OPTIONS   (the game is paused)"
-                                                                                                 : menu.page() == menu::Page::Sound ? "SOUND OPTIONS   (the game is paused)" : menu.page() == menu::Page::Controls ? "CONTROL OPTIONS   (the game is paused)" : "MENU   (the game is paused)");
+  SDL_RenderDebugText(renderer, x, y, pageTitle(menu).c_str());
   y += 2 * lineH;
   for(const std::string& row : rows) { SDL_RenderDebugText(renderer, x, y, row.c_str()); y += lineH; }
   y += lineH;
@@ -105,6 +119,38 @@ static bool controlsShot(SDL_Renderer* renderer, menu::Menu& menu, const menu::C
   report << (xbox ? "xbox_" : "") << "controls_page=" << (menu.page() == menu::Page::Controls ? "yes" : "no") << (xbox ? "\nxbox_symbol_pixels_a_b_x_y=" : "\nsymbol_pixels_cross_circle_square_triangle=") << symbolPixels[0] << ',' << symbolPixels[1]
          << ',' << symbolPixels[2] << ',' << symbolPixels[3] << "\ncontrols_screenshot_saved=" << (saved ? "yes" : "no") << '\n';
   return true;
+}
+
+// Stage I20: the Achievements page with some unlocked, saved as <png>.achievements.png, and the notice of an unlock over the game, saved as <png>.notice.png. The page must show
+// the [x] marks and the notice must have its yellow frame.
+static bool achievementsShot(SDL_Renderer* renderer, menu::Menu& menu, const menu::Choice& now, const std::string& pngPath, std::ofstream& report)
+{
+  menu::Choice c = now;
+  c.progress.unlocked = 0x2c07;   // three scores, two lives and the ghosts
+  c.progress.dates[0] = c.progress.dates[1] = c.progress.dates[2] = c.progress.dates[10] = c.progress.dates[11] = c.progress.dates[13] = "2026-10-29";
+  menu.open(c);
+  for(int i = 0; i < 10 && menu.cursor() != menu::Item::Achievements; ++i) menu.press(menu::Key::Down);
+  menu.press(menu::Key::Enter);
+  menu.press(menu::Key::Down);
+  drawMenu(renderer, menu);
+  bool ok = true;
+  for(int pass = 0; pass < 2; ++pass) {
+    if(pass == 1) drawAchievementNotice(renderer, achievements::definition(7).title);   // over the page: as it appears in the window
+    SDL_Surface* shot = SDL_RenderReadPixels(renderer, nullptr);
+    SDL_Surface* rgb = shot ? SDL_ConvertSurface(shot, SDL_PIXELFORMAT_XRGB8888) : nullptr;
+    if(shot) SDL_DestroySurface(shot);
+    if(!rgb) { report << "result=cannot read window pixels\n"; return false; }
+    long long yellow = 0;
+    for(int y = 0; y < rgb->h; ++y) {
+      const auto* row = reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(rgb->pixels) + y * rgb->pitch);
+      for(int x = 0; x < rgb->w; ++x) yellow += (row[x] & 0x00FFFFFF) == 0xFFD200;
+    }
+    const bool saved = SDL_SavePNG(rgb, (pngPath + (pass == 0 ? ".achievements.png" : ".notice.png")).c_str());
+    SDL_DestroySurface(rgb);
+    report << (pass == 0 ? "achievements_page_yellow_pixels=" : "notice_yellow_pixels=") << yellow << (pass == 0 ? "\nachievements_screenshot_saved=" : "\nnotice_screenshot_saved=") << (saved ? "yes" : "no") << '\n';
+    ok = ok && saved && (pass == 0 ? menu.page() == menu::Page::Achievements : yellow > 400);
+  }
+  return ok;
 }
 
 // --menu-shot: 300 frames of the game, the menu opened on the Game row, drawn in the real window, the window's pixels saved. The report counts
@@ -179,7 +225,9 @@ bool menuShot(SDL_Renderer* renderer, const std::string& pngPath, const std::str
   bool symbolsDrawn = false, saved3 = false, xboxDrawn = false, saved4 = false;
   if(!controlsShot(renderer, menu, now, pngPath, report, symbolsDrawn, saved3)) return false;
   if(!controlsShot(renderer, menu, now, pngPath, report, xboxDrawn, saved4, controls::PadFamily::Xbox)) return false;
-  const bool ok = saved && white > 500 && other > 1000 && menu.page() == menu::Page::Controls && white2 > 300 && saved2 && saved3 && symbolsDrawn && saved4 && xboxDrawn;
+  const bool onControlsPage = menu.page() == menu::Page::Controls;   // (the Achievements picture below moves the menu to another page)
+  const bool achievementsOk = achievementsShot(renderer, menu, now, pngPath, report);
+  const bool ok = achievementsOk && saved && white > 500 && other > 1000 && onControlsPage && white2 > 300 && saved2 && saved3 && symbolsDrawn && saved4 && xboxDrawn;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   return ok;
 }

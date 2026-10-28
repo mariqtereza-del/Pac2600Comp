@@ -158,6 +158,26 @@ void appendFeedbackText(std::vector<std::string>& out, int width, bool padConnec
                          : "No pad is connected now: this works as soon as one is plugged in.");
 }
 
+// The explanation of an achievement row (index 0 to 13: what it asks and whether it is done), or of the row on the main page (-1) (Stage I20, D-025).
+void appendAchievementText(std::vector<std::string>& out, int width, int index, const achievements::Progress& progress)
+{
+  auto paragraph = [&](const std::string& text) {
+    for(const std::string& line : wrap(text, width)) out.push_back(line);
+  };
+  if(index < 0) {
+    paragraph(std::string("The ") + std::to_string(achievements::kCount) + " achievements of the game, and which of them you have unlocked (" + std::to_string(progress.count()) +
+              " so far). Each one unlocks while you play, and a notice appears in the window. Enter opens the page.");
+  } else {
+    const achievements::Definition& d = achievements::definition(index);
+    paragraph(std::string(d.title) + ": " + d.description + ".");
+    out.push_back("");
+    paragraph(progress.has(index) ? "Unlocked on " + progress.dates[static_cast<std::size_t>(index)] + "." : "Not unlocked yet.");
+  }
+  out.push_back("");
+  paragraph("These are the achievements of the RetroAchievements set for Pac-Man on the Atari 2600 (retroachievements.org/game/13094). This program works them out on this "
+            "computer from the game's memory; it does not connect to RetroAchievements, and it never changes the game.");
+}
+
 // The explanation of the Players and the two difficulty rows (moved out of menu.cpp in Stage I13).
 void appendPlayersText(std::vector<std::string>& out, int width, Item item)
 {

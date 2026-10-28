@@ -88,7 +88,7 @@ The owner's words: the ROM is an indirect DRM, preventing anyone without a legal
 
 ## The tables as they are in the program (Stage G5b)
 
-Written by `python -I tools\g5b_make_tables.py rom\pacman.a26` (run after `tools\g5a_data_list.py`). **This is the list Rule 7 refers to:** the 34 tables in `src\game\data\tables.cpp`, 508 bytes, all data (the F6 map calls 502 of the bytes data and 6 untouched; none is program code). Eight of them join several of the tables above, because the original reads them as one (found by the survey of G5b); that also brings in 5 bytes that no game reads, lying between read bytes.
+Written by `python -I tools\g5b_make_tables.py rom\pacman.a26` (run after `tools\g5a_data_list.py`). **This is the list Rule 7 refers to:** the 34 tables in `src\game\data\tables.cpp`, 512 bytes, all data (the F6 map calls 502 of the bytes data and 10 untouched; none is program code). Eight of them join several of the tables above, because the original reads them as one (found by the survey of G5b); that also brings in 9 bytes that no game reads, lying between read bytes.
 
 | Source name | Original address range | Size | What it holds |
 | --- | --- | --- | --- |
@@ -114,11 +114,11 @@ Written by `python -I tools\g5b_make_tables.py rom\pacman.a26` (run after `tools
 | `kBitMasksAndReloads` | $FE6A-$FE75 | 12 | bit masks (wafers, power pills, sound effects) and the chase timer reload values of the ghosts |
 | `kWaferByteIndex` | $FE79-$FE88 | 16 | wafer byte index (kWaferByteIndex) |
 | `kGfxFE89` | $FE89-$FEEB | 99 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |
-| `kLivesMarkerPf2` | $FEEC-$FEF3 | 8 | life-marker playfield, second row |
+| `kLivesMarkerPf2` | $FEEC-$FEF5 | 10 | life-marker playfield, second row (10 entries: 0 to 9 lives; $FEF4-$FEF5 are for 8 and 9 lives, which no recorded game had: Stage I20) |
 | `kDigitPointerLow` | $FEF6-$FF05 | 16 | score digit pointers (kDigitPointerLow) |
 | `kScoreAmounts` | $FF06-$FF12 | 13 | score amounts (low and middle bytes) and the animation pointer steps |
 | `kAnimWhichPointer` | $FF19-$FF1A | 2 | animation pointer choice (kAnimWhichPointer) |
-| `kLivesMarkerPf1` | $FF1B-$FF22 | 8 | life-marker playfield, first (kLivesMarkerPf1) |
+| `kLivesMarkerPf1` | $FF1B-$FF24 | 10 | life-marker playfield, first row (10 entries: 0 to 9 lives; $FF23-$FF24 are for 8 and 9 lives, which no recorded game had: Stage I20) |
 | `kAnimNextY` | $FF25-$FF26 | 2 | animation next y (kAnimNextY) |
 | `kColourTables` | $FF2B-$FF40 | 22 | the colour tables: colour at offset 0, black and white at offset 11 |
 | `kPlayfieldFF41` | $FF41-$FF42 | 2 | reached by index or pointer (docs\F18_KERNEL.md, F19_SOUND.md) |

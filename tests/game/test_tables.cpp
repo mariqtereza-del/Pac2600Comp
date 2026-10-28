@@ -1,6 +1,6 @@
 // Test of the data tables (Stage G5b): test_tables [rom file]. The ROM is only read. Without a ROM (Stage H4: the public, ROM-free set) only the
 // structure is checked: sizes, order, no overlap, the lookup by address inside each table and the totals. Every byte of every embedded table must equal the ROM byte at its
-// original address, the lookup by address must agree, and the totals must be the ones of docs/EMBEDDED_DATA.md (34 tables, 508 bytes).
+// original address, the lookup by address must agree, and the totals must be the ones of docs/EMBEDDED_DATA.md (34 tables, 512 bytes).
 #include <cstdio>
 #include <fstream>
 #include <iterator>
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     }
   }
   check(game::data::kSegmentCount == 34, "34 tables", 0);
-  check(total == 508, "508 bytes", 0);
+  check(total == 512, "512 bytes", 0);
   check(game::data::kMazeWalls.size() == 80, "the maze wall table has 80 bytes", 0xFE13);
   if (haveRom) check(game::data::kMazeWalls[0] == rom[0xFE13 - 0xF000] && game::data::kMazeWalls[79] == rom[0xFE62 - 0xF000], "the maze wall table ends", 0xFE13);
   std::printf("%d checks, %d failures; %zu tables, %u bytes\n", checks, failures, game::data::kSegmentCount, total);

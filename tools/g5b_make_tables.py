@@ -40,7 +40,8 @@ GROUPS = [
     (0xFD83, 0xFD8A, 'kMazeRowFD83', 'picture tables of the maze rows, 8 entries'),
     (0xFE0C, 0xFE0E, 'kPlayfieldFE0C', 'playfield patterns'),
     (0xFE6A, 0xFE75, 'kBitMasksAndReloads', 'bit masks (wafers, power pills, sound effects) and the chase timer reload values of the ghosts'),
-    (0xFEEC, 0xFEF3, 'kLivesMarkerPf2', 'life-marker playfield, second row'),
+    (0xFEEC, 0xFEF5, 'kLivesMarkerPf2', 'life-marker playfield, second row (10 entries: 0 to 9 lives; $FEF4-$FEF5 are for 8 and 9 lives, which no recorded game had: Stage I20)'),
+    (0xFF1B, 0xFF24, 'kLivesMarkerPf1', 'life-marker playfield, first row (10 entries: 0 to 9 lives; $FF23-$FF24 are for 8 and 9 lives, which no recorded game had: Stage I20)'),
     (0xFF06, 0xFF12, 'kScoreAmounts', 'score amounts (low and middle bytes) and the animation pointer steps'),
     (0xFF2B, 0xFF40, 'kColourTables', 'the colour tables: colour at offset 0, black and white at offset 11'),
 ]

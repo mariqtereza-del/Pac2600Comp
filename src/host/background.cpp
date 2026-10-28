@@ -80,6 +80,12 @@ int scoreOf(const std::uint8_t* ram, int player)
   return digit(mid >> 4) * 1000 + digit(mid & 15) * 100 + digit(lo >> 4) * 10 + digit(lo & 15);
 }
 
+int fullScoreOf(const std::uint8_t* ram, int player)
+{
+  const std::uint8_t lo = ram[(player == 0 ? 0xCC : 0xCD) - 0x80], mid = ram[(player == 0 ? 0xCE : 0xCF) - 0x80], hi = ram[(player == 0 ? 0xD0 : 0xD1) - 0x80];
+  return digit(hi >> 4) * 100000 + digit(hi & 15) * 10000 + digit(mid >> 4) * 1000 + digit(mid & 15) * 100 + digit(lo >> 4) * 10 + digit(lo & 15);
+}
+
 int livesOf(const std::uint8_t* ram) { return ram[0x82 - 0x80] != 0 ? 0 : std::min<int>(ram[0x98 - 0x80], 9); }
 
 int playerToPlay(const std::uint8_t* ram) { return (ram[0xE6 - 0x80] & 0x80) != 0 ? 1 : 0; }

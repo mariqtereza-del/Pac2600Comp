@@ -131,18 +131,23 @@ void TiaVideo::renderThrough(int lastRow) {
       ++next_;
     }
     uint8_t* out = &picture_[static_cast<size_t>(row) * kWidth];
+    bool pfBlock = false;   // the playfield of the block of four pixels being drawn
     for (int x = 0; x < kWidth; ++x) {
       const long now = lineStart + 68 + x;
       while (next_ < events_.size() && events_[next_].when <= now) {
         apply(events_[next_], s, hmoveBlank);
         ++next_;
       }
-      const int idx = x / 4;
-      const int bitIdx = idx < 20 ? idx : ((s.ctrlpf & 1) ? 39 - idx : idx - 20);
-      bool pf;
-      if (bitIdx < 4) pf = (s.pf[0] >> (4 + bitIdx)) & 1;
-      else if (bitIdx < 12) pf = (s.pf[1] >> (7 - (bitIdx - 4))) & 1;
-      else pf = (s.pf[2] >> (bitIdx - 12)) & 1;
+      // The playfield is decided once for each block of four pixels, at its first pixel, as the chip and the emulator do: a write in the middle of a block
+      // changes the next block, not the rest of this one (Stage I20, T-I20-1: the ninth life marker is the first picture with a write inside a block).
+      if ((x & 3) == 0) {
+        const int idx = x / 4;
+        const int bitIdx = idx < 20 ? idx : ((s.ctrlpf & 1) ? 39 - idx : idx - 20);
+        if (bitIdx < 4) pfBlock = (s.pf[0] >> (4 + bitIdx)) & 1;
+        else if (bitIdx < 12) pfBlock = (s.pf[1] >> (7 - (bitIdx - 4))) & 1;
+        else pfBlock = (s.pf[2] >> (bitIdx - 12)) & 1;
+      }
+      const bool pf = pfBlock;
       const int bw = 1 << ((s.ctrlpf >> 4) & 3);
       const uint8_t blEnabled = s.vdelbl ? s.enablOld : s.enabl;
       const bool bl = (blEnabled & 2) && mod160(x - s.pos[kBL]) < bw;

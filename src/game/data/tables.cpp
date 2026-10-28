@@ -114,8 +114,8 @@ const Table<99> kGfxFE89 = {{
     0x78, 0x38, 0x00
 }, "kGfxFE89", 0xFE89};
 
-const Table<8> kLivesMarkerPf2 = {{
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x05
+const Table<10> kLivesMarkerPf2 = {{
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x05, 0x15, 0x55
 }, "kLivesMarkerPf2", 0xFEEC};
 
 const Table<16> kDigitPointerLow = {{
@@ -130,8 +130,8 @@ const Table<2> kAnimWhichPointer = {{
     0x00, 0x02
 }, "kAnimWhichPointer", 0xFF19};
 
-const Table<8> kLivesMarkerPf1 = {{
-    0x00, 0x00, 0x80, 0xA0, 0xA8, 0xAA, 0xAA, 0xAA
+const Table<10> kLivesMarkerPf1 = {{
+    0x00, 0x00, 0x80, 0xA0, 0xA8, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA
 }, "kLivesMarkerPf1", 0xFF1B};
 
 const Table<2> kAnimNextY = {{
@@ -186,11 +186,11 @@ const Segment kSegments[] = {
     {"kBitMasksAndReloads", 0xFE6A, 12, kBitMasksAndReloads.bytes},
     {"kWaferByteIndex", 0xFE79, 16, kWaferByteIndex.bytes},
     {"kGfxFE89", 0xFE89, 99, kGfxFE89.bytes},
-    {"kLivesMarkerPf2", 0xFEEC, 8, kLivesMarkerPf2.bytes},
+    {"kLivesMarkerPf2", 0xFEEC, 10, kLivesMarkerPf2.bytes},
     {"kDigitPointerLow", 0xFEF6, 16, kDigitPointerLow.bytes},
     {"kScoreAmounts", 0xFF06, 13, kScoreAmounts.bytes},
     {"kAnimWhichPointer", 0xFF19, 2, kAnimWhichPointer.bytes},
-    {"kLivesMarkerPf1", 0xFF1B, 8, kLivesMarkerPf1.bytes},
+    {"kLivesMarkerPf1", 0xFF1B, 10, kLivesMarkerPf1.bytes},
     {"kAnimNextY", 0xFF25, 2, kAnimNextY.bytes},
     {"kColourTables", 0xFF2B, 22, kColourTables.bytes},
     {"kPlayfieldFF41", 0xFF41, 2, kPlayfieldFF41.bytes},

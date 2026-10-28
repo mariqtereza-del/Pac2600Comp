@@ -55,7 +55,7 @@ unsigned EventWatcher::update(const std::uint8_t* ram)
   const bool inPlay = ram[0x82 - 0x80] == 0;   // $82 is not 0 on the title screen and after the game is over
   const bool dying = inPlay && (ram[0xE7 - 0x80] & 0x40) != 0;
   const int player = background::playerToPlay(ram);
-  const int score = background::scoreOf(ram, player);
+  const int score = background::fullScoreOf(ram, player);   // all six digits: a rise across 9,999 to 10,000 is still found
   unsigned events = 0;
   if(havePrevious_) {
     if(dying && !dying_) events |= Death;

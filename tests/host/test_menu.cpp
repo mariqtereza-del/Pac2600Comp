@@ -227,7 +227,7 @@ int main()
   expect(m.choice().rumble == feedback::Rumble::Off, "and round to off");
   m.press(Key::Down);
   expect(m.cursor() == Item::Back && m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::ControlOptions, "Back returns to the main page, on Control options");
-  m.press(Key::Down);
+  m.press(Key::Down); m.press(Key::Down);   // past the Achievements row (Stage I20) to Quit
   expect(m.cursor() == Item::Quit && m.press(Key::Right) == Result::None, "Right on Quit does nothing");
   expect(m.press(Key::Enter) == Result::Quit && !m.isOpen(), "Enter on Quit quits and closes");
   m.open(start);
@@ -240,10 +240,10 @@ int main()
   expect(m.press(Key::Enter) == Result::StartGame && !m.isOpen() && m.choice().game == 5, "Enter on New game starts, with the choice");
 
   // The rows and the explanations: one marked row, every row has an explanation, none too wide, the facts of the games are in it.
-  for(int page = 0; page < 5; ++page) {  // the main page, then Game options, Graphics options, Sound options and Control options
+  for(int page = 0; page < 6; ++page) {  // the main page, then Game options, Graphics options, Sound options, Control options and Achievements
     m.open(start);
     if(page > 0) { for(int i = 0; i < 1 + page; ++i) m.press(Key::Down); m.press(Key::Enter); }
-    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : page == 2 ? Menu::graphicsItems() : page == 3 ? Menu::soundItems() : Menu::controlItems();
+    const std::vector<Item>& items = page == 0 ? Menu::items() : page == 1 ? Menu::gameItems() : page == 2 ? Menu::graphicsItems() : page == 3 ? Menu::soundItems() : page == 4 ? Menu::controlItems() : Menu::achievementItems();
     expect(m.rows().size() == items.size(), "one text row per item, page " + std::to_string(page));
     for(std::size_t i = 0; i < items.size(); ++i) {
       int marked = 0;
@@ -349,6 +349,42 @@ int main()
   expect(selectFrames == 0 && resetCount == 0, "a refused start (a replay is running) adds no input");
   allowed.open(in);
   expect(allowed.menu().choice().game == 1, "the menu opens on the game the game number byte says (6 = game 1)");
+
+  // Stage I20: the Achievements page. Fourteen rows and Back; an unlocked one is marked [x], with its day in the explanation.
+  {
+    menu::Choice withProgress = start;
+    withProgress.progress.unlocked = 0x2001;   // A Little Snack and Blue Plate Special
+    withProgress.progress.dates[0] = "2026-10-29";
+    withProgress.progress.dates[13] = "2026-11-02";
+    m.open(withProgress);
+    for(int i = 0; i < 6; ++i) m.press(Key::Down);
+    expect(m.cursor() == Item::Achievements, "the Achievements row follows Control options");
+    bool countShown = false;
+    for(const std::string& r : m.rows()) if(r.find("Achievements...") != std::string::npos && r.find("(2 of 14)") != std::string::npos) countShown = true;
+    expect(countShown, "the row says how many are unlocked: 2 of 14");
+    expect(m.press(Key::Right) == Result::None && m.page() == Page::Main, "Right does not open the page (only Enter does)");
+    expect(m.press(Key::Enter) == Result::None && m.page() == Page::Achievements && m.cursorIndex() == 0, "Enter opens the page on the first achievement");
+    expect(m.rows().size() == 15 && Menu::achievementItems().size() == 15, "fourteen achievements and Back");
+    const std::vector<std::string> rows = m.rows();
+    expect(rows[0] == "> [x] A Little Snack" && rows[1] == "  [ ] What's for Breakfast?" && rows[13] == "  [x] Blue Plate Special" && rows[9].find("Pac-Man Fever") != std::string::npos,
+           "the rows show the title and [x] or [ ]; the marked row starts with >");
+    bool dayShown = false, creditShown = false, descriptionShown = false;
+    for(const std::string& w : m.explanation(60)) {
+      if(w.find("Unlocked on 2026-10-29") != std::string::npos) dayShown = true;
+      if(w.find("retroachievements.org/game/13094") != std::string::npos || w.find("RetroAchievements") != std::string::npos) creditShown = true;
+      if(w.find("Score 500 points") != std::string::npos) descriptionShown = true;
+    }
+    expect(dayShown && creditShown && descriptionShown, "the explanation gives the description, the day it was unlocked and the credit to RetroAchievements");
+    m.press(Key::Down);
+    bool notYet = false;
+    for(const std::string& w : m.explanation(60)) if(w.find("Not unlocked yet.") != std::string::npos) notYet = true;
+    expect(m.cursorIndex() == 1 && notYet, "a locked one says it is not unlocked yet");
+    expect(m.press(Key::Enter) == Result::None && m.page() == Page::Achievements, "Enter on an achievement does nothing");
+    while(m.cursor() != Item::Back) m.press(Key::Down);
+    expect(m.press(Key::Enter) == Result::None && m.page() == Page::Main && m.cursor() == Item::Achievements, "Back returns to the main page, on the Achievements row");
+    m.press(Key::Enter);
+    expect(m.press(Key::Escape) == Result::None && m.page() == Page::Main && m.isOpen(), "Escape on the page goes back");
+  }
 
   std::printf("%d checks, %d failures\n", checks, failures);
   if(failures == 0) std::printf("ALL TESTS PASSED\n");

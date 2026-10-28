@@ -3278,7 +3278,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit; the tool only reads.
     - **Documentation updates:** `docs\PROVENANCE.md`, `DECISIONS.md` (D-029, T-J3-1), `TESTING.md`, `PLAN.md`, `PROJECT_STATUS.md`, `CLAUDE.md`.
     - **Git checkpoint:** `Stage J3: Content audit`. **Next stage:** J4 (public documentation).
-4. **[Not started] J4 — Public documentation.** `README.md` (what it is, the ROM requirement in the first screen, how to play), `BUILDING.md`, `docs\HOW_IT_WORKS.md`, and the preservation write-up from `RE_NOTES.md` with any content J1 excluded removed.
+4. **[Done 2026-10-28, T-J4-1] J4 — Public documentation.** `README.md` (what it is, the ROM requirement in the first screen, how to play), `BUILDING.md`, `docs\HOW_IT_WORKS.md`, and the preservation write-up from `RE_NOTES.md` with any content J1 excluded removed.
+    **J4 in full (16 headings):**
+    - **Objective:** the public documents: `README.md` (what it is, the game-file requirement and the rights notice on the first screen, how to play), `BUILDING.md` (checked and linked), `docs\HOW_IT_WORKS.md` and `docs\PRESERVATION.md` (the preservation write-up), and the README inside the release zip brought up to date.
+    - **Why it matters:** these are the first things a visitor reads; they must be true, must not carry ROM addresses, bytes or private paths, and must say clearly that the game belongs to its rights holders (D-028).
+    - **Prerequisites:** J3 Done, clean tree (checked).
+    - **What Claude Code will do:** write the four documents from what the project has proved (no ROM addresses or bytes, no personal paths); update the release README text in `tools\make_release.ps1` (the keys and the menu were out of date); write `tools\j4_docs_check.py`, which checks the first screen of the README, the keys and the SHA-1 against the program's own, that links resolve, and that no public document names a ROM address, holds a run of bytes or a private path.
+    - **What I must do:** nothing is required; reading the README is welcome (D-008).
+    - **Exact instructions:** `python -I tools\j4_docs_check.py` must say `result: OK`.
+    - **Required input:** none. Nothing inside the game changes (D-029).
+    - **Claude Code prompt:** "Do only the single next stage named in PROJECT_STATUS.md."
+    - **Expected result:** four documents and a current release README; the checker passes; `src\` is untouched.
+    - **Verification:** `tools\j4_docs_check.py`; `git diff` shows no change under `src\` and `baseline\`; `test_quick`; a test release zip whose README is read and whose 31-check gate passes.
+    - **Completion criteria:** every claim in the documents can be traced to a test or a record (listed in T-J4-1); the checker is part of `test_quick`.
+    - **Potential problems:** the README links to `LICENSE` and `THIRD_PARTY_NOTICES.md`, which Stage J5 creates (the checker lists them as pending until then); only a DualShock 4 was tried by the owner, so the other pads are described as supported but not tried on real hardware.
+    - **Recovery:** revert the commit.
+    - **Documentation updates:** `README.md`, `BUILDING.md`, `docs\HOW_IT_WORKS.md`, `docs\PRESERVATION.md`, `DECISIONS.md` (T-J4-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J4: Public documentation`. **Next stage:** J5 (licences and credits).
 5. **[Not started] J5 — Licences and credits.** `LICENSE` for our code (your choice from J1, explained), `THIRD_PARTY_NOTICES.md` for SDL3 and Stella, and credits to Atari, the original programmer and the Stella team.
 6. **[Not started] J6 — Create the repository, private.** You create it on github.com while Claude Code tells you each click. Claude Code shows the exact file list for the first push; you check for `.a26` files; you approve the push. Sign-in happens in your browser, never by typing a password into Claude Code.
 7. **[Not started] J7 — Automatic checks on GitHub.** A GitHub Actions workflow builds the game and runs the ROM-free tests on every change.

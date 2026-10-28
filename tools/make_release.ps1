@@ -195,22 +195,26 @@ HOW TO START
      here beforehand. The program remembers where it was, and where you left the window.
   3. Press F3 (or the Options button on a PS4 pad) to start a game.
 
-KEYS                                              PS4 PAD
+KEYS                                              PLAYSTATION PAD (XBOX PAD: A or X fire, Menu = Reset, View = Select, LB / RB, Y)
   Arrow keys or W A S D   move                      D-pad or left stick   move
   Space or Z              fire button               Cross or Square       fire button
   F3 (hold)               Game Reset: new game      Options               Game Reset
   F2 (hold)               Game Select: variation    Share                 Game Select
-  F4                      TV type: Colour / B&W
-  F5 / F6                 left / right difficulty switch A / B
+  F4                      TV type: Colour / B&W     Triangle              TV type
+  F5 / F6                 left / right difficulty   L1 / R1               left / right difficulty
   F7                      soft glow on / off (off = as on a real TV)
   1 2 3 4 5               picture: Sharp, Fill, TV frame, Game area, Framed (5 is the standard)
   Alt + Enter             fullscreen on / off
   F1                      shows this list on the screen
-  Esc                     quit
+  Esc                     opens and closes the menu (the game pauses)   PS button or touchpad: the same
 The three switches (F4, F5, F6) stay where you leave them, also for the next start.
 
+THE MENU (Esc)
+  Resume, New game, Game options (game 1 to 8, players, difficulty, frame rate), Graphics options (background, TV type,
+  CRT filter, HDR), Sound options, Control options, Achievements, Statistics, and Quit. Each row explains itself.
+
 RECORDING (to keep a game and watch it again, or for testers)
-  Double-click  "Record a game.cmd"   to play as usual while every frame's input is recorded. Close the game with Esc
+  Double-click  "Record a game.cmd"   to play as usual while every frame's input is recorded. Close the game with Esc, Quit
                 (or the X button): the recording is then saved in the "recordings" folder next to the program.
   Double-click  "Replay a game.cmd"   to play the newest recording back from power-on; the game comes out exactly the
                 same. To replay another recording, drag its file onto "Replay a game.cmd". When a recording ends, the
@@ -220,12 +224,13 @@ RECORDING (to keep a game and watch it again, or for testers)
   A name without a folder is saved in the folder the Command Prompt was in, not beside the program.
 
 FILES THE PROGRAM WRITES
-  settings.ini next to Pac2600Comp.exe: the path of your game file, the window place and size, the three switches, the soft glow.
+  settings.ini next to Pac2600Comp.exe: the path of your game file, the window place and size, your choices from the menu,
+  your achievements and your statistics. Delete it to start fresh. Nothing is sent anywhere: the program has no network code.
 
 LICENCES AND SOURCE
-  This program contains no emulator, but its picture colours are the colour table of Stella 7.0 (GNU General Public License version 2)
-  and it uses SDL 3.4.18 (zlib licence). Because of the GPL, this program is distributed under the GNU General Public License version 2:
-  see licences\Stella-License.txt. The complete source code of this program, with Stella and SDL, is in
+  This program is distributed under the GNU General Public License, version 2 or later. It contains no emulator, but its picture colours
+  are the colour table of Stella 7.0 and its CRT filters are ports of GPL shaders (CRT-Geom, GDV NTSC); it also uses SDL 3.4.18 (zlib
+  licence). The Stella licence text is in licences\Stella-License.txt. The complete source code of this program, with Stella and SDL, is in
       source\Pac2600Comp-$Version-source.zip     (how to build it: source\BUILDING.txt)
   The three Microsoft runtime files (msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll) are Microsoft's
   Visual C++ runtime, shipped next to the program as Microsoft allows.
@@ -254,13 +259,13 @@ third_party\CMakeLists.txt).
 
 $recordCmd = @"
 @echo off
-rem Plays the game and records every frame's input. Close the game with Esc: the file is then in the recordings folder.
+rem Plays the game and records every frame's input. Close the game with Esc, then Quit (or the X button): the file is then in the recordings folder.
 setlocal
 cd /d "%~dp0"
 if not exist "recordings" mkdir "recordings"
 for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmmss"') do set "STAMP=%%i"
 start "" "%~dp0Pac2600Comp.exe" --record "%~dp0recordings\play-%STAMP%.inputs"
-echo Recording. Close the game with Esc; the recording is saved in the "recordings" folder next to the program.
+echo Recording. Close the game with Esc, then Quit (or the X button); the recording is saved in the "recordings" folder next to the program.
 timeout /t 5 >nul
 "@
 

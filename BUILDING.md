@@ -2,6 +2,8 @@
 
 How to build the PC game and its tests from the repository alone. Nothing here needs the original game file, except the last section ("Playing"). Everything below was followed word for word in a fresh copy in Stage H5 (`DECISIONS.md` T-H5-1).
 
+The program is called **Pac2600Comp** (see [README.md](README.md)). The build files and folders keep the working name `pacman2600`; only the release zip renames the program to `Pac2600Comp.exe`.
+
 ## What you need
 
 - Windows 10 or 11, 64 bit.

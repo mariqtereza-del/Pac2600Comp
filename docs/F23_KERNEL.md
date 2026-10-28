@@ -6,7 +6,7 @@
 
 - **8266 sampled frames of all 70 games** (every 53rd frame): given the 128 bytes at `$F07F`, the native drawing code makes **8266 of 8266 lists of writes to the video chip equal to the emulator's, write for write** (scanline, colour clock, address of the writing instruction, register, value; 4528964 writes in all), and leaves **8266 of 8266 memories equal** to the emulator's at `$F4E7` (all bytes except the stack bytes `$F6-$FF`).
 - Control: with every colour clock moved by 3 the same test finds 0 of 8266 lists equal (it can tell).
-- **Whole native game with the drawing code inside** (`game::Game`, `lockstep_native`): **70 of 70 recorded games, 439680 frames, all 128 bytes identical after every frame with nothing left out except the stack bytes `$F6-$FF`** (F21.27 had to leave out 11 scratch bytes; the drawing code now makes them as well). 9.4 s of work. The collision flags still come from the oracle until F23.4.
+- **Whole native game with the drawing code inside** (`game::Game`, `lockstep_native`): **70 of 70 recorded games, 439680 frames, all 128 bytes identical after every frame with nothing left out except the stack bytes `$F6-$FF`** (F21.27 had to leave out 11 scratch bytes; the drawing code now makes them as well). 9.9 s of work. The collision flags still come from the oracle until F23.4.
 
 ## Not claimed
 

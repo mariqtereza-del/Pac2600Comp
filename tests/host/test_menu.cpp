@@ -198,7 +198,7 @@ int main()
   m.press(Key::Down);
   expect(m.cursor() == Item::ControlOptions && m.press(Key::Right) == Result::None && m.page() == Page::Main, "Control options follows Sound options; Right does not open it (Stage I13)");
   expect(m.press(Key::Enter) == Result::None && m.page() == Page::Controls && m.cursor() == Item::KeyboardKeys, "Enter opens the Control options page on the keyboard row");
-  expect(m.rows().size() == 4 && Menu::controlItems().size() == 4, "the page has the keyboard row, the light bar row (Stage I15), the rumble row and Back");
+  expect(m.rows().size() == 3 && Menu::controlItems().size() == 3, "the page has the keyboard row, the rumble row (Stage I15) and Back");
   expect(m.choice().keyboard == controls::Scheme::Both, "both sets of keys at the start (as it always was)");
   m.press(Key::Right);
   expect(m.choice().keyboard == controls::Scheme::Arrows, "Right: the arrow keys only");
@@ -216,22 +216,9 @@ int main()
   expect(keysShown && !rowShown, "the explanation lists the keys of the choice (W A S D, not the arrows)");
   for(const std::string& r : m.rows()) if(r.find("Keyboard:") != std::string::npos) rowShown = r.find("W A S D") != std::string::npos;
   expect(rowShown, "the row names the choice");
-  // Stage I15: the light bar and the rumble rows.
+  // Stage I15: the rumble row (the light bar is not a choice: it is always on).
   m.press(Key::Down);
-  expect(m.cursor() == Item::LightBar && m.choice().light == feedback::Light::Off, "second row: the light bar, off to begin with");
-  m.press(Key::Right);
-  expect(m.choice().light == feedback::Light::Yellow, "Right: Pac-Man yellow");
-  m.press(Key::Right); m.press(Key::Right);
-  expect(m.choice().light == feedback::Light::Lives, "then the maze colour and the lives");
-  m.press(Key::Right);
-  expect(m.choice().light == feedback::Light::Off, "and round to Off");
-  m.press(Key::Left);
-  expect(m.choice().light == feedback::Light::Lives, "Left goes back round");
-  bool lightShown = false;
-  for(const std::string& r : m.rows()) if(r.find("Light bar:") != std::string::npos && r.find("Lives left") != std::string::npos) lightShown = true;
-  expect(lightShown, "the row names the choice");
-  m.press(Key::Down);
-  expect(m.cursor() == Item::RumbleMotors && m.choice().rumble == feedback::Rumble::Off, "third row: the rumble, off to begin with");
+  expect(m.cursor() == Item::RumbleMotors && m.choice().rumble == feedback::Rumble::Off, "second row: the rumble, off to begin with");
   m.press(Key::Right);
   expect(m.choice().rumble == feedback::Rumble::Light, "Right: light");
   m.press(Key::Enter);

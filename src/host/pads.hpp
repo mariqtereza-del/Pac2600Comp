@@ -90,12 +90,12 @@ public:
     return active_ ? total : controls::PadAsks{};
   }
 
-  // Stage I15 (D-021): what goes out to the pads. The light bar colour is sent when it changed or a pad has just been plugged in; a pad without a light bar ignores it.
+  // Stage I15 (D-021): what goes out to the pads. The light bar colour goes to every PlayStation pad (a DualShock 4) when it changed or the pad has just been plugged in.
   void setLight(const background::Rgb& colour)
   {
     lightUsed_ = true;
     for(Pad& p : pads_)
-      if(!p.lightSent || !(p.light == colour)) { SDL_SetGamepadLED(p.gamepad, colour.r, colour.g, colour.b); p.light = colour; p.lightSent = true; }
+      if(p.family == controls::PadFamily::PlayStation && (!p.lightSent || !(p.light == colour))) { SDL_SetGamepadLED(p.gamepad, colour.r, colour.g, colour.b); p.light = colour; p.lightSent = true; }
   }
 
   // A pulse of the rumble motors (a pad without them ignores it); nothing while the window is not in front.

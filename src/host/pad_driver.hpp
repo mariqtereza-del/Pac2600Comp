@@ -18,23 +18,17 @@ struct PadMenuHooks {
   std::function<void(menu::Key)> press;       // a key for the open menu
 };
 
-// What goes out to the pad (Stage I15, D-021): the light bar colour and a rumble pulse for the game's events. The choices come from settings.ini (light_bar=, rumble=)
-// and from the menu; both default to Off, so nothing is sent unless asked for.
+// What goes out to the pad (Stage I15, D-021): the light bar of a DualShock 4 follows the game (always on), and a rumble pulse for the game's events when the rumble is on
+// (rumble= in settings.ini and the menu; off by default).
 class FeedbackDriver {
  public:
   explicit FeedbackDriver(const std::string& settingsFile);
-  feedback::Light light() const { return light_; }
   feedback::Rumble rumble() const { return rumble_; }
-  void set(feedback::Light light, feedback::Rumble rumble) { light_ = light; rumble_ = rumble; }
-  // Once each time round the window loop; `pixels` is the latest picture of the game (for the maze colour), `rows` its height.
-  void update(Pads& pads, feedback::Hub& hub, const std::uint32_t* pixels, int rows);
+  void set(feedback::Rumble rumble) { rumble_ = rumble; }
+  void update(Pads& pads, feedback::Hub& hub);   // once each time round the window loop
 
  private:
-  feedback::Light light_ = feedback::Light::Off;
   feedback::Rumble rumble_ = feedback::Rumble::Off;
-  background::Rgb maze_ = background::defaultMazeColour();
-  bool lightSent_ = false;
-  int turns_ = 0;
 };
 
 class PadDriver {

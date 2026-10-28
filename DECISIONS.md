@@ -234,12 +234,13 @@ The owner's words: "Next up, I need support for Dualshock 4 with appropriate but
 - **What it must not do:** change the game: the pad's game buttons are exactly those of D11, and the new buttons act only on the window (menu, console switches), as the keys F4 to F6 and Esc do.
 - **Not built (ask if wanted):** the touchpad's touch surface, motion sensors, the light bar's colour, rumble, and changing which button does what.
 
-### D-021 - Light bar colours and rumble for the DualShock 4 (2026-10-28, Stage I15)
+### D-021 - Light bar and rumble for the DualShock 4 (2026-10-28, Stage I15)
 
-The owner's words: "I would like light bar colours and rumble."
+The owner's words: "I would like light bar colours and rumble." Then: "I don't want the option to disable the Lightbar. If a Dualshock 4 is plugged in, it should be on. Additionally - no choices for the lightbar behaviors. It should be reactive based on the small number of events in the game."
 
-- **Status:** approved by the owner's request; built and proved in Stage I15 (T-I15-1).
-- **How it was read:** two choices on the Control options page. Light bar: Off (leave it alone, the default), Pac-Man yellow, Maze colour, Lives left (green / yellow / red). Rumble: Off (the default), Light, Strong; it rumbles for a power pill, a ghost eaten and Pac-Man being caught. The strengths and the four colour choices are my choice; the owner can ask for others.
+- **Status:** approved by the owner's requests; built and proved in Stage I15 (T-I15-1).
+- **Light bar:** no menu row and no setting: whenever a PlayStation pad is connected it is on and follows the game: Pac-Man yellow normally; blue while the ghosts are scared, flashing white at the end; a white flash when a ghost is eaten; red when Pac-Man is caught. The colours and times are my choice; the owner can ask for others.
+- **Rumble:** a row on the Control options page: Off (the default), Light, Strong; a power pill, a ghost eaten and Pac-Man being caught each give a pulse. The owner did not ask for it to be always on, so it stays a choice.
 - **What it must not do:** change the game: both are outputs, worked out from the game's memory after each frame, never the other way round.
 
 ## Technical choices made by Claude Code
@@ -396,11 +397,11 @@ The owner's words: "I would like light bar colours and rumble."
 ### T-I15-1 - Light bar and rumble: events read from the game's memory, sent by the window thread (2026-10-28, Stage I15, D-021)
 
 - **Events:** `feedback::EventWatcher` compares the 128 bytes after each frame (the game thread, `feedback::Hub::gameFrame`): Pac-Man starting to die = `$E7` bit 6 rising while in play (`$82` = 0); a power pill = the score of the player to play rising by exactly 5; a ghost eaten = rising by 20, 40, 80 or 160 (D-005 findings, `docs\E5`). A wafer (+1), the bonus item (+100), a new game (the score falls) and a change of player are not events. The events are kept as bits until the window thread takes them, so none is lost when the window is slower than the game.
-- **Pulses:** a power pill 120 ms (small motor), a ghost 220 ms, a death 700 ms (big motor); Strong is full strength of the big motor (0xC000) and the small (0x8000), Light about 40 % of that. Guesses: the owner is asked how they feel.
-- **Light bar:** sent only when its colour changed or a pad was plugged in; Maze colour is looked for twice a second (`background::mazeColour` over the game rows); Off sends the pad's usual blue (0, 0, 64) once when it was on, and the program does the same when it closes. With Off from the start nothing is ever sent.
+- **Light bar:** `feedback::LightShow` makes a colour for every game frame (so it follows the game, not the window): yellow (255, 210, 0); scared = blue (30, 60, 255) for 320 frames, 160 when the difficulty switch of the player to play is on A (the game's own scared time, `docs\F16_LEVELS.md`; the game's memory has no scared flag that was identified), then 64 frames flashing white and blue; ghost eaten = white for 14 frames; death = red for 130 frames and the scared time is cancelled (the ghosts go back). The window thread sends the latest colour to every PlayStation pad when it changed or a pad was plugged in (`Pads::setLight`); a pad of another kind is never sent a colour. When the program ends the light bar is set to the usual blue (0, 0, 64). There is no setting.
+- **Rumble pulses:** a power pill 120 ms (small motor), a ghost 220 ms, a death 700 ms (big motor); Strong is full strength of the big motor (0xC000) and the small (0x8000), Light about 40 % of that. Guesses: the owner is asked how they feel.
 - **Pace:** only the window thread calls SDL for the pad, and only on an event or a colour change, so the game thread and its sound are not touched.
-- **Proof:** `test_feedback` 51 checks, and in the recorded game BL-046 the watcher finds exactly 5 power pills and 8 ghosts eaten (the numbers of its entry, read by other means) and a death before each fall of the lives; `--pad-check` with callbacks on the virtual pad; the real window with a virtual DualShock 4 in both programs.
-- **Not tested:** a real DualShock 4 (the light and motors); how the strengths feel.
+- **Proof:** `test_feedback` 51 checks, including the light bar frame by frame, and in the recorded game BL-046 the watcher finds exactly 5 power pills and 8 ghosts eaten (the numbers of its entry, read by other means), a death before each fall of the lives, and the light bar blue, white and red as expected; `--pad-check` with callbacks on the virtual pad; the real window with a virtual DualShock 4 in both programs.
+- **Not tested:** a real DualShock 4 (the light and motors); how the colours and strengths look and feel; the scared blue is the game's scared time, not read from a flag, so it could differ by a frame or two.
 - **Reversible:** Yes (Git).
 
 ### T-I14-1 - DualShock 4: pad presses as edges, symbols as drawn characters (2026-10-28, Stage I14, D-020)

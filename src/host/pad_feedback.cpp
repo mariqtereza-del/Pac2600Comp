@@ -4,54 +4,6 @@
 
 namespace feedback {
 
-Light nextLight(Light light, int step) { return static_cast<Light>((static_cast<int>(light) + kLights + step) % kLights); }
-
-const char* lightTitle(Light light)
-{
-  switch(light) {
-    case Light::Off: return "Off";
-    case Light::Yellow: return "Pac-Man yellow";
-    case Light::Maze: return "Maze colour";
-    case Light::Lives: return "Lives left";
-  }
-  return "Off";
-}
-
-const char* lightSettingName(Light light)
-{
-  switch(light) {
-    case Light::Off: return "off";
-    case Light::Yellow: return "yellow";
-    case Light::Maze: return "maze";
-    case Light::Lives: return "lives";
-  }
-  return "off";
-}
-
-Light lightFromSetting(const std::string& text)
-{
-  for(int i = 0; i < kLights; ++i)
-    if(text == lightSettingName(static_cast<Light>(i))) return static_cast<Light>(i);
-  return Light::Off;
-}
-
-background::Rgb lightColour(Light light, const background::Rgb& maze, int lives)
-{
-  switch(light) {
-    case Light::Off: return defaultLightColour();
-    case Light::Yellow: return {255, 210, 0};
-    case Light::Maze: return maze;
-    case Light::Lives:
-      if(lives >= 3) return {0, 200, 0};
-      if(lives == 2) return {255, 200, 0};
-      if(lives == 1) return {255, 0, 0};
-      return {40, 40, 40};
-  }
-  return defaultLightColour();
-}
-
-background::Rgb defaultLightColour() { return {0, 0, 64}; }
-
 Rumble nextRumble(Rumble rumble, int step) { return static_cast<Rumble>((static_cast<int>(rumble) + kRumbles + step) % kRumbles); }
 
 const char* rumbleTitle(Rumble rumble) { return rumble == Rumble::Light ? "Light" : rumble == Rumble::Strong ? "Strong" : "Off"; }
@@ -76,6 +28,27 @@ Pulse pulseFor(unsigned events, Rumble rumble)
   return p;
 }
 
+background::Rgb yellowLight() { return {255, 210, 0}; }
+
+background::Rgb defaultLightColour() { return {0, 0, 64}; }
+
+background::Rgb LightShow::step(unsigned events, bool difficultyA)
+{
+  constexpr int kFlashingFrames = 64, kFlashFrames = 14, kDyingFrames = 130;
+  if(events & Death) { dying_ = kDyingFrames; scared_ = 0; flash_ = 0; }
+  if(events & PowerPill) scared_ = (difficultyA ? 160 : 320) + kFlashingFrames;
+  if(events & GhostEaten) flash_ = kFlashFrames;
+  const background::Rgb colour = dying_ > 0 ? background::Rgb{255, 0, 0}
+                                 : flash_ > 0 ? background::Rgb{255, 255, 255}
+                                 : scared_ > kFlashingFrames ? background::Rgb{30, 60, 255}
+                                 : scared_ > 0 ? (scared_ / 8 % 2 ? background::Rgb{255, 255, 255} : background::Rgb{30, 60, 255})
+                                               : yellowLight();
+  if(dying_ > 0) --dying_;
+  if(flash_ > 0) --flash_;
+  if(scared_ > 0) --scared_;
+  return colour;
+}
+
 unsigned EventWatcher::update(const std::uint8_t* ram)
 {
   const bool inPlay = ram[0x82 - 0x80] == 0;   // $82 is not 0 on the title screen and after the game is over
@@ -98,10 +71,18 @@ unsigned EventWatcher::update(const std::uint8_t* ram)
   return events;
 }
 
-void Hub::gameFrame(const std::uint8_t* ram)
+void Hub::gameFrame(const std::uint8_t* ram, bool leftDifficultyA, bool rightDifficultyA)
 {
-  if(const unsigned e = watcher_.update(ram)) pending_ |= e;
-  lives_ = background::livesOf(ram);
+  const unsigned e = watcher_.update(ram);
+  if(e) pending_ |= e;
+  const background::Rgb c = show_.step(e, background::playerToPlay(ram) == 1 ? rightDifficultyA : leftDifficultyA);
+  colour_ = (static_cast<std::uint32_t>(c.r) << 16) | (static_cast<std::uint32_t>(c.g) << 8) | c.b;
+}
+
+background::Rgb Hub::light() const
+{
+  const std::uint32_t c = colour_.load();
+  return {static_cast<std::uint8_t>(c >> 16), static_cast<std::uint8_t>(c >> 8), static_cast<std::uint8_t>(c)};
 }
 
 }  // namespace feedback

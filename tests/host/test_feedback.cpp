@@ -33,29 +33,53 @@ struct Memory {
 
 int main(int argc, char** argv)
 {
-  // The choices: setting names round trip, anything else is Off, the lists wrap round.
-  for(int i = 0; i < kLights; ++i) {
-    const Light l = static_cast<Light>(i);
-    expect(lightFromSetting(lightSettingName(l)) == l, std::string("light setting round trip: ") + lightSettingName(l));
-    expect(std::string(lightTitle(l)).size() >= 3, std::string("a title for ") + lightSettingName(l));
-    expect(nextLight(l, 1) == static_cast<Light>((i + 1) % kLights) && nextLight(l, -1) == static_cast<Light>((i + kLights - 1) % kLights), "Left and Right wrap round the lights");
-  }
+  // The rumble choices: setting names round trip, anything else is Off, the list wraps round.
   for(int i = 0; i < kRumbles; ++i) {
     const Rumble r = static_cast<Rumble>(i);
     expect(rumbleFromSetting(rumbleSettingName(r)) == r, std::string("rumble setting round trip: ") + rumbleSettingName(r));
     expect(nextRumble(r, 1) == static_cast<Rumble>((i + 1) % kRumbles) && nextRumble(r, -1) == static_cast<Rumble>((i + kRumbles - 1) % kRumbles), "Left and Right wrap round the rumbles");
   }
-  expect(lightFromSetting("") == Light::Off && lightFromSetting("pink") == Light::Off && rumbleFromSetting("loud") == Rumble::Off, "unknown or empty settings mean Off");
+  expect(rumbleFromSetting("") == Rumble::Off && rumbleFromSetting("loud") == Rumble::Off, "unknown or empty settings mean Off");
 
-  // The colours.
-  const background::Rgb maze{10, 20, 200};
-  expect(lightColour(Light::Yellow, maze, 3) == background::Rgb{255, 210, 0}, "yellow is yellow");
-  expect(lightColour(Light::Maze, maze, 3) == maze, "the maze colour is the maze colour");
-  expect(lightColour(Light::Lives, maze, 3) == background::Rgb{0, 200, 0} && lightColour(Light::Lives, maze, 9) == background::Rgb{0, 200, 0}, "three lives or more: green");
-  expect(lightColour(Light::Lives, maze, 2) == background::Rgb{255, 200, 0}, "two lives: yellow");
-  expect(lightColour(Light::Lives, maze, 1) == background::Rgb{255, 0, 0}, "one life: red");
-  expect(lightColour(Light::Lives, maze, 0) == background::Rgb{40, 40, 40}, "none shown: dim white");
-  expect(lightColour(Light::Off, maze, 3) == defaultLightColour(), "Off gives the pad's usual colour back");
+  // The light bar's reactions, a step per game frame.
+  {
+    using background::Rgb;
+    const Rgb yellow{255, 210, 0}, blue{30, 60, 255}, white{255, 255, 255}, red{255, 0, 0};
+    LightShow s;
+    expect(s.step(0, false) == yellow && s.step(0, false) == yellow, "yellow when nothing is going on");
+    int blueFrames = 0, flashFrames = 0, other = 0;
+    Rgb c = s.step(PowerPill, false);
+    expect(c == blue, "a power pill: blue at once");
+    for(int i = 0; i < 1000 && !(c == yellow); ++i) {
+      if(c == blue) ++blueFrames; else if(c == white) ++flashFrames; else ++other;
+      c = s.step(0, false);
+    }
+    expect(blueFrames > 0 && other == 0 && c == yellow, "it ends back at yellow, with nothing but blue and white between");
+    expect(blueFrames + flashFrames == 384, "the scared time is 320 frames and 64 more of flashing: " + std::to_string(blueFrames + flashFrames));
+    expect(flashFrames >= 28 && flashFrames <= 36, "about half of the last 64 frames are white: " + std::to_string(flashFrames));
+    LightShow a;
+    int scaredA = 0;
+    for(Rgb x = a.step(PowerPill, true); !(x == yellow); x = a.step(0, true)) ++scaredA;
+    expect(scaredA == 160 + 64, "with the difficulty on A the scared time is half: " + std::to_string(scaredA));
+    LightShow g;
+    g.step(PowerPill, false);
+    expect(g.step(GhostEaten, false) == white, "a ghost eaten: a white flash");
+    int whites = 1;
+    while(g.step(0, false) == white) ++whites;
+    expect(whites == 14, "the flash lasts 14 frames: " + std::to_string(whites));
+    expect(g.step(0, false) == blue, "and then the scared blue goes on");
+    LightShow d;
+    d.step(PowerPill, false);
+    expect(d.step(Death, false) == red, "caught: red");
+    int reds = 1;
+    while(d.step(0, false) == red) ++reds;
+    expect(reds == 130, "red for 130 frames: " + std::to_string(reds));
+    expect(d.step(0, false) == yellow, "then yellow (the scared time is gone with the ghosts' reset)");
+    LightShow f;
+    f.step(GhostEaten, false);
+    expect(f.step(Death, false) == red, "a death outranks a flash");
+    expect(yellowLight() == yellow && !(defaultLightColour() == yellow), "the pad's usual colour is not the yellow");
+  }
 
   // The pulses.
   expect(pulseFor(PowerPill | GhostEaten | Death, Rumble::Off).ms == 0, "no rumble when it is off");
@@ -117,12 +141,12 @@ int main(int argc, char** argv)
     Memory m;
     m.at(0x98) = 3;
     m.score(0);
-    hub.gameFrame(m.ram.data());
+    hub.gameFrame(m.ram.data(), false, false);
     m.score(5);
-    hub.gameFrame(m.ram.data());
+    hub.gameFrame(m.ram.data(), false, false);
     m.score(25);
-    hub.gameFrame(m.ram.data());
-    expect(hub.lives() == 3, "the hub knows the lives");
+    hub.gameFrame(m.ram.data(), false, false);
+    expect(hub.light() == background::Rgb{255, 255, 255}, "the hub has the light bar colour (a ghost was just eaten: the white flash)");
     expect(hub.takeEvents() == (PowerPill | GhostEaten), "two events between two looks of the window are both kept");
     expect(hub.takeEvents() == 0, "and handed over once");
   }
@@ -133,6 +157,8 @@ int main(int argc, char** argv)
     expect(static_cast<bool>(in), "the trace opens");
     std::string text;
     EventWatcher w;
+    LightShow show;
+    int blueFrames = 0, redFrames = 0, whiteFrames = 0;
     int pills = 0, ghosts = 0, deaths = 0, drops = 0, previousLives = -1;
     long long frames = 0;
     while(std::getline(in, text)) {
@@ -141,6 +167,8 @@ int main(int argc, char** argv)
       if(text.rfind("PacMan2600-trace", 0) == 0 || text.rfind("rom_sha1=", 0) == 0 || text.rfind("columns=", 0) == 0 || text.empty()) continue;
       if(!trace::parseLine(text, row, error)) { expect(false, "a trace line parses: " + error); break; }
       const unsigned e = w.update(row.ram.data());
+      const background::Rgb light = show.step(e, false);
+      blueFrames += light == background::Rgb{30, 60, 255}; redFrames += light == background::Rgb{255, 0, 0}; whiteFrames += light == background::Rgb{255, 255, 255};
       pills += (e & PowerPill) != 0;
       ghosts += (e & GhostEaten) != 0;
       deaths += (e & Death) != 0;
@@ -153,6 +181,8 @@ int main(int argc, char** argv)
     std::printf("trace: %lld frames, %d power pills, %d ghosts eaten, %d deaths, %d drops of the lives shown\n", frames, pills, ghosts, deaths, drops);
     expect(pills == std::atoi(argv[2]), "power pills in the recorded game: " + std::to_string(pills) + " (wanted " + argv[2] + ")");
     expect(ghosts == std::atoi(argv[3]), "ghosts eaten in the recorded game: " + std::to_string(ghosts) + " (wanted " + argv[3] + ")");
+    std::printf("light bar: %d frames blue, %d white, %d red\n", blueFrames, whiteFrames, redFrames);
+    expect(blueFrames > 1000 && whiteFrames > 100 && redFrames >= 4 * 130, "the light bar was blue after the power pills (cut short by deaths), white for ghosts and red for the deaths");
     expect(deaths >= drops, "every drop of the lives shown was announced by a death");
   }
 

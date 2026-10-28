@@ -13,7 +13,7 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
 {
   return std::thread([&options, &stop]() {
       SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");   // the test window may not be in front: SDL would otherwise ignore the pad (test only)
-      struct Outputs { std::atomic<int> rumbles{0}, leds{0}, ledGreen{0}; } outputs;   // what the window told the pad (Stage I15)
+      struct Outputs { std::atomic<int> rumbles{0}, leds{0}, ledYellow{0}, ledRed{0}; } outputs;   // what the window told the pad (Stage I15)
       SDL_VirtualJoystickDesc desc;
       SDL_INIT_INTERFACE(&desc);
       desc.userdata = &outputs;
@@ -21,7 +21,8 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
       desc.SetLED = [](void* u, Uint8 r, Uint8 g, Uint8 b) -> bool {
         Outputs* o = static_cast<Outputs*>(u);
         ++o->leds;
-        if(r == 0 && g == 200 && b == 0) ++o->ledGreen;   // the "lives left" colour for three lives
+        if(r == 255 && g == 210 && b == 0) ++o->ledYellow;   // Pac-Man yellow
+        if(r == 255 && g == 0 && b == 0) ++o->ledRed;         // caught
         return true;
       };
       desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
@@ -62,7 +63,7 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
       SDL_CloseJoystick(joystick);
       SDL_DetachVirtualJoystick(id);
       std::ofstream note(options.settingsFile + ".pad.txt", std::ios::app);   // what the pad was told while the window ran
-      note << "rumble_pulses=" << outputs.rumbles.load() << (char)10 << "light_bar_colours_sent=" << outputs.leds.load() << (char)10 << "light_bar_green_sent=" << outputs.ledGreen.load() << (char)10;
+      note << "rumble_pulses=" << outputs.rumbles.load() << (char)10 << "light_bar_colours_sent=" << outputs.leds.load() << (char)10 << "light_bar_yellow_sent=" << outputs.ledYellow.load() << (char)10 << "light_bar_red_sent=" << outputs.ledRed.load() << (char)10;
   });
 }
 

@@ -110,14 +110,13 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   # Stage I14: a virtual DualShock 4 played through the real window (--push-pad): Options starts a game; Triangle, L1 and R1 flip the console switches (Triangle twice:
   # back to Colour); the touchpad opens the menu, the D-pad and Cross go to Control options, Right chooses the arrow keys, Circle goes back, the PS button closes the
   # menu; the touchpad opens it again and the D-pad and Cross choose Quit. The game must not run while the menu is open.
-  printf 'light_bar=lives\n' > "$P/s22.ini"   # Stage I15: the light bar follows the lives (three at the start: green)
   "$EXE" --push-pad --timed 14 "$P/padwin.txt" "$ROM" --mute --settings "$P/s22.ini"; check "$prog push-pad" $? 0
-  has "$prog pad: the light bar was told green for three lives" "$P/s22.ini.pad.txt" "light_bar_green_sent=[1-9]"
+  has "$prog pad: the light bar was set to Pac-Man yellow (a DualShock 4 is plugged in; nothing was chosen)" "$P/s22.ini.pad.txt" "light_bar_yellow_sent=[1-9]"
   # Stage I15: the rumble, in a recorded game with three deaths (BL-048: nobody plays): the first death comes at about 13 s, so one pulse is required
-  printf 'rumble=strong\nlight_bar=lives\n' > "$P/s23.ini"
+  printf 'rumble=strong\n' > "$P/s23.ini"
   "$EXE" --push-pad --replay baseline/BL-048.inputs --timed 16 "$P/padrumble.txt" "$ROM" --mute --settings "$P/s23.ini"; check "$prog push-pad rumble in a recorded game" $? 0
   has "$prog pad: the first death rumbled" "$P/s23.ini.pad.txt" "rumble_pulses=[1-9]"
-  has "$prog pad: the light bar changed with the lives" "$P/s23.ini.pad.txt" "light_bar_colours_sent=[2-9]"
+  has "$prog pad: the light bar went red when Pac-Man was caught" "$P/s23.ini.pad.txt" "light_bar_red_sent=[1-9]"
   has "$prog pad: the virtual DualShock 4 was plugged in" "$P/s22.ini.pad.txt" "virtual_pad_plugged_in=yes"
   has "$prog pad: the menu opened twice" "$P/s22.ini.audio.txt" "menu_opens=2"
   has "$prog pad: the game was paused while the menu was open" "$P/s22.ini.audio.txt" "menu_frames_run_while_open=[01]$"

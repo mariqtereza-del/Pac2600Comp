@@ -21,7 +21,7 @@ enum class Item { Resume, NewGame, GameOptions, Graphics, Quit,  // the main pag
                   Crt, Hdr, HdrHighlights,                 // on the "Graphics options" page, after the TV type (Stages I11 and I10)
                   Background, TvType, Preview,                     // the "Graphics options" page (Stage I7; the TV type moved there in I8)
                   SoundOptions, Volume, Mute,                      // the "Sound options" page (Stage I12): a row on the main page, then a slider and a mute button
-                  ControlOptions, KeyboardKeys, LightBar, RumbleMotors,                    // the "Control options" page (Stage I13): a row on the main page, then the choice of keys
+                  ControlOptions, KeyboardKeys, RumbleMotors,                    // the "Control options" page (Stage I13): a row on the main page, then the choice of keys
                   Back };                                          // the last row of every page
 enum class Page { Main, GameOptions, Graphics, Sound, Controls };
 enum class Result { None, Resume, StartGame, Quit };
@@ -46,7 +46,6 @@ struct Choice {
   controls::Scheme keyboard = controls::Scheme::Both;      // which keys steer the joystick (Stage I13); takes effect at once
   controls::PadFamily pad = controls::PadFamily::PlayStation;   // the pad whose buttons the Control options page lists (Stage I14); a DualShock 4 when none is connected
   bool padConnected = false;                               // for the explanation only
-  feedback::Light light = feedback::Light::Off;            // the colour of the pad's light bar (Stage I15); takes effect at once
   feedback::Rumble rumble = feedback::Rumble::Off;         // how strongly the pad rumbles at the game's events (Stage I15); takes effect at once
 };
 

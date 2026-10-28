@@ -3346,7 +3346,7 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** the owner can delete the repository on github.com at any time; nothing on this PC changes except the `origin` setting, which `git remote remove origin` takes away (to be done only with the owner's say).
     - **Documentation updates:** `DECISIONS.md` (D-030, T-J6-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J6: Private GitHub repository` (the preparation is committed first and then pushed; the status commit that records the push follows). **Next stage:** J7 (automatic checks on GitHub).
-7. **[In progress 2026-10-29] J7 — Automatic checks on GitHub.** A GitHub Actions workflow builds the game and runs the ROM-free tests on every change.
+7. **[Done 2026-10-29, D-031, T-J7-1] J7 — Automatic checks on GitHub.** A GitHub Actions workflow builds the game and runs the ROM-free tests on every change.
     **J7 in full (16 headings):**
     - **Objective:** GitHub builds the game's test programs and runs the tests that need no game file on every push to `main` and on every pull request, and shows a green tick or a red cross.
     - **Why it matters:** a change that breaks the build or a proof is caught on a clean machine that has none of this PC's leftovers; the workflow written in H4 has never run anywhere.

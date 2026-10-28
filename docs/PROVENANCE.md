@@ -16,9 +16,9 @@ This is a factual list, not legal advice (see `docs\LEGAL_BRIEFING.md`; the owne
 | third-party | 2208 | 49,938,758 | SDL3 (zlib) and the libretro shader sources (per file: GPL v2 or later, public domain) | libraries and shader sources, unchanged |
 | build-tool | 88 | 793,335 | ours | scripts that build, test, release and check the project |
 | test-data | 147 | 311,928 | ours | recorded joystick inputs, entries and frozen files of the preservation suite (no ROM bytes) |
-| documentation | 84 | 2,720,136 | ours | the notes and documents of the project |
+| documentation | 84 | 2,721,097 | ours | the notes and documents of the project |
 | config | 3 | 3,696 | ours | Git and GitHub settings |
-| **total** | 3806 | 82,606,772 |  |  |
+| **total** | 3806 | 82,607,733 |  |  |
 
 Every tracked file is in exactly one category, and no file fits no rule (the tool stops otherwise).
 

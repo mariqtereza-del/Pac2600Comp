@@ -17,6 +17,9 @@ hdr::ScreenState screenStateOf(SDL_Window* window);
 // for the refresh (vsync) is on, as everywhere in the program.
 SDL_Renderer* createRenderer(SDL_Window* window, bool hdrPipeline, bool* gotHdr = nullptr);
 
+// SDL says that the graphics device was lost or has been made again (Stage I16): everything made from the old one, the textures and the filters' objects, must be made again.
+bool rendererWasReset(const SDL_Event& e);
+
 // The window's pixels as standard 8-bit colour (0x00RRGGBB), whatever the renderer's colour space: an HDR renderer gives 16-bit float linear pixels, which are turned back
 // by hand with the screen's white level `sdrWhite`, so that what is compared is what is sent to the screen. Saved as a PNG too. `format` names the pixel format read.
 struct Pixels {

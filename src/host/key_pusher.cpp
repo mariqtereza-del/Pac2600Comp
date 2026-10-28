@@ -2,7 +2,23 @@
 // (Stage I9.4: cut out of play_window.cpp, the code is unchanged.)
 #include "key_pusher.hpp"
 
+#include <windows.h>
+#include <initializer_list>
+
 namespace host {
+
+namespace {
+
+// Stage I16: what happens when Direct3D removes the graphics device: SDL's renderer lets go of the Direct3D libraries and says that the device was reset.
+void simulateDeviceLoss()
+{
+  for(const wchar_t* name : {L"d3d11.dll", L"dxgi.dll"}) if(HMODULE m = GetModuleHandleW(name)) FreeLibrary(m);
+  SDL_Event reset{};
+  reset.type = SDL_EVENT_RENDER_DEVICE_RESET;
+  SDL_PushEvent(&reset);
+}
+
+}  // namespace
 
 namespace {
 
@@ -70,8 +86,9 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
 }  // namespace
 
 void writePushReports(std::ostream& log, const Options& options, const Emulator& emulator, int menuOpens, long long menuFramesRun, std::uint32_t joystickValuesSeen,
-                      const std::set<int>& switchValuesSeen)
+                      const std::set<int>& switchValuesSeen, int rendererRemakes)
 {
+  if(options.pushCrt) log << "renderer_remade=" << rendererRemakes << (char)10;
   if(options.pushMenu || options.pushPad) {
     char flags[16];
     std::snprintf(flags, sizeof flags, "%02x", emulator.ram()[0xE7 - 0x80]);
@@ -92,7 +109,7 @@ void writePushReports(std::ostream& log, const Options& options, const Emulator&
 std::thread startKeyPusher(const Options& options, const std::atomic<bool>& stop)
 {
   if(options.pushPad) return startPadPusher(options, stop);
-  if(!(options.pushKeys || options.pushMenu)) return {};
+  if(!(options.pushKeys || options.pushMenu || options.pushCrt)) return {};
   return std::thread([&options, &stop]() {
       auto key = [](SDL_Scancode code, bool down) {
         SDL_Event e{};
@@ -140,9 +157,26 @@ std::thread startKeyPusher(const Options& options, const std::atomic<bool>& stop
         tap(8.45, SDL_SCANCODE_DOWN); tap(8.47, SDL_SCANCODE_RETURN); tap(8.49, SDL_SCANCODE_RIGHT); tap(8.51, SDL_SCANCODE_ESCAPE);   // Stage I13: Control options, the keyboard to the arrow keys only, back
         tap(8.55, SDL_SCANCODE_DOWN); tap(8.6, SDL_SCANCODE_RETURN);  // Quit
       }
+      if(options.pushCrt) {   // Stage I16: Graphics options, the CRT filter row; Right 14 times (round the four filters three times and a bit), Left 6 times, with a pause for the picture each time
+        plan.clear();
+        auto tap = [&](double at, SDL_Scancode code) { plan.push_back({at, code, true}); plan.push_back({at + 0.05, code, false}); };
+        tap(1.0, SDL_SCANCODE_ESCAPE);
+        for(int i = 0; i < 3; ++i) tap(1.3 + 0.1 * i, SDL_SCANCODE_DOWN);
+        tap(1.8, SDL_SCANCODE_RETURN);
+        tap(2.0, SDL_SCANCODE_DOWN); tap(2.1, SDL_SCANCODE_DOWN);
+        for(int i = 0; i < 14; ++i) tap(2.6 + 0.7 * i, SDL_SCANCODE_RIGHT);
+        for(int i = 0; i < 6; ++i) tap(12.6 + 0.7 * i, SDL_SCANCODE_LEFT);
+        tap(17.2, SDL_SCANCODE_ESCAPE); tap(17.6, SDL_SCANCODE_ESCAPE);   // back to the game
+      }
+      std::vector<double> resets;   // Stage I16: "the graphics device was lost and made again", as SDL says it when Direct3D reports a removed device; times in seconds
+      if(options.pushCrt) resets = {4.4, 7.4, 10.4, 13.4, 16.4};
       const Uint64 t0 = SDL_GetTicksNS();
+      std::size_t nextReset = 0;
       for(const auto& step : plan) {
-        while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) SDL_Delay(5);
+        while(!stop.load() && static_cast<double>(SDL_GetTicksNS() - t0) < step.at * 1e9) {
+          if(nextReset < resets.size() && static_cast<double>(SDL_GetTicksNS() - t0) >= resets[nextReset] * 1e9) { simulateDeviceLoss(); ++nextReset; }
+          SDL_Delay(5);
+        }
         if(stop.load()) break;
         key(step.code, step.down);
       }

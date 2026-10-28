@@ -3144,6 +3144,19 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-021, T-I15-1), `TESTING.md`, `ARCHITECTURE.md`, `docs\GLOSSARY.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I15: Light bar colours and rumble` and `Stage I15b: The light bar always on and reactive`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I16 - Crash while changing CRT filters (bug fix)** **[Done 2026-10-28]**
+      - **Objective:** the program no longer crashes when the graphics device is lost and recovered while a CRT filter is used.
+      - **Why it matters:** the owner reported a crash while changing CRT filters (Windows error report: `pacman2600.exe`, access violation in `d3d11.dll`, 2026-10-28 02:46, HDR on, frame rate unlocked, fullscreen).
+      - **Prerequisites:** I15 Done, clean tree.
+      - **What Claude Code will do:** read the crash dump (the crash was an attempt to run code inside `d3d11.dll` after it was unloaded, from `GpuPasses::run` in a CRT pass); rebuild the exact code with a map to name the functions; find the cause in SDL's Direct3D 11 renderer: when Direct3D reports "device removed" SDL makes a new device inside the same renderer and unloads `d3d11.dll` and `dxgi.dll`, while the filter still held objects of the old device. Fix: (1) the two libraries are pinned (`d3d_pin.*`, `GetModuleHandleEx` with the PIN flag), so they cannot be unloaded; (2) on SDL's "device lost / reset" events the window makes its renderer and every filter object again (as when HDR is switched).
+      - **What I must do:** keep using it, and tell me if it happens again.
+      - **Verification:** `test_d3d_pin`; `--push-crt` in the real window: the CRT filter row is worked round and round while five "device reset" events are sent and `d3d11.dll` and `dxgi.dll` are released as SDL does: with the pin the program goes on (exit 0, renderer made again five times); with the pin switched off (an experiment, not kept) the same run dies with exit code 0xC0000005, the owner's crash; all earlier proofs unchanged.
+      - **Completion criteria:** no frozen file changed; the game is untouched.
+      - **Potential problems:** why Direct3D removed the device in the owner's session is not known (a driver reset or timeout of the graphics card is the usual cause); the fix makes the program recover from it, it does not stop it.
+      - **Recovery:** revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (T-I16-1), `TESTING.md`, `ARCHITECTURE.md`, `CLAUDE.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I16: Do not crash when the graphics device is lost`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

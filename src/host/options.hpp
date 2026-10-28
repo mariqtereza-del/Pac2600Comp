@@ -40,6 +40,7 @@ struct Options {
   int resetAt = -1;   // frame at which the console's Reset is held for 10 frames (tests; the R key does this by hand)
   bool mute = false;  // play the sound stream with the volume at zero (tests)
   bool pushMenu = false;  // tests (Stage I5): a helper thread works the Escape menu through the real window's event queue (--push-menu)
+  bool pushCrt = false;   // tests (Stage I16): a helper thread works the CRT filter row of the Graphics options page, round and round, through the real window (--push-crt)
   bool pushPad = false;   // tests (Stage I14): a helper thread plays a virtual DualShock 4 through the real window: menu button, menu moves, switches (--push-pad)
   bool pushKeys = false;  // tests: a helper thread presses keys in the real window's event queue (--push-keys)
   bool timerClock = false;  // pace the game from the PC clock instead of the sound card (comparison only)

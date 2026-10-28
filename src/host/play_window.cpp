@@ -17,9 +17,7 @@
 
 namespace host {
 
-// The game window: one emulator frame per 1/60 s from a simple clock (temporary; real pacing is Stage D9).
-// With maxSeconds > 0 it stops by itself after that long and returns the frames per second it managed (for tests).
-// Keys 1, 2, 3, 4 choose Sharp, Fill, TV frame, Game area; Alt+Enter toggles fullscreen (temporary; Stage D10 gives the keys their final home).
+// The game window. With maxSeconds > 0 it stops by itself after that long and returns the frames per second it managed (for tests).
 double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string& romPath, double maxSeconds, View view, Tracker& tracker, const Options& options)
 {
   std::vector<std::uint8_t> bytes;
@@ -75,6 +73,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
                        settings::get(options.settingsFile, "tv_type") == "bw");
   keyboard.setScheme(controls::schemeFromSetting(settings::get(options.settingsFile, "keyboard")));   // Stage I13: which keys steer (menu, Control options)
   controls::Input savedSwitches = keyboard.input();
+  int rendererRemakes = 0;   // how often the renderer was made again (HDR switched, or a lost graphics device; reported for the tests)
   Pads pads;  PadDriver padDriver;   // the pad: menu button, menu moves and switches (Stage I14)
   feedback::Hub feedbackHub;  FeedbackDriver padFeedback(options.settingsFile);   // what the game did, for the pad's rumble and light bar (Stage I15)
   menu::Session menuSession(!replaying);  // the Escape menu (Stage I5); a replay decides what the console is given, so it cannot start a game
@@ -98,10 +97,11 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
   bool counterOn = settings::get(options.settingsFile, "frame_counter") == "on";   // the pictures-a-second counter (menu, Game options; frame_counter=on|off)
   auto applyVSync = [&]() { SDL_SetRenderVSync(renderer, (options.presentHz > 0 || framerate::unlocked(rate)) ? 0 : 1); };
   applyVSync();   // the screen's own wait is off while the frame rate is unlocked
-  auto adaptToHdr = [&]() {
+  auto adaptToHdr = [&](bool remake = false) {   // remake: the graphics device was lost (Stage I16), so the renderer is made again whatever the colour space
     screenState = screenStateOf(window);
     const bool want = hdr::useHdr(hdrWanted, screenState);
-    if(want == hdrPipeline) { updateSmoothWanted(); return; }
+    if(want == hdrPipeline && !remake) { updateSmoothWanted(); return; }
+    ++rendererRemakes;
     screen.dropTextures();
     SDL_DestroyRenderer(renderer);
     renderer = createRenderer(window, want, &hdrPipeline);
@@ -279,7 +279,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
     if(options.stallMs > 0 && !stalled && static_cast<double>(SDL_GetTicksNS() - started) >= 5e9) { SDL_Delay(static_cast<Uint32>(options.stallMs)); stalled = true; }
     for(SDL_Event e; SDL_PollEvent(&e); ) {
       if(e.type == SDL_EVENT_QUIT) running = false;
-      if(e.type == SDL_EVENT_WINDOW_HDR_STATE_CHANGED) adaptToHdr();   // Windows turned HDR on or off for this screen (or the window moved to another)
+      if(e.type == SDL_EVENT_WINDOW_HDR_STATE_CHANGED || rendererWasReset(e)) adaptToHdr(rendererWasReset(e));   // HDR turned on or off (or another screen), or the device was lost
       if(handleWindowEvent(window, tracker, e)) continue;
       if(menuKey(e, running)) continue;
       if(e.type == SDL_EVENT_KEY_DOWN && !e.key.repeat) {
@@ -392,7 +392,7 @@ double playWindow(SDL_Window* window, SDL_Renderer*& renderer, const std::string
         << "\nrefreshes_per_game_frame_3=" << refreshHistogram[2] << "\nrefreshes_per_game_frame_4=" << refreshHistogram[3]
         << "\nrefreshes_per_game_frame_5_or_more=" << refreshHistogram[4] << "\ngame_frames_never_shown=" << framesNeverShown << '\n';
     log << frameTimingText(computeMs, lateMs, firstPictureMs.load(), options.presentHz);   // Stage H6: the game thread's own timing (it has ended, so the lists can be read here)
-    writePushReports(log, options, emulator, menuOpens, menuFramesRun, joystickValuesSeen, switchValuesSeen);
+    writePushReports(log, options, emulator, menuOpens, menuFramesRun, joystickValuesSeen, switchValuesSeen, rendererRemakes);
   }
   return static_cast<double>(sharedFrame) / elapsed;
 }

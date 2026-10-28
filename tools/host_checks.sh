@@ -125,6 +125,12 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   has "$prog pad: Triangle twice left the TV type at Colour" "$P/s22.ini" "tv_type=colour"
   has "$prog pad: the menu chose the arrow keys" "$P/s22.ini" "keyboard=arrows"
   has "$prog pad: Quit from the menu closed the program early" "$P/s22.ini.audio.txt" "seconds=1[01]"
+  # Stage I16: the CRT filter row worked round and round in the real window while "the graphics device was lost" is reported five times and the Direct3D libraries are let go of
+  # (what SDL does when Direct3D removes the device): the program must go on (exit 0), make its renderer again each time, and not crash (it did, in d3d11.dll, before I16)
+  printf 'hdr=on\ncrt_filter=lottes\n' > "$P/s24.ini"
+  "$EXE" --push-crt --timed 20 "$P/crtwin.txt" "$ROM" --mute --settings "$P/s24.ini"; check "$prog push-crt with device resets" $? 0
+  has "$prog crt: the renderer was made again after each reset" "$P/s24.ini.audio.txt" "renderer_remade=[5-9]"
+  has "$prog crt: the filter row was worked (net 8 steps round four filters: back to Lottes)" "$P/s24.ini" "crt_filter=lottes"
   "$EXE" --replay "$P/rec1.inputs" --fingerprints "$P/B.csv" --timed 8 "$P/rw.txt" "$ROM" --mute --settings "$P/s10.ini"; check "$prog replay in window" $? 0
   "$EXE" --headless "$P/c.png" "$ROM" --replay "$P/rec1.inputs" --fingerprints "$P/C.csv" --settings "$P/s11.ini"; check "$prog replay headless" $? 0
   # Stage I9.6: the game does not depend on the frame rate. The same recording played in the window at 60 and at 144 (smooth motion on) must give the same
@@ -170,7 +176,7 @@ done
 if [ -f reference/baseline/BL-046.trace ]; then   # Stage I15: the events found in the recorded game BL-046 are the 5 power pills and 8 ghosts its entry counts
   build/host/test_feedback.exe reference/baseline/BL-046.trace 5 8 > "$W/feedback_bl046.log" 2>&1; check "test_feedback on the recorded game BL-046" $? 0
 fi
-for t in test_controls test_feedback test_inputlog test_layout test_menu test_rom_finder test_trace test_windowstate; do
+for t in test_controls test_d3d_pin test_feedback test_inputlog test_layout test_menu test_rom_finder test_trace test_windowstate; do
   case $t in
     test_rom_finder) mkdir -p "$W/t_$t"; build/host/$t.exe "$W/t_$t" "$ROM" >"$W/$t.log" 2>&1 ;;
     test_inputlog|test_windowstate) mkdir -p "$W/t_$t"; build/host/$t.exe "$W/t_$t" >"$W/$t.log" 2>&1 ;;

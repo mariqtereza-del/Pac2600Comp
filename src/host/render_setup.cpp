@@ -1,5 +1,7 @@
 #include "render_setup.hpp"
 
+#include "d3d_pin.hpp"
+
 #include <algorithm>
 #include <cstdlib>
 
@@ -15,8 +17,11 @@ hdr::ScreenState screenStateOf(SDL_Window* window)
   return state;
 }
 
+bool rendererWasReset(const SDL_Event& e) { return e.type == SDL_EVENT_RENDER_DEVICE_RESET || e.type == SDL_EVENT_RENDER_DEVICE_LOST; }
+
 SDL_Renderer* createRenderer(SDL_Window* window, bool hdrPipeline, bool* gotHdr)
 {
+  pinDirect3D();   // before SDL loads them, so that SDL cannot unload them under objects that are still in use (T-I16-1)
   if(gotHdr) *gotHdr = false;
   if(hdrPipeline) {
     SDL_PropertiesID props = SDL_CreateProperties();

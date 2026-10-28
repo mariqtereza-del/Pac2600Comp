@@ -82,7 +82,7 @@ target_link_libraries(emulator_native PUBLIC game_native)
 # They need an Emulator but not which one: the executables below link the native one or the Stella one.
 add_library(host_app STATIC options.cpp rom_choice.cpp screen.cpp symbols.cpp pads.cpp pad_driver.cpp pacer.cpp window_tracker.cpp window_checks.cpp play_window.cpp headless.cpp menu_view.cpp menu_check.cpp backdrop.cpp backdrop_check.cpp smooth_check.cpp key_pusher.cpp hdr_check.cpp render_setup.cpp gpu_pass.cpp filter_check.cpp crt_filter.cpp crt_lottes.cpp crt_geom.cpp gpu_graph.cpp gdv_chain.cpp gdv_generated.cpp gdv_luts.cpp)
 target_compile_options(host_app PRIVATE /W4 /permissive-)
-target_link_libraries(host_app PUBLIC SDL3::SDL3 rom_finder layout windowstate audio controls menu inputlog trace framerate hdr crt d3d11 d3dcompiler dxguid)
+target_link_libraries(host_app PUBLIC SDL3::SDL3 d3d_pin rom_finder layout windowstate audio controls menu inputlog trace framerate hdr crt d3d11 d3dcompiler dxguid)
 
 # WIN32 = a normal windowed program (no console window when double-clicked).
 # pacman2600 is the game: it plays with the rebuilt game (emulator_native) and contains no Stella.
@@ -134,6 +134,14 @@ target_link_libraries(test_framerate PRIVATE framerate)
 add_executable(test_feedback ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_feedback.cpp)
 target_compile_options(test_feedback PRIVATE /W4 /permissive-)
 target_link_libraries(test_feedback PRIVATE menu trace)
+
+# Keeps Direct3D loaded (Stage I16) and its test: build/host/test_d3d_pin.exe
+add_library(d3d_pin STATIC d3d_pin.cpp)
+target_compile_options(d3d_pin PRIVATE /W4 /permissive-)
+add_executable(test_d3d_pin ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_d3d_pin.cpp)
+target_compile_options(test_d3d_pin PRIVATE /W4 /permissive-)
+target_include_directories(test_d3d_pin PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_d3d_pin PRIVATE d3d_pin)
 
 # Tests for the volume (Stage I12): build/host/test_volume.exe
 add_executable(test_volume ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/host/test_volume.cpp)

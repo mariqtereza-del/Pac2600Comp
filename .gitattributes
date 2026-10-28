@@ -12,6 +12,7 @@
 # Vendored library sources stay byte-identical to the official releases (DECISIONS.md T-B7-2).
 third_party/SDL3/** -text
 third_party/stella/** -text
+third_party/shaders/** -text
 
 # Binary files are never changed by Git.
 *.a26 binary

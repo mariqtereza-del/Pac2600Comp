@@ -333,6 +333,16 @@ The owner's words: "My github account is mariqtereza-del. The name should be Pac
 - **Approvals:** every `git push` and every other action on GitHub is approved by the owner at the moment it happens (CLAUDE.md, "Always ask first"). Sign-in is done by the owner in the browser.
 - **Done (2026-10-29):** the owner pushed `main` with GitHub Desktop; the repository is Private with 172 commits (T-J6-3). The repository was made by the owner twice (the second time empty again, same address).
 
+### D-031 - Automatic test runs on GitHub are switched on (2026-10-29, Stage J7)
+
+Asked by Claude Code before switching on; the owner answered "Yes, switch it on (Recommended)".
+
+- **Status:** approved by the owner.
+- **What runs:** `.github\workflows\public-tests.yml` on every push to `main`, every pull request and on request ("Run workflow"): it builds the lockstep test programs and runs `tools\test_public.ps1` (54 steps, no game file) on GitHub's Windows machine. The token can only read the repository.
+- **Cost the owner accepted:** the repository is private, so runs use its free Actions minutes (about 2,000 a month; a Windows minute counts twice); a failing run e-mails the owner.
+- **How to stop it:** change the `on:` part of the workflow to `workflow_dispatch:` alone, or disable the workflow on the Actions page.
+- **Reversible:** Yes.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -483,6 +493,17 @@ The owner's words: "My github account is mariqtereza-del. The name should be Pac
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-J7-1 - Rehearsing the workflow in a fresh clone; what it found (2026-10-29, Stage J7, D-031)
+
+- **Method:** GitHub itself cannot be run from here (Claude Code has no sign-in there), so the workflow's steps were rehearsed in a brand-new shallow clone (`git clone --depth 1 file:///...` into `build\public_check\j7-<time>`, like GitHub's checkout, with Windows line-ending conversion on): `tools\build_lockstep.cmd`, then `tools\test_public.ps1`. No game file is in a clone.
+- **First rehearsal: 53 of 54.** `j5_notices_check` failed: in a fresh Windows clone the shader files under `third_party\shaders` were converted to CRLF (357 extra bytes in `crt-lottes.slang`: 9,897 instead of 9,540), because `.gitattributes` protected `third_party\SDL3` and `third_party\stella` from line-ending conversion (T-B7-2) but not the shaders. So the \"unchanged\" shader files were not unchanged for anyone cloning on Windows, and the manifest's SHA-256 did not match. Fixed: `third_party/shaders/** -text`. A defect that this PC's own folder could never show (its files were written by the download, not by a checkout). The frozen preservation files passed under conversion (their check is not affected).
+- **Second rehearsal in a new clone: 54 of 54**, `result: OK`: build 18 s, tests 170 s, about 3 minutes in all on this PC; GitHub's machine may take 5 to 10 minutes (two to four times slower cores, nothing cached), about 10 to 20 minutes of the free allowance per run with the Windows factor of two.
+- **Anticipated differences from this PC, handled before the first run:** (1) the C++ compiler is looked up by the \"Build Tools\" workload, which a full Visual Studio such as the runner's lacks; the four build scripts (`build_lockstep`, `build_host`, `build_stella_probe`, `build_third_party`) now fall back to the compiler component `Microsoft.VisualStudio.Component.VC.Tools.x86.x64`; proved by running the lookup lines with the first query broken (same folder found); (2) the tools were only ever tried with Python 3.14, so the workflow installs 3.14 (`actions/setup-python@v5`); (3) `windows-latest` has Visual Studio 2026 (18.x), as this PC's Build Tools, according to GitHub's runner image notes found by web search (the exact compiler version was not found); (4) a time limit of 30 minutes, cancelling a superseded run, and printing the failing logs into the run, so no download is needed to see why it failed.
+- **A mistake of mine, caught and repaired:** the first edit of the four build scripts put the new lines at the end of the file (the scripts have Unix line endings and I split on Windows ones), and the repair of one of them cut off the rest of that script; the check of `git diff --stat` showed 6 deleted lines, and the file was rebuilt from the committed content (`git show`, read only). Final diff: +2 lines in each of the four scripts, nothing removed.
+- **Still unknown until the first real run:** whether the runner's compiler accepts the C++23 setting and has CMake and Ninja on its path (it should: Visual Studio 2026 with the C++ workload); whether Python 3.14 can be installed there. The first run's result is reported by the owner.
+- **A commit message that is now wrong:** `21b4be7` says \"workflow updated but still manual\", but its workflow file already runs on push (the trigger was meant to be switched on only after the owner's approval, and nothing had been pushed). It is not pushed-and-live yet, and history is not rewritten without the owner's say; the next commits and this record say what is true.
+- **Reversible:** Yes.
 
 ### T-J4.1-1 - Screenshots in the README (2026-10-29, Stage J4.1)
 

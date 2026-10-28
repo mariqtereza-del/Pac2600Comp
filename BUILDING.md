@@ -22,7 +22,11 @@ Open a Command Prompt or PowerShell in the repository folder (the one that holds
 
 Both scripts write only inside `build\`. A failed build leaves its messages on the screen; fix nothing by hand in `third_party\`.
 
-## Test (about 15 seconds, no game file needed)
+## Test on GitHub
+
+The repository has a workflow (`.github/workflows/public-tests.yml`) that GitHub runs by itself on every push to `main` and every pull request: it builds the test programs and runs the same public tests as below on a clean Windows machine. The green tick or red cross shows on the commit and on the Actions tab. It never sees a game file.
+
+## Test (about 15 seconds of tests after the build, no game file needed)
 
 `powershell -NoProfile -ExecutionPolicy Bypass -File tools\test_public.ps1`
 

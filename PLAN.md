@@ -3312,7 +3312,7 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit.
     - **Documentation updates:** `LICENSE`, `THIRD_PARTY_NOTICES.md`, `DECISIONS.md` (T-J5-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J5: Licences and credits`. **Next stage:** J6 (create the private repository; needs the owner at github.com).
-6. **[In progress 2026-10-28: prepared; waiting for the owner to create the empty private repository] J6 — Create the repository, private.** You create it on github.com while Claude Code tells you each click. Claude Code shows the exact file list for the first push; you check for `.a26` files; you approve the push. Sign-in happens in your browser, never by typing a password into Claude Code.
+6. **[Done 2026-10-29, D-030, T-J6-3] J6 — Create the repository, private.** You create it on github.com while Claude Code tells you each click. Claude Code shows the exact file list for the first push; you check for `.a26` files; you approve the push. Sign-in happens in your browser, never by typing a password into Claude Code.
     **J6 in full (16 headings):**
     - **Objective:** put the project into a **private** GitHub repository, as an off-site backup and the home of Stages J7 to J10; nothing public.
     - **Why it matters:** the first push sends all 170 commits to GitHub's servers and cannot be fully taken back; the owner must see exactly what goes and approve it.

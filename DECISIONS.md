@@ -331,7 +331,7 @@ The owner's words: "My github account is mariqtereza-del. The name should be Pac
 - **Account:** `mariqtereza-del` (the same name is the author of every commit). **Repository:** `Pac2600Comp`, address `https://github.com/mariqtereza-del/Pac2600Comp`.
 - **Visibility:** **Private** (D-027: private first; the decision to go public is J11). Created by the owner on github.com, empty (no README, no `.gitignore`, no licence file).
 - **Approvals:** every `git push` and every other action on GitHub is approved by the owner at the moment it happens (CLAUDE.md, "Always ask first"). Sign-in is done by the owner in the browser.
-- **Reversible:** Yes while the repository is private: the owner can delete it on github.com.
+- **Done (2026-10-29):** the owner pushed `main` with GitHub Desktop; the repository is Private with 172 commits (T-J6-3). The repository was made by the owner twice (the second time empty again, same address).
 
 ## Technical choices made by Claude Code
 
@@ -483,6 +483,16 @@ The owner's words: "My github account is mariqtereza-del. The name should be Pac
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-J6-3 - The first push, done by the owner with GitHub Desktop (2026-10-29, Stage J6, D-030)
+
+- **Route:** the owner chose to push with GitHub Desktop (already signed in) instead of the command line. Claude Code set `origin` to `https://github.com/mariqtereza-del/Pac2600Comp.git` (a setting of this repository only), proved the push contents, and stayed out of GitHub; no `git push` and no other action on GitHub was run by Claude Code.
+- **What happened:** the owner had recreated the repository on github.com (same name) and confirmed it was Private and empty. GitHub Desktop showed **Publish Branch** and not Push origin: that is its normal button for a first push of a branch that does not exist on the remote yet (it sends `main` to the existing `origin`; **Publish repository** is the different button that would create a new repository). The owner clicked it; there was no window asking for a name or a privacy checkbox, no rejection and no e-mail-privacy refusal (GH007), and no gigabytes.
+- **Result, as the owner saw it on github.com:** the **Private** badge, **172 commits**, the folders `.github`, `baseline`, `docs`, `src`, `tests`, `third_party`, `tools` and then `README.md`, `LICENSE`, `THIRD_PARTY_NOTICES.md`, and no `.a26` or `.bin` file. Checked here without contacting GitHub: `origin/main` and `main` are the same commit, `8c7e2b7` (0 ahead, 0 behind).
+- **The size question:** the owner noticed the project folder is over 5 GB and not the 81 MB first quoted. Measured: `reference\` 2,168 MB, `build\` 2,115 MB, `out\` 631 MB, `third_party\_downloads\` 28 MB, `.git` 30 MB, tracked files 81 MB: about 5.05 GB, all but the 81 MB and the `.git` ignored by Git and therefore not sent. The 81 MB was the size of the tracked files only; the push was about 26 MB. Nothing was deleted (D-003).
+- **The working copy was removed and restored:** during the push the owner deleted `rom\pacman.a26` (the working copy of the game file), to be sure it would not go to GitHub; the quick tests then could not run (\"NOT RUN\"). The original `Pac-Man (1981) (Atari).a26` and the spare in `F:\Ports\ROM-originals\` were intact (SHA-1 `0940fea7...`). The owner asked whether putting it back would change the repository; Claude Code showed it would not: `.gitignore` has `/rom/` and `*.a26` (`git check-ignore`), Git tracks 0 files under `rom\`, and the scan of all commits finds no game file. With the owner's approval the copy was restored from the original (a copy; the original only read, still read-only), its SHA-1 was checked, and `test_quick` then passed 57 of 57. The original in the top folder, which is also ignored, was in place during the push and was not sent.\n- **Not done by Claude Code, so not claimed:** Claude Code did not read the repository on GitHub. What is on GitHub is known from the owner's description and from the local `origin/main` reference. The GitHub Actions workflow is still manual-only (T-J6-2).
+- **Still open for J11:** the owner's e-mail address is in all 172 commits.
+- **Reversible:** Yes: the owner can delete the repository on github.com.
 
 ### T-J6-2 - The GitHub workflow is switched to manual before the first push (2026-10-28, Stage J6, D-030)
 

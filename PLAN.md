@@ -3170,6 +3170,19 @@ Development stops here until you decide what, if anything, to add. Nothing in th
       - **Documentation updates:** `DECISIONS.md` (D-022, T-I17-1), `TESTING.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
       - **Git checkpoint:** `Stage I17: DualSense support; Mirrored edge removed`. **Next stage:** I3 continues with the owner's other answers.
 
+    - **I18 - Xbox / XInput pads (the same features as the DualShock 4, without the light bar)** **[Done 2026-10-28]** *(twelfth approved feature, D-023)*
+      - **Objective:** an Xbox 360 / Xbox One / Series pad (XInput) has every feature of the DualShock 4 except the light bar: the buttons and their symbols, the menu on the pad, the three switches, the rumble.
+      - **Why it matters:** the owner asked for it (D-023): "Next up - Xinput controllers. I need the same features, minus the lightbar support obviously."
+      - **Prerequisites:** I17 Done, clean tree.
+      - **What Claude Code will do:** SDL already reads these pads as gamepads (type Xbox 360 / Xbox One) and the program already took them for the Xbox family (D-pad or left stick, A or X = fire, Menu = Reset, View = Select, LB / RB = the difficulty switches, Y = TV type, the Guide button or a press on the right stick = the menu, A do and B back in it, rumble). Added: the lettered buttons are drawn as their colours (A green, B red, X blue, Y yellow) in the F1 list and the Control options page, as the PlayStation shapes are; the pad is named "Xbox (XInput)"; no light bar colour is ever sent to it. A test option `--pad-model xbox` makes the tests' virtual pad an Xbox 360 pad (Microsoft's vendor and product numbers).
+      - **What I must do:** try it with a real Xbox / XInput pad and say what feels wrong. Note: on Windows the Guide button is often taken by the Xbox Game Bar; the right stick press opens the menu as well.
+      - **Verification:** `test_controls` (the Xbox names, the symbols, every Xbox press), `--pad-check --pad-model xbox` (known as an Xbox pad; every button, the right stick opens the menu, no light bar colour sent, the rumble reaches it), `--menu-shot` (the page with an Xbox pad: the four letters drawn in their colours), `--push-pad --pad-model xbox` in the real window (right stick and Guide open the menu, LB flips a switch, a menu choice is made, no light bar sent), both programs; every earlier proof unchanged.
+      - **Completion criteria:** no frozen file changed; the game is untouched; the DualShock 4 and DualSense behave as before.
+      - **Potential problems:** the Guide button may not reach the program on some Windows setups (the right stick press does); the Xbox One pad's trigger motors are not used.
+      - **Recovery:** revert the commit.
+      - **Documentation updates:** `DECISIONS.md` (D-023, T-I18-1), `TESTING.md`, `CLAUDE.md`, `docs\GLOSSARY.md`, `PROJECT_STATUS.md`, `PLAN.md`.
+      - **Git checkpoint:** `Stage I18: Xbox / XInput pads`. **Next stage:** I3 continues with the owner's other answers.
+
 Two rules for every feature:
 
 - The **Original** mode stays the default and is byte-for-byte the 1.0.0 baseline.

@@ -194,7 +194,8 @@ bool padCheck(const Options& o)
   line("PS button asks for the menu", seen.menu, "");
   seen = controls::PadAsks{};
   tap(SDL_GAMEPAD_BUTTON_RIGHT_STICK);
-  line("pressing the right stick does not, on a PlayStation pad", !seen.menu, "");
+  const bool playStation = controls::isPlayStation(model.family);   // an Xbox pad has no touchpad: pressing the right stick in is its second menu button (Stage I18)
+  line(playStation ? "pressing the right stick does not, on a PlayStation pad" : "pressing the right stick asks for the menu, on an Xbox pad", seen.menu != playStation, "");
   seen = controls::PadAsks{};
   tap(SDL_GAMEPAD_BUTTON_SOUTH);
   tap(SDL_GAMEPAD_BUTTON_EAST);
@@ -218,13 +219,17 @@ bool padCheck(const Options& o)
   // Stage I15 (D-021): the light bar and the rumble go out to the pad.
   pads.setLight({255, 210, 0});
   run(2);
-  line("the light bar is told its colour", outputs.leds == 1 && outputs.r == 255 && outputs.g == 210 && outputs.b == 0, "told " + std::to_string(outputs.leds) + " time(s)");
-  pads.setLight({255, 210, 0});
-  run(2);
-  line("the same colour is not sent again", outputs.leds == 1, "told " + std::to_string(outputs.leds) + " time(s)");
-  pads.setLight({0, 200, 0});
-  run(2);
-  line("a new colour is sent", outputs.leds == 2 && outputs.g == 200, "told " + std::to_string(outputs.leds) + " time(s)");
+  if(playStation) {
+    line("the light bar is told its colour", outputs.leds == 1 && outputs.r == 255 && outputs.g == 210 && outputs.b == 0, "told " + std::to_string(outputs.leds) + " time(s)");
+    pads.setLight({255, 210, 0});
+    run(2);
+    line("the same colour is not sent again", outputs.leds == 1, "told " + std::to_string(outputs.leds) + " time(s)");
+    pads.setLight({0, 200, 0});
+    run(2);
+    line("a new colour is sent", outputs.leds == 2 && outputs.g == 200, "told " + std::to_string(outputs.leds) + " time(s)");
+  } else {
+    line("no light bar colour is sent to a pad that has none", outputs.leds == 0, "told " + std::to_string(outputs.leds) + " time(s)");
+  }
   pads.rumble(1000, 2000, 100);
   run(2);
   line("the rumble pulse reaches the pad", outputs.rumbles == 1 && outputs.low == 1000 && outputs.high == 2000, "pulses " + std::to_string(outputs.rumbles));

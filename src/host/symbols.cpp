@@ -39,6 +39,16 @@ void drawSymbol(SDL_Renderer* renderer, float x, float y, char symbol)
       SDL_RenderLine(renderer, x + 7.0f, y + 6.5f, x + 1.0f, y + 6.5f);
       SDL_RenderLine(renderer, x + 1.0f, y + 6.5f, cx, y + 0.5f);
       break;
+    case controls::kButtonA:    // the letters of an Xbox pad, in the colours of its buttons
+    case controls::kButtonB:
+    case controls::kButtonX:
+    case controls::kButtonY: {
+      static const struct { Uint8 r, g, b; char letter[2]; } look[4] = {{80, 200, 80, "A"}, {230, 70, 70, "B"}, {70, 130, 255, "X"}, {250, 200, 40, "Y"}};
+      const auto& l = look[symbol - controls::kButtonA];
+      SDL_SetRenderDrawColor(renderer, l.r, l.g, l.b, 255);
+      SDL_RenderDebugText(renderer, x, y, l.letter);
+      break;
+    }
     default:
       break;
   }

@@ -252,6 +252,15 @@ The owner's words: "Remove the 'Mirrored Edge' display style. Add controller sup
 - **DualSense:** every DualShock 4 feature (D-020, D-021) works with it: D-pad or left stick, Cross or Square = fire, Options = Reset, Create (its Share button) = Select, L1 / R1 = the difficulty switches, Triangle = TV type, PS button or touchpad = the menu, the symbols, the light bar that follows the game, and the rumble.
 - **Not built (ask if wanted):** the DualSense's adaptive triggers, its microphone mute button, its player lights and speaker, and the touch surface.
 
+### D-023 - Xbox / XInput pads, with the DualShock 4's features and no light bar (2026-10-28, Stage I18)
+
+The owner's words: "No need for other controller settings. Dualsense works perfectly now. Next up - Xinput controllers. I need the same features, minus the lightbar support obviously."
+
+- **Status:** approved by the owner's request; built and proved in Stage I18 (T-I18-1).
+- **Features:** D-pad or left stick = joystick; A or X = fire; Menu = Reset; View = Select; LB / RB = left / right difficulty; Y = TV type; Guide button or a press on the right stick = open and close the menu; in the menu the D-pad or stick moves, A does, B goes back; the button letters are shown in their colours; rumble (the Rumble row, off by default). No light bar.
+- **What it must not do:** change the game.
+- **Not built (ask if wanted):** the triggers (the Xbox One pad's trigger motors, and the triggers as buttons).
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -402,6 +411,16 @@ The owner's words: "Remove the 'Mirrored Edge' display style. Add controller sup
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-I18-1 - Xbox pads: what SDL gives, the lettered symbols, no light bar (2026-10-28, Stage I18, D-023)
+
+- **What was already there:** SDL reads an XInput pad (and the Xbox One and Series pads) as a gamepad of type `SDL_GAMEPAD_TYPE_XBOX360` or `XBOXONE`, which `PadFamily::Xbox` has meant since I14; SDL gives its buttons the same names as the PlayStation pad's (South = A, East = B, West = X, North = Y, shoulders, Start = Menu, Back = View, Guide, the stick presses). So the held buttons, the three switches, the menu on the pad and the rumble go through the same code as the DualShock 4's. `isPlayStation()` is false for it, so the touchpad-style rule applies: the right stick press opens the menu as well as Guide (a PlayStation pad does not use it, because it has the touchpad), and `Pads::setLight` never sends it a colour.
+- **Symbols:** four more symbol characters (`kButtonA` to `kButtonY`, `\x05` to `\x08`); `drawSymbolText` draws the letter in the button's colour (A green 80, 200, 80; B red 230, 70, 70; X blue 70, 130, 255; Y yellow 250, 200, 40). The F1 list and the Control options page show them for an Xbox pad; text widths are unchanged.
+- **Names:** `familyTitle` says "Xbox (XInput)".
+- **Tests:** `--pad-model xbox` (test only) uses Microsoft's 045e:028e; `--pad-check`, `--push-pad` (the right stick opens the menu, the Guide button opens it again), `--menu-shot` (the Xbox page picture counts the four colours); `host_checks.sh` runs them.
+- **Guide button:** Windows often keeps it for the Xbox Game Bar, so it may never reach the program; that is why the right stick press is also a menu button.
+- **Not tested:** a real Xbox / XInput pad (none here; the virtual pad goes through SDL's gamepad code but not through its XInput driver). The pad's rumble motors are as good as SDL's XInput driver.
+- **Reversible:** Yes (Git).
 
 ### T-I17-1 - DualSense as a PlayStation pad with its own names; Mirrored edge taken out (2026-10-28, Stage I17, D-022)
 

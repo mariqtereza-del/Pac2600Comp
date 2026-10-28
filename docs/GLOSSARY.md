@@ -233,6 +233,6 @@ Every project term in one line of plain English. New terms are added in the stag
 | Volume / Mute | The "Sound options" page of the Escape menu (Stage I12). The volume slider (0 to 100) makes the sound the game plays quieter, and Mute plays no sound; neither changes the game or the sound it makes, only how loud the sound card is told to play it. |
 | Light bar | The coloured light on the back of a DualShock 4. The program keeps it on while the pad is connected and changes its colour with what happens in the game: yellow, blue while the ghosts are scared, white when one is eaten, red when Pac-Man is caught (Stage I15). |
 | Rumble | The vibration motors of a game pad. The Control options page can make the pad rumble at the game's events (Stage I15). |
-| Pad family | The kind of game pad the program thinks it has (Stages I14, I17): PlayStation (a DualShock 4), DualSense (PlayStation 5), Xbox or other. It only decides which names the buttons are shown with. |
-| Button symbols | The cross, circle, square and triangle of a PlayStation pad, drawn as small coloured pictures in the key list (F1) and the Control options page (Stage I14). |
+| Pad family | The kind of game pad the program thinks it has (Stages I14, I17): PlayStation (a DualShock 4), DualSense (PlayStation 5), Xbox (XInput) or other. It only decides which names the buttons are shown with. |
+| Button symbols | The cross, circle, square and triangle of a PlayStation pad, and the coloured letters A, B, X and Y of an Xbox pad, drawn in the key list (F1) and the Control options page (Stages I14, I18). |
 | Keyboard choice | The "Control options" page of the Escape menu (Stage I13): whether the arrow keys, the letter keys W A S D, or both move the joystick. Both is the usual setting. |

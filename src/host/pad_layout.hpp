@@ -11,8 +11,10 @@ namespace controls {
 
 // The four PlayStation symbols are written into texts as these characters (they are never printed by themselves; drawSymbolText draws a small picture for each).
 inline constexpr char kCross = '\x01', kCircle = '\x02', kSquare = '\x03', kTriangle = '\x04';
+// The four lettered buttons of an Xbox pad (Stage I18): drawn as the letter in the button's colour (A green, B red, X blue, Y yellow).
+inline constexpr char kButtonA = '\x05', kButtonB = '\x06', kButtonX = '\x07', kButtonY = '\x08';
 bool isSymbol(char c);
-std::string plainSymbols(const std::string& text);   // the same text with the words Cross, Circle, Square, Triangle instead of the symbols
+std::string plainSymbols(const std::string& text);   // the same text with the words Cross, Circle, Square, Triangle (and the letters A, B, X, Y) instead of the symbols
 
 const char* familyTitle(PadFamily family);
 

@@ -121,13 +121,24 @@ sys.exit(0 if ok else 1)" "$P"; check "$prog frame rates give the pictures a sec
   has "$prog DualSense: the light bar was set to Pac-Man yellow" "$P/s26.ini.pad.txt" "light_bar_yellow_sent=[1-9]"
   has "$prog DualSense: L1 flipped the left difficulty" "$P/s26.ini" "left_difficulty=a"
   has "$prog DualSense: the menu chose the arrow keys" "$P/s26.ini" "keyboard=arrows"
+  # Stage I18: the same as an Xbox 360 pad (XInput): LB / RB / Y, the right stick press and the Guide button for the menu, the rumble; no light bar is sent
+  "$EXE" --pad-check "$P/pad_xbox.txt" "$ROM" --pad-model xbox --settings "$P/s27.ini"; check "$prog pad-check with a virtual Xbox pad" $? 0; has "$prog Xbox pad result" "$P/pad_xbox.txt" "result=OK"
+  has "$prog Xbox pad is known as an Xbox pad" "$P/pad_xbox.txt" "known as a Xbox (XInput) pad: ok"
+  has "$prog Xbox pad: no light bar colour is sent" "$P/pad_xbox.txt" "no light bar colour is sent to a pad that has none: ok"
+  "$EXE" --push-pad --pad-model xbox --timed 14 "$P/padwin_xbox.txt" "$ROM" --mute --settings "$P/s28.ini"; check "$prog push-pad with a virtual Xbox pad" $? 0
+  has "$prog Xbox: the menu opened twice (right stick press, Guide button)" "$P/s28.ini.audio.txt" "menu_opens=2"
+  has "$prog Xbox: the game was paused while the menu was open" "$P/s28.ini.audio.txt" "menu_frames_run_while_open=[0-2]$"
+  has "$prog Xbox: LB flipped the left difficulty" "$P/s28.ini" "left_difficulty=a"
+  has "$prog Xbox: the menu chose the arrow keys" "$P/s28.ini" "keyboard=arrows"
+  hasnot "$prog Xbox: no light bar colour was sent in the window" "$P/s28.ini.pad.txt" "light_bar_colours_sent=[1-9]"
   printf 'rumble=strong\n' > "$P/s23.ini"
   "$EXE" --push-pad --replay baseline/BL-048.inputs --timed 16 "$P/padrumble.txt" "$ROM" --mute --settings "$P/s23.ini"; check "$prog push-pad rumble in a recorded game" $? 0
   has "$prog pad: the first death rumbled" "$P/s23.ini.pad.txt" "rumble_pulses=[1-9]"
   has "$prog pad: the light bar went red when Pac-Man was caught" "$P/s23.ini.pad.txt" "light_bar_red_sent=[1-9]"
   has "$prog pad: the virtual DualShock 4 was plugged in" "$P/s22.ini.pad.txt" "virtual_pad_plugged_in=yes"
   has "$prog pad: the menu opened twice" "$P/s22.ini.audio.txt" "menu_opens=2"
-  has "$prog pad: the game was paused while the menu was open" "$P/s22.ini.audio.txt" "menu_frames_run_while_open=[01]$"
+  # (at most one frame for each of the two openings: the game thread may be in the middle of a frame when the menu opens, T-I6-1, T-I9-4)
+  has "$prog pad: the game was paused while the menu was open" "$P/s22.ini.audio.txt" "menu_frames_run_while_open=[0-2]$"
   has "$prog pad: L1 flipped the left difficulty" "$P/s22.ini" "left_difficulty=a"
   has "$prog pad: R1 flipped the right difficulty" "$P/s22.ini" "right_difficulty=a"
   has "$prog pad: Triangle twice left the TV type at Colour" "$P/s22.ini" "tv_type=colour"

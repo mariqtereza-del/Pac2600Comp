@@ -60,14 +60,15 @@ std::thread startPadPusher(const Options& options, const std::atomic<bool>& stop
       tap(3.0, SDL_GAMEPAD_BUTTON_NORTH);            // Triangle: TV type to B&W
       tap(3.4, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);    // L1: left difficulty to A
       tap(3.8, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);   // R1: right difficulty to A
-      tap(4.2, SDL_GAMEPAD_BUTTON_TOUCHPAD);         // the touchpad opens the menu
+      const bool xbox = model.family == controls::PadFamily::Xbox;   // an Xbox pad has no touchpad: its menu buttons are the right stick (in) and the Guide button
+      tap(4.2, xbox ? SDL_GAMEPAD_BUTTON_RIGHT_STICK : SDL_GAMEPAD_BUTTON_TOUCHPAD);   // the touchpad (or a press on the right stick) opens the menu
       for(int i = 0; i < 5; ++i) tap(4.6 + 0.2 * i, SDL_GAMEPAD_BUTTON_DPAD_DOWN);   // down to Control options
       tap(5.8, SDL_GAMEPAD_BUTTON_SOUTH);            // Cross: open the page
       tap(6.1, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);       // the keyboard to the arrow keys only
       tap(6.4, SDL_GAMEPAD_BUTTON_EAST);             // Circle: back to the main page
       tap(6.8, SDL_GAMEPAD_BUTTON_GUIDE);            // the PS button closes the menu
       tap(7.4, SDL_GAMEPAD_BUTTON_NORTH);            // Triangle again: TV type back to colour
-      tap(8.0, SDL_GAMEPAD_BUTTON_TOUCHPAD);         // open once more
+      tap(8.0, xbox ? SDL_GAMEPAD_BUTTON_GUIDE : SDL_GAMEPAD_BUTTON_TOUCHPAD);   // open once more
       for(int i = 0; i < 6; ++i) tap(8.4 + 0.2 * i, SDL_GAMEPAD_BUTTON_DPAD_DOWN);   // down to Quit
       tap(10.0, SDL_GAMEPAD_BUTTON_SOUTH);           // Cross: Quit
       if(!options.replayFile.empty()) plan.clear();   // with --replay the pad is only plugged in: a recording plays the game, and the pad's rumble and light are looked at

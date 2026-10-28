@@ -16,7 +16,7 @@ void applyInput(Emulator& emulator, const controls::Input& in, bool extraReset, 
 // True when the game's memory says a two-player game is on ($E6 bit 6) and it is player 2's turn (bit 7).
 bool playerTwoToPlay(const std::uint8_t* ram);
 
-// The virtual pad of the tests (--pad-check, --push-pad): a DualShock 4, or with --pad-model dualsense a DualSense. Sony's vendor and product numbers make SDL take it for the
+// The virtual pad of the tests (--pad-check, --push-pad): a DualShock 4, or with --pad-model dualsense a DualSense or with --pad-model xbox an Xbox 360 pad. Sony's vendor and product numbers make SDL take it for the
 // real thing (Stage I17).
 struct VirtualPadModel {
   Uint16 vendor = 0x054c, product = 0x09cc;
@@ -27,6 +27,7 @@ inline VirtualPadModel virtualPadModel(const std::string& model)
 {
   VirtualPadModel m;
   if(model == "dualsense") { m.product = 0x0ce6; m.name = "Test DualSense (virtual)"; m.family = controls::PadFamily::DualSense; }
+  if(model == "xbox") { m.vendor = 0x045e; m.product = 0x028e; m.name = "Test Xbox 360 pad (virtual)"; m.family = controls::PadFamily::Xbox; }   // Microsoft's numbers for an Xbox 360 pad (XInput)
   return m;
 }
 

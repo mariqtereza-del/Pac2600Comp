@@ -316,7 +316,7 @@ int main()
       expect(lines.size() == 8, std::string("eight pad lines for ") + controls::familyTitle(f));
       bool symbols = false;
       for(const auto& l : lines) for(char c : l.keys + l.meaning) symbols = symbols || controls::isSymbol(c);
-      expect(symbols == controls::isPlayStation(f), std::string("symbols only on PlayStation pads (DualShock 4 and DualSense): ") + controls::familyTitle(f));
+      expect(symbols == (f != PadFamily::Other), std::string("symbols on the pads that have them (PlayStation: shapes, Xbox: lettered buttons): ") + controls::familyTitle(f));
     }
     const auto ps = controls::padLines(PadFamily::PlayStation);
     expect(controls::plainSymbols(ps[1].keys) == "  Cross / Square" && ps[2].keys == "  Options" && ps[3].keys == "  Share" && ps[4].keys == "  L1 / R1"
@@ -339,6 +339,29 @@ int main()
       expect(d.update(rd([](PadReading& r) { r.touchpad = true; }), 51).menu, "DualSense: the touchpad opens the menu");
       d.update(PadReading{}, 68);
       expect(d.update(rd([](PadReading& r) { r.home = true; }), 85).menu, "DualSense: the PS button opens the menu");
+    }
+    // The Xbox pad (XInput): the same things, with its own names and the lettered buttons.
+    const auto xb = controls::padLines(PadFamily::Xbox);
+    expect(controls::plainSymbols(xb[1].keys) == "  A / X" && xb[2].keys == "  Menu" && xb[3].keys == "  View" && xb[4].keys == "  LB / RB" && controls::plainSymbols(xb[5].keys) == "  Y"
+               && xb[6].keys == "  Guide / right stick", "the Xbox names: A / X fire, Menu = Reset, View = Select, LB / RB, Y");
+    expect(controls::plainSymbols(xb[7].meaning) == "D-pad / stick move, A do, B back", "the Xbox menu buttons are named");
+    expect(controls::isSymbol(controls::kButtonA) && controls::isSymbol(controls::kButtonY) && !controls::isSymbol('A') && !controls::isSymbol('\x09'), "the letter symbols are symbols, the letters themselves are not");
+    expect(controls::plainSymbols(std::string(1, controls::kButtonA) + controls::kButtonB + controls::kButtonX + controls::kButtonY) == "ABXY", "the lettered buttons in words");
+    expect(std::string(controls::familyTitle(PadFamily::Xbox)).find("Xbox") != std::string::npos, "the Xbox pad is named");
+    {
+      controls::PadPresses x(PadFamily::Xbox);
+      auto rx = [](auto set) { PadReading r; set(r); return r; };
+      expect(x.update(rx([](PadReading& r) { r.l1 = true; }), 17).leftDifficulty, "Xbox: LB flips the left difficulty");
+      x.update(PadReading{}, 34);
+      expect(x.update(rx([](PadReading& r) { r.r1 = true; }), 51).rightDifficulty, "Xbox: RB flips the right difficulty");
+      x.update(PadReading{}, 68);
+      expect(x.update(rx([](PadReading& r) { r.triangle = true; }), 85).tvType, "Xbox: Y (the top button) flips the TV type");
+      x.update(PadReading{}, 102);
+      expect(x.update(rx([](PadReading& r) { r.home = true; }), 119).menu, "Xbox: the Guide button opens the menu");
+      x.update(PadReading{}, 136);
+      expect(x.update(rx([](PadReading& r) { r.cross = true; }), 153).nav.size() == 1, "Xbox: A does (Enter) in the menu");
+      x.update(PadReading{}, 170);
+      expect(x.update(rx([](PadReading& r) { r.circle = true; }), 187).nav.size() == 1, "Xbox: B goes back in the menu");
     }
     bool inHelp = false;
     for(const auto& l : controls::helpLines(controls::Input{}, "x", false, controls::Scheme::Both, PadFamily::Xbox)) inHelp = inHelp || l.keys == "  LB / RB";

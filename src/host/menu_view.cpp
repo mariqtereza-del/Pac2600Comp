@@ -72,11 +72,15 @@ void drawMenu(SDL_Renderer* renderer, const menu::Menu& menu)
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
 
-// Stage I14: the Control options page with a DualShock 4 listed, saved as <png>.controls.png. The four button symbols must be there, each in its own colour.
-static bool controlsShot(SDL_Renderer* renderer, menu::Menu& menu, const menu::Choice& now, const std::string& pngPath, std::ofstream& report, bool& symbolsDrawn, bool& saved)
+// Stages I14 and I18: the Control options page with a pad listed, saved as <png>.controls.png (a DualShock 4) or <png>.controls_xbox.png (an Xbox pad). The four button symbols must
+// be there, each in its own colour.
+static bool controlsShot(SDL_Renderer* renderer, menu::Menu& menu, const menu::Choice& now, const std::string& pngPath, std::ofstream& report, bool& symbolsDrawn, bool& saved,
+                         controls::PadFamily family = controls::PadFamily::PlayStation)
 {
+  const bool xbox = family == controls::PadFamily::Xbox;
   menu::Choice pad = now;
   pad.padConnected = true;
+  pad.pad = family;
   menu.open(pad);
   for(int i = 0; i < 10 && menu.cursor() != menu::Item::ControlOptions; ++i) menu.press(menu::Key::Down);
   menu.press(menu::Key::Enter);
@@ -87,17 +91,18 @@ static bool controlsShot(SDL_Renderer* renderer, menu::Menu& menu, const menu::C
   SDL_DestroySurface(shot);
   if(!rgb) return false;
   long long symbolPixels[4] = {0, 0, 0, 0};
-  const std::uint32_t symbolColours[4] = {0x6EAAFF, 0xFF5A5A, 0xF58CD7, 0x64E6A0};   // Cross, Circle, Square, Triangle (symbols.cpp)
+  const std::uint32_t psColours[4] = {0x6EAAFF, 0xFF5A5A, 0xF58CD7, 0x64E6A0}, xboxColours[4] = {0x50C850, 0xE64646, 0x4682FF, 0xFAC828};   // Cross, Circle, Square, Triangle; A, B, X, Y (symbols.cpp)
+  const std::uint32_t* symbolColours = xbox ? xboxColours : psColours;
   for(int y = 0; y < rgb->h; ++y) {
     const auto* row = reinterpret_cast<const std::uint32_t*>(static_cast<const std::uint8_t*>(rgb->pixels) + y * rgb->pitch);
     for(int x = 0; x < rgb->w; ++x)
       for(int k = 0; k < 4; ++k) if((row[x] & 0x00FFFFFF) == symbolColours[k]) ++symbolPixels[k];
   }
-  saved = SDL_SavePNG(rgb, (pngPath + ".controls.png").c_str());
+  saved = SDL_SavePNG(rgb, (pngPath + (xbox ? ".controls_xbox.png" : ".controls.png")).c_str());
   SDL_DestroySurface(rgb);
   symbolsDrawn = true;
   for(long long n : symbolPixels) symbolsDrawn = symbolsDrawn && n >= 8;
-  report << "controls_page=" << (menu.page() == menu::Page::Controls ? "yes" : "no") << "\nsymbol_pixels_cross_circle_square_triangle=" << symbolPixels[0] << ',' << symbolPixels[1]
+  report << (xbox ? "xbox_" : "") << "controls_page=" << (menu.page() == menu::Page::Controls ? "yes" : "no") << (xbox ? "\nxbox_symbol_pixels_a_b_x_y=" : "\nsymbol_pixels_cross_circle_square_triangle=") << symbolPixels[0] << ',' << symbolPixels[1]
          << ',' << symbolPixels[2] << ',' << symbolPixels[3] << "\ncontrols_screenshot_saved=" << (saved ? "yes" : "no") << '\n';
   return true;
 }
@@ -171,9 +176,10 @@ bool menuShot(SDL_Renderer* renderer, const std::string& pngPath, const std::str
   report << "graphics_page=" << (menu.page() == menu::Page::Graphics ? "yes" : "no") << "\ngraphics_near_white_pixels=" << white2
          << "\ngraphics_screenshot_saved=" << (saved2 ? "yes" : "no") << '\n';
 
-  bool symbolsDrawn = false, saved3 = false;
+  bool symbolsDrawn = false, saved3 = false, xboxDrawn = false, saved4 = false;
   if(!controlsShot(renderer, menu, now, pngPath, report, symbolsDrawn, saved3)) return false;
-  const bool ok = saved && white > 500 && other > 1000 && menu.page() == menu::Page::Controls && white2 > 300 && saved2 && saved3 && symbolsDrawn;
+  if(!controlsShot(renderer, menu, now, pngPath, report, xboxDrawn, saved4, controls::PadFamily::Xbox)) return false;
+  const bool ok = saved && white > 500 && other > 1000 && menu.page() == menu::Page::Controls && white2 > 300 && saved2 && saved3 && symbolsDrawn && saved4 && xboxDrawn;
   report << "result=" << (ok ? "OK" : "FAIL") << '\n';
   return ok;
 }

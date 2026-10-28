@@ -2,7 +2,7 @@
 
 namespace controls {
 
-bool isSymbol(char c) { return c == kCross || c == kCircle || c == kSquare || c == kTriangle; }
+bool isSymbol(char c) { return c >= kCross && c <= kButtonY; }   // the eight symbol characters are consecutive
 
 std::string plainSymbols(const std::string& text)
 {
@@ -13,6 +13,10 @@ std::string plainSymbols(const std::string& text)
       case kCircle: out += "Circle"; break;
       case kSquare: out += "Square"; break;
       case kTriangle: out += "Triangle"; break;
+      case kButtonA: out += "A"; break;
+      case kButtonB: out += "B"; break;
+      case kButtonX: out += "X"; break;
+      case kButtonY: out += "Y"; break;
       default: out += c;
     }
   }
@@ -21,12 +25,19 @@ std::string plainSymbols(const std::string& text)
 
 const char* familyTitle(PadFamily family)
 {
-  return family == PadFamily::PlayStation ? "PlayStation (DualShock 4)" : family == PadFamily::DualSense ? "PlayStation (DualSense)" : family == PadFamily::Xbox ? "Xbox" : "other game pad";
+  switch(family) {
+    case PadFamily::PlayStation: return "PlayStation (DualShock 4)";
+    case PadFamily::DualSense: return "PlayStation (DualSense)";
+    case PadFamily::Xbox: return "Xbox (XInput)";
+    case PadFamily::Other: break;
+  }
+  return "other game pad";
 }
 
 std::vector<HelpLine> padLines(PadFamily family)
 {
   const std::string cross(1, kCross), circle(1, kCircle), square(1, kSquare), triangle(1, kTriangle);
+  const std::string a(1, kButtonA), b(1, kButtonB), x(1, kButtonX), y(1, kButtonY);
   switch(family) {
     case PadFamily::PlayStation:
     case PadFamily::DualSense:
@@ -40,13 +51,13 @@ std::vector<HelpLine> padLines(PadFamily family)
               {"  In the menu", "D-pad / stick move, " + cross + " do, " + circle + " back"}};
     case PadFamily::Xbox:
       return {{"  D-pad / left stick", "Joystick"},
-              {"  A / X", "Fire button"},
+              {"  " + a + " / " + x, "Fire button"},
               {"  Menu", "Game Reset: start a new game"},
               {"  View", "Game Select: next game variation"},
               {"  LB / RB", "Left / right difficulty switch A / B"},
-              {"  Y", "TV type switch Colour / B&W"},
+              {"  " + y, "TV type switch Colour / B&W"},
               {"  Guide / right stick", "Menu: open and close (press the stick in for the second)"},
-              {"  In the menu", "D-pad / stick move, A do, B back"}};
+              {"  In the menu", "D-pad / stick move, " + a + " do, " + b + " back"}};
     case PadFamily::Other:
       break;
   }

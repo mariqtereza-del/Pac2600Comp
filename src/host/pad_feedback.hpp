@@ -20,7 +20,7 @@ const char* rumbleSettingName(Rumble rumble);            // off | light | strong
 Rumble rumbleFromSetting(const std::string& text);       // anything else is Off
 
 // Things the game does that are worth a pulse or a change of colour.
-enum Event : unsigned { PowerPill = 1, GhostEaten = 2, Death = 4 };
+enum Event : unsigned { PowerPill = 1, GhostEaten = 2, Death = 4, Wafer = 8 };
 
 struct Pulse {
   std::uint16_t low = 0, high = 0;   // the big and the small motor, 0..65535
@@ -44,7 +44,7 @@ class LightShow {
 };
 
 // Finds the events by comparing the game's memory (128 bytes from $80) frame after frame: Pac-Man starting to die ($E7 bit 6), and the score of the player to play rising
-// by 5 (a power pill) or by 20, 40, 80 or 160 (a ghost eaten); the other rises (a wafer 1, the bonus item 100) and a new game (the score falls) are not events.
+// by 1 (a wafer), 5 (a power pill) or by 20, 40, 80 or 160 (a ghost eaten); the bonus item (100) and a new game (the score falls) are not events.
 class EventWatcher {
  public:
   unsigned update(const std::uint8_t* ram);

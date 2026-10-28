@@ -22,6 +22,7 @@ Pulse pulseFor(unsigned events, Rumble rumble)
     p.high = static_cast<std::uint16_t>(std::max<unsigned>(p.high, small * high / 16));
     p.ms = std::max(p.ms, ms);
   };
+  if(events & Wafer) add(6, 16, 50);          // a tiny tap, felt on both strengths: Pac-Man eats a wafer about every eight frames
   if(events & PowerPill) add(8, 16, 120);     // a short tick
   if(events & GhostEaten) add(12, 12, 220);   // a firm thump
   if(events & Death) add(16, 6, 700);         // a long low rumble
@@ -60,6 +61,7 @@ unsigned EventWatcher::update(const std::uint8_t* ram)
     if(dying && !dying_) events |= Death;
     if(inPlay && !dying && player == player_) {
       const int rise = score - score_;
+      if(rise == 1) events |= Wafer;
       if(rise == 5) events |= PowerPill;
       if(rise == 20 || rise == 40 || rise == 80 || rise == 160) events |= GhostEaten;
     }

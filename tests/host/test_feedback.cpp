@@ -82,7 +82,12 @@ int main(int argc, char** argv)
   }
 
   // The pulses.
-  expect(pulseFor(PowerPill | GhostEaten | Death, Rumble::Off).ms == 0, "no rumble when it is off");
+  expect(pulseFor(PowerPill | GhostEaten | Death | Wafer, Rumble::Off).ms == 0, "no rumble when it is off");
+  for(Rumble r : {Rumble::Light, Rumble::Strong}) {
+    const Pulse tap = pulseFor(Wafer, r);
+    expect(tap.ms > 0 && tap.ms < pulseFor(PowerPill, r).ms && tap.high >= 0x3000, std::string("a wafer gives a short tap that is felt on ") + rumbleTitle(r));
+  }
+  expect(pulseFor(Wafer | GhostEaten, Rumble::Strong).ms == pulseFor(GhostEaten, Rumble::Strong).ms, "a wafer does not shorten a ghost's pulse");
   expect(pulseFor(0, Rumble::Strong).ms == 0, "no event, no pulse");
   const Pulse tickL = pulseFor(PowerPill, Rumble::Light), tickS = pulseFor(PowerPill, Rumble::Strong);
   expect(tickL.ms > 0 && tickS.low > tickL.low && tickS.high > tickL.high, "strong is stronger than light");
@@ -98,7 +103,7 @@ int main(int argc, char** argv)
     m.score(0);
     expect(w.update(m.ram.data()) == 0, "the first look finds nothing (there is nothing to compare with)");
     m.score(1);
-    expect(w.update(m.ram.data()) == 0, "a wafer (+1) is not an event");
+    expect(w.update(m.ram.data()) == Wafer, "+1 is a wafer");
     m.score(6);
     expect(w.update(m.ram.data()) == PowerPill, "+5 is a power pill");
     m.score(26);
@@ -159,7 +164,7 @@ int main(int argc, char** argv)
     EventWatcher w;
     LightShow show;
     int blueFrames = 0, redFrames = 0, whiteFrames = 0;
-    int pills = 0, ghosts = 0, deaths = 0, drops = 0, previousLives = -1;
+    int pills = 0, ghosts = 0, deaths = 0, drops = 0, previousLives = -1, wafers = 0;
     long long frames = 0;
     while(std::getline(in, text)) {
       trace::Row row;
@@ -169,6 +174,7 @@ int main(int argc, char** argv)
       const unsigned e = w.update(row.ram.data());
       const background::Rgb light = show.step(e, false);
       blueFrames += light == background::Rgb{30, 60, 255}; redFrames += light == background::Rgb{255, 0, 0}; whiteFrames += light == background::Rgb{255, 255, 255};
+      wafers += (e & Wafer) != 0;
       pills += (e & PowerPill) != 0;
       ghosts += (e & GhostEaten) != 0;
       deaths += (e & Death) != 0;
@@ -178,7 +184,8 @@ int main(int argc, char** argv)
       previousLives = lives;
       ++frames;
     }
-    std::printf("trace: %lld frames, %d power pills, %d ghosts eaten, %d deaths, %d drops of the lives shown\n", frames, pills, ghosts, deaths, drops);
+    std::printf("trace: %lld frames, %d wafers, %d power pills, %d ghosts eaten, %d deaths, %d drops of the lives shown\n", frames, wafers, pills, ghosts, deaths, drops);
+    expect(wafers >= 150 && wafers <= 160, "wafers in the recorded game: " + std::to_string(wafers) + " (its entry counts 150 single wafers, the first one and the map refill)");
     expect(pills == std::atoi(argv[2]), "power pills in the recorded game: " + std::to_string(pills) + " (wanted " + argv[2] + ")");
     expect(ghosts == std::atoi(argv[3]), "ghosts eaten in the recorded game: " + std::to_string(ghosts) + " (wanted " + argv[3] + ")");
     std::printf("light bar: %d frames blue, %d white, %d red\n", blueFrames, whiteFrames, redFrames);

@@ -149,7 +149,7 @@ void appendFeedbackText(std::vector<std::string>& out, int width, bool padConnec
   auto paragraph = [&](const std::string& text) {
     for(const std::string& line : wrap(text, width)) out.push_back(line);
   };
-  paragraph("Makes the pad rumble when something happens in the game: a short tick for a power pill, a thump for a ghost eaten and a long rumble when Pac-Man is "
+  paragraph("Makes the pad rumble when something happens in the game: a tiny tap for each wafer, a short tick for a power pill, a thump for a ghost eaten and a long rumble when Pac-Man is "
             "caught. Light is gentle, Strong is firm. It takes effect at once and is remembered.");
   out.push_back("");
   paragraph("The light bar of a DualShock 4 is always on and follows the game: yellow, blue while the ghosts are scared (flashing white when they are about to "

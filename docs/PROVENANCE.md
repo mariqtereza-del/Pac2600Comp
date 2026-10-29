@@ -1,6 +1,6 @@
 # Provenance of every file in Git (Stage J3)
 
-Made by `python -I tools\j3_provenance.py rom\pacman.a26`; do not edit by hand. It lists what Git holds (3809 files), not what is only on this PC (section 5).
+Made by `python -I tools\j3_provenance.py rom\pacman.a26`; do not edit by hand. It lists what Git holds (3813 files), not what is only on this PC (section 5).
 The categories follow the plan: our own code, ROM-derived material, emulator code, third-party libraries, documentation, build tools and generated files, plus test data, measuring tools and settings.
 This is a factual list, not legal advice (see `docs\LEGAL_BRIEFING.md`; the owner's position is D-028).
 
@@ -14,11 +14,11 @@ This is a factual list, not legal advice (see `docs\LEGAL_BRIEFING.md`; the owne
 | emulator | 1057 | 25,881,425 | Stella 7.0, GPL v2 or any later version, unchanged (D-002) | the reference emulator, used by the test tools and the reference program only |
 | emulator-tool | 8 | 67,833 | ours, links Stella (GPL) | the measuring tools that run the original game inside Stella |
 | third-party | 2208 | 49,938,758 | SDL3 (zlib) and the libretro shader sources (per file: GPL v2 or later, public domain) | libraries and shader sources, unchanged |
-| build-tool | 89 | 800,361 | ours | scripts that build, test, release and check the project |
+| build-tool | 89 | 803,409 | ours | scripts that build, test, release and check the project |
 | test-data | 147 | 311,928 | ours | recorded joystick inputs, entries and frozen files of the preservation suite (no ROM bytes) |
-| documentation | 85 | 2,739,082 | ours | the notes and documents of the project |
-| config | 4 | 3,702 | ours | Git and GitHub settings |
-| **total** | 3809 | 82,632,750 |  |  |
+| documentation | 87 | 2,752,121 | ours | the notes and documents of the project |
+| config | 6 | 6,660 | ours | Git and GitHub settings |
+| **total** | 3813 | 82,651,795 |  |  |
 
 Every tracked file is in exactly one category, and no file fits no rule (the tool stops otherwise).
 

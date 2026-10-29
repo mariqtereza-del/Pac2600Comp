@@ -352,6 +352,15 @@ The owner's choice, after Claude Code offered 1.0.0 ("if you consider the progra
 - **Tags:** a published release is tagged `vX.Y.Z`; `v0.1.0`, `0.5.0-native` and `1.0.0-preservation` stay as milestones (the last one is the permanent baseline of the game). The tag `v1.0.0` is made at the final gate (J11), after the owner's approval, and pushing a tag needs the owner's approval too.
 - **Reversible:** Yes until published.
 
+### D-033 - Contributions are welcome, and merged only after the owner's review and approval (2026-10-29, Stage J10)
+
+The owner asked: "Is it possible for people to make Contributions only with my approval?" Claude Code explained that on GitHub only people with write access can change a repository and everyone else can only propose (a pull request), which changes nothing until the owner merges it; then the owner answered: "Go ahead with j10 on that basis."
+
+- **Status:** approved by the owner.
+- **The rule:** proposals (pull requests) and bug reports are welcome; **nothing is merged without the owner's review and approval**; the owner may ask for changes or decline. Only the owner has write access (no collaborators are added).
+- **The conditions on a proposal** (`CONTRIBUTING.md`): no game file or part of it; no change to what the game does by default; the frozen recorded games are never edited; extras optional, off by default and tested; no new library without a reason; the public tests pass; GNU GPL version 2 or later; texts the program shows stay unless that is the point.
+- **Reversible:** Yes.
+
 ## Technical choices made by Claude Code
 
 ### T-D14-2 — Speed and sound pitch follow the real console: 59.9227 Hz (2026-10-25, Stage D14, owner's rule D-004)
@@ -502,6 +511,16 @@ The owner's choice, after Claude Code offered 1.0.0 ("if you consider the progra
 - **Proof:** `--crt-shot` on the owner's screen (Windows HDR on): in the standard and in the HDR renderer the filtered picture is not black (mean brightness 62.7 against 73.2 for the plain one: scanlines and the mask take some away) and 898,291 pixels differ from the plain picture; the picture was looked at (curved glass, scanlines, shadow mask, soft glow); `test_crt` and `test_menu` 329.
 - **Not done:** CRT-Geom, GDV NTSC 2600, the glide and the HDR highlights inside a filter; a comparison of the port with the original shader by running both (RetroArch is not installed and was not downloaded): the port follows the source line by line, and the owner is asked to judge the look.
 - **Reversible:** Yes (Git); `crt_filter=off` is today's picture.
+
+### T-J10-1 - Issue form, pull-request template, rules, and the GitHub settings that enforce the approval (2026-10-29, Stage J10, D-033)
+
+- **Files:** `CONTRIBUTING.md`; `.github\ISSUE_TEMPLATE\bug_report.yml` (an issue form: version, Windows version, the game file's SHA-1 as a choice and never the file, what happened, expected, steps, setup, an optional recording, two required confirmations; its first text says never to attach or ask for the game file and that such an issue will be closed); `.github\ISSUE_TEMPLATE\config.yml` (blank issues allowed, so a question or a suggestion has a place); `.github\pull_request_template.md` (a six-point checklist); a README section \"Reporting a problem, and contributing\".
+- **Why a recording is safe to attach:** a recording file holds `rom_sha1=` (the fingerprint of the game file) and the frame numbers of the button changes, nothing of the game (`src\host\inputlog.cpp`).
+- **Checked here:** `j4_docs_check` now also reads these files: the approval sentence in `CONTRIBUTING.md` and the README, the key phrases, the form's structure (top keys, no tabs, field types, an id for every field, the six main fields, at least eight required items, the warning, the accepted SHA-1, where to find the versions), the checklist, and no cartridge address, byte run or private path in any of them; proved on eight mistakes. **Not checked here:** that GitHub accepts the form's YAML (no YAML reader in the standard library; GitHub ignores an invalid form silently). The owner looks at it with \"New issue\" after the push.
+- **The GitHub settings that make the approval real (for the owner to apply at J11, on github.com; Claude Code cannot change them):** (1) **Settings > Collaborators**: leave nobody but the owner, so nobody else has write access. (2) **Settings > Actions > General > Fork pull request workflows**: choose to require approval for all outside collaborators, so a stranger's proposal cannot start the test job until approved (the job is read-only and has no secrets in any case). (3) **Settings > Rules > Rulesets** (or Branches > a rule for `main`): require a pull request before merging, require 1 approval and the `public-tests` check, block force pushes. A repository that is private may need a paid GitHub plan for this; a public one does not. (4) **Settings > General > Features**: Issues on; Wiki, Projects and Discussions off (not used). (5) Optional: Settings > Moderation options > Interaction limits.
+- **What the owner still decides:** to accept or decline each proposal; GitHub's \"Merge pull request\" button is the approval. Claude Code never merges or pushes without the owner's approval.
+- **Under D-029:** `src\` is unchanged.
+- **Reversible:** Yes (Git).
 
 ### T-J9-1 - Release packaging: the fingerprint of the zip and the explanation of the warning (2026-10-29, Stage J9)
 

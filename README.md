@@ -103,6 +103,12 @@ Resume; New game; **Game options** (game 1 to 8, one or two players, the two dif
 
 See [BUILDING.md](BUILDING.md). Building needs no game file; playing and some of the tests do.
 
+## Reporting a problem, and contributing
+
+Found a bug? Open an issue and use the **bug report** form: it asks for the version (the name of the zip, or the first line of `BUILD-INFO.txt`), your Windows version and the fingerprint of your game file. **Never attach the game file.** A recording made with `Record a game.cmd` helps a lot.
+
+Proposals are welcome as pull requests, and **nothing is merged without the owner's review and approval**. The rules (no game file, no change to what the game does by default, the tests must pass, the licence) are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Licence and credits
 
 Pac2600Comp's own code is licensed under the **GNU General Public License, version 2 or later**: see [LICENSE](LICENSE). It contains the colour table of the Stella emulator (GPL version 2 or later), ports of the CRT-Geom shader and most of the GDV NTSC shaders (GPL version 2 or later), CRT-Lottes (public domain), a few NTSC shader passes whose files state no licence, and uses SDL3 (zlib licence). Credits and the notices of each are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The achievements are those of the RetroAchievements set for this game; the program does not connect to RetroAchievements.

@@ -3397,8 +3397,24 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit.
     - **Documentation updates:** `README.md`, `BUILDING.md`, `DECISIONS.md` (T-J9-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J9: Release packaging`. **Next stage:** J10 (issues and contributions).
-10. **[Not started] J10 — Issues and contributions.** A short issue template asking for version, Windows version and ROM fingerprint (never the ROM itself); `CONTRIBUTING.md` only if you want outside contributions.
-11. **[Not started] J11 — Final gate: go public.** You switch the repository to public and publish the release. Checklist: J1 decision recorded, no ROM anywhere in history (Claude Code scans all past commits), licences present, release verified, `PROJECT_STATUS.md` says Done.
+10. **[Done 2026-10-29, D-033, T-J10-1] J10 — Issues and contributions.** A short issue template asking for version, Windows version and ROM fingerprint (never the ROM itself); `CONTRIBUTING.md` only if you want outside contributions.
+    **J10 in full (16 headings):**
+    - **Objective:** a way for people to report problems usefully and to propose changes, with every change merged only after the owner's review and approval (D-033).
+    - **Why it matters:** once the repository is public, strangers will ask for the game file, report bugs without the facts needed, or send changes; the rules must be written before that.
+    - **Prerequisites:** J9 Done, clean tree (checked); the owner chose "contributions welcome, merged only after your review".
+    - **What Claude Code will do:** write `CONTRIBUTING.md` (the seven rules, how to propose, how to report, conduct), a bug-report form (`.github/ISSUE_TEMPLATE/bug_report.yml`: version, Windows version, the game file's fingerprint and never the file, what happened, expected, steps, setup, an optional recording) with `config.yml`, a pull-request template with a checklist, and a README section; extend `tools\j4_docs_check.py` to check them; list the GitHub settings that enforce the approval (for J11).
+    - **What I must do:** apply the GitHub settings of T-J10-1 on github.com at J11, and look at the issue form once it is pushed ("New issue").
+    - **Exact instructions:** `python -I tools\j4_docs_check.py` must say `result: OK`.
+    - **Required input:** the owner's choice, given: "Go ahead with j10 on that basis."
+    - **Claude Code prompt:** "Is it possible for people to make Contributions only with my approval?" and "Go ahead with j10 on that basis."
+    - **Expected result:** a form that asks for the right facts and warns against sharing the game file; contribution rules that say nothing is merged without approval.
+    - **Verification:** `j4_docs_check` passes and fails on eight kinds of mistake; `test_quick`; `src\` unchanged. The form's YAML cannot be validated here (no YAML reader in the standard library): it is checked for its structure and the owner sees it on GitHub after the push.
+    - **Completion criteria:** the files exist, are checked, and are committed; the settings are written down for J11.
+    - **Potential problems:** an invalid issue form is silently ignored by GitHub; branch rules on a private repository may need a paid plan; nothing here stops a person with write access from merging, so the owner adds nobody.
+    - **Recovery:** revert the commit.
+    - **Documentation updates:** `CONTRIBUTING.md`, `README.md`, `DECISIONS.md` (D-033, T-J10-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J10: Issues and contributions`. **Next stage:** J11 (final gate: go public).
+11. **[Not started] J11 — Final gate: go public.** You switch the repository to public and publish the release. Checklist: J1 decision recorded, no ROM anywhere in history (Claude Code scans all past commits), licences present, release verified, `PROJECT_STATUS.md` says Done. Also (J10, D-033): the GitHub settings of T-J10-1 that make "nothing is merged without the owner's approval" true, and the decision about the owner's e-mail address in all commits (T-J6-1).
 
 ## 5. Progress tracking and continuity
 

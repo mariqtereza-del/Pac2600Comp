@@ -12,7 +12,7 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PUBLIC = ["README.md", "BUILDING.md", "docs/HOW_IT_WORKS.md", "docs/PRESERVATION.md"]
+PUBLIC = ["README.md", "BUILDING.md", "docs/HOW_IT_WORKS.md", "docs/PRESERVATION.md", "CONTRIBUTING.md"]
 PENDING = set()   # links to files that a later stage creates (none now: LICENSE and THIRD_PARTY_NOTICES.md came with Stage J5)
 
 ADDRESS = re.compile(r"(?:\$F[0-9A-Fa-f]{3}\b|\b0x[Ff][0-9A-Fa-f]{3}\b|\bL_F[0-9A-F]{3}\b)")
@@ -100,6 +100,36 @@ def main():
     for name in ("README.md", "release README.txt"):
         for phrase in ("More info", "Run anyway", "Unblock", "certutil", ".sha256"):
             check(phrase in texts[name], "%s does not explain '%s' (the Windows warning and the fingerprint of the download)" % (name, phrase))
+
+    # Contributions and issues (Stage J10, D-033): the rules say that nothing is merged without the owner's approval and that the game file is never shared; the issue
+    # form and the pull-request template carry the same words. The files are also searched below for addresses, bytes and private paths.
+    contrib = texts["CONTRIBUTING.md"]
+    for phrase in ("without the owner's review and approval", "Never include the game file", "GNU General Public License", "test_public.ps1", "baseline/", "never edited"):
+        check(phrase in contrib, "CONTRIBUTING.md lacks '%s'" % phrase)
+    check("CONTRIBUTING.md" in texts["README.md"], "README.md does not link to CONTRIBUTING.md")
+    check("without the owner's review and approval" in texts["README.md"], "README.md does not say that nothing is merged without the owner's approval")
+    form_path, pr_path, config_path = ".github/ISSUE_TEMPLATE/bug_report.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/config.yml"
+    missing = [p for p in (form_path, pr_path, config_path) if not os.path.exists(os.path.join(ROOT, p))]
+    for p in missing:
+        problems.append("missing: " + p)
+    if not missing:
+        form, pr, config = read(form_path), read(pr_path), read(config_path)
+        texts[form_path], texts[pr_path] = form, pr
+        check("\t" not in form, "the issue form holds a tab (YAML wants spaces)")
+        for key in ("name:", "description:", "body:"):
+            check(re.search(r"^" + key, form, re.MULTILINE) is not None, "the issue form has no top-level '%s'" % key)
+        types = re.findall(r"^  - type: (\w+)\s*$", form, re.MULTILINE)
+        check(set(types) <= {"markdown", "textarea", "input", "dropdown", "checkboxes"} and len(types) >= 6, "the issue form has odd or too few fields: %s" % types)
+        ids = re.findall(r"^    id: (\w+)\s*$", form, re.MULTILINE)
+        check(len(ids) == len([t for t in types if t != "markdown"]), "every field except the markdown one needs an id (found %d ids for %d fields)" % (len(ids), len(types) - types.count("markdown")))
+        for field in ("version", "windows", "game_file", "what_happened", "expected", "steps"):
+            check(field in ids, "the issue form has no field '%s'" % field)
+        check(form.count("required: true") >= 8, "the issue form does not require its main fields and boxes (%d required)" % form.count("required: true"))
+        check("never attach" in form.lower() and "game file" in form, "the issue form does not warn against attaching the game file")
+        check(sha1 in form, "the issue form does not name the SHA-1 the program accepts")
+        check("BUILD-INFO.txt" in form and "winver" in form, "the issue form does not say where to find the version and the Windows version")
+        check(pr.count("- [ ]") >= 5 and "game file" in pr and "baseline/" in pr and "test_public" in pr, "the pull-request template lacks its checklist")
+        check("blank_issues_enabled" in config, "config.yml of the issue templates lacks blank_issues_enabled")
 
     # Links.
     for name in PUBLIC:

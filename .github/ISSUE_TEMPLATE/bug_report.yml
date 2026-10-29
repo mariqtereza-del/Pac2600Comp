@@ -1,0 +1,77 @@
+name: Bug report
+description: Something does not work as it should
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem.
+
+        **Please never attach, paste or ask for the game file** (the Atari 2600 Pac-Man cartridge file), or any part of it. It belongs to its rights holders and is not part of this project. Only the **fingerprint number** of your file is needed. An issue that asks for or shares the game file will be closed.
+  - type: input
+    id: version
+    attributes:
+      label: Version of Pac2600Comp
+      description: It is in the name of the zip you downloaded, in the first line of BUILD-INFO.txt, and in the first line of README.txt.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      description: Press the Windows key, type winver, press Enter, and copy the lines it shows.
+      placeholder: "Windows 11, version ..., build ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: game_file
+    attributes:
+      label: Your game file
+      description: In a Command Prompt run certutil -hashfile "Pac-Man (1981) (Atari).a26" SHA1 and compare the number. Do not attach the file.
+      options:
+        - The SHA-1 is 0940fea7f04cdb6d4b90c5ad1a7e344e68f6dbb1 and the program accepts it
+        - The program refuses my file
+        - I did not check
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened
+      description: What did you see? A screenshot is fine.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+      description: The steps, in order. Does it happen every time?
+    validations:
+      required: true
+  - type: textarea
+    id: setup
+    attributes:
+      label: Your setup (if it matters)
+      description: Your screen and whether Windows HDR is on, the game pad, the frame rate, the CRT filter and the background you chose in the menu.
+  - type: textarea
+    id: recording
+    attributes:
+      label: Recording (optional, very helpful)
+      description: Double-click "Record a game.cmd", play until the problem shows, close the game from its menu (Esc, then Quit), and drag the .inputs file from the recordings folder here. It holds only the buttons you pressed and the fingerprint of your game file.
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before you send
+      options:
+        - label: I am not attaching or pasting the game file or any part of it.
+          required: true
+        - label: I removed anything private (such as folder names on my PC) from what I attached.
+          required: true

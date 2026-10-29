@@ -89,6 +89,7 @@ def main():
     # ---- no cartridge bytes or code as text, and no address of the owner as text, in the files that are public now ----
     j3 = load("j3_provenance")
     emails = {e for e in git("log", "--all", "--format=%ae").split() if e}
+    private_emails = {e for e in emails if not e.lower().endswith("@users.noreply.github.com")}   # the no-reply form is meant to be shown
     byte_lines, address_files, private = 0, 0, 0
     for f in j3.tracked_files():
         if f.startswith(j3.THIRD_PARTY_PREFIXES) or f == "docs/PROVENANCE.md":
@@ -100,7 +101,7 @@ def main():
         if b"\0" in body[:8192]:
             continue
         text = body.decode("latin-1")
-        if any(e.lower() in text.lower() for e in emails):
+        if any(e.lower() in text.lower() for e in private_emails):
             address_files += 1
         if "mariqtereza" in text or "F:\\Ports" in text:
             private += 1
@@ -109,7 +110,7 @@ def main():
         byte_lines += sum(1 for line in text.splitlines() if j3.bytes_as_text(line))
     add("OK" if byte_lines == 0 else "FAIL", "no bytes or instructions of the cartridge quoted as text in a file", "%d line(s) found (Rule 7: the cartridge's program code is never in the repository)" % byte_lines)
     add("OK" if address_files == 0 else "FAIL", "the owner's e-mail address is not written as text in any file", "%d file(s) contain it" % address_files)
-    add("PUBLIC", "the owner's e-mail address is in the commits", "%d commits carry %d author address(es); they are public with the history. New commits use the GitHub no-reply form" % (int(git("rev-list", "--all", "--count").strip()), len(emails)))
+    add("PUBLIC", "the owner's e-mail address is in the commits", "%d commits carry %d author address(es), %d of them a private one; they are public with the history. New commits use the GitHub no-reply form" % (int(git("rev-list", "--all", "--count").strip()), len(emails), len(private_emails)))
     add("PUBLIC", "the notes name the owner's account and folders on this PC, and discuss the legal position", "%d tracked files name the account or a folder; the legal briefing and D-027, D-028 are in the history" % private)
     add("PUBLIC", "the notes name addresses inside the cartridge's program (J3)", "they are in the public history; no bytes or code of the cartridge are in the current files")
     j5 = load("j5_notices_check")
@@ -157,7 +158,7 @@ def main():
         md = ["# Gate J: the checklist before and after going public (Stage J11)", "",
               "Made by `python -I tools\\j11_gate_check.py rom\\pacman.a26 --write`; do not edit by hand. Statuses: OK (in order, proved or decided by the owner), TODO (Claude Code does it), OWNER (only the owner can do it), PUBLIC (already public, cannot be taken back), FAIL (a real problem).", "",
               "| Status | Item | Detail |", "| --- | --- | --- |"]
-        md += ["| %s | %s | %s |" % (s, i.replace("|", "/"), d.replace("|", "/")) for s, i, d in rows]
+        md += ["| %s | %s | %s |" % (s, i.replace("|", "/"), re.sub(r"\d+ commits are only", "some commits are only", d).replace("|", "/")) for s, i, d in rows]
         md += ["", summary, ""]
         with open(os.path.join(ROOT, "docs", "GATE_J.md"), "w", encoding="utf-8", newline="") as f:
             f.write("\n".join(md))

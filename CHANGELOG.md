@@ -12,9 +12,9 @@ A version is three numbers, **big.feature.fix** (for example 1.2.3):
 
 The Git tag of a published release is `vX.Y.Z` (for example `v1.0.0`). Three older tags mark milestones of the work and are not releases: `v0.1.0`, `0.5.0-native` and `1.0.0-preservation` (the permanent baseline of the game: no later change may alter what the game does at that tag).
 
-## [1.0.0] - unreleased
+## [1.0.0] - 2026-10-29
 
-The first public version. The date is the day it is published.
+The first public version.
 
 ### The game
 

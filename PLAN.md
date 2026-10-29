@@ -3414,7 +3414,24 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit.
     - **Documentation updates:** `CONTRIBUTING.md`, `README.md`, `DECISIONS.md` (D-033, T-J10-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J10: Issues and contributions`. **Next stage:** J11 (final gate: go public).
-11. **[Not started] J11 — Final gate: go public.** You switch the repository to public and publish the release. Checklist: J1 decision recorded, no ROM anywhere in history (Claude Code scans all past commits), licences present, release verified, `PROJECT_STATUS.md` says Done. Also (J10, D-033): the GitHub settings of T-J10-1 that make "nothing is merged without the owner's approval" true, and the decision about the owner's e-mail address in all commits (T-J6-1).
+11. **[In progress 2026-10-29: checks run, decisions with the owner] J11 — Final gate: go public.** You switch the repository to public and publish the release. Checklist: J1 decision recorded, no ROM anywhere in history (Claude Code scans all past commits), licences present, release verified, `PROJECT_STATUS.md` says Done. Also (J10, D-033): the GitHub settings of T-J10-1 that make "nothing is merged without the owner's approval" true, and the decision about the owner's e-mail address in all commits (T-J6-1).
+
+    **J11 in full (16 headings):**
+    - **Objective:** the owner decides whether, and in which way, Pac2600Comp becomes public, and the first release (1.0.0) is published if the owner says so. Claude Code runs every check and puts each decision in front of the owner with its options; it never makes anything public itself.
+    - **Why it matters:** what has been public cannot be fully taken back (copies, forks, caches), so the decisions are made once, with the facts in hand.
+    - **Prerequisites:** J1 to J10 Done; clean tree (checked).
+    - **What Claude Code will do:** run the full test set (`tools\test_full.ps1`, about 26 minutes) and the checklist tool `tools\j11_gate_check.py` (what is in order, what needs the owner's decision, what only the owner can do); present the decisions: the way of publishing (this repository as it is, a clean snapshot in a new public repository, or a rewritten history), the owner's e-mail address in all commits, the 23 cartridge bytes quoted as text in one note, the 11 shader files that state no licence, the internal notes; carry out the chosen way step by step with the owner's approval of each push, the tag `v1.0.0` and the release files.
+    - **What I must do:** decide; on github.com apply the settings of T-J10-1, change the visibility if chosen, and publish the release page (clicks given in the session); approve each push.
+    - **Exact instructions:** given in the session, click by click.
+    - **Required input:** the owner's decisions; for an e-mail change, the owner's GitHub no-reply address (github.com > Settings > Emails).
+    - **Claude Code prompt:** "Do only the single next stage named in PROJECT_STATUS.md."
+    - **Expected result:** either a public repository and a published 1.0.0 release, or a recorded decision to wait, with the project safe and complete either way.
+    - **Verification:** `test_full`; `j11_gate_check`; the scan of every commit that would become public (`j6_prepush_check`); the gate check on the final release zip made from the final commit; the owner looking at the public page without signing in.
+    - **Completion criteria:** `PROJECT_STATUS.md` says Done, with what was decided and what is public.
+    - **Potential problems:** a history rewrite changes every commit's identity and needs a backup first; branch rules on a private repository may need a paid plan; a fork or a cached copy outlives a later deletion.
+    - **Recovery:** the visibility can be set back to private and a release deleted on github.com; a backup of the history is made before any rewrite.
+    - **Documentation updates:** `DECISIONS.md` (D-034 and later, T-J11-n), `docs\GATE_J.md`, `CHANGELOG.md` (the date of 1.0.0), `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J11: Final gate`. **Next stage:** none planned: the project is done; further work only on the owner's request.
 
 ## 5. Progress tracking and continuity
 

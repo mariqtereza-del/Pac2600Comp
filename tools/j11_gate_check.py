@@ -138,13 +138,22 @@ def main():
 
     # ---- the release page and GitHub ----
     tags = git("tag", "-l").split()
-    add("OK" if "v%s" % version in tags else "OWNER", "the tag v%s" % version, "tags now: %s; the owner creates it on the release page (Create new tag on publish), so no tag is pushed from here" % ", ".join(tags))
+    typo = "v." + version
+    if "v%s" % version in tags:
+        add("OK", "the tag v%s" % version, "it exists")
+    elif typo in tags:
+        at = git("rev-list", "-n1", typo).strip()[:8]
+        add("OWNER", "the tag v%s" % version, "the release page made the tag %s (a stray dot) at %s; the release and its download links carry that name; harmless, and fixing it takes the owner's clicks (T-J11-1)" % (typo, at))
+    else:
+        add("OWNER", "the tag v%s" % version, "tags now: %s; the owner creates it on the release page (Create new tag on publish)" % ", ".join(tags))
     log = open(os.path.join(ROOT, "CHANGELOG.md"), encoding="utf-8").read()
     add("OWNER" if ("## [%s] - unreleased" % version) in log else "OK", "the date of %s in the changelog" % version, "it says unreleased: the date of publication is written in when the release is published")
     add("OK", "the automatic checks on GitHub (J7)", "the first run was green in 5 min 2 s, as the owner reported")
     add("OWNER", "GitHub settings that make \"merged only with the owner's approval\" true", "no collaborators; approval for outside workflow runs; a rule for main (T-J10-1)")
-    add("OWNER", "the release page with the zip and its .sha256 file", "Releases > Draft a new release (clicks given in the session)")
-    add("OWNER", "look at the public page without signing in", "a private browser window: the README, the pictures, the issue form (New issue)")
+    add("OK", "the release page with the zip and its .sha256 file", "published by the owner, who reported that the download works (not seen from here)")
+    add("OK", "the public page looks right to a guest", "the owner looked at it signed out and said it looks great (not seen from here)")
+    add("OWNER", "the bug-report form shows under New issue", "not reported yet: GitHub ignores an invalid form silently, so it has to be looked at (J10)")
+    add("OWNER", "the three milestone tags are on GitHub", "0.5.0-native, 1.0.0-preservation (the permanent baseline) and v0.1.0 were made on this PC; check the Tags page of the repository; this PC cannot tell")
 
     width = max(len(r[1]) for r in rows)
     lines = ["%-7s %-*s  %s" % (s, width, i, d) for s, i, d in rows]

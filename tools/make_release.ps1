@@ -206,6 +206,15 @@ HOW TO START
      here beforehand. The program remembers where it was, and where you left the window.
   3. Press F3 (or the Options button on a PS4 pad) to start a game.
 
+IF WINDOWS WARNS YOU
+  Windows may show a blue "Windows protected your PC" window ("unknown publisher") when you start Pac2600Comp.exe or one of the .cmd files. The program is
+  free and is not signed with a paid publisher certificate, so this is expected. Click "More info", then "Run anyway".
+  To avoid it for every file: right-click the downloaded zip, choose Properties, tick "Unblock" if it is there, click OK, and only then unzip.
+  To check that a download is the genuine file, run this in a Command Prompt:
+      certutil -hashfile Pac2600Comp-$Version-windows.zip SHA256
+  and compare the long number with the one in Pac2600Comp-$Version-windows.zip.sha256 (next to the zip where you downloaded it) or on the release page.
+  Some antivirus programs distrust any new unsigned program. If you would rather not trust it, build it yourself from the source zip in the source folder.
+
 KEYS                                              PLAYSTATION PAD (XBOX PAD: A or X fire, Menu = Reset, View = Select, LB / RB, Y)
   Arrow keys or W A S D   move                      D-pad or left stick   move
   Space or Z              fire button               Cross or Square       fire button
@@ -363,6 +372,11 @@ $report | ForEach-Object { Write-Host $_ }
 if (-not $passed) { Fail "the scan found a problem; the unfinished file is $partial (not a release)" }
 Move-Item -Force -Path $partial -Destination $zipPath
 $size = (Get-Item $zipPath).Length
+# The fingerprint of the finished zip (Stage J9): one line "<SHA-256>  <zip name>", the format that `sha256sum -c` reads, next to the zip.
+$zipHash = (Get-FileHash -Algorithm SHA256 -Path $zipPath).Hash.ToLowerInvariant()
+[IO.File]::WriteAllText("$zipPath.sha256", "$zipHash  $(Split-Path $zipPath -Leaf)`n", (New-Object System.Text.UTF8Encoding($false)))
+[void]$report.Add("sha256=$zipHash")
+Write-Host "sha256=$zipHash"
 [void]$report.Add("result=OK $zipPath ($size bytes)")
 $report | Set-Content -Path (Join-Path $out "Pac2600Comp-$Version-windows.report.txt") -Encoding ASCII
 Write-Host "result=OK $zipPath ($size bytes)"

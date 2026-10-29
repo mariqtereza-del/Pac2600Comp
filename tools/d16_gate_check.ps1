@@ -50,6 +50,17 @@ function Value([string]$text, [string]$key) {
 $files = Get-ChildItem $dir -Recurse -File
 Check 'release: no ROM-like file' (@($files | Where-Object { $_.Extension -in '.a26', '.bin', '.rom' }).Count -eq 0) "$($files.Count) files, none ending .a26 .bin .rom"
 Check 'release: no file with the ROM fingerprint' (@($files | Where-Object { (Get-FileHash -Algorithm SHA1 $_.FullName).Hash -eq '0940FEA7F04CDB6D4B90C5AD1A7E344E68F6DBB1' }).Count -eq 0) 'SHA-1 of every file compared'
+# The fingerprint file next to the zip (Stage J9): one line "<SHA-256>  <zip name>", the format `sha256sum -c` reads.
+$sidecarFile = "$Zip.sha256"
+$sidecarOk = $false
+$sidecarDetail = "there is no file $sidecarFile"
+if (Test-Path $sidecarFile) {
+  $parts = @((Get-Content $sidecarFile -TotalCount 1) -split '\s+')
+  $actual = (Get-FileHash -Algorithm SHA256 -Path $Zip).Hash.ToLowerInvariant()
+  $sidecarOk = ($parts.Count -ge 2) -and ($parts[0] -eq $actual) -and ($parts[1] -eq (Split-Path $Zip -Leaf))
+  $sidecarDetail = "SHA-256 $($actual.Substring(0, 16))... of $(Split-Path $Zip -Leaf)"
+}
+Check 'release: the .sha256 file next to the zip names it and matches it' $sidecarOk $sidecarDetail
 $info = Get-Content (Join-Path $dir 'BUILD-INFO.txt') -Raw
 $exeHash = (Get-FileHash -Algorithm SHA256 $exe).Hash.ToLower()
 Check 'release: Pac2600Comp.exe is the one BUILD-INFO.txt names' ($info.Contains($exeHash)) "SHA-256 $($exeHash.Substring(0, 16))..."

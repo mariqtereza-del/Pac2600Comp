@@ -14,11 +14,11 @@ This is a factual list, not legal advice (see `docs\LEGAL_BRIEFING.md`; the owne
 | emulator | 1057 | 25,881,425 | Stella 7.0, GPL v2 or any later version, unchanged (D-002) | the reference emulator, used by the test tools and the reference program only |
 | emulator-tool | 8 | 67,833 | ours, links Stella (GPL) | the measuring tools that run the original game inside Stella |
 | third-party | 2208 | 49,938,758 | SDL3 (zlib) and the libretro shader sources (per file: GPL v2 or later, public domain) | libraries and shader sources, unchanged |
-| build-tool | 89 | 797,943 | ours | scripts that build, test, release and check the project |
+| build-tool | 89 | 800,361 | ours | scripts that build, test, release and check the project |
 | test-data | 147 | 311,928 | ours | recorded joystick inputs, entries and frozen files of the preservation suite (no ROM bytes) |
-| documentation | 85 | 2,731,599 | ours | the notes and documents of the project |
+| documentation | 85 | 2,739,082 | ours | the notes and documents of the project |
 | config | 4 | 3,702 | ours | Git and GitHub settings |
-| **total** | 3809 | 82,622,849 |  |  |
+| **total** | 3809 | 82,632,750 |  |  |
 
 Every tracked file is in exactly one category, and no file fits no rule (the tool stops otherwise).
 

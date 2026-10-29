@@ -96,6 +96,11 @@ def main():
         for name in ("README.md", "release README.txt", "release NOTICE.txt"):
             check(sentence in " ".join(texts[name].split()), "%s lacks the rights-notice words '%s'" % (name, sentence))
 
+    # The unsigned-program warning and the fingerprint are explained (Stage J9), in the README and in the one inside the release.
+    for name in ("README.md", "release README.txt"):
+        for phrase in ("More info", "Run anyway", "Unblock", "certutil", ".sha256"):
+            check(phrase in texts[name], "%s does not explain '%s' (the Windows warning and the fingerprint of the download)" % (name, phrase))
+
     # Links.
     for name in PUBLIC:
         base = os.path.dirname(name)

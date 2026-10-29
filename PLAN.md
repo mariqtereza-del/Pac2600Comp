@@ -3380,7 +3380,23 @@ Publish only what you have decided is safe to publish, in a private repository f
     - **Recovery:** revert the commit.
     - **Documentation updates:** `VERSION`, `CHANGELOG.md`, `DECISIONS.md` (D-032, T-J8-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
     - **Git checkpoint:** `Stage J8: Versions and changelog`. **Next stage:** J9 (release packaging).
-9. **[Not started] J9 — Release packaging.** The release zip built by script, scanned for ROMs, unzipped and played on your PC from a fresh folder. The README explains Windows SmartScreen's "unknown publisher" warning, since the `.exe` isn't signed.
+9. **[Done 2026-10-29, T-J9-1] J9 — Release packaging.** The release zip built by script, scanned for ROMs, unzipped and played on your PC from a fresh folder. The README explains Windows SmartScreen's "unknown publisher" warning, since the `.exe` isn't signed.
+    **J9 in full (16 headings):**
+    - **Objective:** a release a stranger can trust and start: the zip comes with a fingerprint (SHA-256) to check it against, and the documents explain Windows' "unknown publisher" warning and how to go on.
+    - **Why it matters:** the program is not signed (no paid publisher certificate), so Windows warns on first start; people will wonder whether the download is genuine.
+    - **Prerequisites:** J8 Done, clean tree (checked); the zip is already built by a script, scanned for game files, and gate-checked from a fresh folder.
+    - **What Claude Code will do:** make `tools\make_release.ps1` write `Pac2600Comp-<version>-windows.zip.sha256` (one line, in the format `sha256sum -c` reads) and the fingerprint into the report; make `tools\d16_gate_check.ps1` check that the file names the zip and matches it (32 checks); add "If Windows warns you, and checking your download" to `README.md` and to the README inside the zip (More info, Run anyway, Unblock, `certutil`, antivirus, build it yourself); extend `tools\j4_docs_check.py` to require those; prove the instructions by following them (`certutil` on the real zip).
+    - **What I must do:** nothing required. The owner reported that the game works as expected (D-008: not required).
+    - **Exact instructions:** `powershell -NoProfile -ExecutionPolicy Bypass -File tools\make_release.ps1`, then `tools\d16_gate_check.ps1`.
+    - **Required input:** none.
+    - **Claude Code prompt:** "Do only the single next stage named in PROJECT_STATUS.md."
+    - **Expected result:** `out\Pac2600Comp-1.0.0-windows.zip` and `.zip.sha256`; the gate passes 32 checks; `certutil -hashfile` gives the number in the file.
+    - **Verification:** the real release from the committed tree and its gate; `certutil` run as the README says; `j4_docs_check` fails when a required phrase is missing; `test_quick`; `src\` unchanged.
+    - **Completion criteria:** the fingerprint file is made, checked by the gate and explained; the warning is explained in both READMEs.
+    - **Potential problems:** the warning cannot be removed without a paid code-signing certificate (not obtained, not asked for); an antivirus may still distrust a new unsigned file; whether the owner's own try used this exact zip was not stated.
+    - **Recovery:** revert the commit.
+    - **Documentation updates:** `README.md`, `BUILDING.md`, `DECISIONS.md` (T-J9-1), `TESTING.md`, `CLAUDE.md`, `PLAN.md`, `PROJECT_STATUS.md`.
+    - **Git checkpoint:** `Stage J9: Release packaging`. **Next stage:** J10 (issues and contributions).
 10. **[Not started] J10 — Issues and contributions.** A short issue template asking for version, Windows version and ROM fingerprint (never the ROM itself); `CONTRIBUTING.md` only if you want outside contributions.
 11. **[Not started] J11 — Final gate: go public.** You switch the repository to public and publish the release. Checklist: J1 decision recorded, no ROM anywhere in history (Claude Code scans all past commits), licences present, release verified, `PROJECT_STATUS.md` says Done.
 

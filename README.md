@@ -46,7 +46,18 @@ The pictures are the program's own screenshots (made again with `tools\j41_scree
 2. Start `Pac2600Comp.exe`. The first time it asks for your game file. Or put the file into the `roms` folder next to the program first. It remembers where the file was and where you left the window.
 3. Press **F3** (hold briefly), or the Options button on a PlayStation pad, to start a game.
 
-Windows may say "unknown publisher" the first time: the program is not signed. That is expected for a small free program.
+Windows may warn you the first time ("unknown publisher"). That is expected: see [If Windows warns you](#if-windows-warns-you-and-checking-your-download) below.
+
+## If Windows warns you, and checking your download
+
+Pac2600Comp is a small free program and is **not signed** with a paid publisher certificate, so Windows may show a blue "Windows protected your PC" window ("unknown publisher") the first time you start `Pac2600Comp.exe` or one of the `.cmd` helpers. This is expected. Click **More info**, then **Run anyway**. To avoid it for every file, right-click the downloaded zip, choose **Properties**, tick **Unblock** if you see it, click **OK**, and only then unzip.
+
+If you would rather check than trust:
+
+- **Check the fingerprint.** Each release has a file ending in `.sha256` next to its zip (and the same number on the release page). In a Command Prompt run `certutil -hashfile Pac2600Comp-1.0.0-windows.zip SHA256` and compare the long number with the one in that file. If they differ, the download is not the genuine file.
+- **Build it yourself** from the source (the release holds the source zip; see [BUILDING.md](BUILDING.md)).
+
+Some antivirus programs distrust any new unsigned program; a fingerprint that matches and a build you made yourself are the answer to that.
 
 ## Controls
 

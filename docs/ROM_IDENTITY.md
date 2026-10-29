@@ -146,11 +146,10 @@ Writes to $3F ('3F' switching scheme) in traced code: 0
 The four "touching" lines looked worrying, so they were checked byte by byte:
 
 ```text
-$FF43: B9 E9 FF    = LDA $FFE9,Y   (read table at $FFE9, entry Y)
-$FF4F: B9 ED FF    = LDA $FFED,Y
-$FFBC: BD F1 FF    = LDA $FFF1,X   (read table at $FFF1, entry X)
-$FFC1: BD F5 FF    = LDA $FFF5,X
-Bytes $FFE9-$FFFF: 07 03 01 00 09 18 10 30 08 04 0C 04 14 18 14 18 00 00 00 00 F0 00 00
+Four instructions read from four 4-byte tables packed just before the vectors:
+  from $FF43 and $FF4F: the tables at $FFE9 and $FFED, indexed by Y
+  from $FFBC and $FFC1: the tables at $FFF1 and $FFF5, indexed by X
+(The bytes of these instructions and of the tables are not quoted here.)
 ```
 
 These are ordinary reads from four 4-byte tables packed just before the vectors. Only 8 KB-and-larger schemes (such as Parker Bros "E0") react to those addresses, and a 4 KB cartridge has no switching circuitry. Together with "no writes to cartridge space" and "no Superchip pattern", the verdict is **no bank switching**. This agrees with Stella's database, which gives no special cartridge type for this ROM (A3), so Stella treats it as plain 4K.

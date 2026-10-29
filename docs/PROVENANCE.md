@@ -1,6 +1,6 @@
 # Provenance of every file in Git (Stage J3)
 
-Made by `python -I tools\j3_provenance.py rom\pacman.a26`; do not edit by hand. It lists what Git holds (3813 files), not what is only on this PC (section 5).
+Made by `python -I tools\j3_provenance.py rom\pacman.a26`; do not edit by hand. It lists what Git holds (3814 files), not what is only on this PC (section 5).
 The categories follow the plan: our own code, ROM-derived material, emulator code, third-party libraries, documentation, build tools and generated files, plus test data, measuring tools and settings.
 This is a factual list, not legal advice (see `docs\LEGAL_BRIEFING.md`; the owner's position is D-028).
 
@@ -14,11 +14,11 @@ This is a factual list, not legal advice (see `docs\LEGAL_BRIEFING.md`; the owne
 | emulator | 1057 | 25,881,425 | Stella 7.0, GPL v2 or any later version, unchanged (D-002) | the reference emulator, used by the test tools and the reference program only |
 | emulator-tool | 8 | 67,833 | ours, links Stella (GPL) | the measuring tools that run the original game inside Stella |
 | third-party | 2208 | 49,938,758 | SDL3 (zlib) and the libretro shader sources (per file: GPL v2 or later, public domain) | libraries and shader sources, unchanged |
-| build-tool | 89 | 803,409 | ours | scripts that build, test, release and check the project |
+| build-tool | 90 | 815,628 | ours | scripts that build, test, release and check the project |
 | test-data | 147 | 311,928 | ours | recorded joystick inputs, entries and frozen files of the preservation suite (no ROM bytes) |
-| documentation | 87 | 2,752,121 | ours | the notes and documents of the project |
+| documentation | 87 | 2,761,324 | ours | the notes and documents of the project |
 | config | 6 | 6,660 | ours | Git and GitHub settings |
-| **total** | 3813 | 82,651,795 |  |  |
+| **total** | 3814 | 82,673,217 |  |  |
 
 Every tracked file is in exactly one category, and no file fits no rule (the tool stops otherwise).
 
@@ -31,7 +31,7 @@ The cartridge file itself and its program code are not in Git, not in the releas
 
 A mention is an address between `$F000` and `$FFFF` (or `0xF...`, or a label `L_F...`): the places in the cartridge's program that our notes and comments refer to. A hex run is a line with nine or more hex bytes in a row. Neither contains the cartridge's code as bytes; they are evidence that these files were written by studying it.
 
-### Documentation: 34 files, 925 address mentions, 1 hex-run lines
+### Documentation: 34 files, 921 address mentions, 0 hex-run lines
 
 | File | Address mentions | Hex-run lines |
 | --- | --- | --- |
@@ -42,8 +42,8 @@ A mention is an address between `$F000` and `$FFFF` (or `0xF...`, or a label `L_
 | `docs/F21_ROUTINES.md` | 56 | 0 |
 | `docs/F7_RAM_MAP.md` | 50 | 0 |
 | `docs/F6_COVERAGE.md` | 44 | 0 |
-| `docs/ROM_IDENTITY.md` | 35 | 1 |
 | `docs/F9_INPUT.md` | 33 | 0 |
+| `docs/ROM_IDENTITY.md` | 31 | 0 |
 | `CLAUDE.md` | 24 | 0 |
 | `docs/F4_DATA_TABLES.md` | 18 | 0 |
 | `docs/F12_COLLISIONS.md` | 16 | 0 |
@@ -140,13 +140,12 @@ A mention is an address between `$F000` and `$FFFF` (or `0xF...`, or a label `L_
 | `src/game/data/tables.hpp` | 72 | 0 |
 | `src/lockstep/generated_tables.hpp` | 47 | 0 |
 
-### Every line that holds bytes as text (1 lines in 1 files)
+### Every line that holds bytes as text (0 lines in 0 files)
 
 These lines quote bytes of the cartridge or of the game's memory as text. None is cartridge program code (Gate G finds no run of it), but any that quote cartridge bytes are ROM-derived material in a note; the owner decides about them at J11.
 
 | File | Line | Starts with |
 | --- | --- | --- |
-| `docs/ROM_IDENTITY.md` | 153 | `Bytes $FFE9-$FFFF: <bytes>` |
 
 ## 4. Binary files that Git holds
 

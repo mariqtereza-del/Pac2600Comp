@@ -70,6 +70,16 @@ HEX_RUN = re.compile(r"(?:\b[0-9A-Fa-f]{2}\b[ ,]+){8,}\b[0-9A-Fa-f]{2}\b")      
 HEX_DOLLAR = re.compile(r"(?:\$[0-9A-Fa-f]{2}\b[ ,]+){8,}\$[0-9A-Fa-f]{2}\b")          # $09, $03, ... as in an assembler listing
 HEX_LONG = re.compile(r"\b(?=[0-9]*[A-Fa-f])[0-9A-Fa-f]{18,}\b")                                       # an unbroken hex string; hashes (32, 40 and 64 digits) are not meant
 HASH_LENGTHS = (32, 40, 64)
+MNEMONIC = re.compile(r"\b(?:LDA|STA|LDX|LDY|STX|STY|JSR|JMP|BNE|BEQ|BCC|BCS|BPL|BMI|BVC|BVS|CMP|CPX|CPY|AND|ORA|EOR|ADC|SBC|INC|DEC|INX|INY|DEX|DEY|ASL|LSR|ROL|ROR|BIT|TAX|TAY|TXA|TYA|TXS|TSX|RTS|RTI|PHA|PLA|PHP|PLP|CLC|SEC|SED|CLD|SEI|CLI|NOP|BRK)\b")
+SHORT_BYTES = re.compile(r"(?<![0-9A-Za-z$#])[0-9A-F]{2}(?: [0-9A-F]{2}){1,2}(?![0-9A-Za-z])")      # two or three bytes: B9 E9 FF
+ANY_ADDRESS = re.compile(r"\$[0-9A-Fa-f]{2,4}")
+
+
+def bytes_as_text(line):
+    """True if the line quotes bytes as text: a run of bytes, a string of hex digits, or an instruction written with its two or three bytes and an address (Stage J11)."""
+    if HEX_RUN.search(line) or HEX_DOLLAR.search(line) or [m for m in HEX_LONG.findall(line) if len(m) not in HASH_LENGTHS]:
+        return True
+    return bool(MNEMONIC.search(line) and SHORT_BYTES.search(line) and ANY_ADDRESS.search(line))
 ROM_LIKE = (".a26", ".bin", ".rom", ".rar", ".7z", ".zip", ".tar", ".gz")
 KNOWN_ARCHIVE = {"third_party/stella/src/os/macos/template.dmg.gz"}   # part of Stella's unchanged source (T-D15-1)
 THIRD_PARTY_PREFIXES = ("third_party/SDL3/", "third_party/stella/", "third_party/shaders/")
@@ -138,12 +148,11 @@ def main():
             addresses = len(ADDRESS.findall(body))
             runs = 0
             for number, line in enumerate(body.splitlines(), 1):
-                long_hits = [m for m in HEX_LONG.findall(line) if len(m) not in HASH_LENGTHS]
                 if p.startswith("src/host/gdv_"):   # the shaders' lookup tables: decimal numbers of pictures, not bytes of anything of Atari's
                     break
-                if HEX_RUN.search(line) or HEX_DOLLAR.search(line) or long_hits:
+                if bytes_as_text(line):
                     runs += 1
-                    shown = HEX_DOLLAR.sub("<bytes>", HEX_RUN.sub("<bytes>", line.strip()))   # the document itself must not quote the bytes it reports
+                    shown = SHORT_BYTES.sub("<bytes>", HEX_DOLLAR.sub("<bytes>", HEX_RUN.sub("<bytes>", line.strip())))   # the document itself must not quote the bytes it reports
                     shown = HEX_LONG.sub(lambda m: m.group(0) if len(m.group(0)) in HASH_LENGTHS else "<bytes>", shown)
                     hex_lines.append((p, number, shown[:48]))
             if addresses or runs:

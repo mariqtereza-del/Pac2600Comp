@@ -22,7 +22,7 @@ Nothing new ran: the 41 other recordings add no instruction. Only three bytes ch
 
 ## The 44 bytes nothing touched
 
-- **Code never run (4 pieces, 12 bytes):** `$FACF-$FAD1` (`20 36 FB`, a JSR), `$FAF9-$FAFB` (`20 5C FB`, a JSR), `$FB2A-$FB2C` and `$FB33-$FB35` (`68 68 60`, PLA PLA RTS). They sit among code that runs, so they are instructions that none of the 70 recordings reaches. F8 (routine list) says whether they are reachable at all.
+- **Code never run (4 pieces, 12 bytes):** `$FACF-$FAD1` (a JSR), `$FAF9-$FAFB` (a JSR), `$FB2A-$FB2C` and `$FB33-$FB35` (PLA PLA RTS). They sit among code that runs, so they are instructions that none of the 70 recordings reaches. F8 (routine list) says whether they are reachable at all.
 - **Single bytes next to code:** `$F5C3` (`50`) and `$F908` (`BF`), right after the look-ahead bytes `$F5C2` and `$F907`.
 - **In the data area (21 bytes):** `$FD60`, `$FD70`, `$FD78`, `$FD85`, `$FE76-$FE78`, `$FEF4-$FEF5`, `$FF13-$FF18` (`06 05 04 03 02 01`), `$FF23-$FF24`, `$FF27-$FF2A`, `$FF3A-$FF3B`: holes inside tables whose neighbours are read.
 - **The end of the ROM:** `$FFF9-$FFFF` (7 bytes: `00 00 00 00 F0 00 00`, the vectors' tail; the processor's reset read of the vectors is not logged as an instruction read).

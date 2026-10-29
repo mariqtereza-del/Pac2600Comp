@@ -190,7 +190,7 @@ C:\Program Files\Git\cmd\git.exe
 PS> git config --global user.name
 mariqtereza-del
 PS> git config --global user.email
-mariqtereza@gmail.com
+the owner's e-mail address
 ```
 
 - The installer added only `C:\Program Files\Git\cmd` to the machine PATH. MSYS2's Git 2.55.0 is still not on PATH, so it cannot be picked up by mistake.
